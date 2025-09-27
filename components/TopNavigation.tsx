@@ -1,12 +1,13 @@
 'use client'
 
-import { Home, DollarSign, Sparkles, Wrench, User, Users, MessageSquare, BarChart3, BookOpen, TrendingUp, Settings, UserCheck } from 'lucide-react'
+import { Home, DollarSign, Sparkles, Wrench, User, Users, MessageSquare, BarChart3, BookOpen, TrendingUp, Settings, UserCheck, Calendar } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 const navItems = [
   { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
   { icon: Home, label: 'Properties', href: '/properties' },
   { icon: BookOpen, label: 'Reservations', href: '/reservations' },
+  { icon: Calendar, label: 'Scheduler', href: '/scheduler' },
   { icon: DollarSign, label: 'Finances', href: '/finances' },
   { icon: TrendingUp, label: 'Analytics', href: '/analytics' },
   { icon: Sparkles, label: 'Cleaning', href: '/cleaning' },

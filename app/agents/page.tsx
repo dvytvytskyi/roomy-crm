@@ -67,7 +67,7 @@ export default function AgentsPage() {
       unitsAttracted: 12,
       totalPayouts: 45000,
       lastPayoutDate: '2024-01-15',
-      status: 'Active',
+      status: 'Active' as const,
       joinDate: '2023-03-15'
     },
     {
@@ -80,7 +80,7 @@ export default function AgentsPage() {
       unitsAttracted: 8,
       totalPayouts: 32000,
       lastPayoutDate: '2024-01-10',
-      status: 'Active',
+      status: 'Active' as const,
       joinDate: '2023-05-10'
     },
     {
@@ -93,7 +93,7 @@ export default function AgentsPage() {
       unitsAttracted: 15,
       totalPayouts: 68000,
       lastPayoutDate: '2024-01-20',
-      status: 'Active',
+      status: 'Active' as const,
       joinDate: '2023-02-28'
     },
     {
@@ -106,7 +106,7 @@ export default function AgentsPage() {
       unitsAttracted: 6,
       totalPayouts: 18000,
       lastPayoutDate: '2023-12-15',
-      status: 'Inactive',
+      status: 'Inactive' as const,
       joinDate: '2023-08-15'
     },
     {
@@ -119,7 +119,7 @@ export default function AgentsPage() {
       unitsAttracted: 10,
       totalPayouts: 42000,
       lastPayoutDate: '2024-01-18',
-      status: 'Active',
+      status: 'Active' as const,
       joinDate: '2023-04-20'
     },
     {
@@ -132,7 +132,7 @@ export default function AgentsPage() {
       unitsAttracted: 9,
       totalPayouts: 35000,
       lastPayoutDate: '2024-01-12',
-      status: 'Active',
+      status: 'Active' as const,
       joinDate: '2023-06-18'
     }
   ]

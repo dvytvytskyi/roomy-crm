@@ -7,7 +7,7 @@ export default function Home() {
             Roomy CRM - Property Management
           </h1>
           <p className="text-xl text-gray-600 mb-12">
-            Comprehensive property management system with calendar integration
+            Comprehensive property management system
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -21,10 +21,6 @@ export default function Home() {
               <p className="text-gray-600">Handle bookings and reservations</p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Calendar</h3>
-              <p className="text-gray-600">Visual booking management</p>
-            </div>
             
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold mb-2">Owners</h3>

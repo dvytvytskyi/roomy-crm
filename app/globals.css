@@ -944,3 +944,155 @@ body, html {
   overflow: hidden;
 }
 
+/* Bryntum Scheduler - Hide watermark and trial messages */
+.b-watermark,
+.b-trial-message,
+.b-watermark-container,
+[class*="watermark"],
+[class*="trial"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide any trial-related elements in scheduler */
+.b-scheduler .b-watermark,
+.b-scheduler .b-trial-message,
+.b-scheduler [class*="watermark"],
+.b-scheduler [class*="trial"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Alternative approach - target specific watermark elements */
+.b-scheduler-watermark,
+.bryntum-watermark,
+.b-trial,
+.b-trial-message {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Full-screen scheduler styles */
+.scheduler-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.scheduler-header {
+  flex-shrink: 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+}
+
+.scheduler-main {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ensure scheduler takes full height */
+.b-scheduler {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.b-scheduler .b-grid-container {
+  height: 100% !important;
+}
+
+/* Infinite scroll and date formatting styles */
+.b-scheduler .b-timeline-header {
+  background: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.b-scheduler .b-timeline-header .b-timeline-header-cell {
+  padding: 8px 12px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: #1e293b !important;
+}
+
+/* Day names styling */
+.b-scheduler .b-timeline-header .b-timeline-header-cell[data-level="middle"] {
+  background: #f1f5f9 !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Month names styling */
+.b-scheduler .b-timeline-header .b-timeline-header-cell[data-level="top"] {
+  background: #e2e8f0 !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  color: #334155 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Smooth scrolling */
+.b-scheduler .b-timeline-scroller {
+  scroll-behavior: smooth !important;
+}
+
+.b-scheduler .b-grid-body-container {
+  scroll-behavior: smooth !important;
+}
+
+/* Property names styling */
+.b-scheduler .b-grid-cell {
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Booking events styling */
+.b-scheduler .b-sch-event {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.b-scheduler .b-sch-event-content {
+  padding: 4px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Hover effects */
+.b-scheduler .b-sch-event:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Remove background watermark from scheduler subgrid */
+.b-grid-subgrid,
+.b-timeline-subgrid,
+.b-scheduler .b-grid-subgrid,
+.b-scheduler .b-timeline-subgrid,
+[data-region="normal"],
+.b-grid-subgrid-normal {
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* Remove any SVG background watermarks */
+*[style*="background-image"][style*="data:image/svg+xml"],
+*[style*="background-image"][style*="bryntum"],
+*[style*="background-image"][style*="trial"] {
+  background-image: none !important;
+  background: transparent !important;
+}
+

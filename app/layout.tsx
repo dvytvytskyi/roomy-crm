@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Roomy CRM - Property Management',
-  description: 'Property management calendar and booking system',
+  description: 'Property management and booking system',
 }
 
 export default function RootLayout({
