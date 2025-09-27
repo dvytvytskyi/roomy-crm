@@ -1,0 +1,238 @@
+'use client'
+
+import { useState } from 'react'
+import TopNavigation from '../../components/TopNavigation'
+import PropertiesTable from '../../components/properties/PropertiesTable'
+import PropertyModal from '../../components/properties/PropertyModal'
+import PropertiesFilters from '../../components/properties/PropertiesFilters'
+import Toast from '../../components/Toast'
+import { Plus, Search, Download, Archive, Trash2, Filter, Home, Building, Users, DollarSign } from 'lucide-react'
+
+export default function PropertiesPage() {
+  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedProperty, setSelectedProperty] = useState<any>(null)
+  const [selectedProperties, setSelectedProperties] = useState<number[]>([])
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  const handleCreateProperty = () => {
+    setSelectedProperty(null)
+    setIsPropertyModalOpen(true)
+  }
+
+  const handleShowToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const handleEditProperty = (property: any) => {
+    setSelectedProperty(property)
+    setIsPropertyModalOpen(true)
+  }
+
+  const handleBulkAction = (action: 'archive' | 'delete' | 'export') => {
+    if (selectedProperties.length === 0) return
+    
+    switch (action) {
+      case 'archive':
+        console.log('Archive properties:', selectedProperties)
+        break
+      case 'delete':
+        console.log('Delete properties:', selectedProperties)
+        break
+      case 'export':
+        console.log('Export properties:', selectedProperties)
+        break
+    }
+    setSelectedProperties([])
+  }
+
+  return (
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+      <TopNavigation />
+      
+      <div className="flex-1 flex flex-col min-h-0" style={{ marginTop: '64px' }}>
+        {/* Header */}
+        <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+          <div className="bg-white rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-semibold text-slate-900">Properties</h1>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search properties..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
+                    />
+                  </div>
+
+                  {/* Add Property */}
+                  <button
+                    onClick={handleCreateProperty}
+                    className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    <span>Add Property</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {/* Stats Cards */}
+        <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <Building className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-slate-600 text-xs mb-1">Total Properties</p>
+                  <p className="text-2xl font-medium text-slate-900">89</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <Home className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-slate-600 text-xs mb-1">Total Units</p>
+                  <p className="text-2xl font-medium text-slate-900">234</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <Users className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-slate-600 text-xs mb-1">Active Guests</p>
+                  <p className="text-2xl font-medium text-slate-900">1,234</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-slate-600 text-xs mb-1">Monthly Revenue</p>
+                  <p className="text-2xl font-medium text-slate-900">AED 166,000</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedProperties.length > 0 && (
+          <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+            <div className="bg-orange-50 rounded-xl border border-orange-200 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-orange-700 font-medium">
+                    {selectedProperties.length} property(ies) selected
+                  </span>
+                  <button
+                    onClick={() => setSelectedProperties([])}
+                    className="text-sm text-orange-600 hover:text-orange-800 font-medium underline cursor-pointer"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleBulkAction('archive')}
+                    className="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium cursor-pointer"
+                  >
+                    Archive
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('export')}
+                    className="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium cursor-pointer"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('delete')}
+                    className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 flex gap-8 px-2 sm:px-3 lg:px-4 py-1.5 min-h-0 overflow-hidden">
+          {/* Filters Sidebar - Fixed Height */}
+          <div className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
+              <div className="flex items-center justify-between p-3 border-b border-gray-200 flex-shrink-0">
+                <h3 className="text-sm font-medium text-slate-700">Filters</h3>
+                <Filter className="w-4 h-4 text-orange-500" />
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                <PropertiesFilters 
+                  isOpen={true}
+                  onClose={() => {}}
+                  isSidebar={true}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 min-h-0">
+            <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
+              <PropertiesTable 
+                searchTerm={searchTerm}
+                onEditProperty={handleEditProperty}
+                selectedProperties={selectedProperties}
+                onSelectionChange={setSelectedProperties}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <PropertyModal
+        isOpen={isPropertyModalOpen}
+        onClose={() => setIsPropertyModalOpen(false)}
+        property={selectedProperty}
+        onShowToast={handleShowToast}
+      />
+
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type="success"
+          duration={5000}
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      
+    </div>
+  )
+}
