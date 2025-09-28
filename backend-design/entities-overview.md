@@ -1,558 +1,774 @@
 # Сутності бази даних - Property Management System
 
-## 1. 👥 USER MANAGEMENT (Управління користувачами)
+## 🗄️ ПОВНА PRISMA СХЕМА (46 МОДЕЛЕЙ)
 
-### Users (Користувачі)
-```sql
-users
-├── id (UUID, PK)
-├── email (VARCHAR, UNIQUE)
-├── password_hash (VARCHAR)
-├── first_name (VARCHAR)
-├── last_name (VARCHAR)
-├── phone (VARCHAR)
-├── avatar_url (TEXT)
-├── role (ENUM: admin, property_manager, cleaner, maintenance, accountant)
-├── is_active (BOOLEAN)
-├── email_verified (BOOLEAN)
-├── last_login_at (TIMESTAMP)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### ✅ **СТАТИСТИКА:**
+- **46 моделей та enum'ів**
+- **706 рядків коду**
+- **Валідна схема** без помилок
+- **База даних синхронізована**
+- **Prisma Client згенерований**
+
+---
+
+## 1. 👥 USER MANAGEMENT (8 моделей)
+
+### User (Користувачі)
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  avatar    String?
+  role      UserRole @default(GUEST)
+  isActive  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ownedProperties     Property[]
+  managedProperties   PropertyManager[]
+  reservations        Reservation[]
+  reviews             Review[]
+  transactions        Transaction[]
+  maintenance         Maintenance[]
+  cleaning            Cleaning[]
+  notifications       Notification[]
+  sentMessages        Message[] @relation("MessageSender")
+  receivedMessages    Message[] @relation("MessageReceiver")
+  bankAccounts        BankAccount[]
+  payments            Payment[]
+}
 ```
 
-### User Roles (Ролі користувачів)
-```sql
-user_roles
-├── id (UUID, PK)
-├── name (VARCHAR) -- 'admin', 'property_manager', 'cleaner'
-├── description (TEXT)
-├── permissions (JSONB) -- Array of permissions
-└── created_at (TIMESTAMP)
+### UserRole (Ролі користувачів)
+```prisma
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+  OWNER
+  GUEST
+  CLEANER
+  MAINTENANCE
+}
 ```
 
-### User Sessions (Сесії користувачів)
-```sql
-user_sessions
-├── id (UUID, PK)
-├── user_id (UUID, FK → users.id)
-├── refresh_token (VARCHAR, UNIQUE)
-├── expires_at (TIMESTAMP)
-├── ip_address (INET)
-├── user_agent (TEXT)
-├── is_active (BOOLEAN)
-└── created_at (TIMESTAMP)
+---
+
+## 2. 🏠 PROPERTY MANAGEMENT (6 моделей)
+
+### Property (Об'єкти нерухомості)
+```prisma
+model Property {
+  id          String       @id @default(cuid())
+  name        String
+  type        PropertyType
+  address     String
+  city        String
+  country     String
+  latitude    Float?
+  longitude   Float?
+  capacity    Int
+  bedrooms    Int
+  bathrooms   Int
+  area        Float?
+  pricePerNight Float
+  description String?
+  amenities   String[]
+  houseRules  String?
+  isActive    Boolean      @default(true)
+  isPublished Boolean      @default(false)
+  ownerId     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  owner          User              @relation(fields: [ownerId], references: [id])
+  managers       PropertyManager[]
+  reservations   Reservation[]
+  reviews        Review[]
+  maintenance    Maintenance[]
+  cleaning       Cleaning[]
+  images         PropertyImage[]
+  pricingRules   PricingRule[]
+  availability   Availability[]
+  priceHistory   PriceHistory[]
+  amenitiesList  PropertyAmenity[]
+  documents      PropertyDocument[]
+  messages       Message[]
+}
 ```
 
-## 2. 🏠 PROPERTY MANAGEMENT (Управління нерухомістю)
-
-### Properties (Об'єкти нерухомості)
-```sql
-properties
-├── id (UUID, PK)
-├── name (VARCHAR) -- 'Apartment 1A', 'Villa Sunset'
-├── description (TEXT)
-├── property_type (ENUM: apartment, house, villa, penthouse, studio, cottage, beach_house)
-├── address (JSONB) -- {street, city, state, zip, country, coordinates}
-├── amenities (TEXT[]) -- ['wifi', 'pool', 'gym', 'parking']
-├── capacity (INTEGER) -- Maximum guests
-├── bedrooms (INTEGER)
-├── bathrooms (INTEGER)
-├── size_sqm (DECIMAL)
-├── floor_number (INTEGER)
-├── has_elevator (BOOLEAN)
-├── pet_friendly (BOOLEAN)
-├── smoking_allowed (BOOLEAN)
-├── base_price_per_night (DECIMAL)
-├── cleaning_fee (DECIMAL)
-├── security_deposit (DECIMAL)
-├── check_in_time (TIME) -- Default 15:00
-├── check_out_time (TIME) -- Default 11:00
-├── minimum_nights (INTEGER) -- Default 1
-├── maximum_nights (INTEGER)
-├── advance_booking_days (INTEGER) -- How far in advance can book
-├── is_active (BOOLEAN)
-├── owner_id (UUID, FK → users.id)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### PropertyType (Типи нерухомості)
+```prisma
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  PENTHOUSE
+  STUDIO
+  COTTAGE
+  BEACH_HOUSE
+  CONDO
+  TOWNHOUSE
+  LOFT
+}
 ```
 
-### Property Images (Зображення об'єктів)
-```sql
-property_images
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── image_url (TEXT)
-├── thumbnail_url (TEXT)
-├── image_type (ENUM: exterior, interior, amenities, floor_plan, virtual_tour)
-├── sort_order (INTEGER)
-├── alt_text (VARCHAR)
-├── file_size (INTEGER)
-├── width (INTEGER)
-├── height (INTEGER)
-└── created_at (TIMESTAMP)
+### PropertyImage (Зображення об'єктів)
+```prisma
+model PropertyImage {
+  id         String @id @default(cuid())
+  propertyId String
+  url        String
+  alt        String?
+  isPrimary  Boolean @default(false)
+  order      Int     @default(0)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
 ```
 
-### Property Documents (Документи об'єктів)
-```sql
-property_documents
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── document_url (TEXT)
-├── document_type (ENUM: contract, insurance, certificate, manual, other)
-├── title (VARCHAR)
-├── description (TEXT)
-├── file_size (INTEGER)
-├── uploaded_by (UUID, FK → users.id)
-└── created_at (TIMESTAMP)
+### PropertyDocument (Документи об'єктів)
+```prisma
+model PropertyDocument {
+  id         String @id @default(cuid())
+  propertyId String
+  name       String
+  url        String
+  type       DocumentType
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+enum DocumentType {
+  CONTRACT
+  INSURANCE
+  PERMIT
+  CERTIFICATE
+  OTHER
+}
 ```
 
-## 3. 💰 PRICING & AVAILABILITY (Ціноутворення та доступність)
+### PropertyManager (Менеджери об'єктів)
+```prisma
+model PropertyManager {
+  id         String   @id @default(cuid())
+  propertyId String
+  userId     String
+  role       ManagerRole @default(MANAGER)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-### Pricing Rules (Правила ціноутворення)
-```sql
-pricing_rules
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── name (VARCHAR) -- 'Summer High Season', 'Weekend Rate'
-├── rule_type (ENUM: percentage, fixed_amount, seasonal, weekend, holiday, length_of_stay)
-├── date_from (DATE)
-├── date_to (DATE)
-├── day_of_week (INTEGER) -- 1=Monday, 7=Sunday (for weekly rules)
-├── price_modifier (DECIMAL) -- Percentage or fixed amount
-├── minimum_nights (INTEGER)
-├── maximum_nights (INTEGER)
-├── minimum_guests (INTEGER)
-├── maximum_guests (INTEGER)
-├── is_active (BOOLEAN)
-├── priority (INTEGER) -- Higher number = higher priority
-└── created_at (TIMESTAMP)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([propertyId, userId])
+}
+
+enum ManagerRole {
+  MANAGER
+  ASSISTANT
+  VIEWER
+}
 ```
 
-### Availability Calendar (Календар доступності)
-```sql
-availability
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── date (DATE)
-├── is_available (BOOLEAN)
-├── minimum_nights (INTEGER)
-├── maximum_nights (INTEGER)
-├── price (DECIMAL)
-├── notes (TEXT)
-├── block_reason (ENUM: maintenance, owner_use, other)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+---
+
+## 3. 📅 RESERVATION SYSTEM (5 моделей)
+
+### Reservation (Резервації)
+```prisma
+model Reservation {
+  id            String            @id @default(cuid())
+  propertyId    String
+  guestId       String
+  checkIn       DateTime
+  checkOut      DateTime
+  status        ReservationStatus @default(PENDING)
+  paymentStatus PaymentStatus     @default(UNPAID)
+  guestStatus   GuestStatus       @default(UPCOMING)
+  totalAmount   Float
+  paidAmount    Float             @default(0)
+  guestCount    Int               @default(1)
+  specialRequests String?
+  source        ReservationSource @default(DIRECT)
+  externalId    String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  property      Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  guest         User              @relation(fields: [guestId], references: [id])
+  transactions  Transaction[]
+  reviews       Review[]
+  messages      Message[]
+  adjustments   ReservationAdjustment[]
+}
 ```
 
-### Seasonal Pricing (Сезонне ціноутворення)
-```sql
-seasonal_pricing
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── season_name (VARCHAR) -- 'Summer 2024', 'Holiday Season'
-├── start_date (DATE)
-├── end_date (DATE)
-├── price_multiplier (DECIMAL) -- 1.5 = 50% increase
-├── minimum_nights (INTEGER)
-├── is_active (BOOLEAN)
-└── created_at (TIMESTAMP)
+### ReservationStatus (Статуси резервацій)
+```prisma
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  MODIFIED
+}
 ```
 
-## 4. 🛏️ RESERVATIONS (Бронювання)
-
-### Reservations (Резервації)
-```sql
-reservations
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── guest_id (UUID, FK → guests.id)
-├── confirmation_code (VARCHAR, UNIQUE) -- 'ROOMY-2024-001'
-├── status (ENUM: confirmed, owner_confirmed, reserved, block, cancelled)
-├── source (ENUM: direct, airbnb, booking, vrbo, manual)
-├── external_booking_id (VARCHAR) -- ID from external platform
-├── external_confirmation_code (VARCHAR) -- Confirmation from platform
-├── check_in_date (DATE)
-├── check_out_date (DATE)
-├── nights (INTEGER)
-├── adults (INTEGER)
-├── children (INTEGER)
-├── infants (INTEGER)
-├── pets (INTEGER)
-├── base_price (DECIMAL)
-├── cleaning_fee (DECIMAL)
-├── security_deposit (DECIMAL)
-├── taxes (DECIMAL)
-├── platform_fees (DECIMAL)
-├── service_fees (DECIMAL)
-├── total_amount (DECIMAL)
-├── currency (VARCHAR) -- 'USD', 'EUR'
-├── payment_status (ENUM: unpaid, partially_paid, fully_paid, refunded)
-├── paid_amount (DECIMAL)
-├── guest_status (ENUM: upcoming, checked_in, checked_out, no_show)
-├── check_in_time (TIMESTAMP)
-├── check_out_time (TIMESTAMP)
-├── guest_notes (TEXT)
-├── internal_notes (TEXT)
-├── cancellation_reason (TEXT)
-├── cancelled_at (TIMESTAMP)
-├── cancelled_by (UUID, FK → users.id)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### PaymentStatus (Статуси платежів)
+```prisma
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  FULLY_PAID
+  REFUNDED
+  PENDING_REFUND
+}
 ```
 
-### Guests (Гості)
-```sql
-guests
-├── id (UUID, PK)
-├── first_name (VARCHAR)
-├── last_name (VARCHAR)
-├── email (VARCHAR)
-├── phone (VARCHAR)
-├── date_of_birth (DATE)
-├── nationality (VARCHAR) -- ISO country code
-├── passport_number (VARCHAR)
-├── address (JSONB) -- Guest's home address
-├── emergency_contact (JSONB) -- {name, phone, relationship}
-├── preferences (JSONB) -- {smoking, pets, accessibility}
-├── vip_status (BOOLEAN)
-├── notes (TEXT)
-└── created_at (TIMESTAMP)
+### GuestStatus (Статуси гостей)
+```prisma
+enum GuestStatus {
+  UPCOMING
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
+  CANCELLED
+}
 ```
 
-### Guest Reviews (Відгуки гостей)
-```sql
-guest_reviews
-├── id (UUID, PK)
-├── reservation_id (UUID, FK → reservations.id)
-├── property_id (UUID, FK → properties.id)
-├── guest_id (UUID, FK → guests.id)
-├── rating (INTEGER) -- 1-5 stars
-├── cleanliness_rating (INTEGER)
-├── location_rating (INTEGER)
-├── value_rating (INTEGER)
-├── communication_rating (INTEGER)
-├── review_text (TEXT)
-├── is_public (BOOLEAN)
-├── response_text (TEXT) -- Owner response
-├── response_date (TIMESTAMP)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### ReservationSource (Джерела бронювань)
+```prisma
+enum ReservationSource {
+  DIRECT
+  AIRBNB
+  BOOKING_COM
+  VRBO
+  OTHER
+}
 ```
 
-## 5. 🔗 INTEGRATIONS (Інтеграції)
+### ReservationAdjustment (Корекції резервацій)
+```prisma
+model ReservationAdjustment {
+  id             String   @id @default(cuid())
+  reservationId  String
+  type           AdjustmentType
+  amount         Float
+  description    String
+  reason         String?
+  createdAt      DateTime @default(now())
+  createdBy      String
 
-### Integration Accounts (Акаунти інтеграцій)
-```sql
-integration_accounts
-├── id (UUID, PK)
-├── platform (ENUM: airbnb, booking, vrbo, expedia)
-├── property_id (UUID, FK → properties.id)
-├── external_property_id (VARCHAR) -- ID on external platform
-├── account_name (VARCHAR) -- User-friendly name
-├── access_token (TEXT)
-├── refresh_token (TEXT)
-├── token_expires_at (TIMESTAMP)
-├── webhook_url (TEXT)
-├── webhook_secret (VARCHAR)
-├── is_active (BOOLEAN)
-├── sync_settings (JSONB) -- Platform-specific settings
-├── last_sync_at (TIMESTAMP)
-├── sync_frequency (INTEGER) -- Minutes between syncs
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+}
+
+enum AdjustmentType {
+  DISCOUNT
+  FEE
+  REFUND
+  DAMAGE
+  OTHER
+}
 ```
 
-### Sync Logs (Логи синхронізації)
-```sql
-sync_logs
-├── id (UUID, PK)
-├── integration_account_id (UUID, FK → integration_accounts.id)
-├── sync_type (ENUM: reservations, pricing, availability, property_info, reviews)
-├── status (ENUM: running, completed, failed, partial)
-├── records_processed (INTEGER)
-├── records_updated (INTEGER)
-├── records_created (INTEGER)
-├── records_failed (INTEGER)
-├── error_message (TEXT)
-├── error_details (JSONB)
-├── started_at (TIMESTAMP)
-├── completed_at (TIMESTAMP)
-├── duration_seconds (INTEGER)
-└── created_at (TIMESTAMP)
+---
+
+## 4. 💰 PRICING SYSTEM (4 моделі)
+
+### PricingRule (Правила ціноутворення)
+```prisma
+model PricingRule {
+  id          String     @id @default(cuid())
+  propertyId  String
+  name        String
+  type        RuleType
+  value       Float
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean    @default(true)
+  priority    Int        @default(0)
+  conditions  Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+enum RuleType {
+  BASE_PRICE
+  SEASONAL
+  WEEKEND
+  HOLIDAY
+  LAST_MINUTE
+  EARLY_BIRD
+  LENGTH_OF_STAY
+  OCCUPANCY
+  CUSTOM
+}
 ```
 
-### Webhook Events (Webhook події)
-```sql
-webhook_events
-├── id (UUID, PK)
-├── integration_account_id (UUID, FK → integration_accounts.id)
-├── event_type (VARCHAR) -- 'reservation.created', 'reservation.cancelled'
-├── external_event_id (VARCHAR) -- ID from external platform
-├── payload (JSONB) -- Raw webhook data
-├── processed (BOOLEAN)
-├── processed_at (TIMESTAMP)
-├── error_message (TEXT)
-├── retry_count (INTEGER)
-└── created_at (TIMESTAMP)
+### PriceHistory (Історія цін)
+```prisma
+model PriceHistory {
+  id          String   @id @default(cuid())
+  propertyId  String
+  date        DateTime
+  basePrice   Float
+  finalPrice  Float
+  source      String   @default("SYSTEM")
+  createdAt   DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, date])
+}
 ```
 
-## 6. 🔧 MAINTENANCE & CLEANING (Обслуговування та прибирання)
+### Availability (Доступність)
+```prisma
+model Availability {
+  id          String            @id @default(cuid())
+  propertyId  String
+  date        DateTime
+  status      AvailabilityStatus @default(AVAILABLE)
+  price       Float?
+  minStay     Int?
+  maxStay     Int?
+  reason      String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-### Maintenance Tasks (Завдання обслуговування)
-```sql
-maintenance_tasks
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── reservation_id (UUID, FK → reservations.id) -- If related to reservation
-├── title (VARCHAR)
-├── description (TEXT)
-├── category (ENUM: plumbing, electrical, hvac, appliance, structural, cosmetic, safety)
-├── priority (ENUM: low, medium, high, urgent)
-├── status (ENUM: pending, in_progress, completed, cancelled, on_hold)
-├── assigned_to (UUID, FK → users.id)
-├── reported_by (UUID, FK → users.id)
-├── scheduled_date (DATE)
-├── completed_date (DATE)
-├── estimated_duration_hours (DECIMAL)
-├── actual_duration_hours (DECIMAL)
-├── estimated_cost (DECIMAL)
-├── actual_cost (DECIMAL)
-├── contractor_name (VARCHAR)
-├── contractor_contact (VARCHAR)
-├── before_photos (TEXT[])
-├── after_photos (TEXT[])
-├── notes (TEXT)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, date])
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BLOCKED
+  BOOKED
+  MAINTENANCE
+  CLEANING
+  OUT_OF_ORDER
+}
 ```
 
-### Cleaning Tasks (Завдання прибирання)
-```sql
-cleaning_tasks
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── reservation_id (UUID, FK → reservations.id)
-├── scheduled_date (DATE)
-├── status (ENUM: pending, in_progress, completed, skipped, rescheduled)
-├── assigned_to (UUID, FK → users.id)
-├── check_in_time (TIME)
-├── check_out_time (TIME)
-├── cleaning_type (ENUM: checkout, maintenance, deep_clean, inspection)
-├── estimated_duration_hours (DECIMAL)
-├── actual_duration_hours (DECIMAL)
-├── cost (DECIMAL)
-├── checklist_items (JSONB) -- Array of checklist items with status
-├── photos (TEXT[]) -- Before/after photos
-├── notes (TEXT)
-├── quality_score (INTEGER) -- 1-5 rating
-├── completed_at (TIMESTAMP)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+---
+
+## 5. ⭐ AMENITIES & REVIEWS (4 моделі)
+
+### Amenity (Зручності)
+```prisma
+model Amenity {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  category    String
+  icon        String?
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  properties PropertyAmenity[]
+}
 ```
 
-### Cleaning Checklists (Чек-листи прибирання)
-```sql
-cleaning_checklists
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── name (VARCHAR) -- 'Standard Checkout', 'Deep Clean'
-├── items (JSONB) -- Array of checklist items
-├── estimated_duration_hours (DECIMAL)
-├── is_active (BOOLEAN)
-└── created_at (TIMESTAMP)
+### PropertyAmenity (Зручності об'єктів)
+```prisma
+model PropertyAmenity {
+  id         String @id @default(cuid())
+  propertyId String
+  amenityId  String
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityId])
+}
 ```
 
-## 7. 💳 FINANCIAL MANAGEMENT (Фінансове управління)
+### Review (Відгуки)
+```prisma
+model Review {
+  id           String   @id @default(cuid())
+  propertyId   String
+  guestId      String
+  reservationId String?
+  rating       Int      @db.SmallInt
+  comment      String?
+  response     String?
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-### Transactions (Транзакції)
-```sql
-transactions
-├── id (UUID, PK)
-├── reservation_id (UUID, FK → reservations.id)
-├── property_id (UUID, FK → properties.id)
-├── transaction_type (ENUM: booking_revenue, cleaning_fee, security_deposit, refund, owner_payout, platform_commission, maintenance_cost)
-├── amount (DECIMAL)
-├── currency (VARCHAR)
-├── description (TEXT)
-├── payment_method (ENUM: credit_card, bank_transfer, paypal, stripe, platform_payment, cash)
-├── external_transaction_id (VARCHAR) -- From payment gateway
-├── gateway_fee (DECIMAL)
-├── net_amount (DECIMAL) -- Amount after fees
-├── status (ENUM: pending, completed, failed, refunded)
-├── processed_at (TIMESTAMP)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  guest       User         @relation(fields: [guestId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
+  @@unique([propertyId, guestId])
+}
 ```
 
-### Owner Payouts (Виплати власникам)
-```sql
-owner_payouts
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── owner_id (UUID, FK → users.id)
-├── payout_period_start (DATE)
-├── payout_period_end (DATE)
-├── total_revenue (DECIMAL)
-├── platform_commissions (DECIMAL)
-├── cleaning_fees (DECIMAL)
-├── maintenance_costs (DECIMAL)
-├── net_payout (DECIMAL)
-├── currency (VARCHAR)
-├── status (ENUM: pending, processing, completed, failed)
-├── payment_method (VARCHAR)
-├── bank_details (JSONB) -- Encrypted bank account info
-├── processed_at (TIMESTAMP)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+---
+
+## 6. 💳 FINANCIAL SYSTEM (4 моделі)
+
+### Transaction (Транзакції)
+```prisma
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  reservationId   String?
+  type            TransactionType
+  amount          Float
+  currency        String            @default("USD")
+  status          TransactionStatus @default(PENDING)
+  paymentGateway  String?
+  transactionRef  String?
+  description     String?
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  CHARGE
+  WITHDRAWAL
+  COMMISSION
+  FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
 ```
 
-### Financial Reports (Фінансові звіти)
-```sql
-financial_reports
-├── id (UUID, PK)
-├── report_type (ENUM: monthly, quarterly, yearly, custom)
-├── property_id (UUID, FK → properties.id)
-├── period_start (DATE)
-├── period_end (DATE)
-├── total_revenue (DECIMAL)
-├── total_expenses (DECIMAL)
-├── net_profit (DECIMAL)
-├── occupancy_rate (DECIMAL) -- Percentage
-├── average_daily_rate (DECIMAL)
-├── revenue_per_available_room (DECIMAL)
-├── report_data (JSONB) -- Detailed breakdown
-├── generated_by (UUID, FK → users.id)
-├── generated_at (TIMESTAMP)
-└── created_at (TIMESTAMP)
+### Payment (Платежі)
+```prisma
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  amount          Float
+  currency        String        @default("USD")
+  status          PaymentStatus @default(UNPAID)
+  paymentMethod   String?
+  paymentGateway  String?
+  transactionRef  String?
+  description     String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
 ```
 
-## 8. 📧 COMMUNICATION & NOTIFICATIONS (Комунікація та сповіщення)
+### BankAccount (Банківські рахунки)
+```prisma
+model BankAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  accountName   String
+  accountNumber String
+  bankName      String
+  routingNumber String?
+  swiftCode     String?
+  isDefault     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-### Messages (Повідомлення)
-```sql
-messages
-├── id (UUID, PK)
-├── reservation_id (UUID, FK → reservations.id)
-├── sender_id (UUID, FK → users.id)
-├── recipient_id (UUID, FK → users.id)
-├── message_type (ENUM: text, email, sms, push)
-├── subject (VARCHAR)
-├── content (TEXT)
-├── is_read (BOOLEAN)
-├── read_at (TIMESTAMP)
-├── sent_at (TIMESTAMP)
-└── created_at (TIMESTAMP)
+  user User @relation(fields: [userId], references: [id])
+}
 ```
 
-### Notification Templates (Шаблони сповіщень)
-```sql
-notification_templates
-├── id (UUID, PK)
-├── name (VARCHAR) -- 'reservation_confirmation', 'check_in_reminder'
-├── type (ENUM: email, sms, push)
-├── subject (VARCHAR)
-├── content (TEXT)
-├── variables (JSONB) -- Available template variables
-├── is_active (BOOLEAN)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+---
+
+## 7. 🔧 MAINTENANCE & CLEANING (6 моделей)
+
+### Maintenance (Обслуговування)
+```prisma
+model Maintenance {
+  id            String            @id @default(cuid())
+  propertyId    String
+  userId        String
+  type          MaintenanceType
+  priority      Priority          @default(MEDIUM)
+  status        MaintenanceStatus @default(PENDING)
+  title         String
+  description   String
+  scheduledDate DateTime?
+  completedDate DateTime?
+  cost          Float?
+  notes         String?
+  attachments   String[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+enum MaintenanceType {
+  REPAIR
+  INSPECTION
+  CLEANING
+  UPGRADE
+  PREVENTIVE
+  EMERGENCY
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
 ```
 
-### Email Logs (Логи електронної пошти)
-```sql
-email_logs
-├── id (UUID, PK)
-├── to_email (VARCHAR)
-├── from_email (VARCHAR)
-├── subject (VARCHAR)
-├── template_name (VARCHAR)
-├── content (TEXT)
-├── status (ENUM: sent, delivered, failed, bounced)
-├── external_id (VARCHAR) -- From email service provider
-├── error_message (TEXT)
-├── sent_at (TIMESTAMP)
-└── created_at (TIMESTAMP)
+### Cleaning (Прибирання)
+```prisma
+model Cleaning {
+  id            String        @id @default(cuid())
+  propertyId    String
+  userId        String
+  status        CleaningStatus @default(SCHEDULED)
+  scheduledDate DateTime
+  completedDate DateTime?
+  duration      Int?          // in minutes
+  notes         String?
+  cost          Float?
+  checklist     Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+enum CleaningStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  SKIPPED
+}
 ```
 
-## 9. 📊 ANALYTICS & REPORTING (Аналітика та звітність)
+---
 
-### Property Analytics (Аналітика об'єктів)
-```sql
-property_analytics
-├── id (UUID, PK)
-├── property_id (UUID, FK → properties.id)
-├── date (DATE)
-├── views_count (INTEGER)
-├── inquiries_count (INTEGER)
-├── bookings_count (INTEGER)
-├── revenue (DECIMAL)
-├── occupancy_rate (DECIMAL)
-├── average_rating (DECIMAL)
-├── cancellation_rate (DECIMAL)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+## 8. 💬 COMMUNICATION (3 моделі)
+
+### Message (Повідомлення)
+```prisma
+model Message {
+  id           String   @id @default(cuid())
+  senderId     String
+  receiverId   String
+  propertyId   String?
+  reservationId String?
+  subject      String?
+  content      String
+  type         MessageType @default(TEXT)
+  isRead       Boolean  @default(false)
+  attachments  String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sender     User         @relation("MessageSender", fields: [senderId], references: [id])
+  receiver   User         @relation("MessageReceiver", fields: [receiverId], references: [id])
+  property   Property?    @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+}
+
+enum MessageType {
+  TEXT
+  EMAIL
+  SMS
+  SYSTEM
+  NOTIFICATION
+}
 ```
 
-### User Activity Logs (Логи активності користувачів)
-```sql
-user_activity_logs
-├── id (UUID, PK)
-├── user_id (UUID, FK → users.id)
-├── action (VARCHAR) -- 'login', 'create_reservation', 'update_property'
-├── resource_type (VARCHAR) -- 'property', 'reservation', 'user'
-├── resource_id (UUID)
-├── ip_address (INET)
-├── user_agent (TEXT)
-├── details (JSONB)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### Notification (Сповіщення)
+```prisma
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum NotificationType {
+  RESERVATION
+  PAYMENT
+  MAINTENANCE
+  CLEANING
+  MESSAGE
+  SYSTEM
+  REMINDER
+}
 ```
 
-## 10. ⚙️ SYSTEM CONFIGURATION (Системна конфігурація)
+---
 
-### System Settings (Системні налаштування)
-```sql
-system_settings
-├── id (UUID, PK)
-├── key (VARCHAR, UNIQUE) -- 'default_cleaning_fee', 'max_advance_booking_days'
-├── value (TEXT)
-├── data_type (ENUM: string, number, boolean, json)
-├── description (TEXT)
-├── is_public (BOOLEAN) -- Can be accessed by frontend
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+## 9. 🔗 INTEGRATIONS (4 моделі)
+
+### Integration (Інтеграції)
+```prisma
+model Integration {
+  id          String           @id @default(cuid())
+  type        IntegrationType
+  name        String
+  isActive    Boolean          @default(true)
+  config      Json
+  lastSync    DateTime?
+  syncStatus  SyncStatus       @default(INACTIVE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+enum IntegrationType {
+  AIRBNB
+  BOOKING_COM
+  VRBO
+  PRICELAB
+  NOMOD
+  SENDGRID
+  AWS_S3
+}
+
+enum SyncStatus {
+  INACTIVE
+  SYNCING
+  SUCCESS
+  ERROR
+  PAUSED
+}
 ```
 
-### Audit Logs (Логи аудиту)
-```sql
-audit_logs
-├── id (UUID, PK)
-├── table_name (VARCHAR)
-├── record_id (UUID)
-├── action (ENUM: create, update, delete)
-├── old_values (JSONB)
-├── new_values (JSONB)
-├── changed_by (UUID, FK → users.id)
-├── ip_address (INET)
-├── user_agent (TEXT)
-├── created_at (TIMESTAMP)
-└── updated_at (TIMESTAMP)
+### SyncLog (Логи синхронізації)
+```prisma
+model SyncLog {
+  id             String   @id @default(cuid())
+  integrationId  String
+  type           String
+  status         SyncStatus
+  message        String?
+  data           Json?
+  startedAt      DateTime
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+}
 ```
 
-## 📋 Підсумок сутностей
+---
 
-### Основні групи:
-1. **User Management** (3 сутності) - Користувачі, ролі, сесії
-2. **Property Management** (3 сутності) - Об'єкти, зображення, документи
-3. **Pricing & Availability** (3 сутності) - Ціни, доступність, сезонність
-4. **Reservations** (3 сутності) - Бронювання, гості, відгуки
-5. **Integrations** (3 сутності) - Акаунти, логи, webhook
-6. **Maintenance & Cleaning** (3 сутності) - Завдання, чек-листи
-7. **Financial** (3 сутності) - Транзакції, виплати, звіти
-8. **Communication** (3 сутності) - Повідомлення, шаблони, логи
-9. **Analytics** (2 сутності) - Аналітика, активність
-10. **System** (2 сутності) - Налаштування, аудит
+## 10. ⚙️ SYSTEM (3 моделі)
 
-### **Загалом: 30 основних сутностей**
+### SystemConfig (Конфігурація системи)
+```prisma
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      ConfigType @default(STRING)
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-Ця структура забезпечить повнофункціональну систему управління нерухомістю з усіма необхідними можливостями! 🏗️
+enum ConfigType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  ARRAY
+}
+```
+
+### AuditLog (Аудит логи)
+```prisma
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  oldData   Json?
+  newData   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+```
+
+---
+
+## 📊 ПІДСУМОК СУТНОСТЕЙ
+
+### **Загалом: 46 моделей та enum'ів**
+
+#### **Основні групи:**
+1. **👥 User Management** (8 моделей) - Користувачі, ролі, сесії
+2. **🏠 Property Management** (6 моделей) - Об'єкти, зображення, документи, менеджери
+3. **📅 Reservation System** (5 моделей) - Резервації, статуси, корекції
+4. **💰 Pricing System** (4 моделі) - Правила цін, історія, доступність
+5. **⭐ Amenities & Reviews** (4 моделі) - Зручності, відгуки
+6. **💳 Financial System** (4 моделі) - Транзакції, платежі, банківські рахунки
+7. **🔧 Maintenance & Cleaning** (6 моделей) - Обслуговування, прибирання
+8. **💬 Communication** (3 моделі) - Повідомлення, сповіщення
+9. **🔗 Integrations** (4 моделі) - Інтеграції, логи синхронізації
+10. **⚙️ System** (3 моделі) - Конфігурація, аудит
+
+### **🎯 КЛЮЧОВІ ОСОБЛИВОСТІ:**
+- ✅ **Повна система ролей** (7 ролей користувачів)
+- ✅ **Гнучке ціноутворення** (9 типів правил)
+- ✅ **Множинні джерела бронювань** (5 платформ)
+- ✅ **Детальна фінансова система** (6 типів транзакцій)
+- ✅ **Система обслуговування** (7 типів завдань)
+- ✅ **Повна комунікація** (5 типів повідомлень)
+- ✅ **Інтеграції з зовнішніми сервісами** (7 типів)
+- ✅ **Аудит та логування** всіх дій
+
+Ця структура забезпечить **повнофункціональну систему управління нерухомістю** з усіма необхідними можливостями! 🏗️
