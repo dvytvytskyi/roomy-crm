@@ -56,12 +56,17 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
   }
 
   const handleArrayFilterChange = (filterType: 'status' | 'source' | 'property', value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [filterType]: prev[filterType].includes(value)
-        ? prev[filterType].filter(item => item !== value)
-        : [...prev[filterType], value]
-    }))
+    console.log(`🔍 ReservationsFilters: Changing ${filterType} filter:`, value)
+    setLocalFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [filterType]: prev[filterType].includes(value)
+          ? prev[filterType].filter(item => item !== value)
+          : [...prev[filterType], value]
+      }
+      console.log(`🔍 ReservationsFilters: New ${filterType} filters:`, newFilters[filterType])
+      return newFilters
+    })
   }
 
   const handleAmountRangeChange = (field: 'min' | 'max', value: string) => {
@@ -82,8 +87,12 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
   }
 
   const handleApplyFilters = () => {
+    console.log('🔍 ReservationsFilters: Applying filters:', localFilters)
     if (onApplyFilters) {
       onApplyFilters(localFilters)
+      console.log('🔍 ReservationsFilters: Filters sent to parent')
+    } else {
+      console.log('❌ ReservationsFilters: onApplyFilters is not defined')
     }
   }
 

@@ -45,6 +45,7 @@ export default function ReservationsPage() {
   // Load reservations from API
   const loadReservations = useCallback(async (currentFilters?: ReservationFilters) => {
     console.log('📅 ReservationsPage: Loading reservations...')
+    console.log('📅 ReservationsPage: Using filters:', currentFilters || filters)
     try {
       setIsLoading(true)
       const response = await reservationService.getReservations(currentFilters || filters)
@@ -64,7 +65,7 @@ export default function ReservationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [filters])
+  }, [])
 
   // Load reservations on component mount
   useEffect(() => {
@@ -73,10 +74,9 @@ export default function ReservationsPage() {
 
   // Reload reservations when filters change
   useEffect(() => {
-    if (filters) {
-      loadReservations(filters)
-    }
-  }, [filters, loadReservations])
+    console.log('🔄 Filters changed, reloading reservations...')
+    loadReservations(filters)
+  }, [filters])
 
   const handleViewReservation = (reservation: any) => {
     setReservationDetailsModal({
@@ -108,7 +108,9 @@ export default function ReservationsPage() {
 
   const handleApplyFilters = (newFilters: ReservationFilters) => {
     console.log('🔍 Applying filters:', newFilters)
+    console.log('🔍 Previous filters:', filters)
     setFilters(newFilters)
+    console.log('🔍 Filters state updated')
   }
 
   const handleClearFilters = () => {
