@@ -1861,33 +1861,51 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
-  // Photos State - завжди використовуємо тестові зображення
-  const [photos, setPhotos] = useState<Photo[]>([
-    {
-      id: 'demo_photo_1',
-      url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-      name: 'Living Room',
-      size: 1024000,
-      isCover: true,
-      uploadedAt: new Date().toISOString()
-    },
-    {
-      id: 'demo_photo_2',
-      url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
-      name: 'Bedroom',
-      size: 980000,
-      isCover: false,
-      uploadedAt: new Date().toISOString()
-    },
-    {
-      id: 'demo_photo_3',
-      url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-      name: 'Kitchen',
-      size: 1100000,
-      isCover: false,
-      uploadedAt: new Date().toISOString()
+  // Photos State - завантажуємо з localStorage або використовуємо тестові зображення
+  const [photos, setPhotos] = useState<Photo[]>(() => {
+    // Завантажуємо з localStorage
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
+    if (savedPhotos) {
+      try {
+        const parsed = JSON.parse(savedPhotos)
+        // Перевіряємо, чи це не blob URL-и (старі дані)
+        const hasBlobUrls = parsed.some((photo: Photo) => photo.url.startsWith('blob:'))
+        if (!hasBlobUrls) {
+          return parsed
+        }
+      } catch (error) {
+        console.error('Error parsing saved photos:', error)
+      }
     }
-  ])
+    
+    // Якщо немає збережених фото або вони з blob URL-ами, використовуємо тестові
+    return [
+      {
+        id: 'demo_photo_1',
+        url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+        name: 'Living Room',
+        size: 1024000,
+        isCover: true,
+        uploadedAt: new Date().toISOString()
+      },
+      {
+        id: 'demo_photo_2',
+        url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
+        name: 'Bedroom',
+        size: 980000,
+        isCover: false,
+        uploadedAt: new Date().toISOString()
+      },
+      {
+        id: 'demo_photo_3',
+        url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+        name: 'Kitchen',
+        size: 1100000,
+        isCover: false,
+        uploadedAt: new Date().toISOString()
+      }
+    ]
+  })
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
@@ -2797,7 +2815,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       const updatedPhotos = [...photos, ...newPhotos]
       setPhotos(updatedPhotos)
-      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
     }
   }
 
@@ -2817,7 +2835,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }))
       
       setPhotos(updatedPhotos)
-      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
     }
   }
 
@@ -2840,7 +2858,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
       
       setPhotos(updatedPhotos)
-      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
     }
   }
 
@@ -3079,8 +3097,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     // Очищуємо тестові дані
     localStorage.removeItem(`payments_${params.id}`)
     localStorage.removeItem(`financialData_${params.id}`)
-    localStorage.removeItem(`propertyPhotos_${params.id}`)
-    localStorage.removeItem('propertyPhotos') // також очищуємо загальний ключ
+    
+    // Очищуємо photos тільки якщо там blob URL-и
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
+    if (savedPhotos) {
+      try {
+        const parsed = JSON.parse(savedPhotos)
+        const hasBlobUrls = parsed.some((photo: Photo) => photo.url.startsWith('blob:'))
+        if (hasBlobUrls) {
+          localStorage.removeItem(`propertyPhotos_${params.id}`)
+          localStorage.removeItem('propertyPhotos')
+          console.log('Cleared blob URL photos from localStorage')
+        }
+      } catch (error) {
+        console.error('Error checking photos:', error)
+      }
+    }
+    
     console.log('Test data cleared on component load')
   }, [params.id])
 
