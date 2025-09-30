@@ -19,10 +19,6 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
-  // Debug logging for isLoading state changes
-  useEffect(() => {
-    console.log('🔄 isLoading state changed to:', isLoading)
-  }, [isLoading])
   const [filters, setFilters] = useState({
     propertyTypes: [] as string[],
     areas: [] as string[],
@@ -50,8 +46,6 @@ export default function PropertiesPage() {
 
   const loadProperties = useCallback(async () => {
     console.log('🔥 loadProperties function called!')
-    console.log('🔥 Current properties state:', properties)
-    console.log('🔥 Current isLoading state:', isLoading)
     
     try {
       setIsLoading(true)
@@ -102,7 +96,7 @@ export default function PropertiesPage() {
       console.log('🏁 Setting isLoading to false')
       setIsLoading(false)
     }
-  }, [properties, isLoading])
+  }, []) // Remove properties and isLoading from dependencies to prevent infinite loop
 
   const handlePropertyCreated = useCallback(() => {
     console.log('🎉 Property created, automatically refreshing list...')
