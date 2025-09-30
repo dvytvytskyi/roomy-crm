@@ -36,11 +36,17 @@ export const getAutomationSettings = async (propertyId: string): Promise<Automat
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Try to get from localStorage first
-    const savedData = localStorage.getItem(`automationSettings_${propertyId}`)
-    if (savedData) {
-      const parsed = JSON.parse(savedData)
-      console.log(`[AutomationService] Loaded from localStorage:`, parsed)
-      return parsed
+    if (typeof window !== 'undefined') {
+      const savedData = localStorage.getItem(`automationSettings_${propertyId}`)
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData)
+          console.log(`[AutomationService] Loaded from localStorage:`, parsed)
+          return parsed
+        } catch (error) {
+          console.error('[AutomationService] Error parsing localStorage data:', error)
+        }
+      }
     }
     
     // Default settings
@@ -68,7 +74,9 @@ export const getAutomationSettings = async (propertyId: string): Promise<Automat
     }
     
     // Save to localStorage
-    localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(defaultSettings))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(defaultSettings))
+    }
     
     console.log(`[AutomationService] Created default settings:`, defaultSettings)
     return defaultSettings
@@ -97,7 +105,9 @@ export const updateAutoResponseSettings = async (propertyId: string, settings: A
     }
     
     // Save to localStorage
-    localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(updatedSettings))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(updatedSettings))
+    }
     
     console.log(`[AutomationService] Updated auto response settings successfully`)
     return settings
@@ -126,7 +136,9 @@ export const updateAutoReviewsSettings = async (propertyId: string, settings: Au
     }
     
     // Save to localStorage
-    localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(updatedSettings))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(updatedSettings))
+    }
     
     console.log(`[AutomationService] Updated auto reviews settings successfully`)
     return settings
@@ -152,6 +164,7 @@ export const updateAutoResponseMessage = async (
     
     // Get current settings
     const currentSettings = await getAutomationSettings(propertyId)
+    console.log(`[AutomationService] Current settings before update:`, currentSettings)
     
     // Update the specific message
     if (type === 'nonConfirmed') {
@@ -181,7 +194,10 @@ export const updateAutoResponseMessage = async (
     }
     
     // Save to localStorage
-    localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(currentSettings))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`automationSettings_${propertyId}`, JSON.stringify(currentSettings))
+      console.log(`[AutomationService] Saved to localStorage:`, currentSettings)
+    }
     
     console.log(`[AutomationService] Updated auto response message successfully`)
     

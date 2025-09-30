@@ -2166,6 +2166,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { getAutomationSettings } = await import('@/lib/api/services/automationService')
       const data = await getAutomationSettings(params.id)
+      console.log('Loaded automation settings:', data)
       setAutomationSettings(data)
       
     } catch (error) {
@@ -2297,6 +2298,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { toggleAutoResponse } = await import('@/lib/api/services/automationService')
       const newStatus = !automationSettings.autoResponse.isActive
+      console.log('Toggling auto response to:', newStatus)
       await toggleAutoResponse(params.id, newStatus)
       
       // Reload automation settings
@@ -4477,11 +4479,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </button>
                   </div>
 
-                  <div className="mt-6 flex justify-end">
-                    <button className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 cursor-pointer">
-                      Save
-                    </button>
-                  </div>
                 </div>
 
                 {/* Auto Reviews Section */}
