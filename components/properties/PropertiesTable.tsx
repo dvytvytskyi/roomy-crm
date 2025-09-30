@@ -410,6 +410,11 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
+  // Debug logging for props
+  console.log('🔧 PropertiesTable render - isLoading prop:', isLoading)
+  console.log('🔧 PropertiesTable render - properties prop length:', properties?.length)
+  console.log('🔧 PropertiesTable render - all props:', { searchTerm, properties: properties?.length, isLoading, filters })
+
   // Use real properties if provided, otherwise fall back to mock data
   const dataSource = properties && properties.length > 0 ? properties : mockProperties
   console.log('📊 PropertiesTable - dataSource:', dataSource)
@@ -615,6 +620,7 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   }
 
   if (isLoading) {
+    console.log('🔄 PropertiesTable: Showing loading spinner because isLoading is true')
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -624,6 +630,8 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
       </div>
     )
   }
+
+  console.log('📋 PropertiesTable: Rendering table because isLoading is false')
 
   return (
     <div className="h-full overflow-auto custom-scrollbar">

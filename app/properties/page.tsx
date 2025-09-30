@@ -18,6 +18,11 @@ export default function PropertiesPage() {
   const [toastMessage, setToastMessage] = useState('')
   const [properties, setProperties] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Debug logging for isLoading state changes
+  useEffect(() => {
+    console.log('🔄 isLoading state changed to:', isLoading)
+  }, [isLoading])
   const [filters, setFilters] = useState({
     propertyTypes: [] as string[],
     areas: [] as string[],
@@ -163,6 +168,9 @@ export default function PropertiesPage() {
     }
     setSelectedProperties([])
   }
+
+  // Debug logging for render
+  console.log('🎨 PropertiesPage render - properties:', properties?.length, 'isLoading:', isLoading)
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
