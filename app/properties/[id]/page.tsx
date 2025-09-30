@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { Edit, Calendar, DollarSign, CreditCard, Info, Flag, Mail, Phone, Plus, X, Download, Check, Building, User, ArrowLeft } from 'lucide-react'
 import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
@@ -1863,7 +1864,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Photos State
   const [photos, setPhotos] = useState<Photo[]>(() => {
-    // Завантажуємо з localStorage або використовуємо порожній масив
+    // Завантажуємо з localStorage або використовуємо тестові зображення
     const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
     if (savedPhotos) {
       try {
@@ -1872,7 +1873,34 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.error('Error parsing saved photos:', error)
       }
     }
-    return []
+    
+    // Тестові зображення для демонстрації
+    return [
+      {
+        id: 'demo_photo_1',
+        url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+        name: 'Living Room',
+        size: 1024000,
+        isCover: true,
+        uploadedAt: new Date().toISOString()
+      },
+      {
+        id: 'demo_photo_2',
+        url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
+        name: 'Bedroom',
+        size: 980000,
+        isCover: false,
+        uploadedAt: new Date().toISOString()
+      },
+      {
+        id: 'demo_photo_3',
+        url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+        name: 'Kitchen',
+        size: 1100000,
+        isCover: false,
+        uploadedAt: new Date().toISOString()
+      }
+    ]
   })
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
@@ -3405,10 +3433,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <div key={photo.id} className={`aspect-[4/3] rounded-lg relative group ${
                         photo.isCover ? 'ring-2 ring-orange-500' : ''
                       }`}>
-                        <img
+                        <Image
                           src={photo.url}
                           alt={photo.name}
+                          width={400}
+                          height={300}
                           className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            console.error('Image failed to load:', photo.url)
+                            e.currentTarget.style.display = 'none'
+                          }}
                         />
                         {photo.isCover && (
                           <span className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
