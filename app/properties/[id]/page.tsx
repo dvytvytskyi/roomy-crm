@@ -1879,6 +1879,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
   const [addBookingModal, setAddBookingModal] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
+  
+  // Add Booking form state
+  const [bookingForm, setBookingForm] = useState({
+    guestName: '',
+    checkIn: '',
+    checkOut: '',
+    totalAmount: '',
+    channel: 'Direct',
+    method: 'Credit Card'
+  })
 
   // Financial Data State
   const [financialData, setFinancialData] = useState(() => {
@@ -3000,6 +3010,55 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
+  // Handle Add Booking
+  const handleAddBooking = () => {
+    setAddBookingModal(true)
+    // Reset form
+    setBookingForm({
+      guestName: '',
+      checkIn: '',
+      checkOut: '',
+      totalAmount: '',
+      channel: 'Direct',
+      method: 'Credit Card'
+    })
+  }
+
+  const handleSaveBooking = async () => {
+    if (!bookingForm.guestName || !bookingForm.checkIn || !bookingForm.checkOut || !bookingForm.totalAmount) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    // Calculate nights
+    const checkInDate = new Date(bookingForm.checkIn)
+    const checkOutDate = new Date(bookingForm.checkOut)
+    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+
+    // Create new payment/booking
+    const newBooking = {
+      guestName: bookingForm.guestName,
+      checkIn: bookingForm.checkIn,
+      checkOut: bookingForm.checkOut,
+      nights: nights,
+      totalAmount: parseFloat(bookingForm.totalAmount),
+      status: 'completed' as const,
+      channel: bookingForm.channel,
+      method: bookingForm.method,
+      date: bookingForm.checkIn
+    }
+
+    try {
+      // Use the same function as Add Payment
+      await handleSavePayment(newBooking)
+      setAddBookingModal(false)
+      console.log('Booking added successfully:', newBooking)
+    } catch (error) {
+      console.error('Error adding booking:', error)
+      alert('Error adding booking. Please try again.')
+    }
+  }
+
 
   // Очищуємо тестові дані при завантаженні
   useEffect(() => {
@@ -3048,7 +3107,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               <span className="text-sm font-medium text-orange-700">AED 460/night</span>
             </div>
             <button 
-              onClick={() => setAddBookingModal(true)}
+              onClick={handleAddBooking}
               className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
             >
               Add booking
@@ -4692,37 +4751,73 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Guest Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Guest Name *</label>
                 <input
                   type="text"
+                  value={bookingForm.guestName}
+                  onChange={(e) => setBookingForm({...bookingForm, guestName: e.target.value})}
                   className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter guest name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Date *</label>
                 <input
                   type="date"
+                  value={bookingForm.checkIn}
+                  onChange={(e) => setBookingForm({...bookingForm, checkIn: e.target.value})}
                   className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Date *</label>
                 <input
                   type="date"
+                  value={bookingForm.checkOut}
+                  onChange={(e) => setBookingForm({...bookingForm, checkOut: e.target.value})}
                   className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Total Amount (AED)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Total Amount (AED) *</label>
                 <input
                   type="number"
+                  value={bookingForm.totalAmount}
+                  onChange={(e) => setBookingForm({...bookingForm, totalAmount: e.target.value})}
                   className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter total amount"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Channel</label>
+                <select
+                  value={bookingForm.channel}
+                  onChange={(e) => setBookingForm({...bookingForm, channel: e.target.value})}
+                  className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="Direct">Direct</option>
+                  <option value="Airbnb">Airbnb</option>
+                  <option value="Booking.com">Booking.com</option>
+                  <option value="Expedia">Expedia</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <select
+                  value={bookingForm.method}
+                  onChange={(e) => setBookingForm({...bookingForm, method: e.target.value})}
+                  className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                  <option value="PayPal">PayPal</option>
+                </select>
               </div>
               
               <div className="flex justify-end space-x-3 pt-4">
@@ -4733,10 +4828,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    // Handle save booking
-                    setAddBookingModal(false)
-                  }}
+                  onClick={handleSaveBooking}
                   className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
                 >
                   Create Booking
