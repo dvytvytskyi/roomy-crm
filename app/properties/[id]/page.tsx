@@ -163,11 +163,6 @@ interface EditAvailabilityModalProps {
   onCancel: () => void
 }
 
-interface EditMarketingModalProps {
-  settings: any
-  onSave: (settings: any) => void
-  onCancel: () => void
-}
 
 interface Photo {
   id: string
@@ -1297,182 +1292,6 @@ function EditAvailabilityModal({ settings, onSave, onCancel }: EditAvailabilityM
   )
 }
 
-function EditMarketingModal({ settings, onSave, onCancel }: EditMarketingModalProps) {
-  const [formData, setFormData] = useState({
-    title: settings.title,
-    summary: settings.summary,
-    theSpace: settings.theSpace,
-    guestAccess: settings.guestAccess,
-    neighborhood: settings.neighborhood,
-    gettingAround: settings.gettingAround,
-    otherNotes: settings.otherNotes,
-    guestInteraction: settings.guestInteraction
-  })
-  
-  const [errors, setErrors] = useState<string[]>([])
-
-  const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
-    // Очищаємо помилки при зміні полів
-    if (errors.length > 0) {
-      setErrors([])
-    }
-  }
-
-  const handleSubmit = () => {
-    console.log('Marketing form submitted with data:', formData)
-    const newErrors: string[] = []
-    
-    // Валідація
-    if (!formData.title.trim()) {
-      newErrors.push('Title is required')
-    }
-    if (!formData.summary.trim()) {
-      newErrors.push('Summary is required')
-    }
-    
-    if (newErrors.length > 0) {
-      console.log('Validation errors:', newErrors)
-      setErrors(newErrors)
-      return
-    }
-    
-    // Якщо валідація пройшла успішно, зберігаємо
-    console.log('Calling onSave with:', formData)
-    onSave(formData)
-  }
-
-  return (
-    <div>
-      {/* Display errors */}
-      {errors.length > 0 && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="text-sm text-red-600">
-            <strong>Please fix the following errors:</strong>
-            <ul className="mt-1 list-disc list-inside">
-              {errors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-      
-      <div className="mb-4 space-y-6 max-h-96 overflow-y-auto">
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleChange('title', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="Enter property title"
-          />
-        </div>
-
-        {/* Summary */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Summary *</label>
-          <textarea
-            value={formData.summary}
-            onChange={(e) => handleChange('summary', e.target.value)}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Enter property summary"
-          />
-        </div>
-
-        {/* The Space */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">The Space</label>
-          <textarea
-            value={formData.theSpace}
-            onChange={(e) => handleChange('theSpace', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Describe the space"
-          />
-        </div>
-
-        {/* Guest Access */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Guest Access</label>
-          <textarea
-            value={formData.guestAccess}
-            onChange={(e) => handleChange('guestAccess', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Describe guest access"
-          />
-        </div>
-
-        {/* Neighborhood */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">The Neighborhood</label>
-          <textarea
-            value={formData.neighborhood}
-            onChange={(e) => handleChange('neighborhood', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Describe the neighborhood"
-          />
-        </div>
-
-        {/* Getting Around */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Getting Around</label>
-          <textarea
-            value={formData.gettingAround}
-            onChange={(e) => handleChange('gettingAround', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Describe transportation options"
-          />
-        </div>
-
-        {/* Other Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Other Things to Note</label>
-          <textarea
-            value={formData.otherNotes}
-            onChange={(e) => handleChange('otherNotes', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Additional notes"
-          />
-        </div>
-
-        {/* Guest Interaction */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Interaction with Guests</label>
-          <textarea
-            value={formData.guestInteraction}
-            onChange={(e) => handleChange('guestInteraction', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-            placeholder="Describe guest interaction"
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
-        >
-          Save Marketing
-        </button>
-      </div>
-    </div>
-  )
-}
 
 function AddPaymentModal({ onSave, onCancel }: AddPaymentModalProps) {
   const [formData, setFormData] = useState({
@@ -2389,7 +2208,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       guestInteraction: 'Not defined'
     }
   })
-  const [editMarketingModal, setEditMarketingModal] = useState(false)
 
 
   // Mock reservations data for financial table
@@ -2497,6 +2315,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           console.log('Property updated on server:', { [editModal.field]: newValue })
         } catch (apiError) {
           console.error('Failed to update on server:', apiError)
+          // Показуємо помилку користувачу, але зберігаємо локально
+        }
+      }
+      
+      // Оновлюємо поля Marketing
+      if (editModal.type === 'marketing') {
+        const updatedMarketing = {
+          ...marketingSettings,
+          [editModal.field]: newValue
+        }
+        setMarketingSettings(updatedMarketing)
+        
+        // Зберігаємо в localStorage
+        localStorage.setItem(`propertyMarketing_${params.id}`, JSON.stringify(updatedMarketing))
+        
+        // Відправляємо на сервер (симуляція API виклику)
+        try {
+          // В реальному додатку тут буде API виклик
+          // await marketingService.updateMarketing(params.id, { [editModal.field]: newValue })
+          console.log('Marketing updated on server:', { [editModal.field]: newValue })
+        } catch (apiError) {
+          console.error('Failed to update marketing on server:', apiError)
           // Показуємо помилку користувачу, але зберігаємо локально
         }
     }
@@ -2778,30 +2618,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
-  // Функції для роботи з marketing settings
-  const handleEditMarketing = () => {
-    setEditMarketingModal(true)
-  }
-
-  const handleSaveMarketing = async (newSettings: any) => {
-    try {
-      console.log('Saving marketing settings:', newSettings)
-      
-      // Оновлюємо стан
-      setMarketingSettings(newSettings)
-      
-      // Зберігаємо в localStorage
-      localStorage.setItem(`propertyMarketing_${params.id}`, JSON.stringify(newSettings))
-      
-      // В реальному додатку тут буде API виклик
-      // await marketingService.updateSettings(params.id, newSettings)
-      
-      setEditMarketingModal(false)
-      console.log('Marketing settings saved successfully')
-    } catch (error) {
-      console.error('Error saving marketing settings:', error)
-    }
-  }
 
   // Функції для роботи з фото
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4006,16 +3822,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
             {activeTab === 'marketing' && (
               <div className="space-y-6">
-                {/* Header with Edit button */}
-                <div className="flex items-center justify-between">
+                {/* Header */}
+                <div>
                   <h2 className="text-xl font-semibold text-gray-900">Marketing Settings</h2>
-                  <button 
-                    onClick={handleEditMarketing}
-                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
-                  >
-                    <Edit size={16} />
-                    <span>Edit Marketing</span>
-                  </button>
                 </div>
 
                 {/* Description Section */}
@@ -4024,84 +3833,124 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   
                   <div className="space-y-4">
                       <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                      <input
-                        type="text"
-                        value={marketingSettings.title}
-                        className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        disabled
-                      />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Title</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'title', marketingSettings.title, 'Edit Title')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
+                          {marketingSettings.title}
+                        </div>
                         </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Summary</label>
-                      <textarea
-                        value={marketingSettings.summary}
-                        rows={6}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                        disabled
-                      />
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Summary</label>
+                        <button
+                          onClick={() => handleEditField('marketing', 'summary', marketingSettings.summary, 'Edit Summary', 'textarea')}
+                          className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                        {marketingSettings.summary}
+                      </div>
                       </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">The space</label>
-                        <textarea
-                          value={marketingSettings.theSpace}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">The space</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'theSpace', marketingSettings.theSpace, 'Edit The Space', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.theSpace}
+                        </div>
                         </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Guest access</label>
-                        <textarea
-                          value={marketingSettings.guestAccess}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Guest access</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'guestAccess', marketingSettings.guestAccess, 'Edit Guest Access', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.guestAccess}
+                        </div>
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">The neighborhood</label>
-                        <textarea
-                          value={marketingSettings.neighborhood}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">The neighborhood</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'neighborhood', marketingSettings.neighborhood, 'Edit Neighborhood', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.neighborhood}
+                        </div>
                     </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Getting around</label>
-                        <textarea
-                          value={marketingSettings.gettingAround}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Getting around</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'gettingAround', marketingSettings.gettingAround, 'Edit Getting Around', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.gettingAround}
+                        </div>
                   </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Other things to note</label>
-                        <textarea
-                          value={marketingSettings.otherNotes}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Other things to note</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'otherNotes', marketingSettings.otherNotes, 'Edit Other Notes', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.otherNotes}
+                        </div>
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Interaction with guests</label>
-                        <textarea
-                          value={marketingSettings.guestInteraction}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                          disabled
-                        />
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Interaction with guests</label>
+                          <button
+                            onClick={() => handleEditField('marketing', 'guestInteraction', marketingSettings.guestInteraction, 'Edit Guest Interaction', 'textarea')}
+                            className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                          {marketingSettings.guestInteraction}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -5035,27 +4884,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         </div>
       )}
 
-      {/* Edit Marketing Modal */}
-      {editMarketingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Marketing Settings</h3>
-              <button 
-                onClick={() => setEditMarketingModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <EditMarketingModal 
-              settings={marketingSettings}
-              onSave={handleSaveMarketing}
-              onCancel={() => setEditMarketingModal(false)}
-            />
-          </div>
-        </div>
-      )}
       </div>
     </div>
     </div>
