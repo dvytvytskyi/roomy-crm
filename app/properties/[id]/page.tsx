@@ -3112,48 +3112,40 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {[
-                            {
-                              name: 'Booking Payment',
-                              date: '2024-01-15',
-                              amount: 3500,
-                              type: 'income',
-                              channel: 'Booking.com',
-                              method: 'Credit Card',
-                              id: 'TXN001',
-                              status: 'Completed'
-                            },
-                            {
-                              name: 'Cleaning Fee',
-                              date: '2024-01-14',
-                              amount: -150,
-                              type: 'expense',
-                              channel: 'Internal',
-                              method: 'Bank Transfer',
-                              id: 'TXN002',
-                              status: 'Completed'
-                            },
-                            {
-                              name: 'Maintenance',
-                              date: '2024-01-10',
-                              amount: -200,
-                              type: 'expense',
-                              channel: 'Internal',
-                              method: 'Bank Transfer',
-                              id: 'TXN003',
-                              status: 'Completed'
-                            }
-                          ].map((transaction, index) => (
-                            <tr key={index} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.date}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.channel}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.method}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.id}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.status}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+{transaction.amount} AED</td>
+                          {payments.length > 0 ? (
+                            payments.map((payment: any) => (
+                              <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.guestName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.date}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.channel}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.method}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.id}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    payment.status === 'completed' 
+                                      ? 'bg-green-100 text-green-800'
+                                      : payment.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {payment.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                  +{payment.totalAmount} AED
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                <div className="flex flex-col items-center">
+                                  <div className="text-sm text-gray-400 mb-2">No transactions recorded</div>
+                                  <div className="text-xs text-gray-400">Add a new payment to see transactions here</div>
+                                </div>
+                              </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -3187,33 +3179,44 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {payments.map((payment: any) => (
-                          <tr key={payment.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {payment.guestName}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {payment.checkIn} / {payment.checkOut}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                payment.channel === 'Airbnb' 
-                                  ? 'bg-pink-100 text-pink-800'
-                                  : payment.channel === 'Booking.com'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}>
-                                {payment.channel}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {payment.nights}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              AED {payment.totalAmount}
+                        {payments.length > 0 ? (
+                          payments.map((payment: any) => (
+                            <tr key={payment.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {payment.guestName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {payment.checkIn} / {payment.checkOut}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  payment.channel === 'Airbnb' 
+                                    ? 'bg-pink-100 text-pink-800'
+                                    : payment.channel === 'Booking.com'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-green-100 text-green-800'
+                                }`}>
+                                  {payment.channel}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {payment.nights}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                AED {payment.totalAmount}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                              <div className="flex flex-col items-center">
+                                <div className="text-sm text-gray-400 mb-2">No reservations recorded</div>
+                                <div className="text-xs text-gray-400">Reservations will appear here when added</div>
+                              </div>
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
