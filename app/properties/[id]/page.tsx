@@ -157,6 +157,12 @@ interface AddDocumentModalProps {
   onCancel: () => void
 }
 
+interface EditAvailabilityModalProps {
+  settings: any
+  onSave: (settings: any) => void
+  onCancel: () => void
+}
+
 interface Photo {
   id: string
   url: string
@@ -1146,6 +1152,145 @@ function AddDocumentModal({ onSave, onCancel }: AddDocumentModalProps) {
   )
 }
 
+function EditAvailabilityModal({ settings, onSave, onCancel }: EditAvailabilityModalProps) {
+  const [formData, setFormData] = useState({
+    bookingWindow: settings.bookingWindow,
+    advanceNotice: settings.advanceNotice,
+    minStay: settings.minStay,
+    maxStay: settings.maxStay
+  })
+  
+  const [errors, setErrors] = useState<string[]>([])
+
+  const handleChange = (field: string, value: string | number) => {
+    setFormData({ ...formData, [field]: value })
+    // Очищаємо помилки при зміні полів
+    if (errors.length > 0) {
+      setErrors([])
+    }
+  }
+
+  const handleSubmit = () => {
+    console.log('Availability form submitted with data:', formData)
+    const newErrors: string[] = []
+    
+    // Валідація
+    if (formData.minStay < 1) {
+      newErrors.push('Minimum stay must be at least 1 night')
+    }
+    if (formData.maxStay < formData.minStay) {
+      newErrors.push('Maximum stay must be greater than minimum stay')
+    }
+    if (formData.maxStay > 365) {
+      newErrors.push('Maximum stay cannot exceed 365 nights')
+    }
+    
+    if (newErrors.length > 0) {
+      console.log('Validation errors:', newErrors)
+      setErrors(newErrors)
+      return
+    }
+    
+    // Якщо валідація пройшла успішно, зберігаємо
+    console.log('Calling onSave with:', formData)
+    onSave(formData)
+  }
+
+  return (
+    <div>
+      {/* Display errors */}
+      {errors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-600">
+            <strong>Please fix the following errors:</strong>
+            <ul className="mt-1 list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-4 space-y-6">
+        {/* Booking Window */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Booking Window</label>
+          <select
+            value={formData.bookingWindow}
+            onChange={(e) => handleChange('bookingWindow', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="all-days">All days available (Default)</option>
+            <option value="fixed-days">Fixed days</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        {/* Advance Notice */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Advance Notice</label>
+          <select
+            value={formData.advanceNotice}
+            onChange={(e) => handleChange('advanceNotice', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="none">None (Default)</option>
+            <option value="same-day">Same day (customize cutoff hours)</option>
+            <option value="1-day">1 day&apos;s notice</option>
+            <option value="2-days">2 day&apos;s notice</option>
+            <option value="3-days">3 day&apos;s notice</option>
+            <option value="7-days">7 day&apos;s notice</option>
+          </select>
+        </div>
+
+        {/* Length of Stay */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Stay</label>
+            <input
+              type="number"
+              value={formData.minStay}
+              onChange={(e) => handleChange('minStay', parseInt(e.target.value) || 1)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              min="1"
+            />
+            <p className="text-xs text-gray-500 mt-1">nights</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Stay</label>
+            <input
+              type="number"
+              value={formData.maxStay}
+              onChange={(e) => handleChange('maxStay', parseInt(e.target.value) || 1)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              min="1"
+              max="365"
+            />
+            <p className="text-xs text-gray-500 mt-1">nights</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+        >
+          Save Settings
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AddPaymentModal({ onSave, onCancel }: AddPaymentModalProps) {
   const [formData, setFormData] = useState({
     guestName: '',
@@ -2019,6 +2164,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addDocumentModal, setAddDocumentModal] = useState(false)
 
+  // Availability settings state
+  const [availabilitySettings, setAvailabilitySettings] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedSettings = localStorage.getItem(`propertyAvailability_${params.id}`)
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings)
+      } catch (error) {
+        console.error('Error parsing saved availability settings:', error)
+      }
+    }
+    return {
+      bookingWindow: 'all-days',
+      advanceNotice: 'none',
+      minStay: 3,
+      maxStay: 365
+    }
+  })
+  const [editAvailabilityModal, setEditAvailabilityModal] = useState(false)
+
 
   // Mock reservations data for financial table
   const mockReservations = [
@@ -2379,6 +2544,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log('Document download initiated')
     } catch (error) {
       console.error('Error downloading document:', error)
+    }
+  }
+
+  // Функції для роботи з availability settings
+  const handleEditAvailability = () => {
+    setEditAvailabilityModal(true)
+  }
+
+  const handleSaveAvailability = async (newSettings: any) => {
+    try {
+      console.log('Saving availability settings:', newSettings)
+      
+      // Оновлюємо стан
+      setAvailabilitySettings(newSettings)
+      
+      // Зберігаємо в localStorage
+      localStorage.setItem(`propertyAvailability_${params.id}`, JSON.stringify(newSettings))
+      
+      // В реальному додатку тут буде API виклик
+      // await availabilityService.updateSettings(params.id, newSettings)
+      
+      setEditAvailabilityModal(false)
+      console.log('Availability settings saved successfully')
+    } catch (error) {
+      console.error('Error saving availability settings:', error)
     }
   }
 
@@ -3484,6 +3674,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
             {activeTab === 'availability' && (
               <div className="space-y-6">
+                {/* Header with Edit button */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Availability Settings</h2>
+                  <button 
+                    onClick={handleEditAvailability}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
+                  >
+                    <Edit size={16} />
+                    <span>Edit Settings</span>
+                  </button>
+                </div>
+
                 {/* Two Column Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Booking window */}
@@ -3492,7 +3694,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     <p className="text-sm text-gray-600 mb-4">How far into the future is your property available for booking</p>
                     
                     <div className="relative mb-6">
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer">
+                      <select 
+                        value={availabilitySettings.bookingWindow}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                        disabled
+                      >
                         <option value="all-days">All days available (Default)</option>
                         <option value="fixed-days">Fixed days</option>
                         <option value="custom">Custom</option>
@@ -3510,7 +3716,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <p className="text-sm text-gray-600 mb-4">The latest guests can book a reservation ahead of check-in</p>
                       
                       <div className="relative">
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer">
+                        <select 
+                          value={availabilitySettings.advanceNotice}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                          disabled
+                        >
                           <option value="none">None (Default)</option>
                           <option value="same-day">Same day (customize cutoff hours)</option>
                           <option value="1-day">1 day&apos;s notice</option>
@@ -3529,14 +3739,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
                   {/* Length of stay limits */}
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
+                    <div className="mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Length of stay limits</h3>
                         <p className="text-sm text-gray-600">Set the minimum and maximum length of stay per reservation.</p>
-                      </div>
-                      <button className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer">
-                        Edit
-                      </button>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
@@ -3544,8 +3749,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Minimum length of stay</label>
                         <input
                           type="number"
-                          defaultValue="3"
+                          value={availabilitySettings.minStay}
                           className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          disabled
                         />
                         <p className="text-xs text-gray-500 mt-1">nights</p>
                       </div>
@@ -3554,8 +3760,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Maximum length of stay</label>
                         <input
                           type="number"
-                          defaultValue="365"
+                          value={availabilitySettings.maxStay}
                           className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          disabled
                         />
                         <p className="text-xs text-gray-500 mt-1">nights</p>
                       </div>
@@ -4568,6 +4775,28 @@ With easy access to transport, shopping, and dining, everything you need is righ
             <AddDocumentModal 
               onSave={handleSaveDocument}
               onCancel={() => setAddDocumentModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Availability Modal */}
+      {editAvailabilityModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Availability Settings</h3>
+              <button 
+                onClick={() => setEditAvailabilityModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <EditAvailabilityModal 
+              settings={availabilitySettings}
+              onSave={handleSaveAvailability}
+              onCancel={() => setEditAvailabilityModal(false)}
             />
           </div>
         </div>
