@@ -17,8 +17,7 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
     status: true,
     source: true,
     property: true,
-    amountRange: true,
-    tags: true
+    amountRange: true
   })
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -217,48 +216,6 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
         )}
       </div>
 
-      {/* Tags */}
-      <div>
-        <button
-          onClick={() => toggleSection('tags')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Tags</label>
-          {openSections.tags ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.tags && (
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">VIP</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">Family</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">Luxury</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">Premium</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">Budget</span>
-            </label>
-            <label className="flex items-center">
-              <input type="checkbox" className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" />
-              <span className="ml-2 text-xs text-gray-700">Beachfront</span>
-            </label>
-          </div>
-        )}
-      </div>
     </div>
   )
 

@@ -27,7 +27,6 @@ export default function ReservationsPage() {
     source: [],
     property: [],
     amountRange: { min: '', max: '' },
-    tags: [],
     guestName: ''
   })
 
@@ -71,7 +70,6 @@ export default function ReservationsPage() {
       source: [],
       property: [],
       amountRange: { min: '', max: '' },
-      tags: [],
       guestName: ''
     })
   }
