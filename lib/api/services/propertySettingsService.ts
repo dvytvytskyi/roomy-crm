@@ -1,4 +1,4 @@
-import { api } from '../config'
+import { API_CONFIG } from '../config'
 
 export interface PropertySettings {
   amenities: string[]
@@ -15,7 +15,7 @@ export const propertySettingsService = {
   // Отримати налаштування властивості
   getPropertySettings: async (propertyId: string): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/settings`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/settings`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export const propertySettingsService = {
   // Оновити amenities
   updateAmenities: async (propertyId: string, amenities: string[], selectedAmenities: string[]): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/amenities`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/amenities`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export const propertySettingsService = {
   // Оновити rules
   updateRules: async (propertyId: string, rules: string[], selectedRules: string[]): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/rules`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/rules`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export const propertySettingsService = {
   // Оновити utilities
   updateUtilities: async (propertyId: string, utilities: Array<{ title: string; description: string }>): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/utilities`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/utilities`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ export const propertySettingsService = {
   // Додати новий utility
   addUtility: async (propertyId: string, utility: { title: string; description: string }): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/utilities`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/utilities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export const propertySettingsService = {
   // Видалити utility
   deleteUtility: async (propertyId: string, utilityIndex: number): Promise<PropertySettings> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/utilities/${utilityIndex}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/utilities/${utilityIndex}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

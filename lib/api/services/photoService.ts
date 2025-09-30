@@ -1,4 +1,4 @@
-import { api } from '../config'
+import { API_CONFIG } from '../config'
 
 export interface Photo {
   id: string
@@ -19,7 +19,7 @@ export const photoService = {
   // Отримати всі фото для властивості
   getPhotos: async (propertyId: string): Promise<Photo[]> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/photos`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/photos`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export const photoService = {
         formData.append(`photos`, file)
       })
 
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/photos`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/photos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -87,7 +87,7 @@ export const photoService = {
   // Встановити обкладинку
   setCoverPhoto: async (propertyId: string, photoId: string): Promise<Photo[]> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/photos/${photoId}/cover`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/photos/${photoId}/cover`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ export const photoService = {
   // Видалити фото
   deletePhoto: async (propertyId: string, photoId: string): Promise<Photo[]> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/photos/${photoId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/properties/${propertyId}/photos/${photoId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

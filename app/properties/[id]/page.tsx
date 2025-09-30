@@ -1959,25 +1959,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     content: ''
   })
   
-  const [autoReviewsSettings, setAutoReviewsSettings] = useState({
-    isActive: true,
-    delay: 3,
-    rating: 5,
-    template: 'If no templates are set, we will use our own template.'
-  })
-  
-  const [autoResponseSettings, setAutoResponseSettings] = useState({
-    isActive: true,
-    nonConfirmed: {
-      firstMessage: '',
-      subsequentMessage: ''
+  const [automationSettings, setAutomationSettings] = useState({
+    autoResponse: {
+      isActive: true,
+      nonConfirmed: {
+        firstMessage: '',
+        subsequentMessage: ''
+      },
+      confirmed: {
+        beforeCheckin: '',
+        checkinDay: '',
+        checkoutDay: '',
+        duringStay: '',
+        afterCheckout: ''
+      }
     },
-    confirmed: {
-      beforeCheckin: '',
-      checkinDay: '',
-      checkoutDay: '',
-      duringStay: '',
-      afterCheckout: ''
+    autoReviews: {
+      isActive: true,
+      delay: 3,
+      rating: 5,
+      template: 'If no templates are set, we will use our own template.'
     }
   })
 
@@ -2160,6 +2161,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
+  // Функції для роботи з automation
+  const loadAutomationSettings = useCallback(async () => {
+    try {
+      const { getAutomationSettings } = await import('@/lib/api/services/automationService')
+      const data = await getAutomationSettings(params.id)
+      setAutomationSettings(data)
+      
+    } catch (error) {
+      console.error('Error loading automation settings:', error)
+    }
+  }, [params.id])
+
   // Automation handlers
   const handleAutoResponseConfigure = (type: string, trigger: string) => {
     const titles = {
@@ -2172,38 +2185,126 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       'after-checkout': 'Configure After Check-out Response'
     }
     
+    // Get current content based on type and trigger
+    let content = ''
+    if (type === 'nonConfirmed') {
+      if (trigger === 'first-message') {
+        content = automationSettings.autoResponse.nonConfirmed.firstMessage
+      } else if (trigger === 'subsequent') {
+        content = automationSettings.autoResponse.nonConfirmed.subsequentMessage
+      }
+    } else if (type === 'confirmed') {
+      switch (trigger) {
+        case 'before-checkin':
+          content = automationSettings.autoResponse.confirmed.beforeCheckin
+          break
+        case 'checkin-day':
+          content = automationSettings.autoResponse.confirmed.checkinDay
+          break
+        case 'checkout-day':
+          content = automationSettings.autoResponse.confirmed.checkoutDay
+          break
+        case 'during-stay':
+          content = automationSettings.autoResponse.confirmed.duringStay
+          break
+        case 'after-checkout':
+          content = automationSettings.autoResponse.confirmed.afterCheckout
+          break
+      }
+    }
+    
     setAutoResponseModal({
       isOpen: true,
       type,
       trigger,
       title: titles[trigger as keyof typeof titles] || 'Configure Auto Response',
-      content: (autoResponseSettings[type as keyof typeof autoResponseSettings] as any)?.[trigger as keyof any] || ''
+      content
     })
   }
 
-  const handleAutoResponseSave = (data: any) => {
-    console.log('Auto response saved:', data)
-    setAutoResponseModal({ isOpen: false, type: '', trigger: '', title: '', content: '' })
+  const handleAutoResponseSave = async (data: any) => {
+    try {
+      const { updateAutoResponseMessage } = await import('@/lib/api/services/automationService')
+      await updateAutoResponseMessage(params.id, data.type, data.trigger, data.content)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+      setAutoResponseModal({ isOpen: false, type: '', trigger: '', title: '', content: '' })
+      
+    } catch (error) {
+      console.error('Error saving auto response:', error)
+    }
   }
 
-  const handleAutoReviewsToggle = () => {
-    setAutoReviewsSettings(prev => ({ ...prev, isActive: !prev.isActive }))
+  const handleAutoReviewsToggle = async () => {
+    try {
+      const { toggleAutoReviews } = await import('@/lib/api/services/automationService')
+      const newStatus = !automationSettings.autoReviews.isActive
+      await toggleAutoReviews(params.id, newStatus)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+    } catch (error) {
+      console.error('Error toggling auto reviews:', error)
+    }
   }
 
-  const handleAutoReviewsDelayChange = (delay: number) => {
-    setAutoReviewsSettings(prev => ({ ...prev, delay }))
+  const handleAutoReviewsDelayChange = async (delay: number) => {
+    try {
+      const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
+      const updatedSettings = { ...automationSettings.autoReviews, delay }
+      await updateAutoReviewsSettings(params.id, updatedSettings)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+    } catch (error) {
+      console.error('Error updating auto reviews delay:', error)
+    }
   }
 
-  const handleAutoReviewsRatingChange = (rating: number) => {
-    setAutoReviewsSettings(prev => ({ ...prev, rating }))
+  const handleAutoReviewsRatingChange = async (rating: number) => {
+    try {
+      const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
+      const updatedSettings = { ...automationSettings.autoReviews, rating }
+      await updateAutoReviewsSettings(params.id, updatedSettings)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+    } catch (error) {
+      console.error('Error updating auto reviews rating:', error)
+    }
   }
 
-  const handleAutoReviewsTemplateChange = (template: string) => {
-    setAutoReviewsSettings(prev => ({ ...prev, template }))
+  const handleAutoReviewsTemplateChange = async (template: string) => {
+    try {
+      const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
+      const updatedSettings = { ...automationSettings.autoReviews, template }
+      await updateAutoReviewsSettings(params.id, updatedSettings)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+    } catch (error) {
+      console.error('Error updating auto reviews template:', error)
+    }
   }
 
-  const handleAutoResponseToggle = () => {
-    setAutoResponseSettings(prev => ({ ...prev, isActive: !prev.isActive }))
+  const handleAutoResponseToggle = async () => {
+    try {
+      const { toggleAutoResponse } = await import('@/lib/api/services/automationService')
+      const newStatus = !automationSettings.autoResponse.isActive
+      await toggleAutoResponse(params.id, newStatus)
+      
+      // Reload automation settings
+      await loadAutomationSettings()
+      
+    } catch (error) {
+      console.error('Error toggling auto response:', error)
+    }
   }
 
   const [utilities, setUtilities] = useState(() => {
@@ -2952,13 +3053,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         await loadFinancialData()
         await loadPayments()
         await loadSavedReplies()
+        await loadAutomationSettings()
       } catch (error) {
-        console.error('Error loading initial financial data:', error)
+        console.error('Error loading initial data:', error)
       }
     }
     
     loadInitialData()
-  }, [loadFinancialData, loadPayments, loadSavedReplies])
+  }, [loadFinancialData, loadPayments, loadSavedReplies, loadAutomationSettings])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -4268,7 +4370,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <label className="flex items-center space-x-2">
                         <input 
                           type="checkbox" 
-                          checked={autoResponseSettings.isActive}
+                          checked={automationSettings.autoResponse.isActive}
                           onChange={handleAutoResponseToggle}
                           className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500" 
                         />
@@ -4390,7 +4492,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <label className="flex items-center space-x-2">
                         <input 
                           type="checkbox" 
-                          checked={autoReviewsSettings.isActive}
+                          checked={automationSettings.autoReviews.isActive}
                           onChange={handleAutoReviewsToggle}
                           className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500" 
                         />
@@ -4405,7 +4507,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Delay (in days)</label>
                         <input
                           type="number"
-                          value={autoReviewsSettings.delay}
+                          value={automationSettings.autoReviews.delay}
                           onChange={(e) => handleAutoReviewsDelayChange(parseInt(e.target.value))}
                           className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
@@ -4414,7 +4516,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Rating to use</label>
                         <RatingStars
-                          rating={autoReviewsSettings.rating}
+                          rating={automationSettings.autoReviews.rating}
                           interactive={true}
                           size="md"
                           onRatingChange={handleAutoReviewsRatingChange}
@@ -4425,7 +4527,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Review templates</label>
                       <textarea
-                        value={autoReviewsSettings.template}
+                        value={automationSettings.autoReviews.template}
                         onChange={(e) => handleAutoReviewsTemplateChange(e.target.value)}
                         rows={4}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
