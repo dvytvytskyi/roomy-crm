@@ -554,14 +554,27 @@ function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditMod
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<any>({})
   const [successMessage, setSuccessMessage] = useState<string>('')
+  
+  // Додаємо state для string значень інпутів
+  const [inputValues, setInputValues] = useState({
+    ownerIncome: incomeDistribution.ownerIncome.toString(),
+    roomyAgencyFee: incomeDistribution.roomyAgencyFee.toString(),
+    referringAgent: incomeDistribution.referringAgent.toString(),
+    totalProfit: incomeDistribution.totalProfit.toString()
+  })
 
   const handleChange = (field: keyof IncomeDistribution, value: string) => {
+    // Оновлюємо string значення для інпутів
+    setInputValues(prev => ({ ...prev, [field]: value }))
+    
+    // Парсимо числове значення
     const numValue = parseFloat(value) || 0
     const newFormData = { ...formData, [field]: numValue }
     
     // Auto-calculate total if it's not the total field being changed
     if (field !== 'totalProfit') {
       newFormData.totalProfit = newFormData.ownerIncome + newFormData.roomyAgencyFee + newFormData.referringAgent
+      setInputValues(prev => ({ ...prev, totalProfit: newFormData.totalProfit.toString() }))
     }
     
     setFormData(newFormData)
@@ -656,7 +669,7 @@ function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditMod
             min="0"
             max="100"
             step="0.1"
-            value={formData.ownerIncome}
+            value={inputValues.ownerIncome}
             onChange={(e) => handleChange('ownerIncome', e.target.value)}
             className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
               errors.ownerIncome ? 'border-red-300' : 'border-gray-300'
@@ -673,7 +686,7 @@ function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditMod
             min="0"
             max="100"
             step="0.1"
-            value={formData.roomyAgencyFee}
+            value={inputValues.roomyAgencyFee}
             onChange={(e) => handleChange('roomyAgencyFee', e.target.value)}
             className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
               errors.roomyAgencyFee ? 'border-red-300' : 'border-gray-300'
@@ -690,7 +703,7 @@ function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditMod
             min="0"
             max="100"
             step="0.1"
-            value={formData.referringAgent}
+            value={inputValues.referringAgent}
             onChange={(e) => handleChange('referringAgent', e.target.value)}
             className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
               errors.referringAgent ? 'border-red-300' : 'border-gray-300'
@@ -706,7 +719,7 @@ function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditMod
             type="number"
             min="0"
             step="0.01"
-            value={formData.totalProfit}
+            value={inputValues.totalProfit}
             onChange={(e) => handleChange('totalProfit', e.target.value)}
             className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
               errors.totalProfit ? 'border-red-300' : 'border-gray-300'
