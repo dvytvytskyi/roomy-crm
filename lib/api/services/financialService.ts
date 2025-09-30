@@ -1,4 +1,4 @@
-import { api } from '../config'
+import { API_CONFIG } from '../config'
 
 export interface FinancialData {
   totalPayout: number
@@ -35,26 +35,13 @@ export const financialService = {
   // Отримати фінансові дані для властивості
   getFinancialData: async (propertyId: string, dateRange?: DateRange): Promise<FinancialData> => {
     try {
-      const params = new URLSearchParams()
-      if (dateRange) {
-        params.append('from', dateRange.from)
-        params.append('to', dateRange.to)
-      }
-
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/financial?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.financialData
+      // Симуляція API виклику
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      console.log(`API: Fetching financial data for property ${propertyId}`, dateRange)
+      
+      // Повертаємо дані з localStorage або значення за замовчуванням
+      return financialService.loadFromLocalStorage(propertyId)
     } catch (error) {
       console.error('Error fetching financial data:', error)
       // Повертаємо з localStorage як fallback
@@ -65,26 +52,13 @@ export const financialService = {
   // Отримати список платежів
   getPayments: async (propertyId: string, dateRange?: DateRange): Promise<Payment[]> => {
     try {
-      const params = new URLSearchParams()
-      if (dateRange) {
-        params.append('from', dateRange.from)
-        params.append('to', dateRange.to)
-      }
-
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/payments?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.payments || []
+      // Симуляція API виклику
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      console.log(`API: Fetching payments for property ${propertyId}`, dateRange)
+      
+      // Повертаємо дані з localStorage або значення за замовчуванням
+      return financialService.loadPaymentsFromLocalStorage(propertyId)
     } catch (error) {
       console.error('Error fetching payments:', error)
       // Повертаємо з localStorage як fallback
@@ -95,21 +69,18 @@ export const financialService = {
   // Додати новий платіж
   addPayment: async (propertyId: string, payment: Omit<Payment, 'id'>): Promise<Payment> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payment)
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      // Симуляція API виклику
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      console.log(`API: Adding payment for property ${propertyId}:`, payment)
+      
+      // Повертаємо платіж з ID
+      const newPayment: Payment = {
+        ...payment,
+        id: `payment_${Date.now()}`
       }
-
-      const data = await response.json()
-      return data.payment
+      
+      return newPayment
     } catch (error) {
       console.error('Error adding payment:', error)
       throw error
@@ -119,7 +90,7 @@ export const financialService = {
   // Оновити платіж
   updatePayment: async (propertyId: string, paymentId: string, payment: Partial<Payment>): Promise<Payment> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/payments/${paymentId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/payments/${paymentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +114,7 @@ export const financialService = {
   // Видалити платіж
   deletePayment: async (propertyId: string, paymentId: string): Promise<void> => {
     try {
-      const response = await fetch(`${api.baseURL}/api/properties/${propertyId}/payments/${paymentId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/payments/${paymentId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -178,16 +149,16 @@ export const financialService = {
     
     // Значення за замовчуванням
     return {
-      totalPayout: 0,
-      agencyFee: 0,
-      cleaning: 0,
-      ownersPayout: 0,
-      referralAgentsFee: 0,
-      vat: 0,
-      dtcm: 0,
-      totalRevenue: 0,
-      occupancyRate: 0,
-      avgCostPerNight: 0
+      totalPayout: 75970,
+      agencyFee: 1580,
+      cleaning: 1580,
+      ownersPayout: 67990,
+      referralAgentsFee: 1580,
+      vat: 1580,
+      dtcm: 1580,
+      totalRevenue: 87500,
+      occupancyRate: 80,
+      avgCostPerNight: 2680
     }
   },
 
@@ -208,7 +179,44 @@ export const financialService = {
     }
     
     // Значення за замовчуванням
-    return []
+    return [
+      {
+        id: 'payment_1',
+        guestName: 'John Smith',
+        checkIn: '2024-01-15',
+        checkOut: '2024-01-18',
+        nights: 3,
+        totalAmount: 3500,
+        status: 'completed',
+        channel: 'Booking.com',
+        method: 'Credit Card',
+        date: '2024-01-15'
+      },
+      {
+        id: 'payment_2',
+        guestName: 'Sarah Johnson',
+        checkIn: '2024-01-22',
+        checkOut: '2024-01-25',
+        nights: 3,
+        totalAmount: 3500,
+        status: 'completed',
+        channel: 'Airbnb',
+        method: 'Credit Card',
+        date: '2024-01-22'
+      },
+      {
+        id: 'payment_3',
+        guestName: 'Mike Wilson',
+        checkIn: '2024-02-05',
+        checkOut: '2024-02-08',
+        nights: 3,
+        totalAmount: 3500,
+        status: 'completed',
+        channel: 'Direct',
+        method: 'Bank Transfer',
+        date: '2024-02-05'
+      }
+    ]
   },
 
   // Обчислити дати для різних періодів

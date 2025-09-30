@@ -1340,36 +1340,41 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Завантажуємо фінансові дані для нового періоду
       await loadFinancialData(dateRange)
+      await loadPayments(dateRange)
     } catch (error) {
       console.error('Error changing date range:', error)
       
       // Fallback: локальне обчислення дат
-    const today = new Date()
-    let fromDate = new Date()
-    let toDate = new Date()
-    
-    switch (range) {
-      case 'lastweek':
-        fromDate.setDate(today.getDate() - 7)
-        break
-      case 'lastmonth':
-        fromDate.setMonth(today.getMonth() - 1)
-        break
-      case 'last3month':
-        fromDate.setMonth(today.getMonth() - 3)
-        break
-      case 'last6month':
-        fromDate.setMonth(today.getMonth() - 6)
-        break
-      case 'lastyear':
-        fromDate.setFullYear(today.getFullYear() - 1)
-        break
-      default:
-        fromDate.setDate(today.getDate() - 7)
-    }
-    
-    setDateFrom(fromDate.toISOString().split('T')[0])
-    setDateTo(toDate.toISOString().split('T')[0])
+      const today = new Date()
+      let fromDate = new Date()
+      let toDate = new Date()
+      
+      switch (range) {
+        case 'lastweek':
+          fromDate.setDate(today.getDate() - 7)
+          break
+        case 'lastmonth':
+          fromDate.setMonth(today.getMonth() - 1)
+          break
+        case 'last3month':
+          fromDate.setMonth(today.getMonth() - 3)
+          break
+        case 'last6month':
+          fromDate.setMonth(today.getMonth() - 6)
+          break
+        case 'lastyear':
+          fromDate.setFullYear(today.getFullYear() - 1)
+          break
+        default:
+          fromDate.setDate(today.getDate() - 7)
+      }
+      
+      setDateFrom(fromDate.toISOString().split('T')[0])
+      setDateTo(toDate.toISOString().split('T')[0])
+      
+      // Завантажуємо дані з новими датами
+      await loadFinancialData({ from: fromDate.toISOString().split('T')[0], to: toDate.toISOString().split('T')[0] })
+      await loadPayments({ from: fromDate.toISOString().split('T')[0], to: toDate.toISOString().split('T')[0] })
     }
   }
   const [editModal, setEditModal] = useState<{
@@ -2401,6 +2406,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setAddPaymentModal(false)
   }
 
+  const handleCustomDateChange = async () => {
+    if (dateFrom && dateTo) {
+      const dateRange = { from: dateFrom, to: dateTo }
+      await loadFinancialData(dateRange)
+      await loadPayments(dateRange)
+    }
+  }
+
   // Завантажуємо фінансові дані при завантаженні компонента
   useEffect(() => {
     const loadInitialData = async () => {
@@ -2923,6 +2936,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       onChange={(e) => setDateTo(e.target.value)}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={handleCustomDateChange}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
+                    >
+                      Apply
+                    </button>
                   </div>
                 </div>
                   ) : (
