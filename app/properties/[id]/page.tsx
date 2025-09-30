@@ -1232,22 +1232,6 @@ const mockProperty = {
       status: 'Confirmed',
       amount: 250
     }
-  ],
-  expenses: [
-    {
-      date: '4.11.2024',
-      unit: 'Apartment Burj Khalifa 2',
-      category: 'Electrical',
-      contractor: 'ProElectric Dubai',
-      amount: 40
-    },
-    {
-      date: '4.11.2024',
-      unit: 'Apartment Burj Khalifa 2',
-      category: 'Electrical',
-      contractor: 'ProElectric Dubai',
-      amount: 40
-    }
   ]
 }
 
@@ -1345,32 +1329,32 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.error('Error changing date range:', error)
       
       // Fallback: локальне обчислення дат
-      const today = new Date()
-      let fromDate = new Date()
-      let toDate = new Date()
-      
-      switch (range) {
-        case 'lastweek':
-          fromDate.setDate(today.getDate() - 7)
-          break
-        case 'lastmonth':
-          fromDate.setMonth(today.getMonth() - 1)
-          break
-        case 'last3month':
-          fromDate.setMonth(today.getMonth() - 3)
-          break
-        case 'last6month':
-          fromDate.setMonth(today.getMonth() - 6)
-          break
-        case 'lastyear':
-          fromDate.setFullYear(today.getFullYear() - 1)
-          break
-        default:
-          fromDate.setDate(today.getDate() - 7)
-      }
-      
-      setDateFrom(fromDate.toISOString().split('T')[0])
-      setDateTo(toDate.toISOString().split('T')[0])
+    const today = new Date()
+    let fromDate = new Date()
+    let toDate = new Date()
+    
+    switch (range) {
+      case 'lastweek':
+        fromDate.setDate(today.getDate() - 7)
+        break
+      case 'lastmonth':
+        fromDate.setMonth(today.getMonth() - 1)
+        break
+      case 'last3month':
+        fromDate.setMonth(today.getMonth() - 3)
+        break
+      case 'last6month':
+        fromDate.setMonth(today.getMonth() - 6)
+        break
+      case 'lastyear':
+        fromDate.setFullYear(today.getFullYear() - 1)
+        break
+      default:
+        fromDate.setDate(today.getDate() - 7)
+    }
+    
+    setDateFrom(fromDate.toISOString().split('T')[0])
+    setDateTo(toDate.toISOString().split('T')[0])
       
       // Завантажуємо дані з новими датами
       await loadFinancialData({ from: fromDate.toISOString().split('T')[0], to: toDate.toISOString().split('T')[0] })
@@ -1487,29 +1471,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   })
 
-  const [expenses, setExpenses] = useState([
-    {
-      date: '4.11.2024',
-      unit: 'Apartment Burj Khalifa 2',
-      category: 'Cleaning',
-      contractor: 'CleanPro Services',
-      amount: 150
-    },
-    {
-      date: '4.11.2024',
-      unit: 'Apartment Burj Khalifa 2',
-      category: 'Maintenance',
-      contractor: 'FixIt Dubai',
-      amount: 200
-    },
-    {
-      date: '4.11.2024',
-      unit: 'Apartment Burj Khalifa 2',
-      category: 'Electrical',
-      contractor: 'ProElectric Dubai',
-      amount: 40
+  const [expenses, setExpenses] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо порожній масив
+    const savedExpenses = localStorage.getItem(`propertyExpenses_${params.id}`)
+    if (savedExpenses) {
+      try {
+        return JSON.parse(savedExpenses)
+      } catch (error) {
+        console.error('Error parsing saved expenses:', error)
+      }
     }
-  ])
+    return []
+  })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
   // Photos State
@@ -2281,12 +2254,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   const handleSaveExpense = (newExpense: any) => {
-    setExpenses([...expenses, newExpense])
+    const updatedExpenses = [...expenses, newExpense]
+    setExpenses(updatedExpenses)
+    // Зберігаємо в localStorage
+    localStorage.setItem(`propertyExpenses_${params.id}`, JSON.stringify(updatedExpenses))
     setAddExpenseModal(false)
   }
 
   const handleDeleteExpense = (index: number) => {
-    setExpenses(expenses.filter((_, i) => i !== index))
+    const updatedExpenses = expenses.filter((_: any, i: number) => i !== index)
+    setExpenses(updatedExpenses)
+    // Зберігаємо в localStorage
+    localStorage.setItem(`propertyExpenses_${params.id}`, JSON.stringify(updatedExpenses))
     setDeleteExpenseModal({isOpen: false})
   }
 
@@ -3004,8 +2983,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </div>
                       <div className="flex items-center space-x-3">
                           <span className="text-sm font-medium text-green-600">AED {((financialData.totalRevenue * incomeDistribution.ownerIncome) / 100).toLocaleString()}</span>
-                        </div>
                       </div>
+                    </div>
                       <div className="flex items-center justify-between py-3 border-b border-gray-100">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium text-gray-600">Roomy Agency Fee ({incomeDistribution.roomyAgencyFee}%):</span>
@@ -3020,8 +2999,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </div>
                       <div className="flex items-center space-x-3">
                           <span className="text-sm font-medium text-blue-600">AED {((financialData.totalRevenue * incomeDistribution.referringAgent) / 100).toLocaleString()}</span>
-                        </div>
                       </div>
+                        </div>
                       </div>
                     <div className="space-y-4">
                       <div className="bg-slate-50 rounded-lg p-4">
@@ -3134,7 +3113,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                                   +{payment.totalAmount} AED
                                 </td>
-                              </tr>
+                            </tr>
                             ))
                           ) : (
                             <tr>
@@ -3182,30 +3161,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         {payments.length > 0 ? (
                           payments.map((payment: any) => (
                             <tr key={payment.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {payment.guestName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {payment.checkIn} / {payment.checkOut}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   payment.channel === 'Airbnb' 
-                                    ? 'bg-pink-100 text-pink-800'
+                                  ? 'bg-pink-100 text-pink-800'
                                     : payment.channel === 'Booking.com'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
                                   {payment.channel}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {payment.nights}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 AED {payment.totalAmount}
-                              </td>
-                            </tr>
+                            </td>
+                          </tr>
                           ))
                         ) : (
                           <tr>
@@ -3245,14 +3224,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {expenses.map((expense, index) => (
+                        {expenses.length > 0 ? (
+                          expenses.map((expense: any, index: number) => (
                           <tr key={index} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.date}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.unit}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.category}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.contractor}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED {expense.amount}</td>
-                            <td className="px-6 py-4 text-sm text-gray-900">{(expense as any).description || 'Electrical maintenance and repairs'}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900">{(expense as any).description || 'No description'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button 
                                 onClick={() => setDeleteExpenseModal({ isOpen: true, index, expense })}
@@ -3263,7 +3243,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                              <div className="flex flex-col items-center">
+                                <div className="text-sm text-gray-400 mb-2">No expenses recorded</div>
+                                <div className="text-xs text-gray-400">Add a new expense to see it here</div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
