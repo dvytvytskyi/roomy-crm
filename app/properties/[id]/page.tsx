@@ -763,9 +763,14 @@ function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
   })
   
   const [files, setFiles] = useState<File[]>([])
+  const [errors, setErrors] = useState<string[]>([])
 
   const handleChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value })
+    // Очищаємо помилки при зміні полів
+    if (errors.length > 0) {
+      setErrors([])
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -780,21 +785,62 @@ function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
   }
 
   const handleSubmit = () => {
-    if (formData.date && formData.category && formData.contractor && formData.amount) {
-      onSave({
-        date: formData.date,
-        unit: formData.unit,
-        category: formData.category,
-        contractor: formData.contractor,
-        amount: parseInt(formData.amount),
-        description: formData.description,
-        files: files
-      })
+    console.log('Form submitted with data:', formData)
+    const newErrors: string[] = []
+    
+    // Валідація обов'язкових полів
+    if (!formData.date) {
+      newErrors.push('Date is required')
     }
+    if (!formData.category) {
+      newErrors.push('Category is required')
+    }
+    if (!formData.contractor) {
+      newErrors.push('Contractor is required')
+    }
+    if (!formData.amount) {
+      newErrors.push('Amount is required')
+    } else if (isNaN(parseInt(formData.amount)) || parseInt(formData.amount) <= 0) {
+      newErrors.push('Amount must be a positive number')
+    }
+    
+    if (newErrors.length > 0) {
+      console.log('Validation errors:', newErrors)
+      setErrors(newErrors)
+      return
+    }
+    
+    // Якщо валідація пройшла успішно, зберігаємо
+    const expenseData = {
+      date: formData.date,
+      unit: formData.unit,
+      category: formData.category,
+      contractor: formData.contractor,
+      amount: parseInt(formData.amount),
+      description: formData.description,
+      files: files
+    }
+    
+    console.log('Calling onSave with:', expenseData)
+    onSave(expenseData)
   }
 
   return (
     <div>
+      {/* Display errors */}
+      {errors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-600">
+            <strong>Please fix the following errors:</strong>
+            <ul className="mt-1 list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      
       <div className="mb-4 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
@@ -2254,11 +2300,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   const handleSaveExpense = (newExpense: any) => {
+    console.log('Saving expense:', newExpense)
     const updatedExpenses = [...expenses, newExpense]
     setExpenses(updatedExpenses)
     // Зберігаємо в localStorage
     localStorage.setItem(`propertyExpenses_${params.id}`, JSON.stringify(updatedExpenses))
     setAddExpenseModal(false)
+    console.log('Expense saved successfully, total expenses:', updatedExpenses.length)
   }
 
   const handleDeleteExpense = (index: number) => {
