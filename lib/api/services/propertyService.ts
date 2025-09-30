@@ -98,6 +98,17 @@ export class PropertyService {
           console.log('🏠 PropertyService: First property structure:', response.data[0])
           console.log('🏠 PropertyService: First property keys:', Object.keys(response.data[0]))
           console.log('🏠 PropertyService: First property values:', Object.values(response.data[0]))
+          
+          // Debug name fields specifically
+          const firstProperty = response.data[0]
+          console.log('🏷️ PropertyService: Name fields debug:', {
+            id: firstProperty.id,
+            name: firstProperty.name,
+            nickname: firstProperty.nickname,
+            title: firstProperty.title,
+            propertyName: firstProperty.propertyName,
+            allStringFields: Object.entries(firstProperty).filter(([key, value]) => typeof value === 'string' && value.length > 0)
+          })
         } else {
           console.log('🏠 PropertyService: No properties returned from API')
         }

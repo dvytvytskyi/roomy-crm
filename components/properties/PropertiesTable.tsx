@@ -419,9 +419,19 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
 
   // Helper functions to handle both mock and real data formats
   const getPropertyName = (property: any) => {
-    // API format: nickname || name
+    // Debug logging for name fields
+    console.log('🏷️ Property name fields:', {
+      id: property.id,
+      name: property.name,
+      nickname: property.nickname,
+      title: property.title,
+      propertyName: property.propertyName,
+      allKeys: Object.keys(property)
+    })
+    
+    // API format: nickname || name || title || propertyName
     // Mock format: nickname || name
-    return property.nickname || property.name || 'Unnamed Property'
+    return property.nickname || property.name || property.title || property.propertyName || 'Unnamed Property'
   }
   
   const getPropertyArea = (property: any) => {
