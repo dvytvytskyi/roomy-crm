@@ -1613,7 +1613,10 @@ const mockProperty = {
 
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [propertyNickname, setPropertyNickname] = useState('Apartment Burj Khalifa 2')
+  const [propertyNickname, setPropertyNickname] = useState(() => {
+    const saved = localStorage.getItem('propertyNickname')
+    return saved || 'Apartment Burj Khalifa 2'
+  })
   const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
   
 
@@ -2446,9 +2449,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     
     // Оновлюємо нікнейм якщо це поле nickname
     if (editModal.field === 'nickname') {
+      console.log('Updating nickname from', propertyNickname, 'to', newValue)
       setPropertyNickname(newValue)
-        // Зберігаємо в localStorage
-        localStorage.setItem('propertyNickname', newValue)
+      // Також оновлюємо в propertyGeneralInfo
+      const updatedInfo = {
+        ...propertyGeneralInfo,
+        nickname: newValue
+      }
+      setPropertyGeneralInfo(updatedInfo)
+      // Зберігаємо в localStorage
+      localStorage.setItem('propertyNickname', newValue)
+      localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+      console.log('Nickname updated and saved to localStorage')
       }
     
     // Оновлюємо description якщо це поле description
