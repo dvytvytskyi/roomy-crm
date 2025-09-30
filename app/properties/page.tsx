@@ -16,7 +16,6 @@ export default function PropertiesPage() {
   const [selectedProperties, setSelectedProperties] = useState<number[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0) // Key to force refresh
   const [properties, setProperties] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filters, setFilters] = useState({
@@ -57,21 +56,24 @@ export default function PropertiesPage() {
         setProperties(response.data)
       } else {
         console.error('❌ Failed to load properties:', response.error)
+        // Keep existing properties or set empty array
         setProperties([])
+        // Show error toast
+        handleShowToast(`Failed to load properties: ${response.error?.message || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('💥 Error loading properties:', error)
       setProperties([])
+      // Show error toast
+      handleShowToast(`Error loading properties: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   const handlePropertyCreated = useCallback(() => {
-    console.log('🎉 Property created, refreshing list...')
-    // Force refresh by updating the key
-    setRefreshKey(prev => prev + 1)
-    // Also reload properties from API
+    console.log('🎉 Property created, automatically refreshing list...')
+    // Automatically reload properties from API
     loadProperties()
   }, [loadProperties])
 
@@ -153,7 +155,7 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Properties</p>
-                  <p className="text-2xl font-medium text-slate-900">89</p>
+                  <p className="text-2xl font-medium text-slate-900">{properties.length}</p>
                 </div>
               </div>
             </div>
@@ -164,8 +166,10 @@ export default function PropertiesPage() {
                   <Home className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-slate-600 text-xs mb-1">Total Units</p>
-                  <p className="text-2xl font-medium text-slate-900">234</p>
+                  <p className="text-slate-600 text-xs mb-1">Active Properties</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {properties.filter(p => p.status === 'Active' || p.is_active === true).length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -176,8 +180,10 @@ export default function PropertiesPage() {
                   <Users className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-slate-600 text-xs mb-1">Active Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">1,234</p>
+                  <p className="text-slate-600 text-xs mb-1">Total Bedrooms</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {properties.reduce((sum, p) => sum + (parseInt(p.bedrooms || p.beds || '0') || 0), 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -188,8 +194,10 @@ export default function PropertiesPage() {
                   <DollarSign className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-slate-600 text-xs mb-1">Monthly Revenue</p>
-                  <p className="text-2xl font-medium text-slate-900">AED 166,000</p>
+                  <p className="text-slate-600 text-xs mb-1">Avg Price/Night</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    AED {properties.length > 0 ? Math.round(properties.reduce((sum, p) => sum + (parseFloat(p.base_price || p.price || '0') || 0), 0) / properties.length) : 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -263,7 +271,6 @@ export default function PropertiesPage() {
           <div className="flex-1 min-h-0">
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
               <PropertiesTable 
-                key={refreshKey} // Force re-render when refreshKey changes
                 searchTerm={searchTerm}
                 onEditProperty={handleEditProperty}
                 selectedProperties={selectedProperties}

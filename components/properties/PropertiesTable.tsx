@@ -411,29 +411,40 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
   // Use real properties if provided, otherwise fall back to mock data
-  const dataSource = properties || mockProperties
+  const dataSource = properties && properties.length > 0 ? properties : mockProperties
   console.log('📊 PropertiesTable - dataSource:', dataSource)
   console.log('📊 PropertiesTable - properties prop:', properties)
   console.log('📊 PropertiesTable - isLoading:', isLoading)
+  console.log('📊 PropertiesTable - filters:', filters)
 
   // Helper functions to handle both mock and real data formats
   const getPropertyName = (property: any) => property.nickname || property.name || 'Unnamed Property'
-  const getPropertyArea = (property: any) => property.area || property.city || 'Unknown'
+  const getPropertyArea = (property: any) => property.area || property.location || property.city || 'Unknown'
   const getPropertyType = (property: any) => property.property_type || property.type || 'Unknown'
-  const getPropertyBedrooms = (property: any) => property.bedrooms || 0
-  const getPropertyMaxGuests = (property: any) => property.max_guests || property.capacity || 0
-  const getPropertyPrice = (property: any) => property.base_price || property.pricePerNight || 0
+  const getPropertyBedrooms = (property: any) => {
+    // Handle both string and number formats
+    const beds = property.bedrooms || property.beds || 0
+    return typeof beds === 'string' ? parseInt(beds) || 0 : beds
+  }
+  const getPropertyMaxGuests = (property: any) => {
+    const guests = property.max_guests || property.capacity || 0
+    return typeof guests === 'string' ? parseInt(guests) || 0 : guests
+  }
+  const getPropertyPrice = (property: any) => {
+    const price = property.base_price || property.pricePerNight || property.price || 0
+    return typeof price === 'string' ? parseFloat(price) || 0 : price
+  }
   const getPropertyAddress = (property: any) => property.address || 'No address'
   
   const filteredProperties = dataSource.filter(property => {
-    // Handle both mock data format and real API format
-    const name = property.name || property.nickname || ''
-    const area = property.area || property.city || ''
-    const type = property.property_type || property.type || ''
-    const price = property.base_price || property.pricePerNight || 0
-    const bedrooms = property.bedrooms || 0
-    const maxGuests = property.max_guests || property.capacity || 0
-    const occupancyRate = property.occupancy_rate || 0
+    // Use helper functions for consistent data handling
+    const name = getPropertyName(property)
+    const area = getPropertyArea(property)
+    const type = getPropertyType(property)
+    const price = getPropertyPrice(property)
+    const bedrooms = getPropertyBedrooms(property)
+    const maxGuests = getPropertyMaxGuests(property)
+    const occupancyRate = property.occupancy_rate || property.occupancyRate || 0
     
     // Search filter
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||

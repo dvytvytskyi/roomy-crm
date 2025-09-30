@@ -72,7 +72,23 @@ export class PropertyService {
 
   // Get all properties
   async getProperties(): Promise<ApiResponse<Property[]>> {
-    return apiClient.get<Property[]>('/properties');
+    console.log('🏠 PropertyService: Fetching properties from API...')
+    try {
+      const response = await apiClient.get<Property[]>('/properties');
+      console.log('🏠 PropertyService: API Response:', response)
+      return response;
+    } catch (error) {
+      console.error('🏠 PropertyService: Error fetching properties:', error)
+      // Return empty array on error to prevent crashes
+      return {
+        success: false,
+        data: [],
+        error: {
+          message: error instanceof Error ? error.message : 'Failed to fetch properties',
+          statusCode: 500
+        }
+      };
+    }
   }
 
   // Create new property
