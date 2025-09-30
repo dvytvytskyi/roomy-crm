@@ -2245,7 +2245,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     { id: 'expenses', label: 'Expenses' },
     { id: 'documents', label: 'Documents' },
     { id: 'availability', label: 'Availability settings' },
-    { id: 'monthly-calendar', label: 'Monthly Calendar' },
     { id: 'marketing', label: 'Marketing' },
     { id: 'saved-replies', label: 'Saved replies' },
     { id: 'automation', label: 'Automation' }
@@ -3772,22 +3771,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               </div>
             )}
 
-            {activeTab === 'monthly-calendar' && (
-              <div className="space-y-6">
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Calendar</h3>
-                  <p className="text-gray-600 leading-relaxed mb-6">
-                    Here you&apos;ll find the listing&apos;s availability for the entire month. You can create new reservations, add or edit manual blocks,
-                    edit minimum nights, and override nightly rates. Changes will be synced automatically with your connected channels.
-                  </p>
-                  
-                  {/* Calendar placeholder */}
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-gray-500">Calendar functionality will be implemented here</div>
-                      </div>
-                </div>
-              </div>
-            )}
 
             {activeTab === 'marketing' && (
               <div className="space-y-6">
