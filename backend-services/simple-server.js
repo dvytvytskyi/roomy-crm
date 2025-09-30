@@ -65,7 +65,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Mock data for reservations
+// Mock data for reservations with extended structure
 const mockReservations = [
   {
     id: 'res_1',
@@ -78,6 +78,7 @@ const mockReservations = [
     guestName: 'John Smith',
     guestEmail: 'john@example.com',
     guestPhone: '+971501234567',
+    guestWhatsapp: '+971501234567',
     checkIn: '2024-02-01T00:00:00.000Z',
     checkOut: '2024-02-05T00:00:00.000Z',
     status: 'CONFIRMED',
@@ -93,7 +94,53 @@ const mockReservations = [
     specialRequests: 'Early check-in requested',
     createdAt: '2024-01-10T10:00:00Z',
     updatedAt: '2024-01-10T10:00:00Z',
+    createdBy: {
+      name: 'Sarah Johnson',
+      email: 'sarah.johnson@company.com'
+    },
+    // Extended data for detailed view
+    notesList: [
+      {
+        id: 1,
+        content: 'Early check-in requested',
+        type: 'special_request',
+        priority: 'high',
+        createdAt: '2024-01-10T10:00:00Z',
+        createdBy: 'Sarah Johnson'
+      }
+    ],
+    payments: [
+      {
+        id: 1,
+        amount: 1200,
+        method: 'credit_card',
+        date: '2024-01-10',
+        reference: 'TXN-001',
+        description: 'Full payment',
+        type: 'payment',
+        status: 'completed'
+      }
+    ],
     adjustments: [],
+    pricingHistory: [
+      {
+        id: 1,
+        pricePerNight: 300,
+        totalAmount: 1200,
+        reason: 'Initial booking',
+        date: '2024-01-10',
+        changedBy: 'Sarah Johnson'
+      }
+    ],
+    communicationHistory: [
+      {
+        id: 1,
+        type: 'email',
+        subject: 'Welcome to your stay',
+        date: '2024-01-10T10:00:00Z',
+        status: 'sent'
+      }
+    ],
     transactions: []
   },
   {
@@ -107,6 +154,7 @@ const mockReservations = [
     guestName: 'Sarah Johnson',
     guestEmail: 'sarah@example.com',
     guestPhone: '+971507654321',
+    guestWhatsapp: '+971507654321',
     checkIn: '2024-02-10T00:00:00.000Z',
     checkOut: '2024-02-15T00:00:00.000Z',
     status: 'PENDING',
@@ -122,7 +170,25 @@ const mockReservations = [
     specialRequests: null,
     createdAt: '2024-01-12T14:30:00Z',
     updatedAt: '2024-01-12T14:30:00Z',
+    createdBy: {
+      name: 'Admin User',
+      email: 'admin@company.com'
+    },
+    // Extended data for detailed view
+    notesList: [],
+    payments: [],
     adjustments: [],
+    pricingHistory: [
+      {
+        id: 2,
+        pricePerNight: 500,
+        totalAmount: 2500,
+        reason: 'Initial booking',
+        date: '2024-01-12',
+        changedBy: 'Admin User'
+      }
+    ],
+    communicationHistory: [],
     transactions: []
   },
   {
@@ -136,6 +202,7 @@ const mockReservations = [
     guestName: 'Ahmed Al-Rashid',
     guestEmail: 'ahmed@example.com',
     guestPhone: '+971509876543',
+    guestWhatsapp: '+971509876543',
     checkIn: '2024-01-25T00:00:00.000Z',
     checkOut: '2024-01-27T00:00:00.000Z',
     status: 'COMPLETED',
@@ -151,7 +218,45 @@ const mockReservations = [
     specialRequests: 'Business trip',
     createdAt: '2024-01-08T09:15:00Z',
     updatedAt: '2024-01-27T12:00:00Z',
+    createdBy: {
+      name: 'System',
+      email: 'system@company.com'
+    },
+    // Extended data for detailed view
+    notesList: [
+      {
+        id: 3,
+        content: 'Business trip',
+        type: 'internal',
+        priority: 'normal',
+        createdAt: '2024-01-08T09:15:00Z',
+        createdBy: 'System'
+      }
+    ],
+    payments: [
+      {
+        id: 3,
+        amount: 800,
+        method: 'bank_transfer',
+        date: '2024-01-08',
+        reference: 'TXN-003',
+        description: 'Full payment',
+        type: 'payment',
+        status: 'completed'
+      }
+    ],
     adjustments: [],
+    pricingHistory: [
+      {
+        id: 3,
+        pricePerNight: 400,
+        totalAmount: 800,
+        reason: 'Initial booking',
+        date: '2024-01-08',
+        changedBy: 'System'
+      }
+    ],
+    communicationHistory: [],
     transactions: []
   }
 ];
@@ -499,6 +604,429 @@ app.post('/api/auth/logout', mockAuth, (req, res) => {
   res.json({
     success: true,
     message: 'Logout successful'
+  });
+});
+
+// ===== RESERVATION DETAILS ENDPOINTS =====
+
+// Update reservation
+app.put('/api/reservations/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  console.log(`📝 PUT /api/reservations/${id} - Updating reservation`);
+  console.log('📝 Update data:', updateData);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  // Update reservation
+  mockReservations[reservationIndex] = {
+    ...mockReservations[reservationIndex],
+    ...updateData,
+    updatedAt: new Date().toISOString()
+  };
+  
+  res.json({
+    success: true,
+    data: mockReservations[reservationIndex],
+    message: 'Reservation updated successfully'
+  });
+});
+
+// Add note to reservation
+app.post('/api/reservations/:id/notes', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { content, type = 'internal', priority = 'normal' } = req.body;
+  console.log(`📝 POST /api/reservations/${id}/notes - Adding note`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const newNote = {
+    id: Date.now(),
+    content,
+    type,
+    priority,
+    createdAt: new Date().toISOString(),
+    createdBy: 'Current User'
+  };
+  
+  if (!mockReservations[reservationIndex].notesList) {
+    mockReservations[reservationIndex].notesList = [];
+  }
+  mockReservations[reservationIndex].notesList.push(newNote);
+  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: newNote,
+    message: 'Note added successfully'
+  });
+});
+
+// Update note
+app.put('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
+  const { id, noteId } = req.params;
+  const { content } = req.body;
+  console.log(`📝 PUT /api/reservations/${id}/notes/${noteId} - Updating note`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const reservation = mockReservations[reservationIndex];
+  if (!reservation.notesList) {
+    return res.status(404).json({
+      success: false,
+      message: 'Note not found'
+    });
+  }
+  
+  const noteIndex = reservation.notesList.findIndex(n => n.id === parseInt(noteId));
+  if (noteIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Note not found'
+    });
+  }
+  
+  reservation.notesList[noteIndex].content = content;
+  reservation.notesList[noteIndex].updatedAt = new Date().toISOString();
+  reservation.updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: reservation.notesList[noteIndex],
+    message: 'Note updated successfully'
+  });
+});
+
+// Delete note
+app.delete('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
+  const { id, noteId } = req.params;
+  console.log(`🗑️ DELETE /api/reservations/${id}/notes/${noteId} - Deleting note`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const reservation = mockReservations[reservationIndex];
+  if (!reservation.notesList) {
+    return res.status(404).json({
+      success: false,
+      message: 'Note not found'
+    });
+  }
+  
+  const noteIndex = reservation.notesList.findIndex(n => n.id === parseInt(noteId));
+  if (noteIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Note not found'
+    });
+  }
+  
+  reservation.notesList.splice(noteIndex, 1);
+  reservation.updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    message: 'Note deleted successfully'
+  });
+});
+
+// Add payment to reservation
+app.post('/api/reservations/:id/payments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { amount, method, date, reference, description, type = 'payment' } = req.body;
+  console.log(`💳 POST /api/reservations/${id}/payments - Adding payment`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const newPayment = {
+    id: Date.now(),
+    amount: parseFloat(amount),
+    method,
+    date,
+    reference,
+    description,
+    type,
+    status: 'completed',
+    createdAt: new Date().toISOString()
+  };
+  
+  if (!mockReservations[reservationIndex].payments) {
+    mockReservations[reservationIndex].payments = [];
+  }
+  mockReservations[reservationIndex].payments.push(newPayment);
+  
+  // Update payment amounts
+  const reservation = mockReservations[reservationIndex];
+  if (type === 'payment') {
+    reservation.paidAmount += newPayment.amount;
+    reservation.outstandingBalance -= newPayment.amount;
+  } else if (type === 'refund') {
+    reservation.paidAmount -= newPayment.amount;
+    reservation.outstandingBalance += newPayment.amount;
+  }
+  
+  reservation.updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: newPayment,
+    message: 'Payment added successfully'
+  });
+});
+
+// Add adjustment to reservation
+app.post('/api/reservations/:id/adjustments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { type, amount, reason } = req.body;
+  console.log(`⚖️ POST /api/reservations/${id}/adjustments - Adding adjustment`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const newAdjustment = {
+    id: Date.now(),
+    type,
+    amount: parseFloat(amount),
+    reason,
+    date: new Date().toISOString().split('T')[0],
+    createdBy: 'Current User',
+    createdAt: new Date().toISOString()
+  };
+  
+  if (!mockReservations[reservationIndex].adjustments) {
+    mockReservations[reservationIndex].adjustments = [];
+  }
+  mockReservations[reservationIndex].adjustments.push(newAdjustment);
+  
+  // Update total amount
+  mockReservations[reservationIndex].totalAmount += newAdjustment.amount;
+  mockReservations[reservationIndex].outstandingBalance += newAdjustment.amount;
+  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: newAdjustment,
+    message: 'Adjustment added successfully'
+  });
+});
+
+// Delete adjustment
+app.delete('/api/reservations/:id/adjustments/:adjustmentId', mockAuth, (req, res) => {
+  const { id, adjustmentId } = req.params;
+  console.log(`🗑️ DELETE /api/reservations/${id}/adjustments/${adjustmentId} - Deleting adjustment`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const reservation = mockReservations[reservationIndex];
+  if (!reservation.adjustments) {
+    return res.status(404).json({
+      success: false,
+      message: 'Adjustment not found'
+    });
+  }
+  
+  const adjustmentIndex = reservation.adjustments.findIndex(a => a.id === parseInt(adjustmentId));
+  if (adjustmentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Adjustment not found'
+    });
+  }
+  
+  const adjustment = reservation.adjustments[adjustmentIndex];
+  reservation.adjustments.splice(adjustmentIndex, 1);
+  
+  // Update total amount
+  reservation.totalAmount -= adjustment.amount;
+  reservation.outstandingBalance -= adjustment.amount;
+  reservation.updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    message: 'Adjustment deleted successfully'
+  });
+});
+
+// Update reservation dates
+app.put('/api/reservations/:id/dates', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { checkIn, checkOut } = req.body;
+  console.log(`📅 PUT /api/reservations/${id}/dates - Updating dates`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  // Calculate nights
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+  const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  mockReservations[reservationIndex].checkIn = checkIn;
+  mockReservations[reservationIndex].checkOut = checkOut;
+  mockReservations[reservationIndex].nights = nights;
+  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: mockReservations[reservationIndex],
+    message: 'Dates updated successfully'
+  });
+});
+
+// Update reservation pricing
+app.put('/api/reservations/:id/pricing', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { pricePerNight, totalAmount } = req.body;
+  console.log(`💰 PUT /api/reservations/${id}/pricing - Updating pricing`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const reservation = mockReservations[reservationIndex];
+  const oldTotalAmount = reservation.totalAmount;
+  
+  reservation.totalAmount = parseFloat(totalAmount);
+  reservation.outstandingBalance = reservation.totalAmount - reservation.paidAmount;
+  reservation.updatedAt = new Date().toISOString();
+  
+  // Add to pricing history
+  if (!reservation.pricingHistory) {
+    reservation.pricingHistory = [];
+  }
+  reservation.pricingHistory.push({
+    id: Date.now(),
+    pricePerNight: parseFloat(pricePerNight),
+    totalAmount: parseFloat(totalAmount),
+    reason: 'Price adjustment',
+    date: new Date().toISOString().split('T')[0],
+    changedBy: 'Current User'
+  });
+  
+  res.json({
+    success: true,
+    data: reservation,
+    message: 'Pricing updated successfully'
+  });
+});
+
+// Send communication
+app.post('/api/reservations/:id/communications', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { type, subject, content } = req.body;
+  console.log(`📧 POST /api/reservations/${id}/communications - Sending communication`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const newCommunication = {
+    id: Date.now(),
+    type,
+    subject,
+    content,
+    date: new Date().toISOString(),
+    status: 'sent',
+    sentBy: 'Current User'
+  };
+  
+  if (!mockReservations[reservationIndex].communicationHistory) {
+    mockReservations[reservationIndex].communicationHistory = [];
+  }
+  mockReservations[reservationIndex].communicationHistory.push(newCommunication);
+  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    data: newCommunication,
+    message: 'Communication sent successfully'
+  });
+});
+
+// Generate invoice
+app.post('/api/reservations/:id/invoices', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { type = 'standard' } = req.body;
+  console.log(`🧾 POST /api/reservations/${id}/invoices - Generating invoice`);
+  
+  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  if (reservationIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Reservation not found'
+    });
+  }
+  
+  const reservation = mockReservations[reservationIndex];
+  const invoice = {
+    id: `INV-${Date.now()}`,
+    reservationId: id,
+    type,
+    totalAmount: reservation.totalAmount,
+    paidAmount: reservation.paidAmount,
+    outstandingBalance: reservation.outstandingBalance,
+    generatedAt: new Date().toISOString(),
+    generatedBy: 'Current User',
+    status: 'generated'
+  };
+  
+  res.json({
+    success: true,
+    data: invoice,
+    message: 'Invoice generated successfully'
   });
 });
 

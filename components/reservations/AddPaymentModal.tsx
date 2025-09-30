@@ -87,7 +87,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -102,9 +102,9 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleChange('type', 'payment')}
-                  className={`flex-1 px-4 py-2 rounded-lg border text-sm ${
+                  className={`flex-1 px-4 py-2 rounded-lg border text-sm cursor-pointer ${
                     formData.type === 'payment'
-                      ? 'bg-blue-500 text-white border-blue-500'
+                      ? 'bg-orange-500 text-white border-orange-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -113,7 +113,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 </button>
                 <button
                   onClick={() => handleChange('type', 'refund')}
-                  className={`flex-1 px-4 py-2 rounded-lg border text-sm ${
+                  className={`flex-1 px-4 py-2 rounded-lg border text-sm cursor-pointer ${
                     formData.type === 'refund'
                       ? 'bg-red-500 text-white border-red-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -135,7 +135,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 type="number"
                 value={formData.amount}
                 onChange={(e) => handleChange('amount', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
                   errors.amount ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="0.00"
@@ -154,20 +154,28 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 <CreditCard size={16} className="inline mr-2" />
                 Payment Method
               </label>
-              <select
-                value={formData.method}
-                onChange={(e) => handleChange('method', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.method ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select method</option>
-                {paymentMethods.map(method => (
-                  <option key={method.value} value={method.value}>
-                    {method.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.method}
+                  onChange={(e) => handleChange('method', e.target.value)}
+                  className={`w-full h-10 px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer ${
+                    errors.method ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select method</option>
+                  {paymentMethods.map(method => (
+                    <option key={method.value} value={method.value}>
+                      {method.label}
+                    </option>
+                  ))}
+                </select>
+                {/* Custom dropdown arrow */}
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
               {errors.method && <p className="text-red-500 text-sm mt-1">{errors.method}</p>}
             </div>
 
@@ -181,7 +189,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleChange('date', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
                   errors.date ? 'border-red-300' : 'border-gray-300'
                 }`}
               />
@@ -195,7 +203,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 type="text"
                 value={formData.reference}
                 onChange={(e) => handleChange('reference', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="Transaction ID, check number, etc."
               />
             </div>
@@ -207,7 +215,7 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
                 placeholder="Add any notes about this payment..."
               />
             </div>
@@ -247,15 +255,15 @@ export default function AddPaymentModal({ reservation, onClose, onSave }: AddPay
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className={`px-4 py-2 text-sm text-white rounded-lg ${
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg cursor-pointer ${
               formData.type === 'payment' 
-                ? 'bg-blue-500 hover:bg-blue-600' 
+                ? 'bg-orange-500 hover:bg-orange-600' 
                 : 'bg-red-500 hover:bg-red-600'
             }`}
           >

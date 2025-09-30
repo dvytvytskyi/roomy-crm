@@ -12,6 +12,7 @@ export interface Reservation {
   guestName: string;
   guestEmail: string;
   guestPhone?: string;
+  guestWhatsapp?: string;
   checkIn: string;
   checkOut: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'MODIFIED';
@@ -32,6 +33,48 @@ export interface Reservation {
   updatedAt: string;
   notes?: string;
   tags?: string[];
+  // Extended properties for detailed view
+  notesList?: Array<{
+    id: number;
+    content: string;
+    type: string;
+    priority: string;
+    createdAt: string;
+    createdBy: string;
+    updatedAt?: string;
+  }>;
+  payments?: Array<{
+    id: number;
+    amount: number;
+    method: string;
+    date: string;
+    reference?: string;
+    description?: string;
+    type: string;
+    status: string;
+    createdAt?: string;
+  }>;
+  pricingHistory?: Array<{
+    id: number;
+    pricePerNight: number;
+    totalAmount: number;
+    reason: string;
+    date: string;
+    changedBy: string;
+  }>;
+  communicationHistory?: Array<{
+    id: number;
+    type: string;
+    subject: string;
+    content?: string;
+    date: string;
+    status: string;
+    sentBy?: string;
+  }>;
+  createdBy?: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface ReservationFilters {
@@ -255,6 +298,89 @@ class ReservationService {
   // Mark as no-show
   async markAsNoShow(id: string): Promise<ApiResponse<Reservation>> {
     return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.NO_SHOW(id));
+  }
+
+  // ===== RESERVATION DETAILS OPERATIONS =====
+
+  // Update reservation
+  async updateReservation(id: string, updateData: Partial<Reservation>): Promise<ApiResponse<Reservation>> {
+    const response = await apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.BY_ID(id), updateData);
+    return response;
+  }
+
+  // Add note to reservation
+  async addNote(id: string, noteData: { content: string; type?: string; priority?: string }): Promise<ApiResponse<any>> {
+    const response = await apiClient.post<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/notes`, noteData);
+    return response;
+  }
+
+  // Update note
+  async updateNote(id: string, noteId: string, content: string): Promise<ApiResponse<any>> {
+    const response = await apiClient.put<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/notes/${noteId}`, { content });
+    return response;
+  }
+
+  // Delete note
+  async deleteNote(id: string, noteId: string): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete<void>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/notes/${noteId}`);
+    return response;
+  }
+
+  // Add payment to reservation
+  async addPayment(id: string, paymentData: {
+    amount: number;
+    method: string;
+    date: string;
+    reference?: string;
+    description?: string;
+    type?: string;
+  }): Promise<ApiResponse<any>> {
+    const response = await apiClient.post<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/payments`, paymentData);
+    return response;
+  }
+
+  // Add adjustment to reservation
+  async addAdjustment(id: string, adjustmentData: {
+    type: string;
+    amount: number;
+    reason: string;
+  }): Promise<ApiResponse<any>> {
+    const response = await apiClient.post<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/adjustments`, adjustmentData);
+    return response;
+  }
+
+  // Delete adjustment
+  async deleteAdjustment(id: string, adjustmentId: string): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete<void>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/adjustments/${adjustmentId}`);
+    return response;
+  }
+
+  // Update reservation dates
+  async updateDates(id: string, dates: { checkIn: string; checkOut: string }): Promise<ApiResponse<Reservation>> {
+    const response = await apiClient.put<Reservation>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/dates`, dates);
+    return response;
+  }
+
+  // Update reservation pricing
+  async updatePricing(id: string, pricing: { pricePerNight: number; totalAmount: number }): Promise<ApiResponse<Reservation>> {
+    const response = await apiClient.put<Reservation>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/pricing`, pricing);
+    return response;
+  }
+
+  // Send communication
+  async sendCommunication(id: string, communication: {
+    type: string;
+    subject: string;
+    content: string;
+  }): Promise<ApiResponse<any>> {
+    const response = await apiClient.post<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/communications`, communication);
+    return response;
+  }
+
+  // Generate invoice
+  async generateInvoice(id: string, type?: string): Promise<ApiResponse<any>> {
+    const response = await apiClient.post<any>(`${API_ENDPOINTS.RESERVATIONS.BY_ID(id)}/invoices`, { type });
+    return response;
   }
 }
 

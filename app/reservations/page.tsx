@@ -30,7 +30,6 @@ export default function ReservationsPage() {
     dateRange: { from: '', to: '' },
     status: [],
     source: [],
-    property: [],
     amountRange: { min: '', max: '' },
     guestName: ''
   })
@@ -49,7 +48,6 @@ export default function ReservationsPage() {
     console.log('📅 ReservationsPage: Filters breakdown:', {
       status: currentFilters?.status || filters?.status,
       source: currentFilters?.source || filters?.source,
-      property: currentFilters?.property || filters?.property,
       searchTerm: currentFilters?.searchTerm || filters?.searchTerm,
       amountRange: currentFilters?.amountRange || filters?.amountRange
     })
