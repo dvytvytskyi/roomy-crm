@@ -163,6 +163,12 @@ interface EditAvailabilityModalProps {
   onCancel: () => void
 }
 
+interface EditMarketingModalProps {
+  settings: any
+  onSave: (settings: any) => void
+  onCancel: () => void
+}
+
 interface Photo {
   id: string
   url: string
@@ -1291,6 +1297,183 @@ function EditAvailabilityModal({ settings, onSave, onCancel }: EditAvailabilityM
   )
 }
 
+function EditMarketingModal({ settings, onSave, onCancel }: EditMarketingModalProps) {
+  const [formData, setFormData] = useState({
+    title: settings.title,
+    summary: settings.summary,
+    theSpace: settings.theSpace,
+    guestAccess: settings.guestAccess,
+    neighborhood: settings.neighborhood,
+    gettingAround: settings.gettingAround,
+    otherNotes: settings.otherNotes,
+    guestInteraction: settings.guestInteraction
+  })
+  
+  const [errors, setErrors] = useState<string[]>([])
+
+  const handleChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value })
+    // Очищаємо помилки при зміні полів
+    if (errors.length > 0) {
+      setErrors([])
+    }
+  }
+
+  const handleSubmit = () => {
+    console.log('Marketing form submitted with data:', formData)
+    const newErrors: string[] = []
+    
+    // Валідація
+    if (!formData.title.trim()) {
+      newErrors.push('Title is required')
+    }
+    if (!formData.summary.trim()) {
+      newErrors.push('Summary is required')
+    }
+    
+    if (newErrors.length > 0) {
+      console.log('Validation errors:', newErrors)
+      setErrors(newErrors)
+      return
+    }
+    
+    // Якщо валідація пройшла успішно, зберігаємо
+    console.log('Calling onSave with:', formData)
+    onSave(formData)
+  }
+
+  return (
+    <div>
+      {/* Display errors */}
+      {errors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-600">
+            <strong>Please fix the following errors:</strong>
+            <ul className="mt-1 list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-4 space-y-6 max-h-96 overflow-y-auto">
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Enter property title"
+          />
+        </div>
+
+        {/* Summary */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Summary *</label>
+          <textarea
+            value={formData.summary}
+            onChange={(e) => handleChange('summary', e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Enter property summary"
+          />
+        </div>
+
+        {/* The Space */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">The Space</label>
+          <textarea
+            value={formData.theSpace}
+            onChange={(e) => handleChange('theSpace', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Describe the space"
+          />
+        </div>
+
+        {/* Guest Access */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Guest Access</label>
+          <textarea
+            value={formData.guestAccess}
+            onChange={(e) => handleChange('guestAccess', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Describe guest access"
+          />
+        </div>
+
+        {/* Neighborhood */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">The Neighborhood</label>
+          <textarea
+            value={formData.neighborhood}
+            onChange={(e) => handleChange('neighborhood', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Describe the neighborhood"
+          />
+        </div>
+
+        {/* Getting Around */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Getting Around</label>
+          <textarea
+            value={formData.gettingAround}
+            onChange={(e) => handleChange('gettingAround', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Describe transportation options"
+          />
+        </div>
+
+        {/* Other Notes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Other Things to Note</label>
+          <textarea
+            value={formData.otherNotes}
+            onChange={(e) => handleChange('otherNotes', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Additional notes"
+          />
+        </div>
+
+        {/* Guest Interaction */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Interaction with Guests</label>
+          <textarea
+            value={formData.guestInteraction}
+            onChange={(e) => handleChange('guestInteraction', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            placeholder="Describe guest interaction"
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+        >
+          Save Marketing
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AddPaymentModal({ onSave, onCancel }: AddPaymentModalProps) {
   const [formData, setFormData] = useState({
     guestName: '',
@@ -2184,6 +2367,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [editAvailabilityModal, setEditAvailabilityModal] = useState(false)
 
+  // Marketing settings state
+  const [marketingSettings, setMarketingSettings] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedSettings = localStorage.getItem(`propertyMarketing_${params.id}`)
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings)
+      } catch (error) {
+        console.error('Error parsing saved marketing settings:', error)
+      }
+    }
+    return {
+      title: 'Westwood l Next to Metro l Great Amenities',
+      summary: 'Stay in this modern studio just steps from the metro! Perfect for travelers, it offers a comfy bed, smart TV, mini kitchenette, and a stylish bathroom. Big windows bring in plenty of natural light, making the space bright and inviting.\n\nWith easy access to transport, shopping, and dining, everything you need is right at your doorstep. Enjoy a hassle-free, comfortable stay in a prime location. Book now!',
+      theSpace: 'Not defined',
+      guestAccess: 'Not defined',
+      neighborhood: 'Not defined',
+      gettingAround: 'Not defined',
+      otherNotes: 'Not defined',
+      guestInteraction: 'Not defined'
+    }
+  })
+  const [editMarketingModal, setEditMarketingModal] = useState(false)
+
 
   // Mock reservations data for financial table
   const mockReservations = [
@@ -2568,6 +2775,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log('Availability settings saved successfully')
     } catch (error) {
       console.error('Error saving availability settings:', error)
+    }
+  }
+
+  // Функції для роботи з marketing settings
+  const handleEditMarketing = () => {
+    setEditMarketingModal(true)
+  }
+
+  const handleSaveMarketing = async (newSettings: any) => {
+    try {
+      console.log('Saving marketing settings:', newSettings)
+      
+      // Оновлюємо стан
+      setMarketingSettings(newSettings)
+      
+      // Зберігаємо в localStorage
+      localStorage.setItem(`propertyMarketing_${params.id}`, JSON.stringify(newSettings))
+      
+      // В реальному додатку тут буде API виклик
+      // await marketingService.updateSettings(params.id, newSettings)
+      
+      setEditMarketingModal(false)
+      console.log('Marketing settings saved successfully')
+    } catch (error) {
+      console.error('Error saving marketing settings:', error)
     }
   }
 
@@ -3774,6 +4006,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
             {activeTab === 'marketing' && (
               <div className="space-y-6">
+                {/* Header with Edit button */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">Marketing Settings</h2>
+                  <button 
+                    onClick={handleEditMarketing}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
+                  >
+                    <Edit size={16} />
+                    <span>Edit Marketing</span>
+                  </button>
+                </div>
+
                 {/* Description Section */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
@@ -3783,19 +4027,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
                       <input
                         type="text"
-                        defaultValue="Westwood l Next to Metro l Great Amenities"
+                        value={marketingSettings.title}
                         className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        disabled
                       />
                         </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Summary</label>
                       <textarea
-                        defaultValue="Stay in this modern studio just steps from the metro! Perfect for travelers, it offers a comfy bed, smart TV, mini kitchenette, and a stylish bathroom. Big windows bring in plenty of natural light, making the space bright and inviting.
-
-With easy access to transport, shopping, and dining, everything you need is right at your doorstep. Enjoy a hassle-free, comfortable stay in a prime location. Book now!"
+                        value={marketingSettings.summary}
                         rows={6}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                        disabled
                       />
                       </div>
                     
@@ -3803,54 +4047,60 @@ With easy access to transport, shopping, and dining, everything you need is righ
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">The space</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.theSpace}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                         </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Guest access</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.guestAccess}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">The neighborhood</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.neighborhood}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                     </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Getting around</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.gettingAround}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                   </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Other things to note</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.otherNotes}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Interaction with guests</label>
                         <textarea
-                          defaultValue="Not defined"
+                          value={marketingSettings.guestInteraction}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                          disabled
                         />
                       </div>
                     </div>
@@ -4780,6 +5030,28 @@ With easy access to transport, shopping, and dining, everything you need is righ
               settings={availabilitySettings}
               onSave={handleSaveAvailability}
               onCancel={() => setEditAvailabilityModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Marketing Modal */}
+      {editMarketingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Marketing Settings</h3>
+              <button 
+                onClick={() => setEditMarketingModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <EditMarketingModal 
+              settings={marketingSettings}
+              onSave={handleSaveMarketing}
+              onCancel={() => setEditMarketingModal(false)}
             />
           </div>
         </div>
