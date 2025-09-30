@@ -3000,25 +3000,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
-  // Функція для очищення тестових даних
-  const clearTestData = () => {
+
+  // Очищуємо тестові дані при завантаженні
+  useEffect(() => {
+    // Очищуємо тестові дані
     localStorage.removeItem(`payments_${params.id}`)
     localStorage.removeItem(`financialData_${params.id}`)
-    setPayments([])
-    setFinancialData({
-      totalPayout: 0,
-      agencyFee: 0,
-      cleaning: 0,
-      ownersPayout: 0,
-      referralAgentsFee: 0,
-      vat: 0,
-      dtcm: 0,
-      totalRevenue: 0,
-      occupancyRate: 0,
-      avgCostPerNight: 0
-    })
-    console.log('Test data cleared!')
-  }
+    console.log('Test data cleared on component load')
+  }, [params.id])
 
   // Завантажуємо фінансові дані при завантаженні компонента
   useEffect(() => {
@@ -3665,21 +3654,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-gray-900">Last transactions</h2>
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={clearTestData}
-                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
-                      >
-                        <span>Clear Data</span>
-                      </button>
-                      <button 
-                        onClick={handleAddPayment}
-                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
-                      >
+                    <button 
+                      onClick={handleAddPayment}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
+                    >
                       <Plus size={16} />
                       <span>New payment</span>
                     </button>
-                    </div>
                   </div>
                   <div className="overflow-hidden">
                     <div className="overflow-x-auto">
