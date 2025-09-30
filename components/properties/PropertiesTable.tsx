@@ -417,33 +417,47 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   const dataSource = properties && properties.length > 0 ? properties : mockProperties
   console.log('📊 PropertiesTable - dataSource length:', dataSource.length, 'using mock:', !properties || properties.length === 0)
 
+  // Helper function to clean text from encoding issues
+  const cleanText = (text: string) => {
+    if (!text || typeof text !== 'string') return text
+    
+    return text
+      .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Remove non-printable chars
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+  }
+
   // Helper functions to handle both mock and real data formats
   const getPropertyName = (property: any) => {
-    // Debug logging for name fields
-    console.log('🏷️ Property name fields:', {
-      id: property.id,
-      name: property.name,
-      nickname: property.nickname,
-      title: property.title,
-      propertyName: property.propertyName,
-      allKeys: Object.keys(property)
-    })
+    // Get the best available name field
+    const name = property.nickname || property.name || property.title || property.propertyName
     
-    // API format: nickname || name || title || propertyName
-    // Mock format: nickname || name
-    return property.nickname || property.name || property.title || property.propertyName || 'Unnamed Property'
+    // Clean up the name if it has encoding issues
+    if (name && typeof name === 'string') {
+      const cleanName = cleanText(name)
+      
+      // If the cleaned name is significantly different, use it
+      if (cleanName.length > 0 && cleanName !== name) {
+        console.log('🏷️ Cleaned property name:', { original: name, cleaned: cleanName })
+        return cleanName
+      }
+    }
+    
+    return name || 'Unnamed Property'
   }
   
   const getPropertyArea = (property: any) => {
     // API format: location
     // Mock format: area || city
-    return property.location || property.area || property.city || 'Unknown'
+    const area = property.location || property.area || property.city || 'Unknown'
+    return cleanText(area)
   }
   
   const getPropertyType = (property: any) => {
     // API format: type
     // Mock format: property_type || type
-    return property.type || property.property_type || 'Unknown'
+    const type = property.type || property.property_type || 'Unknown'
+    return cleanText(type)
   }
   
   const getPropertyBedrooms = (property: any) => {
@@ -475,7 +489,8 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   const getPropertyAddress = (property: any) => {
     // API format: address
     // Mock format: address
-    return property.address || 'No address'
+    const address = property.address || 'No address'
+    return cleanText(address)
   }
   
   const filteredProperties = dataSource.filter(property => {
