@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import { Edit, Calendar, DollarSign, CreditCard, Info, Flag, Mail, Phone, Plus, X, Download, Check, Building, User, ArrowLeft } from 'lucide-react'
 import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
@@ -3433,15 +3432,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <div key={photo.id} className={`aspect-[4/3] rounded-lg relative group ${
                         photo.isCover ? 'ring-2 ring-orange-500' : ''
                       }`}>
-                        <Image
+                        <img
                           src={photo.url}
                           alt={photo.name}
-                          width={400}
-                          height={300}
                           className="w-full h-full object-cover rounded-lg"
                           onError={(e) => {
                             console.error('Image failed to load:', photo.url)
-                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzZiNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4='
                           }}
                         />
                         {photo.isCover && (
