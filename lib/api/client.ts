@@ -83,7 +83,10 @@ class ApiClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ API request timeout after', this.timeout, 'ms');
+        controller.abort();
+      }, this.timeout);
 
       const response = await fetch(url, {
         ...config,
@@ -125,6 +128,21 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('API request failed:', error);
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.error('Request was aborted (timeout or manual abort)');
+          throw new Error('Request timeout - server is taking too long to respond');
+        } else if (error.message.includes('Failed to fetch')) {
+          console.error('Network error - server might be unreachable');
+          throw new Error('Network error - cannot connect to server');
+        } else if (error.message.includes('signal is aborted')) {
+          console.error('Signal aborted error');
+          throw new Error('Request was cancelled - please try again');
+        }
+      }
+      
       throw error;
     }
   }

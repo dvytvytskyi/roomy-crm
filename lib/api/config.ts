@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: 'http://5.223.55.121:3001/api',
-  TIMEOUT: 15000, // Збільшуємо timeout
+  TIMEOUT: 30000, // Збільшуємо timeout до 30 секунд
   HEADERS: {
     'Content-Type': 'application/json',
   },

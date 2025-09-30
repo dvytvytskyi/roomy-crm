@@ -70,9 +70,10 @@ export class PropertyService {
     return apiClient.get<PropertyStats>(`/properties/${propertyId}/stats`);
   }
 
-  // Get all properties
-  async getProperties(): Promise<ApiResponse<Property[]>> {
-    console.log('🏠 PropertyService: Fetching properties from API...')
+  // Get all properties with retry logic
+  async getProperties(retryCount = 0): Promise<ApiResponse<Property[]>> {
+    const maxRetries = 2;
+    console.log(`🏠 PropertyService: Fetching properties from API... (attempt ${retryCount + 1}/${maxRetries + 1})`)
     console.log('🏠 PropertyService: API Base URL:', API_CONFIG.BASE_URL)
     console.log('🏠 PropertyService: Full endpoint:', `${API_CONFIG.BASE_URL}/properties`)
     
@@ -110,6 +111,15 @@ export class PropertyService {
       console.error('🏠 PropertyService: Error fetching properties:', error)
       console.error('🏠 PropertyService: Error type:', typeof error)
       console.error('🏠 PropertyService: Error message:', error instanceof Error ? error.message : 'Unknown error')
+      
+      // Retry logic for timeout/abort errors
+      if (retryCount < maxRetries && error instanceof Error) {
+        if (error.message.includes('timeout') || error.message.includes('aborted') || error.message.includes('cancelled')) {
+          console.log(`🏠 PropertyService: Retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          return this.getProperties(retryCount + 1)
+        }
+      }
       
       // If it's a 401 error, try without authentication
       if (error instanceof Error && error.message.includes('401')) {

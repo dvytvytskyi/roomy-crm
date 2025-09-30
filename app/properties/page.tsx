@@ -66,15 +66,33 @@ export default function PropertiesPage() {
         console.error('❌ Failed to load properties:', response.error)
         console.log('❌ Setting properties to empty array')
         setProperties([])
-        // Show error toast
-        handleShowToast(`Failed to load properties: ${response.error?.message || 'Unknown error'}`)
+        // Show error toast with more user-friendly message
+        const errorMessage = response.error?.message || 'Unknown error'
+        let userMessage = 'Failed to load properties'
+        if (errorMessage.includes('timeout')) {
+          userMessage = 'Server is taking too long to respond. Please try again.'
+        } else if (errorMessage.includes('Network error')) {
+          userMessage = 'Cannot connect to server. Please check your internet connection.'
+        } else if (errorMessage.includes('cancelled')) {
+          userMessage = 'Request was cancelled. Please try again.'
+        }
+        handleShowToast(userMessage)
       }
     } catch (error) {
       console.error('💥 Error loading properties:', error)
       console.log('💥 Setting properties to empty array due to error')
       setProperties([])
-      // Show error toast
-      handleShowToast(`Error loading properties: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      // Show error toast with more user-friendly message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      let userMessage = 'Error loading properties'
+      if (errorMessage.includes('timeout')) {
+        userMessage = 'Server is taking too long to respond. Please try again.'
+      } else if (errorMessage.includes('Network error')) {
+        userMessage = 'Cannot connect to server. Please check your internet connection.'
+      } else if (errorMessage.includes('cancelled')) {
+        userMessage = 'Request was cancelled. Please try again.'
+      }
+      handleShowToast(userMessage)
     } finally {
       console.log('🏁 Setting isLoading to false')
       setIsLoading(false)
