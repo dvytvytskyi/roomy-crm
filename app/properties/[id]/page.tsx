@@ -152,6 +152,11 @@ interface AddExpenseModalProps {
   onCancel: () => void
 }
 
+interface AddDocumentModalProps {
+  onSave: (document: any) => void
+  onCancel: () => void
+}
+
 interface Photo {
   id: string
   url: string
@@ -812,13 +817,13 @@ function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
     
     // Якщо валідація пройшла успішно, зберігаємо
     const expenseData = {
-      date: formData.date,
-      unit: formData.unit,
-      category: formData.category,
-      contractor: formData.contractor,
-      amount: parseInt(formData.amount),
-      description: formData.description,
-      files: files
+        date: formData.date,
+        unit: formData.unit,
+        category: formData.category,
+        contractor: formData.contractor,
+        amount: parseInt(formData.amount),
+        description: formData.description,
+        files: files
     }
     
     console.log('Calling onSave with:', expenseData)
@@ -957,6 +962,184 @@ function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
           className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
         >
           Add Expense
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AddDocumentModal({ onSave, onCancel }: AddDocumentModalProps) {
+  const [formData, setFormData] = useState({
+    title: '',
+    type: '',
+    uploadedBy: 'Admin',
+    uploadedByEmail: 'admin@company.com'
+  })
+  
+  const [file, setFile] = useState<File | null>(null)
+  const [errors, setErrors] = useState<string[]>([])
+
+  const handleChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value })
+    // Очищаємо помилки при зміні полів
+    if (errors.length > 0) {
+      setErrors([])
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
+      // Очищаємо помилки при виборі файлу
+      if (errors.length > 0) {
+        setErrors([])
+      }
+    }
+  }
+
+  const handleSubmit = () => {
+    console.log('Document form submitted with data:', formData, file)
+    const newErrors: string[] = []
+    
+    // Валідація обов'язкових полів
+    if (!formData.title) {
+      newErrors.push('Document title is required')
+    }
+    if (!formData.type) {
+      newErrors.push('Document type is required')
+    }
+    if (!file) {
+      newErrors.push('Please select a file to upload')
+    }
+    
+    if (newErrors.length > 0) {
+      console.log('Validation errors:', newErrors)
+      setErrors(newErrors)
+      return
+    }
+    
+    // Якщо валідація пройшла успішно, зберігаємо
+    const documentData = {
+      title: formData.title,
+      type: formData.type,
+      uploadedBy: formData.uploadedBy,
+      uploadedByEmail: formData.uploadedByEmail,
+      file: file
+    }
+    
+    console.log('Calling onSave with:', documentData)
+    onSave(documentData)
+  }
+
+  return (
+    <div>
+      {/* Display errors */}
+      {errors.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-600">
+            <strong>Please fix the following errors:</strong>
+            <ul className="mt-1 list-disc list-inside">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+      
+      <div className="mb-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Document Title</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Enter document title"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
+          <select
+            value={formData.type}
+            onChange={(e) => handleChange('type', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">Select document type</option>
+            <option value="Contract">Contract</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Photos">Photos</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Legal">Legal</option>
+            <option value="Financial">Financial</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Uploaded By</label>
+          <input
+            type="text"
+            value={formData.uploadedBy}
+            onChange={(e) => handleChange('uploadedBy', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Enter uploader name"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Uploader Email</label>
+          <input
+            type="email"
+            value={formData.uploadedByEmail}
+            onChange={(e) => handleChange('uploadedByEmail', e.target.value)}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Enter uploader email"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select File</label>
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.zip"
+          />
+          
+          {/* Display selected file */}
+          {file && (
+            <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">{file.name}</span>
+                  <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                </div>
+                <button
+                  onClick={() => setFile(null)}
+                  className="text-red-500 hover:text-red-700 text-sm"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+        >
+          Upload Document
         </button>
       </div>
     </div>
@@ -1822,106 +2005,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   // Documents state
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      title: 'Property Lease Agreement',
-      fileName: 'lease_agreement_2024.pdf',
-      uploadDate: '2024-01-15T10:30:00Z',
-      fileSize: '2.3 MB',
-      type: 'Contract',
-      uploadedBy: 'Admin',
-      uploadedByEmail: 'admin@company.com'
-    },
-    {
-      id: 2,
-      title: 'Property Insurance Certificate',
-      fileName: 'insurance_certificate.pdf',
-      uploadDate: '2024-02-20T14:15:00Z',
-      fileSize: '1.1 MB',
-      type: 'Insurance',
-      uploadedBy: 'Manager',
-      uploadedByEmail: 'manager@company.com'
-    },
-    {
-      id: 3,
-      title: 'Property Photos Gallery',
-      fileName: 'property_photos.zip',
-      uploadDate: '2024-03-10T09:45:00Z',
-      fileSize: '15.7 MB',
-      type: 'Photos',
-      uploadedBy: 'Admin',
-      uploadedByEmail: 'admin@company.com'
-    },
-    {
-      id: 4,
-      title: 'Maintenance Records',
-      fileName: 'maintenance_records_2024.pdf',
-      uploadDate: '2024-04-05T16:20:00Z',
-      fileSize: '3.2 MB',
-      type: 'Maintenance',
-      uploadedBy: 'Manager',
-      uploadedByEmail: 'manager@company.com'
+  const [documents, setDocuments] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо порожній масив
+    const savedDocuments = localStorage.getItem(`propertyDocuments_${params.id}`)
+    if (savedDocuments) {
+      try {
+        return JSON.parse(savedDocuments)
+      } catch (error) {
+        console.error('Error parsing saved documents:', error)
+      }
     }
-  ])
+    return []
+  })
+  const [addDocumentModal, setAddDocumentModal] = useState(false)
 
-  // Mock linked units data
-  const mockLinkedUnits = [
-    {
-      id: 1,
-      unitName: 'Burj Khalifa Studio',
-      unitNickname: 'BK Studio',
-      owner: 'Ahmed Al-Rashid',
-      ownerEmail: 'ahmed.alrashid@example.com',
-      ownerFlag: '🇦🇪',
-      ownerNationality: 'Emirati',
-      income: 12500,
-      roomyIncome: 3750,
-      referringAgent: 'Sarah Johnson',
-      agentEmail: 'sarah.johnson@company.com',
-      profitFormula: '70% Owner / 30% Company',
-      lastPayment: '2024-07-15T10:30:00Z',
-      ownerPercentage: 70,
-      roomyPercentage: 25,
-      agentPercentage: 5
-    },
-    {
-      id: 2,
-      unitName: 'Marina View Apartment',
-      unitNickname: 'Marina Apt',
-      owner: 'Sarah Johnson',
-      ownerEmail: 'sarah.johnson@example.com',
-      ownerFlag: '🇬🇧',
-      ownerNationality: 'British',
-      income: 18750,
-      roomyIncome: 5625,
-      referringAgent: 'Alex Thompson',
-      agentEmail: 'alex.thompson@company.com',
-      profitFormula: '65% Owner / 35% Company',
-      lastPayment: '2024-07-20T14:15:00Z',
-      ownerPercentage: 65,
-      roomyPercentage: 30,
-      agentPercentage: 5
-    },
-    {
-      id: 3,
-      unitName: 'Downtown Loft',
-      unitNickname: 'DT Loft',
-      owner: 'Mohammed Hassan',
-      ownerEmail: 'mohammed.hassan@example.com',
-      ownerFlag: '🇪🇬',
-      ownerNationality: 'Egyptian',
-      income: 9800,
-      roomyIncome: 2450,
-      referringAgent: 'Maria Rodriguez',
-      agentEmail: 'maria.rodriguez@company.com',
-      profitFormula: '75% Owner / 25% Company',
-      lastPayment: '2024-07-10T09:45:00Z',
-      ownerPercentage: 75,
-      roomyPercentage: 20,
-      agentPercentage: 5
-    }
-  ]
 
   // Mock reservations data for financial table
   const mockReservations = [
@@ -1981,7 +2078,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     { id: 'overview', label: 'Overview' },
     { id: 'financial', label: 'Financial' },
     { id: 'expenses', label: 'Expenses' },
-    { id: 'linked-units', label: 'Linked Units' },
     { id: 'documents', label: 'Documents' },
     { id: 'availability', label: 'Availability settings' },
     { id: 'monthly-calendar', label: 'Monthly Calendar' },
@@ -2216,6 +2312,74 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleAddExpense = () => {
     setAddExpenseModal(true)
+  }
+
+  // Функції для роботи з документами
+  const handleAddDocument = () => {
+    setAddDocumentModal(true)
+  }
+
+  const handleSaveDocument = async (documentData: any) => {
+    try {
+      console.log('Saving document:', documentData)
+      
+      // Використовуємо API сервіс для завантаження
+      const { documentService } = await import('@/lib/api/services/documentService')
+      
+      const newDocument = await documentService.uploadDocument(params.id, documentData.file, {
+        title: documentData.title,
+        type: documentData.type,
+        uploadedBy: documentData.uploadedBy,
+        uploadedByEmail: documentData.uploadedByEmail
+      })
+      
+      const updatedDocuments = [...documents, newDocument]
+      setDocuments(updatedDocuments)
+      
+      // Зберігаємо в localStorage
+      documentService.saveToLocalStorage(params.id, updatedDocuments)
+      
+      setAddDocumentModal(false)
+      console.log('Document saved successfully, total documents:', updatedDocuments.length)
+    } catch (error) {
+      console.error('Error saving document:', error)
+    }
+  }
+
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      console.log('Deleting document:', documentId)
+      
+      // Використовуємо API сервіс для видалення
+      const { documentService } = await import('@/lib/api/services/documentService')
+      
+      await documentService.deleteDocument(params.id, documentId)
+      
+      const updatedDocuments = documents.filter((doc: any) => doc.id !== documentId)
+      setDocuments(updatedDocuments)
+      
+      // Зберігаємо в localStorage
+      documentService.saveToLocalStorage(params.id, updatedDocuments)
+      
+      console.log('Document deleted successfully')
+    } catch (error) {
+      console.error('Error deleting document:', error)
+    }
+  }
+
+  const handleDownloadDocument = async (documentId: string) => {
+    try {
+      console.log('Downloading document:', documentId)
+      
+      // Використовуємо API сервіс для завантаження
+      const { documentService } = await import('@/lib/api/services/documentService')
+      
+      await documentService.downloadDocument(params.id, documentId)
+      
+      console.log('Document download initiated')
+    } catch (error) {
+      console.error('Error downloading document:', error)
+    }
   }
 
   // Функції для роботи з фото
@@ -3750,108 +3914,6 @@ With easy access to transport, shopping, and dining, everything you need is righ
               </div>
             )}
 
-            {activeTab === 'linked-units' && (
-              <div className="space-y-6">
-                {/* Linked Units Section */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Linked Units</h3>
-                    <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center space-x-2 cursor-pointer">
-                      <Plus size={16} />
-                      <span>Link Unit</span>
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {mockLinkedUnits.map((unit) => (
-                      <div key={unit.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        {/* Header with Unit Info */}
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                              <Building size={16} className="text-orange-600" />
-                            </div>
-                <div>
-                              <h4 className="text-sm font-medium text-gray-900">{unit.unitName}</h4>
-                              <p className="text-xs text-gray-500">{unit.unitNickname}</p>
-                    </div>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <button 
-                              onClick={() => window.location.href = `/owners/${unit.id}`}
-                              className="p-1.5 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
-                              title="View Owner"
-                            >
-                              <User size={14} />
-                      </button>
-                            <button className="p-1.5 text-green-600 hover:bg-green-100 rounded cursor-pointer">
-                              <Edit size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                        {/* Compact Info Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-                          {/* Owner */}
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="text-sm">{unit.ownerFlag}</span>
-                              <span className="font-medium text-gray-900">{unit.owner}</span>
-                            </div>
-                            <div className="text-gray-500">{unit.ownerNationality}</div>
-                            <div className="text-gray-400 truncate">{unit.ownerEmail}</div>
-                          </div>
-
-                          {/* Income Distribution */}
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <div className="font-medium text-gray-900 mb-2">Income Distribution</div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Owner:</span>
-                                <span className="text-green-600 font-medium">{unit.ownerPercentage}%</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Agency:</span>
-                                <span className="text-orange-600 font-medium">{unit.roomyPercentage}%</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Agent:</span>
-                                <span className="text-purple-600 font-medium">{unit.agentPercentage}%</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Total Income */}
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <div className="font-medium text-gray-900 mb-2">Total Income</div>
-                            <div className="text-lg font-semibold text-green-600">AED {unit.income.toLocaleString()}</div>
-                            <div className="text-gray-500 mt-1">{unit.profitFormula}</div>
-                          </div>
-
-                          {/* Referring Agent */}
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <div className="font-medium text-gray-900 mb-2">Referring Agent</div>
-                            <div className="text-gray-900">{unit.referringAgent}</div>
-                            <div className="text-gray-500 truncate">{unit.agentEmail}</div>
-                            <div className="text-gray-400 mt-1">
-                              Last: {new Date(unit.lastPayment).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {mockLinkedUnits.length === 0 && (
-                    <div className="text-center py-8">
-                      <Building size={32} className="mx-auto text-gray-400 mb-3" />
-                      <h3 className="text-sm font-medium text-gray-900 mb-1">No linked units</h3>
-                      <p className="text-xs text-gray-500">Link units to track their performance and owner information</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {activeTab === 'documents' && (
               <div className="space-y-6">
@@ -3859,14 +3921,17 @@ With easy access to transport, shopping, and dining, everything you need is righ
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">Property Documents Archive</h3>
-                    <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center space-x-2 cursor-pointer">
+                    <button 
+                      onClick={handleAddDocument}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center space-x-2 cursor-pointer"
+                    >
                       <Plus size={16} />
                       <span>Add Document</span>
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    {documents.map((document) => (
+                    {documents.map((document: any) => (
                       <div key={document.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-orange-100 rounded-lg">
@@ -3886,14 +3951,18 @@ With easy access to transport, shopping, and dining, everything you need is righ
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <button className="p-1.5 text-orange-600 hover:bg-orange-100 rounded cursor-pointer" title="Download">
+                          <button 
+                            onClick={() => handleDownloadDocument(document.id)}
+                            className="p-1.5 text-orange-600 hover:bg-orange-100 rounded cursor-pointer" 
+                            title="Download"
+                          >
                             <Download size={14} />
                           </button>
                           <button 
                             className="p-1.5 text-red-600 hover:bg-red-100 rounded cursor-pointer"
                             onClick={() => {
                               if (confirm('Are you sure you want to delete this document?')) {
-                                setDocuments(prev => prev.filter(doc => doc.id !== document.id))
+                                handleDeleteDocument(document.id)
                               }
                             }}
                             title="Delete"
@@ -4479,6 +4548,27 @@ With easy access to transport, shopping, and dining, everything you need is righ
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Document Modal */}
+      {addDocumentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Document</h3>
+              <button 
+                onClick={() => setAddDocumentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <AddDocumentModal 
+              onSave={handleSaveDocument}
+              onCancel={() => setAddDocumentModal(false)}
+            />
           </div>
         </div>
       )}
