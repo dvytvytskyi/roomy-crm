@@ -12,7 +12,7 @@ import { reservationService, Reservation, ReservationFilters } from '@/lib/api/s
 
 export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedReservations, setSelectedReservations] = useState<number[]>([])
+  const [selectedReservations, setSelectedReservations] = useState<string[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showToast, setShowToast] = useState(false)
@@ -46,12 +46,20 @@ export default function ReservationsPage() {
   const loadReservations = useCallback(async (currentFilters?: ReservationFilters) => {
     console.log('📅 ReservationsPage: Loading reservations...')
     console.log('📅 ReservationsPage: Using filters:', currentFilters || filters)
+    console.log('📅 ReservationsPage: Filters breakdown:', {
+      status: currentFilters?.status || filters?.status,
+      source: currentFilters?.source || filters?.source,
+      property: currentFilters?.property || filters?.property,
+      searchTerm: currentFilters?.searchTerm || filters?.searchTerm,
+      amountRange: currentFilters?.amountRange || filters?.amountRange
+    })
     try {
       setIsLoading(true)
       const response = await reservationService.getReservations(currentFilters || filters)
       
       if (response.success && response.data) {
-        console.log('✅ Reservations loaded:', response.data)
+        console.log('✅ Reservations loaded:', response.data.length, 'reservations')
+        console.log('✅ First reservation:', response.data[0])
         setReservations(response.data)
       } else {
         console.error('❌ Failed to load reservations:', response.error)
@@ -72,11 +80,15 @@ export default function ReservationsPage() {
     loadReservations()
   }, [])
 
-  // Reload reservations when filters change
+  // Reload reservations when filters or search term change
   useEffect(() => {
-    console.log('🔄 Filters changed, reloading reservations...')
-    loadReservations(filters)
-  }, [filters])
+    console.log('🔄 Filters or search term changed, reloading reservations...')
+    const filtersWithSearch = {
+      ...filters,
+      searchTerm: searchTerm
+    }
+    loadReservations(filtersWithSearch)
+  }, [filters, searchTerm])
 
   const handleViewReservation = (reservation: any) => {
     setReservationDetailsModal({
@@ -102,7 +114,7 @@ export default function ReservationsPage() {
     // TODO: Implement bulk actions
   }
 
-  const handleSelectionChange = (selectedIds: number[]) => {
+  const handleSelectionChange = (selectedIds: string[]) => {
     setSelectedReservations(selectedIds)
   }
 

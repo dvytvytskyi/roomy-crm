@@ -1,6 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://5.223.55.121:3001/api',
+  BASE_URL: process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3001/api' 
+    : 'http://5.223.55.121:3001/api',
   TIMEOUT: 30000, // Збільшуємо timeout до 30 секунд
   HEADERS: {
     'Content-Type': 'application/json',
@@ -61,7 +63,14 @@ export const API_ENDPOINTS = {
   RESERVATIONS: {
     BASE: '/reservations',
     BY_ID: (id: string) => `/reservations/${id}`,
-    AVAILABILITY: '/reservations/availability',
+    CALENDAR: '/reservations/calendar',
+    STATS: '/reservations/stats',
+    SOURCES: '/reservations/sources',
+    AVAILABLE_PROPERTIES: '/reservations/available-properties',
+    STATUS: (id: string) => `/reservations/${id}/status`,
+    CHECK_IN: (id: string) => `/reservations/${id}/check-in`,
+    CHECK_OUT: (id: string) => `/reservations/${id}/check-out`,
+    NO_SHOW: (id: string) => `/reservations/${id}/no-show`,
   },
   
   // Analytics

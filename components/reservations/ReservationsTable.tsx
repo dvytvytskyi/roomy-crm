@@ -2,192 +2,61 @@
 
 import { useState } from 'react'
 import { Edit, Trash2, Eye, Home, Users, Star, DollarSign, Copy, Settings, ChevronUp, ChevronDown, Calendar, User, Hash, Building, X } from 'lucide-react'
+import { Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
 interface ReservationsTableProps {
   searchTerm: string
-  filters?: any
-  reservations?: any[]
+  filters?: ReservationFilters
+  reservations?: Reservation[]
   isLoading?: boolean
-  onViewReservation: (reservation: any) => void
-  onEditReservation: (reservation: any) => void
-  selectedReservations: number[]
-  onSelectionChange: (selectedIds: number[]) => void
+  onViewReservation: (reservation: Reservation) => void
+  onEditReservation: (reservation: Reservation) => void
+  selectedReservations: string[]
+  onSelectionChange: (selectedIds: string[]) => void
 }
 
-// Mock data for reservations
-const mockReservations = [
-  {
-    id: 1,
-    guest_name: 'John Smith',
-    check_in: '2024-08-15',
-    check_out: '2024-08-18',
-    status: 'confirmed',
-    reservation_id: 'RES-001',
-    total_amount: 450,
-    unit_property: 'Burj Khalifa Studio',
-    source: 'Airbnb',
-    nights: 3,
-    number_of_guests: 2,
-    paid_amount: 450,
-    outstanding_balance: 0,
-    notes: 'Guest requested late check-in'
-  },
-  {
-    id: 2,
-    guest_name: 'Sarah Johnson',
-    check_in: '2024-08-20',
-    check_out: '2024-08-25',
-    status: 'pending',
-    reservation_id: 'RES-002',
-    total_amount: 750,
-    unit_property: 'Marina View',
-    source: 'Booking.com',
-    nights: 5,
-    number_of_guests: 4,
-    paid_amount: 0,
-    outstanding_balance: 750,
-    notes: 'Special anniversary trip'
-  },
-  {
-    id: 3,
-    guest_name: 'Michael Brown',
-    check_in: '2024-08-10',
-    check_out: '2024-08-12',
-    status: 'completed',
-    reservation_id: 'RES-003',
-    total_amount: 300,
-    unit_property: 'Downtown Loft',
-    source: 'Direct',
-    nights: 2,
-    number_of_guests: 1,
-    paid_amount: 300,
-    outstanding_balance: 0,
-    notes: 'Business trip',
-    created_by: {
-      name: 'Alex Thompson',
-      email: 'alex.thompson@company.com'
-    }
-  },
-  {
-    id: 4,
-    guest_name: 'Emily Davis',
-    check_in: '2024-08-30',
-    check_out: '2024-09-05',
-    status: 'confirmed',
-    reservation_id: 'RES-004',
-    total_amount: 1200,
-    unit_property: 'Palm Villa',
-    source: 'Direct',
-    nights: 6,
-    number_of_guests: 6,
-    paid_amount: 600,
-    outstanding_balance: 600,
-    notes: 'Long-term stay',
-    created_by: {
-      name: 'Maria Rodriguez',
-      email: 'maria.rodriguez@company.com'
-    }
-  },
-  {
-    id: 5,
-    guest_name: 'David Wilson',
-    check_in: '2024-08-22',
-    check_out: '2024-08-24',
-    status: 'canceled',
-    reservation_id: 'RES-005',
-    total_amount: 400,
-    unit_property: 'Skyline Penthouse',
-    source: 'Airbnb',
-    nights: 2,
-    number_of_guests: 3,
-    paid_amount: 0,
-    outstanding_balance: 0,
-    notes: 'Guest canceled due to flight change'
-  }
-]
+// No mock data needed - using real API data
 
 export default function ReservationsTable({ searchTerm, filters, reservations, isLoading, onViewReservation, onEditReservation, selectedReservations, onSelectionChange }: ReservationsTableProps) {
   const [sortField, setSortField] = useState<string>('checkIn')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
-  // Use real reservations if provided, otherwise fall back to mock data
-  const dataSource = reservations && reservations.length > 0 ? reservations : mockReservations
-  console.log('📅 ReservationsTable - dataSource length:', dataSource.length, 'using mock:', !reservations || reservations.length === 0)
+  // Use real reservations from API
+  const dataSource = reservations || []
+  console.log('📅 ReservationsTable - dataSource length:', dataSource.length, 'reservations:', reservations?.length || 0)
 
-  // Helper functions to handle both API and mock data formats
+  // Helper functions for API data format
   const getReservationGuestName = (reservation: any) => {
-    return reservation.guestName || reservation.guest_name || 'Unknown Guest'
+    return reservation.guestName || 'Unknown Guest'
   }
 
   const getReservationCheckIn = (reservation: any) => {
-    return reservation.checkIn || reservation.check_in || ''
+    return reservation.checkIn || ''
   }
 
   const getReservationCheckOut = (reservation: any) => {
-    return reservation.checkOut || reservation.check_out || ''
+    return reservation.checkOut || ''
   }
 
   const getReservationStatus = (reservation: any) => {
-    return reservation.status || 'unknown'
+    return reservation.status || 'UNKNOWN'
   }
 
   const getReservationSource = (reservation: any) => {
-    return reservation.source || 'unknown'
+    return reservation.source || 'UNKNOWN'
   }
 
   const getReservationAmount = (reservation: any) => {
-    return reservation.totalAmount || reservation.total_amount || 0
+    return reservation.totalAmount || 0
   }
 
   const getReservationProperty = (reservation: any) => {
-    return reservation.propertyName || reservation.property_name || 'Unknown Property'
+    return reservation.propertyName || 'Unknown Property'
   }
 
-  const filteredReservations = dataSource.filter(reservation => {
-    // Use helper functions for consistent data handling
-    const guestName = getReservationGuestName(reservation)
-    const propertyName = getReservationProperty(reservation)
-    const status = getReservationStatus(reservation)
-    const source = getReservationSource(reservation)
-    const amount = getReservationAmount(reservation)
-    
-    // Search term filter
-    const matchesSearch = guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      propertyName.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    if (!matchesSearch) return false
-
-    // Additional filters
-    if (filters) {
-      // Status filter
-      if (filters.status && filters.status.length > 0 && !filters.status.includes(status)) {
-        return false
-      }
-      
-      // Source filter
-      if (filters.source && filters.source.length > 0 && !filters.source.includes(source)) {
-        return false
-      }
-      
-      // Property filter
-      if (filters.property && filters.property.length > 0 && !filters.property.includes(propertyName)) {
-        return false
-      }
-      
-      // Amount range filter
-      if (filters.amountRange?.min && amount < parseFloat(filters.amountRange.min)) {
-        return false
-      }
-      if (filters.amountRange?.max && amount > parseFloat(filters.amountRange.max)) {
-        return false
-      }
-      
-    }
-    
-    return true
-  })
+  // No local filtering needed - filtering is done on the backend
+  const filteredReservations = dataSource
 
   const sortedReservations = filteredReservations.sort((a, b) => {
     const aValue = a[sortField as keyof typeof a]
@@ -207,7 +76,7 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
     }
   }
 
-  const handleSelectReservation = (reservationId: number) => {
+  const handleSelectReservation = (reservationId: string) => {
     onSelectionChange(
       selectedReservations.includes(reservationId)
         ? selectedReservations.filter(id => id !== reservationId)
@@ -225,13 +94,15 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      confirmed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmed' },
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
-      canceled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Canceled' },
-      completed: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Completed' }
+      CONFIRMED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmed' },
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
+      CANCELLED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' },
+      COMPLETED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Completed' },
+      NO_SHOW: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'No Show' },
+      MODIFIED: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Modified' }
     }
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING
     
     return (
       <span className={`px-2 py-1 text-xs ${config.bg} ${config.text} rounded-full`}>
@@ -270,10 +141,11 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
 
   return (
     <div className="h-full overflow-auto custom-scrollbar">
-      <table className="w-full">
+      <div className="min-w-full overflow-x-auto">
+        <table className="w-full min-w-[1200px]">
         <thead className="bg-slate-50 border-b border-gray-200 sticky top-0 z-10">
           <tr>
-            <th className="px-6 py-3 text-left">
+            <th className="px-4 py-3 text-left w-12">
               <input
                 type="checkbox"
                 checked={selectedReservations.length === sortedReservations.length && sortedReservations.length > 0}
@@ -282,47 +154,47 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
               />
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('guest_name')}
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-48"
+              onClick={() => handleSort('guestName')}
             >
               <div className="flex items-center space-x-1">
                 <User size={14} />
                 <span>Guest Name</span>
-                {getSortIcon('guest_name')}
+                {getSortIcon('guestName')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('unit_property')}
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-56"
+              onClick={() => handleSort('propertyName')}
             >
               <div className="flex items-center space-x-1">
                 <Building size={14} />
-                <span>Unit</span>
-                {getSortIcon('unit_property')}
+                <span>Property</span>
+                {getSortIcon('propertyName')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('reservation_id')}
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-32"
+              onClick={() => handleSort('id')}
             >
               <div className="flex items-center space-x-1">
                 <Hash size={14} />
                 <span>Code</span>
-                {getSortIcon('reservation_id')}
+                {getSortIcon('id')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('check_in')}
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-40"
+              onClick={() => handleSort('checkIn')}
             >
               <div className="flex items-center space-x-1">
                 <Calendar size={14} />
                 <span>Dates</span>
-                {getSortIcon('check_in')}
+                {getSortIcon('checkIn')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-20"
               onClick={() => handleSort('nights')}
             >
               <div className="flex items-center space-x-1">
@@ -331,7 +203,7 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-24"
               onClick={() => handleSort('source')}
             >
               <div className="flex items-center space-x-1">
@@ -340,17 +212,17 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('total_amount')}
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-32"
+              onClick={() => handleSort('totalAmount')}
             >
               <div className="flex items-center space-x-1">
                 <DollarSign size={14} />
                 <span>Amount</span>
-                {getSortIcon('total_amount')}
+                {getSortIcon('totalAmount')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-28"
               onClick={() => handleSort('status')}
             >
               <div className="flex items-center space-x-1">
@@ -358,7 +230,7 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
                 {getSortIcon('status')}
               </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
               Actions
             </th>
           </tr>
@@ -371,7 +243,7 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
               onMouseEnter={() => setHoveredRow(reservation.id)}
               onMouseLeave={() => setHoveredRow(null)}
             >
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-12">
                 <input
                   type="checkbox"
                   checked={selectedReservations.includes(reservation.id)}
@@ -379,45 +251,49 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
                   className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
                 />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-48">
                 <button
                   onClick={() => window.location.href = `/reservations/${reservation.id}`}
-                  className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
+                  className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left truncate block w-full"
+                  title={reservation.guestName}
                 >
-                  {reservation.guest_name}
+                  {reservation.guestName}
                 </button>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{reservation.unit_property}</span>
+              <td className="px-4 py-4 whitespace-nowrap w-56">
+                <span className="text-sm text-slate-900 truncate block" title={reservation.propertyName}>
+                  {reservation.propertyName}
+                </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm font-mono text-slate-900">{reservation.reservation_id}</span>
+              <td className="px-4 py-4 whitespace-nowrap w-32">
+                <span className="text-sm font-mono text-slate-900">{reservation.id}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-40">
                 <div className="text-sm text-slate-900">
-                  {formatDate(reservation.check_in)} - {formatDate(reservation.check_out)}
+                  <div>{formatDate(reservation.checkIn)}</div>
+                  <div className="text-xs text-gray-500">to {formatDate(reservation.checkOut)}</div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-20 text-center">
                 <span className="text-sm text-slate-900">{reservation.nights}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-24">
                 <span className="text-sm text-slate-900">{reservation.source}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-32">
                 <div>
-                  <div className="text-sm font-medium text-slate-900">${reservation.total_amount}</div>
-                  {reservation.outstanding_balance > 0 && (
+                  <div className="text-sm font-medium text-slate-900">${reservation.totalAmount}</div>
+                  {reservation.outstandingBalance && reservation.outstandingBalance > 0 && (
                     <div className="text-xs text-red-600">
-                      ${reservation.outstanding_balance} outstanding
+                      ${reservation.outstandingBalance} outstanding
                     </div>
                   )}
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap w-28">
                 {getStatusBadge(reservation.status)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium w-24">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === reservation.id ? 'opacity-100' : 'opacity-70'}`}>
                   <button
                     onClick={() => {
@@ -452,7 +328,8 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { X, ChevronDown, ChevronUp } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface ReservationsFiltersProps {
   filters?: any
@@ -16,16 +16,23 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
     dateRange: true,
     status: true,
     source: true,
-    property: true,
     amountRange: true
   })
+
+  // Debounce function
+  const debounce = useCallback((func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout
+    return (...args: any[]) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => func.apply(null, args), delay)
+    }
+  }, [])
 
   // Local state for filter values
   const [localFilters, setLocalFilters] = useState({
     dateRange: { from: '', to: '' },
     status: [] as string[],
     source: [] as string[],
-    property: [] as string[],
     amountRange: { min: '', max: '' },
     guestName: ''
   })
@@ -46,45 +53,72 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
 
   // Filter change handlers
   const handleDateRangeChange = (field: 'from' | 'to', value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...localFilters,
       dateRange: {
-        ...prev.dateRange,
+        ...localFilters.dateRange,
         [field]: value
       }
-    }))
+    }
+    setLocalFilters(newFilters)
+    // Auto-apply filters in sidebar mode
+    if (isSidebar && onApplyFilters) {
+      onApplyFilters(newFilters)
+    }
   }
 
   const handleArrayFilterChange = (filterType: 'status' | 'source' | 'property', value: string) => {
     console.log(`🔍 ReservationsFilters: Changing ${filterType} filter:`, value)
-    setLocalFilters(prev => {
-      const newFilters = {
-        ...prev,
-        [filterType]: prev[filterType].includes(value)
-          ? prev[filterType].filter(item => item !== value)
-          : [...prev[filterType], value]
-      }
-      console.log(`🔍 ReservationsFilters: New ${filterType} filters:`, newFilters[filterType])
-      return newFilters
-    })
+    const newFilters = {
+      ...localFilters,
+      [filterType]: localFilters[filterType].includes(value)
+        ? localFilters[filterType].filter(item => item !== value)
+        : [...localFilters[filterType], value]
+    }
+    console.log(`🔍 ReservationsFilters: New ${filterType} filters:`, newFilters[filterType])
+    setLocalFilters(newFilters)
+    // Auto-apply filters in sidebar mode
+    if (isSidebar && onApplyFilters) {
+      onApplyFilters(newFilters)
+    }
   }
 
   const handleAmountRangeChange = (field: 'min' | 'max', value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...localFilters,
       amountRange: {
-        ...prev.amountRange,
+        ...localFilters.amountRange,
         [field]: value
       }
-    }))
+    }
+    setLocalFilters(newFilters)
+    // Auto-apply filters in sidebar mode with debounce
+    if (isSidebar) {
+      debouncedApplyFilters(newFilters)
+    }
   }
 
   const handleGuestNameChange = (value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...localFilters,
       guestName: value
-    }))
+    }
+    setLocalFilters(newFilters)
+    // Auto-apply filters in sidebar mode with debounce
+    if (isSidebar) {
+      debouncedApplyFilters(newFilters)
+    }
   }
+
+  // Debounced version for input fields
+  const debouncedApplyFilters = useCallback(
+    debounce((filters: any) => {
+      if (onApplyFilters) {
+        onApplyFilters(filters)
+      }
+    }, 300),
+    [onApplyFilters, debounce]
+  )
 
   const handleApplyFilters = () => {
     console.log('🔍 ReservationsFilters: Applying filters:', localFilters)
@@ -101,7 +135,6 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
       dateRange: { from: '', to: '' },
       status: [],
       source: [],
-      property: [],
       amountRange: { min: '', max: '' },
       guestName: ''
     }
@@ -262,87 +295,6 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
         )}
       </div>
 
-      {/* Property */}
-      <div>
-        <button
-          onClick={() => toggleSection('property')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Property/Unit</label>
-          {openSections.property ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.property && (
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Apartment Burj Khalifa 1A')}
-                onChange={() => handleArrayFilterChange('property', 'Apartment Burj Khalifa 1A')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Apartment Burj Khalifa 1A</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Apartment Burj Khalifa 1B')}
-                onChange={() => handleArrayFilterChange('property', 'Apartment Burj Khalifa 1B')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Apartment Burj Khalifa 1B</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Villa Dubai Marina 1')}
-                onChange={() => handleArrayFilterChange('property', 'Villa Dubai Marina 1')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Villa Dubai Marina 1</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Villa Dubai Marina 2')}
-                onChange={() => handleArrayFilterChange('property', 'Villa Dubai Marina 2')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Villa Dubai Marina 2</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Studio Downtown 1')}
-                onChange={() => handleArrayFilterChange('property', 'Studio Downtown 1')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Studio Downtown 1</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Beach Villa Palm Jumeirah 1')}
-                onChange={() => handleArrayFilterChange('property', 'Beach Villa Palm Jumeirah 1')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Beach Villa Palm Jumeirah 1</span>
-            </label>
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={localFilters.property.includes('Beach Villa Palm Jumeirah 2')}
-                onChange={() => handleArrayFilterChange('property', 'Beach Villa Palm Jumeirah 2')}
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500" 
-              />
-              <span className="ml-2 text-xs text-gray-700">Beach Villa Palm Jumeirah 2</span>
-            </label>
-          </div>
-        )}
-      </div>
 
       {/* Amount Range */}
       <div>
@@ -383,6 +335,18 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
         )}
       </div>
 
+      {/* Guest Name Search */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Guest Name</label>
+        <input
+          type="text"
+          placeholder="Search by guest name..."
+          value={localFilters.guestName}
+          onChange={(e) => handleGuestNameChange(e.target.value)}
+          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+        />
+      </div>
+
     </div>
   )
 
@@ -403,22 +367,20 @@ export default function ReservationsFilters({ filters, onApplyFilters, onClearFi
       <FilterContent />
 
       {/* Action Buttons */}
-      {!isSidebar && (
-        <div className="flex space-x-2 mt-4 pt-4 border-t border-gray-200">
-          <button 
-            onClick={handleApplyFilters}
-            className="flex-1 px-3 py-2 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 cursor-pointer"
-          >
-            Apply Filters
-          </button>
-          <button 
-            onClick={handleClearFilters}
-            className="flex-1 px-3 py-2 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
-          >
-            Clear All
-          </button>
-        </div>
-      )}
+      <div className="flex space-x-2 mt-4 pt-4 border-t border-gray-200">
+        <button 
+          onClick={handleApplyFilters}
+          className="flex-1 px-3 py-2 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 cursor-pointer"
+        >
+          Apply Filters
+        </button>
+        <button 
+          onClick={handleClearFilters}
+          className="flex-1 px-3 py-2 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
+        >
+          Clear All
+        </button>
+      </div>
     </div>
   )
 }

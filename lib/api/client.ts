@@ -69,7 +69,6 @@ class ApiClient {
     const defaultHeaders = {
       ...API_CONFIG.HEADERS,
       'Accept': 'application/json',
-      'Access-Control-Allow-Origin': '*',
       ...(token && { Authorization: `Bearer ${token}` }),
     };
 

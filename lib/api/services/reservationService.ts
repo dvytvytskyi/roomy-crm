@@ -5,16 +5,29 @@ export interface Reservation {
   id: string;
   propertyId: string;
   propertyName: string;
+  propertyType?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  guestId: string;
   guestName: string;
   guestEmail: string;
   guestPhone?: string;
   checkIn: string;
   checkOut: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  source: 'airbnb' | 'booking' | 'vrbo' | 'direct';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'MODIFIED';
+  paymentStatus?: 'UNPAID' | 'PARTIALLY_PAID' | 'FULLY_PAID' | 'REFUNDED' | 'PENDING_REFUND';
+  guestStatus?: 'UPCOMING' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW' | 'CANCELLED';
+  source: 'DIRECT' | 'AIRBNB' | 'BOOKING_COM' | 'VRBO' | 'OTHER';
   totalAmount: number;
+  paidAmount?: number;
+  outstandingBalance?: number;
   nights: number;
   guests: number;
+  guestCount?: number;
+  specialRequests?: string;
+  externalId?: string;
+  adjustments?: any[];
+  transactions?: any[];
   createdAt: string;
   updatedAt: string;
   notes?: string;
@@ -25,9 +38,9 @@ export interface ReservationFilters {
   dateRange?: { from: string; to: string };
   status?: string[];
   source?: string[];
-  property?: string[];
   amountRange?: { min: string; max: string };
   guestName?: string;
+  searchTerm?: string;
 }
 
 export interface ReservationStats {
@@ -63,9 +76,6 @@ class ReservationService {
       if (filters?.source && filters.source.length > 0) {
         params.source = filters.source.join(',')
       }
-      if (filters?.property && filters.property.length > 0) {
-        params.property = filters.property.join(',')
-      }
       if (filters?.amountRange?.min) {
         params.minAmount = filters.amountRange.min
       }
@@ -75,11 +85,16 @@ class ReservationService {
       if (filters?.guestName) {
         params.guestName = filters.guestName
       }
+      if (filters?.searchTerm) {
+        params.searchTerm = filters.searchTerm
+      }
 
       console.log('📅 ReservationService: Query params:', params)
+      console.log('📅 ReservationService: Final URL:', `${API_CONFIG.BASE_URL}${API_ENDPOINTS.RESERVATIONS.BASE}`)
       
-      const response = await apiClient.get<Reservation[]>('/reservations', params);
+      const response = await apiClient.get<Reservation[]>(API_ENDPOINTS.RESERVATIONS.BASE, params);
       console.log('📅 ReservationService: Raw API Response:', response)
+      console.log('📅 ReservationService: Response data length:', response.data?.length || 0)
       
       if (response.success && response.data) {
         console.log('📅 ReservationService: Reservations data:', response.data)
@@ -164,32 +179,82 @@ class ReservationService {
 
   // Get reservation by ID
   async getReservationById(id: string): Promise<ApiResponse<Reservation>> {
-    return apiClient.get<Reservation>(`/reservations/${id}`);
+    return apiClient.get<Reservation>(API_ENDPOINTS.RESERVATIONS.BY_ID(id));
   }
 
   // Create new reservation
   async createReservation(data: Partial<Reservation>): Promise<ApiResponse<Reservation>> {
-    return apiClient.post<Reservation>('/reservations', data);
+    return apiClient.post<Reservation>(API_ENDPOINTS.RESERVATIONS.BASE, data);
   }
 
   // Update reservation
   async updateReservation(id: string, data: Partial<Reservation>): Promise<ApiResponse<Reservation>> {
-    return apiClient.put<Reservation>(`/reservations/${id}`, data);
+    return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.BY_ID(id), data);
   }
 
   // Delete reservation
   async deleteReservation(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(`/reservations/${id}`);
-  }
-
-  // Get reservation statistics
-  async getReservationStats(): Promise<ApiResponse<ReservationStats>> {
-    return apiClient.get<ReservationStats>('/reservations/stats');
+    return apiClient.delete<void>(API_ENDPOINTS.RESERVATIONS.BY_ID(id));
   }
 
   // Get available properties for filtering
   async getAvailableProperties(): Promise<ApiResponse<{id: string, name: string}[]>> {
     return apiClient.get<{id: string, name: string}[]>('/properties');
+  }
+
+  // Get reservation calendar
+  async getReservationCalendar(propertyId?: string, startDate?: string, endDate?: string): Promise<ApiResponse<any[]>> {
+    const params: Record<string, any> = {};
+    if (propertyId) params.propertyId = propertyId;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    
+    return apiClient.get<any[]>(API_ENDPOINTS.RESERVATIONS.CALENDAR, params);
+  }
+
+  // Get reservation statistics
+  async getReservationStats(propertyId?: string, startDate?: string, endDate?: string): Promise<ApiResponse<any>> {
+    const params: Record<string, any> = {};
+    if (propertyId) params.propertyId = propertyId;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    
+    return apiClient.get<any>(API_ENDPOINTS.RESERVATIONS.STATS, params);
+  }
+
+  // Get reservation sources
+  async getReservationSources(): Promise<ApiResponse<any[]>> {
+    return apiClient.get<any[]>(API_ENDPOINTS.RESERVATIONS.SOURCES);
+  }
+
+  // Get available properties for booking
+  async getAvailablePropertiesForBooking(startDate?: string, endDate?: string, guests?: number): Promise<ApiResponse<any[]>> {
+    const params: Record<string, any> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (guests) params.guests = guests;
+    
+    return apiClient.get<any[]>(API_ENDPOINTS.RESERVATIONS.AVAILABLE_PROPERTIES, params);
+  }
+
+  // Update reservation status
+  async updateReservationStatus(id: string, statusData: { status?: string; paymentStatus?: string; guestStatus?: string }): Promise<ApiResponse<Reservation>> {
+    return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.STATUS(id), statusData);
+  }
+
+  // Check-in guest
+  async checkInGuest(id: string): Promise<ApiResponse<Reservation>> {
+    return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.CHECK_IN(id));
+  }
+
+  // Check-out guest
+  async checkOutGuest(id: string): Promise<ApiResponse<Reservation>> {
+    return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.CHECK_OUT(id));
+  }
+
+  // Mark as no-show
+  async markAsNoShow(id: string): Promise<ApiResponse<Reservation>> {
+    return apiClient.put<Reservation>(API_ENDPOINTS.RESERVATIONS.NO_SHOW(id));
   }
 }
 
