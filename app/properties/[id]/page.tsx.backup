@@ -2433,10 +2433,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Description</h2>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 pr-4">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid&apos;s quarters for added convenience and opulence.</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid's quarters for added convenience and opulence.</p>
                     </div>
                     <button 
-                      onClick={() => handleEditField('description', 'textarea', 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid&apos;s quarters for added convenience and opulence.', 'Description')}
+                      onClick={() => handleEditField('description', 'textarea', 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid\'s quarters for added convenience and opulence.', 'Description')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={16} />
@@ -2826,31 +2826,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                               name: 'Booking Payment',
                               date: '2024-01-15',
                               amount: 3500,
-                              type: 'income',
-                              channel: 'Booking.com',
-                              method: 'Credit Card',
-                              id: 'TXN001',
-                              status: 'Completed'
+                              type: 'income'
                             },
                             {
                               name: 'Cleaning Fee',
                               date: '2024-01-14',
                               amount: -150,
-                              type: 'expense',
-                              channel: 'Internal',
-                              method: 'Bank Transfer',
-                              id: 'TXN002',
-                              status: 'Completed'
+                              type: 'expense'
                             },
                             {
                               name: 'Maintenance',
                               date: '2024-01-10',
                               amount: -200,
-                              type: 'expense',
-                              channel: 'Internal',
-                              method: 'Bank Transfer',
-                              id: 'TXN003',
-                              status: 'Completed'
+                              type: 'expense'
                             }
                           ].map((transaction, index) => (
                             <tr key={index} className="hover:bg-gray-50 transition-colors">
