@@ -45,31 +45,41 @@ export default function PropertiesPage() {
 
   const loadProperties = useCallback(async () => {
     console.log('🔥 loadProperties function called!')
+    console.log('🔥 Current properties state:', properties)
+    console.log('🔥 Current isLoading state:', isLoading)
+    
     try {
       setIsLoading(true)
       console.log('🔄 Loading properties from API...')
       const response = await propertyService.getProperties()
-      console.log('📋 API Response:', response)
+      console.log('📋 API Response in loadProperties:', response)
+      console.log('📋 Response success:', response.success)
+      console.log('📋 Response data:', response.data)
+      console.log('📋 Response error:', response.error)
       
       if (response.success && response.data) {
-        console.log('✅ Properties loaded:', response.data)
+        console.log('✅ Properties loaded successfully:', response.data)
+        console.log('✅ Properties count:', response.data.length)
         setProperties(response.data)
+        console.log('✅ Properties state updated')
       } else {
         console.error('❌ Failed to load properties:', response.error)
-        // Keep existing properties or set empty array
+        console.log('❌ Setting properties to empty array')
         setProperties([])
         // Show error toast
         handleShowToast(`Failed to load properties: ${response.error?.message || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('💥 Error loading properties:', error)
+      console.log('💥 Setting properties to empty array due to error')
       setProperties([])
       // Show error toast
       handleShowToast(`Error loading properties: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
+      console.log('🏁 Setting isLoading to false')
       setIsLoading(false)
     }
-  }, [])
+  }, [properties, isLoading])
 
   const handlePropertyCreated = useCallback(() => {
     console.log('🎉 Property created, automatically refreshing list...')
@@ -81,6 +91,22 @@ export default function PropertiesPage() {
     console.log('🚀 PropertiesPage: useEffect triggered!')
     console.log('🔧 loadProperties function:', loadProperties)
     console.log('📞 Calling loadProperties...')
+    
+    // Test API endpoint directly
+    console.log('🧪 Testing API endpoint directly...')
+    fetch('http://5.223.55.121:3001/api/properties')
+      .then(response => {
+        console.log('🧪 Direct API test response status:', response.status)
+        console.log('🧪 Direct API test response ok:', response.ok)
+        return response.json()
+      })
+      .then(data => {
+        console.log('🧪 Direct API test data:', data)
+      })
+      .catch(error => {
+        console.error('🧪 Direct API test error:', error)
+      })
+    
     loadProperties()
   }, [loadProperties])
 

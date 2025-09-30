@@ -413,14 +413,20 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   // Use real properties if provided, otherwise fall back to mock data
   const dataSource = properties && properties.length > 0 ? properties : mockProperties
   console.log('📊 PropertiesTable - dataSource:', dataSource)
+  console.log('📊 PropertiesTable - dataSource length:', dataSource.length)
   console.log('📊 PropertiesTable - properties prop:', properties)
+  console.log('📊 PropertiesTable - properties prop length:', properties?.length)
   console.log('📊 PropertiesTable - isLoading:', isLoading)
   console.log('📊 PropertiesTable - filters:', filters)
+  console.log('📊 PropertiesTable - using mock data:', !properties || properties.length === 0)
   
   // Log first property structure for debugging
   if (dataSource.length > 0) {
     console.log('🔍 First property structure:', dataSource[0])
     console.log('🔍 Property keys:', Object.keys(dataSource[0]))
+    console.log('🔍 Property values:', Object.values(dataSource[0]))
+  } else {
+    console.log('🔍 No properties in dataSource')
   }
 
   // Helper functions to handle both mock and real data formats

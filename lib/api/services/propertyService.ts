@@ -73,21 +73,36 @@ export class PropertyService {
   // Get all properties
   async getProperties(): Promise<ApiResponse<Property[]>> {
     console.log('🏠 PropertyService: Fetching properties from API...')
+    console.log('🏠 PropertyService: API Base URL:', API_CONFIG.BASE_URL)
+    console.log('🏠 PropertyService: Full endpoint:', `${API_CONFIG.BASE_URL}/properties`)
+    
     try {
       const response = await apiClient.get<Property[]>('/properties');
-      console.log('🏠 PropertyService: API Response:', response)
+      console.log('🏠 PropertyService: Raw API Response:', response)
+      console.log('🏠 PropertyService: Response success:', response.success)
+      console.log('🏠 PropertyService: Response data type:', typeof response.data)
+      console.log('🏠 PropertyService: Response data length:', response.data?.length)
       
       if (response.success && response.data) {
         console.log('🏠 PropertyService: Properties data:', response.data)
         if (response.data.length > 0) {
           console.log('🏠 PropertyService: First property structure:', response.data[0])
           console.log('🏠 PropertyService: First property keys:', Object.keys(response.data[0]))
+          console.log('🏠 PropertyService: First property values:', Object.values(response.data[0]))
+        } else {
+          console.log('🏠 PropertyService: No properties returned from API')
         }
+      } else {
+        console.log('🏠 PropertyService: API call failed or returned no data')
+        console.log('🏠 PropertyService: Error details:', response.error)
       }
       
       return response;
     } catch (error) {
       console.error('🏠 PropertyService: Error fetching properties:', error)
+      console.error('🏠 PropertyService: Error type:', typeof error)
+      console.error('🏠 PropertyService: Error message:', error instanceof Error ? error.message : 'Unknown error')
+      
       // Return empty array on error to prevent crashes
       return {
         success: false,
