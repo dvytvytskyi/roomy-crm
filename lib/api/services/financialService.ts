@@ -147,18 +147,56 @@ export const financialService = {
       }
     }
     
-    // Значення за замовчуванням
+    // Розраховуємо дані на основі payments
+    const payments = financialService.loadPaymentsFromLocalStorage(propertyId)
+    const totalRevenue = payments.reduce((sum, payment) => sum + payment.totalAmount, 0)
+    
+    // Отримуємо Income Distribution
+    const savedIncome = localStorage.getItem('incomeDistribution')
+    let incomeDist = {
+      ownerIncome: 70,
+      roomyAgencyFee: 25,
+      referringAgent: 5
+    }
+    
+    if (savedIncome) {
+      try {
+        const parsed = JSON.parse(savedIncome)
+        incomeDist = {
+          ownerIncome: parsed.ownerIncome || 70,
+          roomyAgencyFee: parsed.roomyAgencyFee || 25,
+          referringAgent: parsed.referringAgent || 5
+        }
+      } catch (error) {
+        console.error('Error parsing income distribution:', error)
+      }
+    }
+    
+    // Розраховуємо дані
+    const agencyFee = (totalRevenue * incomeDist.roomyAgencyFee) / 100
+    const ownersPayout = (totalRevenue * incomeDist.ownerIncome) / 100
+    const referralAgentsFee = (totalRevenue * incomeDist.referringAgent) / 100
+    const vat = totalRevenue * 0.05 // 5% VAT
+    const dtcm = totalRevenue * 0.02 // 2% DTCM
+    const cleaning = payments.length * 50 // 50 AED per booking for cleaning
+    const totalPayout = ownersPayout + referralAgentsFee + vat + dtcm + cleaning
+    
+    // Розраховуємо occupancy rate та avg cost per night
+    const totalNights = payments.reduce((sum, payment) => sum + payment.nights, 0)
+    const avgCostPerNight = totalNights > 0 ? totalRevenue / totalNights : 0
+    const occupancyRate = totalNights > 0 ? Math.min((totalNights / 365) * 100, 100) : 0
+    
     return {
-      totalPayout: 75970,
-      agencyFee: 1580,
-      cleaning: 1580,
-      ownersPayout: 67990,
-      referralAgentsFee: 1580,
-      vat: 1580,
-      dtcm: 1580,
-      totalRevenue: 87500,
-      occupancyRate: 80,
-      avgCostPerNight: 2680
+      totalPayout,
+      agencyFee,
+      cleaning,
+      ownersPayout,
+      referralAgentsFee,
+      vat,
+      dtcm,
+      totalRevenue,
+      occupancyRate,
+      avgCostPerNight
     }
   },
 
@@ -178,45 +216,8 @@ export const financialService = {
       }
     }
     
-    // Значення за замовчуванням
-    return [
-      {
-        id: 'payment_1',
-        guestName: 'John Smith',
-        checkIn: '2024-01-15',
-        checkOut: '2024-01-18',
-        nights: 3,
-        totalAmount: 3500,
-        status: 'completed',
-        channel: 'Booking.com',
-        method: 'Credit Card',
-        date: '2024-01-15'
-      },
-      {
-        id: 'payment_2',
-        guestName: 'Sarah Johnson',
-        checkIn: '2024-01-22',
-        checkOut: '2024-01-25',
-        nights: 3,
-        totalAmount: 3500,
-        status: 'completed',
-        channel: 'Airbnb',
-        method: 'Credit Card',
-        date: '2024-01-22'
-      },
-      {
-        id: 'payment_3',
-        guestName: 'Mike Wilson',
-        checkIn: '2024-02-05',
-        checkOut: '2024-02-08',
-        nights: 3,
-        totalAmount: 3500,
-        status: 'completed',
-        channel: 'Direct',
-        method: 'Bank Transfer',
-        date: '2024-02-05'
-      }
-    ]
+    // Повертаємо порожній масив - тільки нові платежі
+    return []
   },
 
   // Обчислити дати для різних періодів

@@ -1908,19 +1908,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     
-    const totalRevenue = 87500
-    
+    // Початкові значення - все на нулі, поки не додамо резервації
     return {
-      totalPayout: 75970,
-      agencyFee: (totalRevenue * incomeDist.roomyAgencyFee) / 100,
-      cleaning: 1580,
-      ownersPayout: (totalRevenue * incomeDist.ownerIncome) / 100,
-      referralAgentsFee: (totalRevenue * incomeDist.referringAgent) / 100,
-      vat: 1580,
-      dtcm: 1580,
-      totalRevenue: totalRevenue,
-      occupancyRate: 80,
-      avgCostPerNight: 2680
+      totalPayout: 0,
+      agencyFee: 0,
+      cleaning: 0,
+      ownersPayout: 0,
+      referralAgentsFee: 0,
+      vat: 0,
+      dtcm: 0,
+      totalRevenue: 0,
+      occupancyRate: 0,
+      avgCostPerNight: 0
     }
   })
 
@@ -2384,59 +2383,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
 
-  // Mock reservations data for financial table
-  const mockReservations = [
-    {
-      id: 1,
-      guestName: 'John Smith',
-      checkIn: '2024-08-15',
-      checkOut: '2024-08-18',
-      source: 'Airbnb',
-      nights: 3,
-      nightAmount: 150,
-      totalPaid: 450
-    },
-    {
-      id: 2,
-      guestName: 'Maria Garcia',
-      checkIn: '2024-08-20',
-      checkOut: '2024-08-25',
-      source: 'Booking.com',
-      nights: 5,
-      nightAmount: 140,
-      totalPaid: 700
-    },
-    {
-      id: 3,
-      guestName: 'Ahmed Al-Rashid',
-      checkIn: '2024-08-28',
-      checkOut: '2024-08-30',
-      source: 'Direct',
-      nights: 2,
-      nightAmount: 160,
-      totalPaid: 320
-    },
-    {
-      id: 4,
-      guestName: 'Sarah Johnson',
-      checkIn: '2024-09-02',
-      checkOut: '2024-09-07',
-      source: 'Airbnb',
-      nights: 5,
-      nightAmount: 145,
-      totalPaid: 725
-    },
-    {
-      id: 5,
-      guestName: 'David Wilson',
-      checkIn: '2024-09-10',
-      checkOut: '2024-09-12',
-      source: 'Booking.com',
-      nights: 2,
-      nightAmount: 155,
-      totalPaid: 310
-    }
-  ]
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -3027,6 +2973,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Зберігаємо локально
       financialService.savePaymentsToLocalStorage(params.id, updatedPayments)
       
+      // Оновлюємо financial data на основі нових платежів
+      await loadFinancialData()
+      
       console.log('Payment added successfully:', newPayment)
     } catch (error) {
       console.error('Error adding payment:', error)
@@ -3035,6 +2984,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedPayments = [...payments, newPayment]
       setPayments(updatedPayments)
       localStorage.setItem(`payments_${params.id}`, JSON.stringify(updatedPayments))
+      
+      // Оновлюємо financial data
+      await loadFinancialData()
     }
     
     setAddPaymentModal(false)
