@@ -2442,6 +2442,32 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
+  // Проста функція для збереження полів General Information
+  const handleSaveGeneralField = (field: keyof PropertyGeneralInfo, value: string) => {
+    console.log(`Saving general field ${field} with value:`, value)
+    
+    const updatedInfo = {
+      ...propertyGeneralInfo,
+      [field]: value
+    }
+    
+    setPropertyGeneralInfo(updatedInfo)
+    
+    // Зберігаємо в localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+      console.log('General info saved to localStorage:', updatedInfo)
+    }
+    
+    // Якщо це nickname, також оновлюємо propertyNickname
+    if (field === 'nickname') {
+      setPropertyNickname(value)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('propertyNickname', value)
+      }
+    }
+  }
+
   const handleSaveEdit = async (newValue: string) => {
     try {
     console.log(`Saving ${editModal.field}: ${newValue}`)
@@ -3389,7 +3415,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         { label: 'Address', value: propertyGeneralInfo.address, key: 'address' },
                         { label: 'Size', value: propertyGeneralInfo.size, key: 'size' },
                         { label: 'Beds', value: propertyGeneralInfo.beds, key: 'beds' }
-                      ].map((item, index) => (
+                      ].map((item, index) => {
+                        console.log(`Rendering field ${item.key}:`, item.value)
+                        return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
@@ -3412,7 +3440,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                             </button>
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                     <div className="space-y-4">
                       {[
@@ -3423,7 +3452,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         { label: 'Check-in from', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
                         { label: 'Check-out to', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
                         { label: 'Unit intake date', value: propertyGeneralInfo.unitIntakeDate, key: 'unitIntakeDate' }
-                      ].map((item, index) => (
+                      ].map((item, index) => {
+                        console.log(`Rendering field ${item.key}:`, item.value)
+                        return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
@@ -3446,7 +3477,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                             </button>
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -4758,7 +4790,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       }
                       
                       if (input) {
+                        // Використовуємо нову функцію для general полів
+                        if (editModal.type === 'general') {
+                          handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, input.value)
+                        } else {
                         handleSaveEdit(input.value)
+                        }
+                        handleCloseEdit()
                       }
                     }}
                     className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
