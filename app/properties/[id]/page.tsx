@@ -4044,9 +4044,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </div>
                 </div>
 
-                  <button className="mt-6 w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700">
-                    + Add New Channel
-                  </button>
                 </div>
               </div>
             )}
