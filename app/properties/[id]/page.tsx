@@ -1961,17 +1961,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   
   const [automationSettings, setAutomationSettings] = useState({
     autoResponse: {
-      isActive: true,
-      nonConfirmed: {
-        firstMessage: '',
-        subsequentMessage: ''
-      },
-      confirmed: {
-        beforeCheckin: '',
-        checkinDay: '',
-        checkoutDay: '',
-        duringStay: '',
-        afterCheckout: ''
+    isActive: true,
+    nonConfirmed: {
+      firstMessage: '',
+      subsequentMessage: ''
+    },
+    confirmed: {
+      beforeCheckin: '',
+      checkinDay: '',
+      checkoutDay: '',
+      duringStay: '',
+      afterCheckout: ''
       }
     },
     autoReviews: {
@@ -2231,7 +2231,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Reload automation settings
       await loadAutomationSettings()
       
-      setAutoResponseModal({ isOpen: false, type: '', trigger: '', title: '', content: '' })
+    setAutoResponseModal({ isOpen: false, type: '', trigger: '', title: '', content: '' })
       
     } catch (error) {
       console.error('Error saving auto response:', error)
@@ -4473,12 +4473,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <button className="text-orange-600 hover:text-orange-700 text-sm cursor-pointer">
-                      Learn more...
-                    </button>
-                  </div>
-
                 </div>
 
                 {/* Auto Reviews Section */}
@@ -4530,12 +4524,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
                       />
                     </div>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <button className="text-orange-600 hover:text-orange-700 text-sm cursor-pointer">
-                      Learn more...
-                    </button>
                   </div>
                 </div>
               </div>
