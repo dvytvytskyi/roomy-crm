@@ -1541,17 +1541,37 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.error('Error parsing saved financial data:', error)
       }
     }
+    
+    // Отримуємо Income Distribution для розрахунків
+    const savedIncome = localStorage.getItem('incomeDistribution')
+    let incomeDist = {
+      ownerIncome: 70,
+      roomyAgencyFee: 25,
+      referringAgent: 5,
+      totalProfit: 12500
+    }
+    
+    if (savedIncome) {
+      try {
+        incomeDist = JSON.parse(savedIncome)
+      } catch (error) {
+        console.error('Error parsing saved income distribution:', error)
+      }
+    }
+    
+    const totalRevenue = 87500
+    
     return {
-      totalPayout: 0,
-      agencyFee: 0,
-      cleaning: 0,
-      ownersPayout: 0,
-      referralAgentsFee: 0,
-      vat: 0,
-      dtcm: 0,
-      totalRevenue: 0,
-      occupancyRate: 0,
-      avgCostPerNight: 0
+      totalPayout: 75970,
+      agencyFee: (totalRevenue * incomeDist.roomyAgencyFee) / 100,
+      cleaning: 1580,
+      ownersPayout: (totalRevenue * incomeDist.ownerIncome) / 100,
+      referralAgentsFee: (totalRevenue * incomeDist.referringAgent) / 100,
+      vat: 1580,
+      dtcm: 1580,
+      totalRevenue: totalRevenue,
+      occupancyRate: 80,
+      avgCostPerNight: 2680
     }
   })
 
@@ -2139,6 +2159,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Зберігаємо в localStorage
       localStorage.setItem('incomeDistribution', JSON.stringify(newIncome))
+      
+      // Оновлюємо фінансові дані на основі нових відсотків
+      const updatedFinancialData = {
+        ...financialData,
+        ownersPayout: (financialData.totalRevenue * newIncome.ownerIncome) / 100,
+        agencyFee: (financialData.totalRevenue * newIncome.roomyAgencyFee) / 100,
+        referralAgentsFee: (financialData.totalRevenue * newIncome.referringAgent) / 100
+      }
+      setFinancialData(updatedFinancialData)
+      
+      // Зберігаємо оновлені фінансові дані
+      localStorage.setItem(`financialData_${params.id}`, JSON.stringify(updatedFinancialData))
       
       // Відправляємо на сервер (симуляція API виклику)
       try {
@@ -2968,18 +3000,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </div>
                       <div className="flex items-center justify-between py-3 border-b border-gray-100">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-600">Owner Payout:</span>
+                          <span className="text-sm font-medium text-gray-600">Owner Payout ({incomeDistribution.ownerIncome}%):</span>
                       </div>
                       <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-green-600">AED {financialData.ownersPayout.toLocaleString()}</span>
+                          <span className="text-sm font-medium text-green-600">AED {((financialData.totalRevenue * incomeDistribution.ownerIncome) / 100).toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between py-3 border-b border-gray-100">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-600">Agency Fee:</span>
+                          <span className="text-sm font-medium text-gray-600">Roomy Agency Fee ({incomeDistribution.roomyAgencyFee}%):</span>
                       </div>
                       <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-orange-600">AED {financialData.agencyFee.toLocaleString()}</span>
+                          <span className="text-sm font-medium text-orange-600">AED {((financialData.totalRevenue * incomeDistribution.roomyAgencyFee) / 100).toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-600">Referring Agent ({incomeDistribution.referringAgent}%):</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-blue-600">AED {((financialData.totalRevenue * incomeDistribution.referringAgent) / 100).toLocaleString()}</span>
                         </div>
                       </div>
                       </div>
@@ -2989,17 +3029,24 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-600">Owner</span>
-                            <span className="text-xs text-gray-600">80%</span>
+                            <span className="text-xs text-gray-600">{incomeDistribution.ownerIncome}%</span>
                         </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${incomeDistribution.ownerIncome}%` }}></div>
                       </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">Agency</span>
-                            <span className="text-xs text-gray-600">20%</span>
+                            <span className="text-xs text-gray-600">Roomy Agency</span>
+                            <span className="text-xs text-gray-600">{incomeDistribution.roomyAgencyFee}%</span>
                     </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-orange-500 h-2 rounded-full" style={{ width: '20%' }}></div>
+                            <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${incomeDistribution.roomyAgencyFee}%` }}></div>
+                  </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">Referring Agent</span>
+                            <span className="text-xs text-gray-600">{incomeDistribution.referringAgent}%</span>
+                    </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${incomeDistribution.referringAgent}%` }}></div>
                   </div>
                       </div>
                         </div>
@@ -3023,76 +3070,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                  {/* Fees */}
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Fees</span>
+                          {/* No expenses data */}
+                          <tr>
+                            <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                              <div className="flex flex-col items-center">
+                                <div className="text-sm text-gray-400 mb-2">No expenses recorded</div>
+                                <div className="text-xs text-gray-400">Expenses will appear here when added</div>
+                              </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Agency fee</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 800</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Management and booking platform fees</td>
-                          </tr>
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Fees</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Referral agents fee</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 400</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Commission for external booking agents</td>
-                          </tr>
-                          
-                          {/* Taxes */}
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Taxes</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">VAT</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 750</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Value Added Tax on rental income</td>
-                          </tr>
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Taxes</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">DTCM</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 400</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Dubai Tourism and Commerce Marketing fees</td>
-                          </tr>
-                          
-                          {/* Maintenance */}
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Maintenance</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Owner</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 600</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Property maintenance costs covered by owner</td>
-                          </tr>
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Maintenance</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Roomy</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 600</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Property management and maintenance services</td>
-                          </tr>
-
-                  {/* Other */}
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Other</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Cleaning</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 800</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Professional cleaning services between guests</td>
-                          </tr>
-                          <tr className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">Other</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Purchases</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AED 225</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">Supplies and amenities for the property</td>
                           </tr>
                         </tbody>
                       </table>
