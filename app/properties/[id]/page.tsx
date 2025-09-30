@@ -1861,7 +1861,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
-  // Photos State - завантажуємо з localStorage або використовуємо тестові зображення
+  // Photos State - завантажуємо тільки з localStorage
   const [photos, setPhotos] = useState<Photo[]>(() => {
     // Завантажуємо з localStorage
     const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
@@ -1878,33 +1878,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     
-    // Якщо немає збережених фото або вони з blob URL-ами, використовуємо тестові
-    return [
-      {
-        id: 'demo_photo_1',
-        url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-        name: 'Living Room',
-        size: 1024000,
-        isCover: true,
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        id: 'demo_photo_2',
-        url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
-        name: 'Bedroom',
-        size: 980000,
-        isCover: false,
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        id: 'demo_photo_3',
-        url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-        name: 'Kitchen',
-        size: 1100000,
-        isCover: false,
-        uploadedAt: new Date().toISOString()
-      }
-    ]
+    // Повертаємо порожній масив - тільки ваші фото
+    return []
   })
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
