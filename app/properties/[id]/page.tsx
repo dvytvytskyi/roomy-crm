@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit, Calendar, DollarSign, CreditCard, Info, Flag, Mail, Phone, Plus, X, Download, Check, Building, User, ArrowLeft } from 'lucide-react'
 import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
@@ -163,6 +163,11 @@ interface Photo {
 
 interface AddUtilityModalProps {
   onSave: (utility: { title: string; description: string }) => void
+  onCancel: () => void
+}
+
+interface AddPaymentModalProps {
+  onSave: (payment: any) => void
   onCancel: () => void
 }
 
@@ -380,7 +385,7 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
       
       // Call onSave after a short delay to show success message
       setTimeout(() => {
-        onSave(transformedOwner)
+      onSave(transformedOwner)
       }, 1500)
     } catch (error) {
       console.error('Error updating owner:', error)
@@ -912,6 +917,159 @@ function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
   )
 }
 
+function AddPaymentModal({ onSave, onCancel }: AddPaymentModalProps) {
+  const [formData, setFormData] = useState({
+    guestName: '',
+    checkIn: '',
+    checkOut: '',
+    totalAmount: '',
+    status: 'completed',
+    channel: 'Booking.com',
+    method: 'Credit Card'
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Обчислюємо кількість ночей
+    const checkInDate = new Date(formData.checkIn)
+    const checkOutDate = new Date(formData.checkOut)
+    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    const payment = {
+      id: `payment_${Date.now()}`,
+      guestName: formData.guestName,
+      checkIn: formData.checkIn,
+      checkOut: formData.checkOut,
+      nights: nights,
+      totalAmount: parseFloat(formData.totalAmount),
+      status: formData.status,
+      channel: formData.channel,
+      method: formData.method,
+      date: new Date().toISOString().split('T')[0]
+    }
+    
+    onSave(payment)
+  }
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Payment</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Guest Name</label>
+            <input
+              type="text"
+              value={formData.guestName}
+              onChange={(e) => handleChange('guestName', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Date</label>
+              <input
+                type="date"
+                value={formData.checkIn}
+                onChange={(e) => handleChange('checkIn', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Date</label>
+              <input
+                type="date"
+                value={formData.checkOut}
+                onChange={(e) => handleChange('checkOut', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Total Amount (AED)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.totalAmount}
+              onChange={(e) => handleChange('totalAmount', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Channel</label>
+              <select
+                value={formData.channel}
+                onChange={(e) => handleChange('channel', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="Booking.com">Booking.com</option>
+                <option value="Airbnb">Airbnb</option>
+                <option value="Direct">Direct</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+              <select
+                value={formData.method}
+                onChange={(e) => handleChange('method', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="Credit Card">Credit Card</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => handleChange('status', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+        >
+          Add Payment
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AddUtilityModal({ onSave, onCancel }: AddUtilityModalProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -1164,7 +1322,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   })
 
-  const handleDateRangeChange = (range: string) => {
+  const handleDateRangeChange = async (range: string) => {
     setDateRange(range)
     
     if (range === 'custom') {
@@ -1172,6 +1330,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       return
     }
     
+    try {
+      // Використовуємо API сервіс для обчислення дат
+      const { financialService } = await import('@/lib/api/services/financialService')
+      const dateRange = financialService.calculateDateRange(range)
+      
+      setDateFrom(dateRange.from)
+      setDateTo(dateRange.to)
+      
+      // Завантажуємо фінансові дані для нового періоду
+      await loadFinancialData(dateRange)
+    } catch (error) {
+      console.error('Error changing date range:', error)
+      
+      // Fallback: локальне обчислення дат
     const today = new Date()
     let fromDate = new Date()
     let toDate = new Date()
@@ -1198,6 +1370,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     
     setDateFrom(fromDate.toISOString().split('T')[0])
     setDateTo(toDate.toISOString().split('T')[0])
+    }
   }
   const [editModal, setEditModal] = useState<{
     isOpen: boolean
@@ -1225,14 +1398,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     return [
-      'Air conditioning',
-      'WiFi',
-      'Pool',
-      'Parking',
-      'Kitchen',
-      'TV',
-      'Gym',
-      'Balcony'
+    'Air conditioning',
+    'WiFi',
+    'Pool',
+    'Parking',
+    'Kitchen',
+    'TV',
+    'Gym',
+    'Balcony'
     ]
   })
 
@@ -1246,10 +1419,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     return [
-      'Air conditioning',
-      'WiFi',
-      'Pool',
-      'Parking'
+    'Air conditioning',
+    'WiFi',
+    'Pool',
+    'Parking'
     ]
   })
 
@@ -1263,10 +1436,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     return [
-      'No smoking',
-      'No pets',
-      'No parties',
-      'Quiet hours'
+    'No smoking',
+    'No pets',
+    'No parties',
+    'Quiet hours'
     ]
   })
 
@@ -1280,9 +1453,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     return [
-      'No smoking',
-      'No pets',
-      'No parties'
+    'No smoking',
+    'No pets',
+    'No parties'
     ]
   })
 
@@ -1300,12 +1473,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     // Значення за замовчуванням
     return {
       id: 'cmg6ax5z2000yal7boyvbq8rd', // Real user ID from API
-      name: 'John Doe',
-      flag: '🇬🇧',
-      country: 'United Kingdom',
+    name: 'John Doe',
+    flag: '🇬🇧',
+    country: 'United Kingdom',
       email: 'testowner@roomy.com',
-      phone: '+44 123 456 789',
-      status: 'active'
+    phone: '+44 123 456 789',
+    status: 'active'
     }
   })
 
@@ -1352,6 +1525,45 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
   const [addBookingModal, setAddBookingModal] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date())
+
+  // Financial Data State
+  const [financialData, setFinancialData] = useState(() => {
+    const saved = localStorage.getItem(`financialData_${params.id}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved financial data:', error)
+      }
+    }
+    return {
+      totalPayout: 0,
+      agencyFee: 0,
+      cleaning: 0,
+      ownersPayout: 0,
+      referralAgentsFee: 0,
+      vat: 0,
+      dtcm: 0,
+      totalRevenue: 0,
+      occupancyRate: 0,
+      avgCostPerNight: 0
+    }
+  })
+
+  // Payments State
+  const [payments, setPayments] = useState(() => {
+    const saved = localStorage.getItem(`payments_${params.id}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved payments:', error)
+      }
+    }
+    return []
+  })
+
+  const [addPaymentModal, setAddPaymentModal] = useState(false)
   
   // Saved replies states
   const [savedRepliesModal, setSavedRepliesModal] = useState({
@@ -1559,9 +1771,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     return [
-      { title: 'Electricity', description: 'Monthly electricity bill' },
-      { title: 'Water', description: 'Monthly water bill' },
-      { title: 'Internet', description: 'Monthly internet subscription' }
+    { title: 'Electricity', description: 'Monthly electricity bill' },
+    { title: 'Water', description: 'Monthly water bill' },
+    { title: 'Internet', description: 'Monthly internet subscription' }
     ]
   })
 
@@ -1747,11 +1959,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveEdit = async (newValue: string) => {
     try {
-      console.log(`Saving ${editModal.field}: ${newValue}`)
-      
-      // Оновлюємо нікнейм якщо це поле nickname
-      if (editModal.field === 'nickname') {
-        setPropertyNickname(newValue)
+    console.log(`Saving ${editModal.field}: ${newValue}`)
+    
+    // Оновлюємо нікнейм якщо це поле nickname
+    if (editModal.field === 'nickname') {
+      setPropertyNickname(newValue)
         // Зберігаємо в localStorage
         localStorage.setItem('propertyNickname', newValue)
       }
@@ -1776,12 +1988,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           console.error('Failed to update on server:', apiError)
           // Показуємо помилку користувачу, але зберігаємо локально
         }
-      }
-      
-      setEditModal({ ...editModal, isOpen: false })
+    }
+    
+    setEditModal({ ...editModal, isOpen: false })
     } catch (error) {
       console.error('Error saving field:', error)
-      setEditModal({ ...editModal, isOpen: false })
+    setEditModal({ ...editModal, isOpen: false })
     }
   }
 
@@ -1806,7 +2018,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
       await propertySettingsService.updateAmenities(params.id, amenities, newAmenities)
       
-      setSelectedAmenities(newAmenities)
+    setSelectedAmenities(newAmenities)
       
       // Зберігаємо локально
       propertySettingsService.saveToLocalStorage(params.id, {
@@ -1844,7 +2056,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
       await propertySettingsService.updateRules(params.id, rules, newRules)
       
-      setSelectedRules(newRules)
+    setSelectedRules(newRules)
       
       // Зберігаємо локально
       propertySettingsService.saveToLocalStorage(params.id, {
@@ -2082,14 +2294,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleUpdateUtility = async (index: number, field: 'title' | 'description', value: string) => {
     try {
-      const updatedUtilities = [...utilities]
-      updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
+    const updatedUtilities = [...utilities]
+    updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
       
       // Використовуємо API сервіс для оновлення
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
       await propertySettingsService.updateUtilities(params.id, updatedUtilities)
       
-      setUtilities(updatedUtilities)
+    setUtilities(updatedUtilities)
       
       // Зберігаємо локально
       propertySettingsService.saveToLocalStorage(params.id, {
@@ -2132,6 +2344,76 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
     }
   }
+
+  // Функції для роботи з фінансовими даними
+  const loadFinancialData = async (dateRange?: { from: string; to: string }) => {
+    try {
+      const { financialService } = await import('@/lib/api/services/financialService')
+      const data = await financialService.getFinancialData(params.id, dateRange)
+      setFinancialData(data)
+      
+      // Зберігаємо локально
+      financialService.saveToLocalStorage(params.id, data)
+    } catch (error) {
+      console.error('Error loading financial data:', error)
+    }
+  }
+
+  const loadPayments = async (dateRange?: { from: string; to: string }) => {
+    try {
+      const { financialService } = await import('@/lib/api/services/financialService')
+      const data = await financialService.getPayments(params.id, dateRange)
+      setPayments(data)
+      
+      // Зберігаємо локально
+      financialService.savePaymentsToLocalStorage(params.id, data)
+    } catch (error) {
+      console.error('Error loading payments:', error)
+    }
+  }
+
+  const handleAddPayment = () => {
+    setAddPaymentModal(true)
+  }
+
+  const handleSavePayment = async (newPayment: any) => {
+    try {
+      // Використовуємо API сервіс для додавання
+      const { financialService } = await import('@/lib/api/services/financialService')
+      await financialService.addPayment(params.id, newPayment)
+      
+      const updatedPayments = [...payments, newPayment]
+      setPayments(updatedPayments)
+      
+      // Зберігаємо локально
+      financialService.savePaymentsToLocalStorage(params.id, updatedPayments)
+      
+      console.log('Payment added successfully:', newPayment)
+    } catch (error) {
+      console.error('Error adding payment:', error)
+      
+      // Fallback: локальне збереження
+      const updatedPayments = [...payments, newPayment]
+      setPayments(updatedPayments)
+      localStorage.setItem(`payments_${params.id}`, JSON.stringify(updatedPayments))
+    }
+    
+    setAddPaymentModal(false)
+  }
+
+  // Завантажуємо фінансові дані при завантаженні компонента
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        await loadFinancialData()
+        await loadPayments()
+      } catch (error) {
+        console.error('Error loading initial financial data:', error)
+      }
+    }
+    
+    loadInitialData()
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -2180,9 +2462,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           </div>
           
               {/* Property Name and Address */}
-            <div>
-              <h3 className="text-lg font-medium text-slate-900">{propertyNickname}</h3>
-              <p className="text-sm text-slate-500">{propertyAddress}</p>
+              <div>
+                  <h3 className="text-lg font-medium text-slate-900">{propertyNickname}</h3>
+                  <p className="text-sm text-slate-500">{propertyAddress}</p>
             </div>
           </div>
           
@@ -2327,8 +2609,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           </div>
                           <div className="flex items-center space-x-3">
                             <span className="text-sm text-gray-900">{item.value}</span>
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                       ))}
                     </div>
                     <div className="space-y-4">
@@ -2461,9 +2743,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         />
                         {photo.isCover && (
                           <span className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                            Cover
-                          </span>
-                        )}
+                              Cover
+                            </span>
+                          )}
                         
                         {/* Hover overlay with actions */}
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -2485,9 +2767,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                               Delete
                             </button>
                           </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                     
                     {/* Upload button */}
                     <div className="aspect-[4/3] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-orange-400 hover:bg-orange-50 cursor-pointer relative">
@@ -2502,7 +2784,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <Plus size={28} className="text-gray-400 mx-auto mb-2" />
                         <span className="text-sm text-gray-500">Add Photos</span>
                       </div>
-                    </div>
+                  </div>
                   </div>
                   
                   {photos.length === 0 && (
@@ -2660,25 +2942,25 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           <span className="text-sm font-medium text-gray-600">Total Revenue:</span>
                       </div>
                         <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-gray-900">AED 22,850</span>
+                          <span className="text-sm font-medium text-gray-900">AED {financialData.totalRevenue.toLocaleString()}</span>
                       </div>
                     </div>
                       <div className="flex items-center justify-between py-3 border-b border-gray-100">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-600">Owner Payout (80%):</span>
+                          <span className="text-sm font-medium text-gray-600">Owner Payout:</span>
                       </div>
                       <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-green-600">AED 18,280</span>
-                      </div>
-                    </div>
-                      <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-600">Agency Fee (20%):</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-orange-600">AED 4,570</span>
-                      </div>
+                          <span className="text-sm font-medium text-green-600">AED {financialData.ownersPayout.toLocaleString()}</span>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-600">Agency Fee:</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-orange-600">AED {financialData.agencyFee.toLocaleString()}</span>
+                        </div>
+                      </div>
                       </div>
                     <div className="space-y-4">
                       <div className="bg-slate-50 rounded-lg p-4">
@@ -2801,7 +3083,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-gray-900">Last transactions</h2>
-                    <button className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2">
+                    <button 
+                      onClick={handleAddPayment}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
+                    >
                       <Plus size={16} />
                       <span>New payment</span>
                     </button>
@@ -2896,30 +3181,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {mockReservations.map((reservation) => (
-                          <tr key={reservation.id} className="hover:bg-gray-50">
+                        {payments.map((payment: any) => (
+                          <tr key={payment.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {reservation.guestName}
+                              {payment.guestName}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {reservation.checkIn} / {reservation.checkOut}
+                              {payment.checkIn} / {payment.checkOut}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                reservation.source === 'Airbnb' 
+                                payment.channel === 'Airbnb' 
                                   ? 'bg-pink-100 text-pink-800'
-                                  : reservation.source === 'Booking.com'
+                                  : payment.channel === 'Booking.com'
                                   ? 'bg-blue-100 text-blue-800'
                                   : 'bg-green-100 text-green-800'
                               }`}>
-                                {reservation.source}
+                                {payment.channel}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {reservation.nights}
+                              {payment.nights}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              ${reservation.totalPaid}
+                              AED {payment.totalAmount}
                             </td>
                           </tr>
                         ))}
@@ -3184,17 +3469,17 @@ With easy access to transport, shopping, and dining, everything you need is righ
                         onChange={handlePhotoUpload}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
-                      <div className="text-gray-400 mb-4">
-                        <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">Upload photos of your property</p>
-                      <p className="text-xs text-gray-500 mb-4">Drag and drop files here, or click to browse</p>
-                      <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer">
-                        Upload Photos
-                      </button>
+                    <div className="text-gray-400 mb-4">
+                      <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
+                    <p className="text-sm text-gray-600 mb-2">Upload photos of your property</p>
+                    <p className="text-xs text-gray-500 mb-4">Drag and drop files here, or click to browse</p>
+                    <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer">
+                      Upload Photos
+                    </button>
+                  </div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {photos.map((photo) => (
@@ -3229,9 +3514,9 @@ With easy access to transport, shopping, and dining, everything you need is righ
                               >
                                 Delete
                               </button>
-                            </div>
-                          </div>
-                        </div>
+                    </div>
+                    </div>
+                    </div>
                       ))}
                       
                       {/* Add more photos button */}
@@ -3244,8 +3529,8 @@ With easy access to transport, shopping, and dining, everything you need is righ
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                         <Plus size={20} className="text-gray-400" />
-                      </div>
                     </div>
+                  </div>
                   )}
                 </div>
 
@@ -3928,6 +4213,27 @@ With easy access to transport, shopping, and dining, everything you need is righ
             <AddUtilityModal 
               onSave={handleSaveUtility}
               onCancel={() => setAddUtilityModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Add Payment Modal */}
+      {addPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Payment</h3>
+              <button 
+                onClick={() => setAddPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <AddPaymentModal
+              onSave={handleSavePayment}
+              onCancel={() => setAddPaymentModal(false)}
             />
           </div>
         </div>
