@@ -6,6 +6,8 @@ import { Edit, Trash2, Eye, Home, Users, Star, DollarSign, Copy, Settings, Chevr
 interface ReservationsTableProps {
   searchTerm: string
   filters?: any
+  reservations?: any[]
+  isLoading?: boolean
   onViewReservation: (reservation: any) => void
   onEditReservation: (reservation: any) => void
   selectedReservations: number[]
@@ -104,41 +106,81 @@ const mockReservations = [
   }
 ]
 
-export default function ReservationsTable({ searchTerm, filters, onViewReservation, onEditReservation, selectedReservations, onSelectionChange }: ReservationsTableProps) {
-  const [sortField, setSortField] = useState<string>('check_in')
+export default function ReservationsTable({ searchTerm, filters, reservations, isLoading, onViewReservation, onEditReservation, selectedReservations, onSelectionChange }: ReservationsTableProps) {
+  const [sortField, setSortField] = useState<string>('checkIn')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
-  const filteredReservations = mockReservations.filter(reservation => {
+  // Use real reservations if provided, otherwise fall back to mock data
+  const dataSource = reservations && reservations.length > 0 ? reservations : mockReservations
+  console.log('📅 ReservationsTable - dataSource length:', dataSource.length, 'using mock:', !reservations || reservations.length === 0)
+
+  // Helper functions to handle both API and mock data formats
+  const getReservationGuestName = (reservation: any) => {
+    return reservation.guestName || reservation.guest_name || 'Unknown Guest'
+  }
+
+  const getReservationCheckIn = (reservation: any) => {
+    return reservation.checkIn || reservation.check_in || ''
+  }
+
+  const getReservationCheckOut = (reservation: any) => {
+    return reservation.checkOut || reservation.check_out || ''
+  }
+
+  const getReservationStatus = (reservation: any) => {
+    return reservation.status || 'unknown'
+  }
+
+  const getReservationSource = (reservation: any) => {
+    return reservation.source || 'unknown'
+  }
+
+  const getReservationAmount = (reservation: any) => {
+    return reservation.totalAmount || reservation.total_amount || 0
+  }
+
+  const getReservationProperty = (reservation: any) => {
+    return reservation.propertyName || reservation.property_name || 'Unknown Property'
+  }
+
+  const filteredReservations = dataSource.filter(reservation => {
+    // Use helper functions for consistent data handling
+    const guestName = getReservationGuestName(reservation)
+    const propertyName = getReservationProperty(reservation)
+    const status = getReservationStatus(reservation)
+    const source = getReservationSource(reservation)
+    const amount = getReservationAmount(reservation)
+    
     // Search term filter
-    const matchesSearch = reservation.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.reservation_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.unit_property.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reservation.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      propertyName.toLowerCase().includes(searchTerm.toLowerCase())
     
     if (!matchesSearch) return false
 
     // Additional filters
     if (filters) {
       // Status filter
-      if (filters.status.length > 0 && !filters.status.includes(reservation.status)) {
+      if (filters.status && filters.status.length > 0 && !filters.status.includes(status)) {
         return false
       }
       
       // Source filter
-      if (filters.source.length > 0 && !filters.source.includes(reservation.source)) {
+      if (filters.source && filters.source.length > 0 && !filters.source.includes(source)) {
         return false
       }
       
       // Property filter
-      if (filters.property.length > 0 && !filters.property.includes(reservation.unit_property)) {
+      if (filters.property && filters.property.length > 0 && !filters.property.includes(propertyName)) {
         return false
       }
       
       // Amount range filter
-      if (filters.amountRange.min && reservation.total_amount < parseInt(filters.amountRange.min)) {
+      if (filters.amountRange?.min && amount < parseFloat(filters.amountRange.min)) {
         return false
       }
-      if (filters.amountRange.max && reservation.total_amount > parseInt(filters.amountRange.max)) {
+      if (filters.amountRange?.max && amount > parseFloat(filters.amountRange.max)) {
         return false
       }
       
@@ -213,6 +255,17 @@ export default function ReservationsTable({ searchTerm, filters, onViewReservati
       day: 'numeric',
       year: 'numeric'
     })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading reservations...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Filter, Download, Archive, Trash2, Eye, Edit, X, Plus, MessageSquare, AlertCircle, Bell } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import ReservationsTable from '@/components/reservations/ReservationsTable'
@@ -8,10 +8,15 @@ import ReservationsFilters from '@/components/reservations/ReservationsFilters'
 import ReservationDetailsModal from '@/components/reservations/ReservationDetailsModal'
 import ReservationEditModal from '@/components/reservations/ReservationEditModal'
 import NewReservationModal from '@/components/reservations/NewReservationModal'
+import { reservationService, Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
 export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedReservations, setSelectedReservations] = useState<number[]>([])
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
   const [reservationDetailsModal, setReservationDetailsModal] = useState({
     isOpen: false,
     reservation: null
@@ -21,7 +26,7 @@ export default function ReservationsPage() {
     reservation: null
   })
   const [newReservationModal, setNewReservationModal] = useState(false)
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ReservationFilters>({
     dateRange: { from: '', to: '' },
     status: [],
     source: [],
@@ -30,6 +35,48 @@ export default function ReservationsPage() {
     guestName: ''
   })
 
+  // Toast handler
+  const handleShowToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 5000)
+  }
+
+  // Load reservations from API
+  const loadReservations = useCallback(async (currentFilters?: ReservationFilters) => {
+    console.log('📅 ReservationsPage: Loading reservations...')
+    try {
+      setIsLoading(true)
+      const response = await reservationService.getReservations(currentFilters || filters)
+      
+      if (response.success && response.data) {
+        console.log('✅ Reservations loaded:', response.data)
+        setReservations(response.data)
+      } else {
+        console.error('❌ Failed to load reservations:', response.error)
+        setReservations([])
+        handleShowToast(`Failed to load reservations: ${response.error?.message || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('💥 Error loading reservations:', error)
+      setReservations([])
+      handleShowToast(`Error loading reservations: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filters])
+
+  // Load reservations on component mount
+  useEffect(() => {
+    loadReservations()
+  }, [])
+
+  // Reload reservations when filters change
+  useEffect(() => {
+    if (filters) {
+      loadReservations(filters)
+    }
+  }, [filters, loadReservations])
 
   const handleViewReservation = (reservation: any) => {
     setReservationDetailsModal({
@@ -59,24 +106,45 @@ export default function ReservationsPage() {
     setSelectedReservations(selectedIds)
   }
 
-  const handleApplyFilters = (newFilters: any) => {
+  const handleApplyFilters = (newFilters: ReservationFilters) => {
+    console.log('🔍 Applying filters:', newFilters)
     setFilters(newFilters)
   }
 
   const handleClearFilters = () => {
-    setFilters({
+    console.log('🧹 Clearing filters')
+    const clearedFilters: ReservationFilters = {
       dateRange: { from: '', to: '' },
       status: [],
       source: [],
       property: [],
       amountRange: { min: '', max: '' },
       guestName: ''
-    })
+    }
+    setFilters(clearedFilters)
   }
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
       <TopNavigation />
+      
+      {/* Toast */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-orange-100 border border-orange-400 text-orange-700 px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+            <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs">!</span>
+            </div>
+            <span>{toastMessage}</span>
+            <button
+              onClick={() => setShowToast(false)}
+              className="text-orange-500 hover:text-orange-700 ml-2"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="flex-1 flex flex-col min-h-0" style={{ marginTop: '64px' }}>
         {/* Header */}
@@ -198,6 +266,8 @@ export default function ReservationsPage() {
               <ReservationsTable
                 searchTerm={searchTerm}
                 filters={filters}
+                reservations={reservations}
+                isLoading={isLoading}
                 onViewReservation={handleViewReservation}
                 onEditReservation={handleEditReservation}
                 selectedReservations={selectedReservations}
