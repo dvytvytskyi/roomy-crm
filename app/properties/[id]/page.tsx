@@ -1759,6 +1759,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     inputType: 'text'
   })
 
+  // State для значення в модальному вікні
+  const [modalValue, setModalValue] = useState('')
+
   const [amenities, setAmenities] = useState(() => {
     const savedAmenities = localStorage.getItem(`propertyAmenities_${params.id}`)
     if (savedAmenities) {
@@ -2440,15 +2443,22 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       title,
       inputType
     })
+    setModalValue(currentValue)
   }
 
   // Проста функція для збереження полів General Information
   const handleSaveGeneralField = (field: keyof PropertyGeneralInfo, value: string) => {
     console.log(`Saving general field ${field} with value:`, value)
     
+    // Валідація - не зберігаємо порожні значення якщо це не дозволено
+    if (!value || value.trim() === '') {
+      console.warn(`Empty value for field ${field}, not saving`)
+      return
+    }
+    
     const updatedInfo = {
       ...propertyGeneralInfo,
-      [field]: value
+      [field]: value.trim()
     }
     
     setPropertyGeneralInfo(updatedInfo)
@@ -2461,9 +2471,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     
     // Якщо це nickname, також оновлюємо propertyNickname
     if (field === 'nickname') {
-      setPropertyNickname(value)
+      setPropertyNickname(value.trim())
       if (typeof window !== 'undefined') {
-        localStorage.setItem('propertyNickname', value)
+        localStorage.setItem('propertyNickname', value.trim())
       }
     }
   }
@@ -2549,6 +2559,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleCloseEdit = () => {
     setEditModal({ ...editModal, isOpen: false })
+    setModalValue('')
   }
 
   const handleEditAmenities = () => {
@@ -4734,13 +4745,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </label>
                   {editModal.inputType === 'textarea' ? (
                     <textarea
-                      defaultValue={editModal.currentValue}
+                      value={modalValue}
+                      onChange={(e) => setModalValue(e.target.value)}
                       className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
                       autoFocus
                     />
                   ) : editModal.inputType === 'select' ? (
                     <select
-                      defaultValue={editModal.currentValue}
+                      value={modalValue}
+                      onChange={(e) => setModalValue(e.target.value)}
                       className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       autoFocus
                     >
@@ -4763,7 +4776,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   ) : (
                   <input
                     type={editModal.inputType}
-                    defaultValue={editModal.currentValue}
+                    value={modalValue}
+                    onChange={(e) => setModalValue(e.target.value)}
                       className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     autoFocus
                   />
@@ -4779,25 +4793,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </button>
                   <button
                     onClick={() => {
-                      let input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null
+                      console.log(`Saving ${editModal.field} with value: "${modalValue}"`)
                       
-                      if (editModal.inputType === 'textarea') {
-                        input = document.querySelector('textarea') as HTMLTextAreaElement
-                      } else if (editModal.inputType === 'select') {
-                        input = document.querySelector('select') as HTMLSelectElement
+                      // Використовуємо нову функцію для general полів
+                      if (editModal.type === 'general') {
+                        handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, modalValue)
                       } else {
-                        input = document.querySelector('input') as HTMLInputElement
+                        handleSaveEdit(modalValue)
                       }
-                      
-                      if (input) {
-                        // Використовуємо нову функцію для general полів
-                        if (editModal.type === 'general') {
-                          handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, input.value)
-                        } else {
-                        handleSaveEdit(input.value)
-                        }
-                        handleCloseEdit()
-                      }
+                      handleCloseEdit()
                     }}
                     className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
                   >
