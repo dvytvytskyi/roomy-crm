@@ -168,7 +168,7 @@ export default function PropertiesPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Active Properties</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {properties.filter(p => p.status === 'Active' || p.is_active === true).length}
+                    {properties.filter(p => p.status === 'Active' || p.is_active === true || p.status === 'active').length}
                   </p>
                 </div>
               </div>
@@ -182,7 +182,15 @@ export default function PropertiesPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Bedrooms</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {properties.reduce((sum, p) => sum + (parseInt(p.bedrooms || p.beds || '0') || 0), 0)}
+                    {properties.reduce((sum, p) => {
+                      const beds = p.beds || p.bedrooms || '0'
+                      if (typeof beds === 'string') {
+                        // Parse string like "1 double bed • 1 single bed" or just "1"
+                        const match = beds.match(/(\d+)/)
+                        return sum + (match ? parseInt(match[1]) : 0)
+                      }
+                      return sum + (typeof beds === 'number' ? beds : 0)
+                    }, 0)}
                   </p>
                 </div>
               </div>
@@ -196,7 +204,10 @@ export default function PropertiesPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Avg Price/Night</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    AED {properties.length > 0 ? Math.round(properties.reduce((sum, p) => sum + (parseFloat(p.base_price || p.price || '0') || 0), 0) / properties.length) : 0}
+                    AED {properties.length > 0 ? Math.round(properties.reduce((sum, p) => {
+                      const price = p.base_price || p.pricePerNight || p.price || 0
+                      return sum + (typeof price === 'string' ? parseFloat(price) || 0 : price)
+                    }, 0) / properties.length) : 0}
                   </p>
                 </div>
               </div>

@@ -416,25 +416,63 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   console.log('📊 PropertiesTable - properties prop:', properties)
   console.log('📊 PropertiesTable - isLoading:', isLoading)
   console.log('📊 PropertiesTable - filters:', filters)
+  
+  // Log first property structure for debugging
+  if (dataSource.length > 0) {
+    console.log('🔍 First property structure:', dataSource[0])
+    console.log('🔍 Property keys:', Object.keys(dataSource[0]))
+  }
 
   // Helper functions to handle both mock and real data formats
-  const getPropertyName = (property: any) => property.nickname || property.name || 'Unnamed Property'
-  const getPropertyArea = (property: any) => property.area || property.location || property.city || 'Unknown'
-  const getPropertyType = (property: any) => property.property_type || property.type || 'Unknown'
-  const getPropertyBedrooms = (property: any) => {
-    // Handle both string and number formats
-    const beds = property.bedrooms || property.beds || 0
-    return typeof beds === 'string' ? parseInt(beds) || 0 : beds
+  const getPropertyName = (property: any) => {
+    // API format: nickname || name
+    // Mock format: nickname || name
+    return property.nickname || property.name || 'Unnamed Property'
   }
+  
+  const getPropertyArea = (property: any) => {
+    // API format: location
+    // Mock format: area || city
+    return property.location || property.area || property.city || 'Unknown'
+  }
+  
+  const getPropertyType = (property: any) => {
+    // API format: type
+    // Mock format: property_type || type
+    return property.type || property.property_type || 'Unknown'
+  }
+  
+  const getPropertyBedrooms = (property: any) => {
+    // API format: beds (string)
+    // Mock format: bedrooms (number)
+    const beds = property.beds || property.bedrooms || 0
+    if (typeof beds === 'string') {
+      // Parse string like "1 double bed • 1 single bed" or just "1"
+      const match = beds.match(/(\d+)/)
+      return match ? parseInt(match[1]) : 0
+    }
+    return typeof beds === 'number' ? beds : 0
+  }
+  
   const getPropertyMaxGuests = (property: any) => {
-    const guests = property.max_guests || property.capacity || 0
+    // API format: might not have this field
+    // Mock format: max_guests || capacity
+    const guests = property.max_guests || property.capacity || property.maxGuests || 0
     return typeof guests === 'string' ? parseInt(guests) || 0 : guests
   }
+  
   const getPropertyPrice = (property: any) => {
-    const price = property.base_price || property.pricePerNight || property.price || 0
+    // API format: might not have price field
+    // Mock format: base_price || pricePerNight || price
+    const price = property.base_price || property.pricePerNight || property.price || property.pricePerNight || 0
     return typeof price === 'string' ? parseFloat(price) || 0 : price
   }
-  const getPropertyAddress = (property: any) => property.address || 'No address'
+  
+  const getPropertyAddress = (property: any) => {
+    // API format: address
+    // Mock format: address
+    return property.address || 'No address'
+  }
   
   const filteredProperties = dataSource.filter(property => {
     // Use helper functions for consistent data handling
@@ -456,7 +494,8 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
     
     // Property type filter
     if (filters?.propertyTypes && filters.propertyTypes.length > 0) {
-      if (!filters.propertyTypes.includes(type.toLowerCase())) return false
+      const propertyType = type.toLowerCase()
+      if (!filters.propertyTypes.includes(propertyType)) return false
     }
     
     // Area filter

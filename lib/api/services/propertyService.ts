@@ -76,6 +76,15 @@ export class PropertyService {
     try {
       const response = await apiClient.get<Property[]>('/properties');
       console.log('🏠 PropertyService: API Response:', response)
+      
+      if (response.success && response.data) {
+        console.log('🏠 PropertyService: Properties data:', response.data)
+        if (response.data.length > 0) {
+          console.log('🏠 PropertyService: First property structure:', response.data[0])
+          console.log('🏠 PropertyService: First property keys:', Object.keys(response.data[0]))
+        }
+      }
+      
       return response;
     } catch (error) {
       console.error('🏠 PropertyService: Error fetching properties:', error)
