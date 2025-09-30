@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Edit, Calendar, DollarSign, CreditCard, Info, Flag, Mail, Phone, Plus, X, Download, Check, Building, User, ArrowLeft } from 'lucide-react'
 import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
@@ -1947,6 +1947,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     replyData: null
   })
   
+  const [savedReplies, setSavedReplies] = useState<any[]>([])
+  const [syncStatus, setSyncStatus] = useState({ success: true, message: 'Synced with Airbnb, Booking.com, and other channels' })
+  
   // Automation states
   const [autoResponseModal, setAutoResponseModal] = useState({
     isOpen: false,
@@ -2076,17 +2079,85 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   const handleReplyClick = (replyName: string) => {
+    // Find the reply in savedReplies
+    let replyData = null
+    for (const category of savedReplies) {
+      const reply = category.replies?.find((r: any) => r.name === replyName)
+      if (reply) {
+        replyData = reply
+        break
+      }
+    }
+    
     setSavedRepliesModal({
       isOpen: true,
-      type: 'multiple',
+      type: replyData?.category || 'multiple',
       title: `Edit ${replyName}`,
-      replyData: { name: replyName } as any
+      replyData: replyData
     })
   }
 
-  const handleSavedRepliesSave = (data: any) => {
-    console.log('Saved reply:', data)
+  // Функції для роботи з saved replies
+  const loadSavedReplies = useCallback(async () => {
+    try {
+      const { getSavedReplies } = await import('@/lib/api/services/savedRepliesService')
+      const data = await getSavedReplies(params.id)
+      setSavedReplies(data)
+      
+    } catch (error) {
+      console.error('Error loading saved replies:', error)
+    }
+  }, [params.id])
+
+  const handleSavedRepliesSave = async (data: any) => {
+    try {
+      const { updateSavedReply, addSavedReply } = await import('@/lib/api/services/savedRepliesService')
+      
+      if (savedRepliesModal.replyData) {
+        // Update existing reply
+        await updateSavedReply(params.id, (savedRepliesModal.replyData as any).id, data)
+      } else {
+        // Add new reply
+        await addSavedReply(params.id, {
+          name: data.name,
+          content: data.content,
+          category: savedRepliesModal.type as 'single' | 'multiple'
+        })
+      }
+      
+      // Reload saved replies
+      await loadSavedReplies()
+      
     setSavedRepliesModal({ isOpen: false, type: '', title: '', replyData: null })
+      
+    } catch (error) {
+      console.error('Error saving reply:', error)
+    }
+  }
+
+  const handleDeleteReply = async (replyId: string) => {
+    try {
+      const { deleteSavedReply } = await import('@/lib/api/services/savedRepliesService')
+      await deleteSavedReply(params.id, replyId)
+      
+      // Reload saved replies
+      await loadSavedReplies()
+      
+    } catch (error) {
+      console.error('Error deleting reply:', error)
+    }
+  }
+
+  const handleSyncReplies = async () => {
+    try {
+      const { syncSavedReplies } = await import('@/lib/api/services/savedRepliesService')
+      const result = await syncSavedReplies(params.id)
+      setSyncStatus(result)
+      
+    } catch (error) {
+      console.error('Error syncing replies:', error)
+      setSyncStatus({ success: false, message: 'Failed to sync replies' })
+    }
   }
 
   // Automation handlers
@@ -2811,7 +2882,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   // Функції для роботи з фінансовими даними
-  const loadFinancialData = async (dateRange?: { from: string; to: string }) => {
+  const loadFinancialData = useCallback(async (dateRange?: { from: string; to: string }) => {
     try {
       const { financialService } = await import('@/lib/api/services/financialService')
       const data = await financialService.getFinancialData(params.id, dateRange)
@@ -2822,9 +2893,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     } catch (error) {
       console.error('Error loading financial data:', error)
     }
-  }
+  }, [params.id])
 
-  const loadPayments = async (dateRange?: { from: string; to: string }) => {
+  const loadPayments = useCallback(async (dateRange?: { from: string; to: string }) => {
     try {
       const { financialService } = await import('@/lib/api/services/financialService')
       const data = await financialService.getPayments(params.id, dateRange)
@@ -2835,7 +2906,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     } catch (error) {
       console.error('Error loading payments:', error)
     }
-  }
+  }, [params.id])
 
   const handleAddPayment = () => {
     setAddPaymentModal(true)
@@ -2880,13 +2951,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       try {
         await loadFinancialData()
         await loadPayments()
+        await loadSavedReplies()
       } catch (error) {
         console.error('Error loading initial financial data:', error)
       }
     }
     
     loadInitialData()
-  }, [])
+  }, [loadFinancialData, loadPayments, loadSavedReplies])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -3876,7 +3948,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.theSpace}
                         </div>
-                        </div>
+                      </div>
                       
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -3891,7 +3963,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.guestAccess}
                         </div>
-                      </div>
+                    </div>
                       
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -3906,8 +3978,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.neighborhood}
                         </div>
-                    </div>
-                      
+                  </div>
+
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-sm font-medium text-gray-700">Getting around</label>
@@ -3921,8 +3993,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.gettingAround}
                         </div>
-                  </div>
-
+                      </div>
+                      
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-sm font-medium text-gray-700">Other things to note</label>
@@ -3932,12 +4004,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           >
                             <Edit size={16} />
                           </button>
-                        </div>
+                      </div>
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.otherNotes}
-                        </div>
-                      </div>
-                      
+                  </div>
+                </div>
+
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="block text-sm font-medium text-gray-700">Interaction with guests</label>
@@ -3946,12 +4018,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                             className="text-orange-600 hover:text-orange-800 cursor-pointer"
                           >
                             <Edit size={16} />
-                          </button>
-                        </div>
+                    </button>
+                  </div>
                         <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                           {marketingSettings.guestInteraction}
-                        </div>
-                      </div>
+                    </div>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -4050,10 +4122,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
             {activeTab === 'saved-replies' && (
               <div className="space-y-6">
-                {/* Replies for this listing only */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                {savedReplies.map((category: any) => (
+                  <div key={category.id} className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">REPLIES SAVED FOR JUST THIS LISTING</h3>
+                      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{category.name}</h3>
+                      {category.id === 'single' && (
                     <div className="flex space-x-3">
                       <button 
                         onClick={handleAddNewReply}
@@ -4062,62 +4135,53 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         Add a new reply
                       </button>
                     </div>
+                      )}
                   </div>
                   
                   <div className="bg-gray-50 rounded-lg p-4 min-h-[80px] border border-gray-200">
-                    <button 
-                      onClick={() => handleReplyClick('INFO')}
-                      className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      INFO
-                    </button>
-                  </div>
-                </div>
-
-                {/* Replies for multiple listings */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">REPLIES SAVED FOR THIS LISTING AND OTHER LISTINGS</h3>
-                  
+                      {category.replies && category.replies.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
+                          {category.replies.map((reply: any) => (
+                            <div key={reply.id} className="flex items-center space-x-2">
                     <button 
-                      onClick={() => handleReplyClick('AFTER CHECK IN')}
+                                onClick={() => handleReplyClick(reply.name)}
                       className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
                     >
-                      AFTER CHECK IN
+                                {reply.name}
                     </button>
                     <button 
-                      onClick={() => handleReplyClick('AFTER CHECK OUT')}
-                      className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      AFTER CHECK OUT
-                    </button>
-                    <button 
-                      onClick={() => handleReplyClick('BEFORE CHECK OUT')}
-                      className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      BEFORE CHECK OUT
-                    </button>
-                    <button 
-                      onClick={() => handleReplyClick('JUST BOOKED')}
-                      className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      JUST BOOKED
-                    </button>
-                    <button 
-                      onClick={() => handleReplyClick('KEY & CARD')}
-                      className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      KEY & CARD
+                                onClick={() => handleDeleteReply(reply.id)}
+                                className="text-red-500 hover:text-red-700 text-xs cursor-pointer"
+                                title="Delete reply"
+                              >
+                                <X size={12} />
                     </button>
                   </div>
+                          ))}
                 </div>
+                      ) : (
+                        <div className="text-center text-gray-500 text-sm py-4">
+                          No saved replies yet
+                  </div>
+                      )}
+                </div>
+              </div>
+                ))}
 
                 {/* Sync Status */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700">Synced with Airbnb, Booking.com, and other channels</span>
-                  </div>
+                  <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${syncStatus.success ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="text-sm text-gray-700">{syncStatus.message}</span>
+                            </div>
+                            <button 
+                      onClick={handleSyncReplies}
+                      className="px-3 py-1.5 bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200 text-xs font-medium cursor-pointer transition-colors"
+                            >
+                      Sync Now
+                      </button>
+                    </div>
                   <p className="text-xs text-gray-500 mt-2">All saved replies are automatically synchronized with your connected booking platforms.</p>
                 </div>
               </div>
@@ -4657,42 +4721,58 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               </button>
             </div>
             
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target as HTMLFormElement)
+              const name = formData.get('name') as string
+              const content = formData.get('content') as string
+              
+              if (name && content) {
+                handleSavedRepliesSave({ name, content })
+              }
+            }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                 <input
                   type="text"
+                    name="name"
                   defaultValue={(savedRepliesModal.replyData as any)?.name || ''}
                   className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter reply name"
+                    required
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label>
                 <textarea
+                    name="content"
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
                   placeholder="Enter your message template here..."
+                    defaultValue={(savedRepliesModal.replyData as any)?.content || ''}
+                    required
                 />
               </div>
-              
             </div>
             
             <div className="flex justify-end space-x-3 mt-6">
               <button
+                  type="button"
                 onClick={() => setSavedRepliesModal({ isOpen: false, type: '', title: '', replyData: null })}
                 className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleSavedRepliesSave({ type: savedRepliesModal.type })}
+                  type="submit"
                 className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
               >
                 Save
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}
