@@ -19,6 +19,13 @@ export default function PropertiesPage() {
   const [refreshKey, setRefreshKey] = useState(0) // Key to force refresh
   const [properties, setProperties] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [filters, setFilters] = useState({
+    propertyTypes: [] as string[],
+    areas: [] as string[],
+    occupancyRates: [] as string[],
+    maxGuests: [] as string[],
+    bedrooms: [] as string[]
+  })
 
   console.log('🏠 PropertiesPage render - properties:', properties, 'isLoading:', isLoading)
 
@@ -30,6 +37,11 @@ export default function PropertiesPage() {
   const handleShowToast = (message: string) => {
     setToastMessage(message)
     setShowToast(true)
+  }
+
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    console.log('🔍 Filters changed:', newFilters)
+    setFilters(newFilters)
   }
 
   const loadProperties = useCallback(async () => {
@@ -240,6 +252,8 @@ export default function PropertiesPage() {
                   isOpen={true}
                   onClose={() => {}}
                   isSidebar={true}
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
                 />
               </div>
             </div>
@@ -256,6 +270,7 @@ export default function PropertiesPage() {
                 onSelectionChange={setSelectedProperties}
                 properties={properties}
                 isLoading={isLoading}
+                filters={filters}
               />
             </div>
           </div>

@@ -7,9 +7,23 @@ interface PropertiesFiltersProps {
   isOpen: boolean
   onClose: () => void
   isSidebar?: boolean
+  filters?: {
+    propertyTypes: string[]
+    areas: string[]
+    occupancyRates: string[]
+    maxGuests: string[]
+    bedrooms: string[]
+  }
+  onFiltersChange?: (filters: {
+    propertyTypes: string[]
+    areas: string[]
+    occupancyRates: string[]
+    maxGuests: string[]
+    bedrooms: string[]
+  }) => void
 }
 
-export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }: PropertiesFiltersProps) {
+export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, filters, onFiltersChange }: PropertiesFiltersProps) {
   const [openSections, setOpenSections] = useState({
     propertyType: true,
     area: true,
@@ -18,11 +32,46 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
     bedrooms: true
   })
 
+  // Local state for filters
+  const [localFilters, setLocalFilters] = useState({
+    propertyTypes: filters?.propertyTypes || [],
+    areas: filters?.areas || [],
+    occupancyRates: filters?.occupancyRates || [],
+    maxGuests: filters?.maxGuests || [],
+    bedrooms: filters?.bedrooms || []
+  })
+
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
+  }
+
+  const handleFilterChange = (filterType: keyof typeof localFilters, value: string) => {
+    const newFilters = { ...localFilters }
+    const currentValues = newFilters[filterType]
+    
+    if (currentValues.includes(value)) {
+      newFilters[filterType] = currentValues.filter(v => v !== value)
+    } else {
+      newFilters[filterType] = [...currentValues, value]
+    }
+    
+    setLocalFilters(newFilters)
+    onFiltersChange?.(newFilters)
+  }
+
+  const clearAllFilters = () => {
+    const clearedFilters = {
+      propertyTypes: [],
+      areas: [],
+      occupancyRates: [],
+      maxGuests: [],
+      bedrooms: []
+    }
+    setLocalFilters(clearedFilters)
+    onFiltersChange?.(clearedFilters)
   }
 
   if (!isOpen) return null
@@ -47,6 +96,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.propertyTypes.includes('apartment')}
+              onChange={() => handleFilterChange('propertyTypes', 'apartment')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">Apartment</span>
@@ -54,6 +105,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.propertyTypes.includes('villa')}
+              onChange={() => handleFilterChange('propertyTypes', 'villa')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">Villa</span>
@@ -61,6 +114,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.propertyTypes.includes('penthouse')}
+              onChange={() => handleFilterChange('propertyTypes', 'penthouse')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">Penthouse</span>
@@ -68,6 +123,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.propertyTypes.includes('studio')}
+              onChange={() => handleFilterChange('propertyTypes', 'studio')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">Studio</span>
@@ -559,10 +616,16 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false }
 
       {!isSidebar && (
         <div className="flex space-x-3 pt-4">
-          <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <button 
+            onClick={onClose}
+            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
             Apply Filter
           </button>
-          <button className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 hover:border-orange-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
+          <button 
+            onClick={clearAllFilters}
+            className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 hover:border-orange-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium"
+          >
             Clear
           </button>
         </div>

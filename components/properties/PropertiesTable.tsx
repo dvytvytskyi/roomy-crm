@@ -10,6 +10,13 @@ interface PropertiesTableProps {
   onSelectionChange: (selected: number[]) => void
   properties?: any[]
   isLoading?: boolean
+  filters?: {
+    propertyTypes: string[]
+    areas: string[]
+    occupancyRates: string[]
+    maxGuests: string[]
+    bedrooms: string[]
+  }
 }
 
 // Mock data for properties
@@ -398,7 +405,7 @@ const mockProperties = [
   }
 ]
 
-export default function PropertiesTable({ searchTerm, onEditProperty, selectedProperties, onSelectionChange, properties, isLoading }: PropertiesTableProps) {
+export default function PropertiesTable({ searchTerm, onEditProperty, selectedProperties, onSelectionChange, properties, isLoading, filters }: PropertiesTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
@@ -424,13 +431,71 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
     const area = property.area || property.city || ''
     const type = property.property_type || property.type || ''
     const price = property.base_price || property.pricePerNight || 0
+    const bedrooms = property.bedrooms || 0
+    const maxGuests = property.max_guests || property.capacity || 0
+    const occupancyRate = property.occupancy_rate || 0
     
+    // Search filter
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       area.toLowerCase().includes(searchTerm.toLowerCase()) ||
       type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       price.toString().includes(searchTerm)
     
-    return matchesSearch
+    if (!matchesSearch) return false
+    
+    // Property type filter
+    if (filters?.propertyTypes && filters.propertyTypes.length > 0) {
+      if (!filters.propertyTypes.includes(type.toLowerCase())) return false
+    }
+    
+    // Area filter
+    if (filters?.areas && filters.areas.length > 0) {
+      if (!filters.areas.includes(area)) return false
+    }
+    
+    // Bedrooms filter
+    if (filters?.bedrooms && filters.bedrooms.length > 0) {
+      const bedroomMatch = filters.bedrooms.some(filter => {
+        switch (filter) {
+          case 'studio': return bedrooms === 0
+          case '1': return bedrooms === 1
+          case '2': return bedrooms === 2
+          case '3': return bedrooms === 3
+          case '4+': return bedrooms >= 4
+          default: return false
+        }
+      })
+      if (!bedroomMatch) return false
+    }
+    
+    // Max guests filter
+    if (filters?.maxGuests && filters.maxGuests.length > 0) {
+      const guestMatch = filters.maxGuests.some(filter => {
+        switch (filter) {
+          case '1-2': return maxGuests >= 1 && maxGuests <= 2
+          case '3-4': return maxGuests >= 3 && maxGuests <= 4
+          case '5-6': return maxGuests >= 5 && maxGuests <= 6
+          case '7+': return maxGuests >= 7
+          default: return false
+        }
+      })
+      if (!guestMatch) return false
+    }
+    
+    // Occupancy rate filter
+    if (filters?.occupancyRates && filters.occupancyRates.length > 0) {
+      const occupancyMatch = filters.occupancyRates.some(filter => {
+        switch (filter) {
+          case 'high': return occupancyRate >= 80
+          case 'medium': return occupancyRate >= 50 && occupancyRate < 80
+          case 'low': return occupancyRate < 50
+          default: return false
+        }
+      })
+      if (!occupancyMatch) return false
+    }
+    
+    return true
   })
 
   const sortedProperties = filteredProperties.sort((a, b) => {
