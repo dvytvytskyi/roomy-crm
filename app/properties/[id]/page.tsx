@@ -1897,6 +1897,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     method: 'Credit Card'
   })
 
+  // Description state
+  const [description, setDescription] = useState(() => {
+    const saved = localStorage.getItem(`propertyDescription_${params.id}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved description:', error)
+      }
+    }
+    return 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid\'s quarters for added convenience and opulence.'
+  })
+
   // Financial Data State
   const [financialData, setFinancialData] = useState(() => {
     const saved = localStorage.getItem(`financialData_${params.id}`)
@@ -2433,6 +2446,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         // Зберігаємо в localStorage
         localStorage.setItem('propertyNickname', newValue)
       }
+    
+    // Оновлюємо description якщо це поле description
+    if (editModal.field === 'description') {
+      await handleSaveDescription(newValue)
+    }
       
       // Оновлюємо поля General Information
       if (editModal.type === 'general') {
@@ -3066,6 +3084,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
+  // Handle description save
+  const handleSaveDescription = async (newDescription: string) => {
+    try {
+      setDescription(newDescription)
+      localStorage.setItem(`propertyDescription_${params.id}`, JSON.stringify(newDescription))
+      console.log('Description saved successfully')
+    } catch (error) {
+      console.error('Error saving description:', error)
+    }
+  }
+
 
   // Очищуємо тестові дані при завантаженні
   useEffect(() => {
@@ -3408,10 +3437,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Description</h2>
                   <div className="flex items-start justify-between">
                     <div className="flex-1 pr-4">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid&apos;s quarters for added convenience and opulence.</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{description}</p>
                     </div>
                     <button 
-                      onClick={() => handleEditField('description', 'textarea', 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid&apos;s quarters for added convenience and opulence.', 'Description')}
+                      onClick={() => handleEditField('description', 'textarea', description, 'Description')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={16} />
