@@ -1653,10 +1653,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // General Information State
   const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
     // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedInfo = localStorage.getItem('propertyGeneralInfo')
+    const savedInfo = localStorage.getItem(`propertyGeneralInfo_${params.id}`)
+    console.log('Loading property general info from localStorage:', savedInfo)
     if (savedInfo) {
       try {
-        return JSON.parse(savedInfo)
+        const parsed = JSON.parse(savedInfo)
+        console.log('Parsed property general info:', parsed)
+        return parsed
       } catch (error) {
         console.error('Error parsing saved property info:', error)
       }
@@ -2439,6 +2442,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleSaveEdit = async (newValue: string) => {
     try {
     console.log(`Saving ${editModal.field}: ${newValue}`)
+    console.log('Edit modal type:', editModal.type)
     
     // Оновлюємо нікнейм якщо це поле nickname
     if (editModal.field === 'nickname') {
@@ -2454,6 +2458,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Оновлюємо поля General Information
       if (editModal.type === 'general') {
+        console.log('Updating general info field:', editModal.field, 'with value:', newValue)
         const updatedInfo = {
           ...propertyGeneralInfo,
           [editModal.field]: newValue
@@ -2461,7 +2466,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         setPropertyGeneralInfo(updatedInfo)
         
         // Зберігаємо в localStorage
-        localStorage.setItem('propertyGeneralInfo', JSON.stringify(updatedInfo))
+        localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+        console.log('General info saved to localStorage:', updatedInfo)
         
         // Відправляємо на сервер (симуляція API виклику)
         try {
@@ -3087,9 +3093,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Handle description save
   const handleSaveDescription = async (newDescription: string) => {
     try {
+      console.log('handleSaveDescription called with:', newDescription)
       setDescription(newDescription)
       localStorage.setItem(`propertyDescription_${params.id}`, JSON.stringify(newDescription))
-      console.log('Description saved successfully')
+      console.log('Description saved successfully to localStorage')
     } catch (error) {
       console.error('Error saving description:', error)
     }
@@ -3440,7 +3447,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{description}</p>
                     </div>
                     <button 
-                      onClick={() => handleEditField('description', 'textarea', description, 'Description')}
+                      onClick={() => handleEditField('description', 'description', description, 'Description', 'textarea')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={16} />
