@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import { API_ENDPOINTS, ApiResponse } from '../config';
+import { API_ENDPOINTS, ApiResponse, API_CONFIG } from '../config';
 
 export interface Property {
   id: string;
@@ -76,6 +76,14 @@ export class PropertyService {
     console.log('🏠 PropertyService: API Base URL:', API_CONFIG.BASE_URL)
     console.log('🏠 PropertyService: Full endpoint:', `${API_CONFIG.BASE_URL}/properties`)
     
+    // Check if user is authenticated
+    const isAuthenticated = apiClient.isAuthenticated()
+    console.log('🏠 PropertyService: User authenticated:', isAuthenticated)
+    
+    if (!isAuthenticated) {
+      console.log('🏠 PropertyService: User not authenticated, trying to get properties without auth...')
+    }
+    
     try {
       const response = await apiClient.get<Property[]>('/properties');
       console.log('🏠 PropertyService: Raw API Response:', response)
@@ -102,6 +110,30 @@ export class PropertyService {
       console.error('🏠 PropertyService: Error fetching properties:', error)
       console.error('🏠 PropertyService: Error type:', typeof error)
       console.error('🏠 PropertyService: Error message:', error instanceof Error ? error.message : 'Unknown error')
+      
+      // If it's a 401 error, try without authentication
+      if (error instanceof Error && error.message.includes('401')) {
+        console.log('🏠 PropertyService: 401 error detected, trying without auth...')
+        try {
+          const response = await fetch(`${API_CONFIG.BASE_URL}/properties`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            console.log('🏠 PropertyService: Success without auth:', data)
+            return {
+              success: true,
+              data: data.data || data,
+            }
+          }
+        } catch (noAuthError) {
+          console.error('🏠 PropertyService: Even without auth failed:', noAuthError)
+        }
+      }
       
       // Return empty array on error to prevent crashes
       return {
