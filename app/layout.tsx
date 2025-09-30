@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import ApiStatus from '../components/ApiStatus'
+import ClientAuthGuard from '../components/ClientAuthGuard'
 
 export const metadata: Metadata = {
   title: 'Roomy CRM - Property Management',
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <ClientAuthGuard>
+          {children}
+        </ClientAuthGuard>
+        <ApiStatus />
+      </body>
     </html>
   )
 }

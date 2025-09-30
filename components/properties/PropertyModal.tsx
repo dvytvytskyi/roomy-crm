@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { X, Save, Home, MapPin, User, DollarSign } from 'lucide-react'
+import { propertyService } from '../../lib/api'
 
 interface PropertyModalProps {
   isOpen: boolean
   onClose: () => void
   property?: any
   onShowToast?: (message: string) => void
+  onPropertyCreated?: () => void // Callback to refresh the list
 }
 
-export default function PropertyModal({ isOpen, onClose, property, onShowToast }: PropertyModalProps) {
+export default function PropertyModal({ isOpen, onClose, property, onShowToast, onPropertyCreated }: PropertyModalProps) {
   const [formData, setFormData] = useState({
     nickname: '',
     type: 'apartment',
@@ -20,7 +22,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast }
     owner_name: '',
     owner_email: '',
     owner_phone: '',
-    price_per_night: 0,
+    price_per_night: 100, // Default to 100 AED instead of 0
     status: 'active'
   })
 
@@ -106,36 +108,43 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast }
   const propertyName = `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} in ${formData.location} ${formData.bedrooms} bedroom${formData.bedrooms !== 1 ? 's' : ''}`
 
   useEffect(() => {
-    if (property) {
-      setFormData({
-        nickname: property.nickname || '',
-        type: property.type || 'apartment',
-        location: property.location || '',
-        address: property.address || '',
-        bedrooms: property.bedrooms || 1,
-        owner_name: property.owner_name || '',
-        owner_email: property.owner_email || '',
-        owner_phone: property.owner_phone || '',
-        price_per_night: property.price_per_night || 0,
-        status: property.status || 'active'
-      })
-    } else {
-      setFormData({
-        nickname: '',
-        type: 'apartment',
-        location: '',
-        address: '',
-        bedrooms: 1,
-        owner_name: '',
-        owner_email: '',
-        owner_phone: '',
-        price_per_night: 0,
-        status: 'active'
-      })
+    console.log('🔄 PropertyModal useEffect - isOpen:', isOpen, 'property:', property)
+    if (isOpen) {
+      if (property) {
+        // Editing existing property
+        console.log('📝 Editing existing property, setting form data')
+        setFormData({
+          nickname: property.nickname || '',
+          type: property.type || 'apartment',
+          location: property.location || '',
+          address: property.address || '',
+          bedrooms: property.bedrooms || 1,
+          owner_name: property.owner_name || '',
+          owner_email: property.owner_email || '',
+          owner_phone: property.owner_phone || '',
+          price_per_night: property.price_per_night || 100,
+          status: property.status || 'active'
+        })
+      } else {
+        // Creating new property - reset form
+        console.log('🆕 Creating new property, resetting form')
+        setFormData({
+          nickname: '',
+          type: 'apartment',
+          location: '',
+          address: '',
+          bedrooms: 1,
+          owner_name: '',
+          owner_email: '',
+          owner_phone: '',
+          price_per_night: 100,
+          status: 'active'
+        })
+      }
     }
-  }, [property])
+  }, [isOpen, property]) // Added isOpen to dependencies
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Validation: at least one contact method for owner
@@ -144,28 +153,85 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast }
       return
     }
     
-    // Create final property data with generated name
-    const finalPropertyData = {
-      ...formData,
-      name: propertyName, // Auto-generated name
-      nickname: formData.nickname || propertyName // Use nickname if provided, otherwise use generated name
+    // Validation: price must be greater than 0
+    if (!formData.price_per_night || formData.price_per_night <= 0) {
+      alert('Please enter a valid price per night (must be greater than 0).')
+      return
     }
     
-    // Handle form submission
-    console.log('Property data:', finalPropertyData)
-    
-    // Show success message
-    const successMessage = property 
-      ? `Property "${formData.nickname || propertyName}" updated successfully!`
-      : `Property "${formData.nickname || propertyName}" created successfully!`
-    
-    // Show toast notification
-    if (onShowToast) {
-      onShowToast(successMessage)
+    // Validation: address is required
+    if (!formData.address.trim()) {
+      alert('Please enter a valid address.')
+      return
     }
     
-    // Close modal
-    onClose()
+    try {
+      // Create final property data with generated name
+      const finalPropertyData = {
+        name: propertyName, // Auto-generated name
+        type: formData.type.toUpperCase(), // Convert to uppercase for backend
+        address: formData.address,
+        city: 'Dubai', // Default city
+        country: 'UAE', // Default country
+        capacity: 4, // Default capacity
+        bedrooms: formData.bedrooms,
+        bathrooms: 2, // Default bathrooms
+        area: 100, // Default area
+        pricePerNight: formData.price_per_night,
+        description: `Property in ${formData.location}`,
+        amenities: []
+        // Remove houseRules field entirely - backend will use default
+      }
+      
+      console.log('Property data:', finalPropertyData)
+      
+      // Send to backend
+      const response = await propertyService.createProperty(finalPropertyData)
+      
+      if (response.success) {
+        // Show success message
+        const successMessage = property 
+          ? `Property "${formData.nickname || propertyName}" updated successfully!`
+          : `Property "${formData.nickname || propertyName}" created successfully!`
+        
+        // Show toast notification
+        if (onShowToast) {
+          onShowToast(successMessage)
+        }
+        
+        // Refresh the properties list
+        if (onPropertyCreated) {
+          onPropertyCreated()
+        }
+        
+        // Reset form for next use
+        setFormData({
+          nickname: '',
+          type: 'apartment',
+          location: '',
+          address: '',
+          bedrooms: 1,
+          owner_name: '',
+          owner_email: '',
+          owner_phone: '',
+          price_per_night: 100,
+          status: 'active'
+        })
+        
+        // Close modal
+        onClose()
+      } else {
+        // Show error message
+        if (onShowToast) {
+          onShowToast(`Error: ${response.error?.message || 'Failed to create property'}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error creating property:', error)
+      if (onShowToast) {
+        onShowToast(`Error: ${error instanceof Error ? error.message : 'Failed to create property'}`)
+      }
+    }
   }
 
   if (!isOpen) return null
@@ -366,11 +432,11 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast }
                     </label>
                     <input
                       type="number"
-                      min="0"
+                      min="1"
                       value={formData.price_per_night}
-                      onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: parseInt(e.target.value) || 0 }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price_per_night: parseInt(e.target.value) || 1 }))}
                       className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="0"
+                      placeholder="100"
                     />
                   </div>
 

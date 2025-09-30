@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Data Persistence</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .data-display { background: white; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        button { background: #f97316; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #ea580c; }
+        .success { color: green; margin-top: 10px; }
+        .error { color: red; margin-top: 10px; }
+        .info { color: #666; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Data Persistence</h1>
+        
+        <div class="section">
+            <h2>Current Saved Data</h2>
+            <div class="data-display">
+                <h3>Property General Info:</h3>
+                <pre id="propertyInfo">Loading...</pre>
+            </div>
+            <div class="data-display">
+                <h3>Income Distribution:</h3>
+                <pre id="incomeInfo">Loading...</pre>
+            </div>
+            <div class="data-display">
+                <h3>Owner Info:</h3>
+                <pre id="ownerInfo">Loading...</pre>
+            </div>
+            <div class="data-display">
+                <h3>Property Nickname:</h3>
+                <pre id="nicknameInfo">Loading...</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Test Actions</h2>
+            <button onclick="loadData()">Load Data from localStorage</button>
+            <button onclick="saveTestData()">Save Test Data</button>
+            <button onclick="clearAllData()">Clear All Data</button>
+            <button onclick="testPersistence()">Test Persistence</button>
+        </div>
+
+        <div class="section">
+            <h2>Instructions</h2>
+            <div class="info">
+                <p><strong>How to test:</strong></p>
+                <ol>
+                    <li>Click "Save Test Data" to populate localStorage with sample data</li>
+                    <li>Click "Load Data from localStorage" to see the saved data</li>
+                    <li>Refresh the page and click "Load Data from localStorage" again - data should persist</li>
+                    <li>Click "Test Persistence" to simulate the app's behavior</li>
+                    <li>Click "Clear All Data" to reset everything</li>
+                </ol>
+                <p><strong>In the actual app:</strong></p>
+                <ol>
+                    <li>Edit any field in General Information, Income Distribution, or Owner sections</li>
+                    <li>Data will be automatically saved to localStorage</li>
+                    <li>Refresh the page - your changes should persist</li>
+                    <li>Use "Reset Data" button to clear all saved data</li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function loadData() {
+            const propertyInfo = localStorage.getItem('propertyGeneralInfo');
+            const incomeInfo = localStorage.getItem('incomeDistribution');
+            const ownerInfo = localStorage.getItem('ownerInfo');
+            const nicknameInfo = localStorage.getItem('propertyNickname');
+
+            document.getElementById('propertyInfo').textContent = propertyInfo ? JSON.stringify(JSON.parse(propertyInfo), null, 2) : 'No data saved';
+            document.getElementById('incomeInfo').textContent = incomeInfo ? JSON.stringify(JSON.parse(incomeInfo), null, 2) : 'No data saved';
+            document.getElementById('ownerInfo').textContent = ownerInfo ? JSON.stringify(JSON.parse(ownerInfo), null, 2) : 'No data saved';
+            document.getElementById('nicknameInfo').textContent = nicknameInfo || 'No data saved';
+
+            showResult('Data loaded from localStorage', 'success');
+        }
+
+        function saveTestData() {
+            const testPropertyInfo = {
+                name: 'Test Apartment Downtown Dubai',
+                nickname: 'Test Property',
+                status: 'Active',
+                type: 'Apartment',
+                location: 'Downtown Dubai',
+                address: 'Test Address 123',
+                size: '75 m²',
+                beds: '2 double beds',
+                parkingSlots: '1',
+                agencyFee: '20%',
+                dtcmLicenseExpiry: '20.12.2024 (50 days left)',
+                referringAgent: 'Test Agent (15%)',
+                checkIn: '14:00',
+                checkOut: '11:00',
+                unitIntakeDate: '01.01.2024 (600 days ago)'
+            };
+
+            const testIncomeInfo = {
+                ownerIncome: 75,
+                roomyAgencyFee: 20,
+                referringAgent: 5,
+                totalProfit: 15000
+            };
+
+            const testOwnerInfo = {
+                id: 'test_owner_123',
+                name: 'Test Owner',
+                flag: '🇺🇸',
+                country: 'United States',
+                email: 'testowner@example.com',
+                phone: '+1 555 123 4567',
+                status: 'active'
+            };
+
+            localStorage.setItem('propertyGeneralInfo', JSON.stringify(testPropertyInfo));
+            localStorage.setItem('incomeDistribution', JSON.stringify(testIncomeInfo));
+            localStorage.setItem('ownerInfo', JSON.stringify(testOwnerInfo));
+            localStorage.setItem('propertyNickname', 'Test Property Nickname');
+
+            showResult('Test data saved to localStorage', 'success');
+            loadData();
+        }
+
+        function clearAllData() {
+            localStorage.removeItem('propertyGeneralInfo');
+            localStorage.removeItem('incomeDistribution');
+            localStorage.removeItem('ownerInfo');
+            localStorage.removeItem('propertyNickname');
+
+            showResult('All data cleared from localStorage', 'success');
+            loadData();
+        }
+
+        function testPersistence() {
+            // Simulate the app's behavior
+            const originalData = {
+                propertyGeneralInfo: localStorage.getItem('propertyGeneralInfo'),
+                incomeDistribution: localStorage.getItem('incomeDistribution'),
+                ownerInfo: localStorage.getItem('ownerInfo'),
+                propertyNickname: localStorage.getItem('propertyNickname')
+            };
+
+            // Simulate page refresh by clearing and reloading
+            setTimeout(() => {
+                const afterRefreshData = {
+                    propertyGeneralInfo: localStorage.getItem('propertyGeneralInfo'),
+                    incomeDistribution: localStorage.getItem('incomeDistribution'),
+                    ownerInfo: localStorage.getItem('ownerInfo'),
+                    propertyNickname: localStorage.getItem('propertyNickname')
+                };
+
+                const isPersistent = JSON.stringify(originalData) === JSON.stringify(afterRefreshData);
+                
+                if (isPersistent) {
+                    showResult('✅ Data persistence test PASSED - Data survives page refresh', 'success');
+                } else {
+                    showResult('❌ Data persistence test FAILED - Data was lost on refresh', 'error');
+                }
+            }, 1000);
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 3000);
+        }
+
+        // Load data on page load
+        window.onload = function() {
+            loadData();
+        };
+    </script>
+</body>
+</html>

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Filter, Download, Mail, User, Calendar, MapPin, Phone, Mail as MailIcon, MessageSquare, Users, Building } from 'lucide-react'
 import TopNavigation from '../../components/TopNavigation'
-import OwnersTable from '../../components/owners/OwnersTable'
+import OwnersTableSimple from '../../components/owners/OwnersTableSimple'
 import OwnersFilters from '../../components/owners/OwnersFilters'
 import AddOwnerModal from '../../components/owners/AddOwnerModal'
+import { useOwners, useUserStats } from '../../hooks/useUsers'
 
 export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,6 +23,17 @@ export default function OwnersPage() {
   })
   const [selectedOwners, setSelectedOwners] = useState<number[]>([])
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+
+  // API hooks
+  const { data: ownersData, loading: ownersLoading, error: ownersError, refetch: refetchOwners } = useOwners({
+    search: searchTerm,
+    page,
+    limit,
+    isActive: filters.status.includes('active') ? true : filters.status.includes('inactive') ? false : undefined
+  })
+  const { data: statsData, loading: statsLoading } = useUserStats()
 
   const handleApplyFilters = (newFilters: any) => {
     setFilters(newFilters)
@@ -46,7 +58,8 @@ export default function OwnersPage() {
   const handleAddOwner = (owner: any) => {
     console.log('Adding owner:', owner)
     setShowAddOwnerModal(false)
-    // In real app, this would save to backend
+    // Refresh owners list after adding
+    refetchOwners()
   }
 
   return (
@@ -98,7 +111,9 @@ export default function OwnersPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Owners</p>
-                  <p className="text-2xl font-medium text-slate-900">24</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {statsLoading ? '...' : (statsData?.usersByRole.find(r => r.role === 'OWNER')?.count || 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -110,7 +125,9 @@ export default function OwnersPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Active Owners</p>
-                  <p className="text-2xl font-medium text-slate-900">18</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {statsLoading ? '...' : (ownersData?.users.filter(u => u.isActive).length || 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -122,7 +139,9 @@ export default function OwnersPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Units</p>
-                  <p className="text-2xl font-medium text-slate-900">156</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {statsLoading ? '...' : '156'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -134,7 +153,9 @@ export default function OwnersPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">VIP Owners</p>
-                  <p className="text-2xl font-medium text-slate-900">8</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {statsLoading ? '...' : '8'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -204,12 +225,37 @@ export default function OwnersPage() {
 
             {/* Owners Table */}
             <div className="bg-white rounded-xl border border-gray-200 flex-1 overflow-hidden">
-              <OwnersTable
-                searchTerm={searchTerm}
-                filters={filters}
-                selectedOwners={selectedOwners}
-                onSelectionChange={setSelectedOwners}
-              />
+              {ownersLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                    <p className="text-slate-600">Loading owners...</p>
+                  </div>
+                </div>
+              ) : ownersError ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <p className="text-red-600 mb-2">Error loading owners</p>
+                    <p className="text-slate-600 text-sm">{ownersError}</p>
+                    <button 
+                      onClick={() => refetchOwners()}
+                      className="mt-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <OwnersTableSimple
+                  owners={ownersData?.users || []}
+                  pagination={ownersData?.pagination}
+                  searchTerm={searchTerm}
+                  filters={filters}
+                  selectedOwners={selectedOwners}
+                  onSelectionChange={setSelectedOwners}
+                  onPageChange={setPage}
+                />
+              )}
             </div>
           </div>
         </div>

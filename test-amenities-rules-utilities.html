@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amenities, Rules & Utilities Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #333;
+            border-bottom: 2px solid #ff6b35;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .item:hover {
+            border-color: #ff6b35;
+            background: #fff5f0;
+        }
+        .item.selected {
+            background: #fff5f0;
+            border-color: #ff6b35;
+        }
+        .add-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .add-form input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #ff6b35;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #e55a2b;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .utility-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+        }
+        .utility-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .utility-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stats {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .checkbox {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Amenities, Rules & Utilities Management Test</h1>
+        <p>Тестування функціональності управління зручностями, правилами та комунальними послугами</p>
+        
+        <div class="stats">
+            <strong>Статистика:</strong>
+            <span id="amenities-count">0</span> amenities, 
+            <span id="rules-count">0</span> rules, 
+            <span id="utilities-count">0</span> utilities
+        </div>
+    </div>
+
+    <!-- Amenities Section -->
+    <div class="container">
+        <div class="section">
+            <h2>Amenities</h2>
+            
+            <div class="add-form">
+                <h3>Add New Amenity</h3>
+                <input type="text" id="newAmenity" placeholder="Enter new amenity...">
+                <button class="btn btn-primary" onclick="addAmenity()">Add Amenity</button>
+            </div>
+
+            <div class="grid" id="amenitiesGrid">
+                <!-- Amenities will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Section -->
+    <div class="container">
+        <div class="section">
+            <h2>Rules</h2>
+            
+            <div class="add-form">
+                <h3>Add New Rule</h3>
+                <input type="text" id="newRule" placeholder="Enter new rule...">
+                <button class="btn btn-primary" onclick="addRule()">Add Rule</button>
+            </div>
+
+            <div class="grid" id="rulesGrid">
+                <!-- Rules will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Utilities Section -->
+    <div class="container">
+        <div class="section">
+            <h2>Utilities</h2>
+            
+            <div class="add-form">
+                <h3>Add New Utility</h3>
+                <input type="text" id="newUtilityTitle" placeholder="Utility title...">
+                <input type="text" id="newUtilityDesc" placeholder="Utility description...">
+                <button class="btn btn-primary" onclick="addUtility()">Add Utility</button>
+            </div>
+
+            <div id="utilitiesList">
+                <!-- Utilities will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PropertyManager {
+            constructor() {
+                this.amenities = this.loadFromStorage('amenities') || [
+                    'Air conditioning', 'WiFi', 'Pool', 'Parking', 
+                    'Kitchen', 'TV', 'Gym', 'Balcony'
+                ];
+                this.selectedAmenities = this.loadFromStorage('selectedAmenities') || [
+                    'Air conditioning', 'WiFi', 'Pool', 'Parking'
+                ];
+                
+                this.rules = this.loadFromStorage('rules') || [
+                    'No smoking', 'No pets', 'No parties', 'Quiet hours'
+                ];
+                this.selectedRules = this.loadFromStorage('selectedRules') || [
+                    'No smoking', 'No pets', 'No parties'
+                ];
+                
+                this.utilities = this.loadFromStorage('utilities') || [
+                    { title: 'Electricity', description: 'Monthly electricity bill' },
+                    { title: 'Water', description: 'Monthly water bill' },
+                    { title: 'Internet', description: 'Monthly internet subscription' }
+                ];
+                
+                this.render();
+            }
+
+            loadFromStorage(key) {
+                const saved = localStorage.getItem(key);
+                return saved ? JSON.parse(saved) : null;
+            }
+
+            saveToStorage(key, data) {
+                localStorage.setItem(key, JSON.stringify(data));
+            }
+
+            // Amenities
+            addAmenity() {
+                const input = document.getElementById('newAmenity');
+                const value = input.value.trim();
+                if (value && !this.amenities.includes(value)) {
+                    this.amenities.push(value);
+                    this.saveToStorage('amenities', this.amenities);
+                    this.render();
+                    input.value = '';
+                }
+            }
+
+            toggleAmenity(amenity) {
+                if (this.selectedAmenities.includes(amenity)) {
+                    this.selectedAmenities = this.selectedAmenities.filter(a => a !== amenity);
+                } else {
+                    this.selectedAmenities.push(amenity);
+                }
+                this.saveToStorage('selectedAmenities', this.selectedAmenities);
+                this.render();
+            }
+
+            // Rules
+            addRule() {
+                const input = document.getElementById('newRule');
+                const value = input.value.trim();
+                if (value && !this.rules.includes(value)) {
+                    this.rules.push(value);
+                    this.saveToStorage('rules', this.rules);
+                    this.render();
+                    input.value = '';
+                }
+            }
+
+            toggleRule(rule) {
+                if (this.selectedRules.includes(rule)) {
+                    this.selectedRules = this.selectedRules.filter(r => r !== rule);
+                } else {
+                    this.selectedRules.push(rule);
+                }
+                this.saveToStorage('selectedRules', this.selectedRules);
+                this.render();
+            }
+
+            // Utilities
+            addUtility() {
+                const titleInput = document.getElementById('newUtilityTitle');
+                const descInput = document.getElementById('newUtilityDesc');
+                const title = titleInput.value.trim();
+                const description = descInput.value.trim();
+                
+                if (title) {
+                    this.utilities.push({ title, description });
+                    this.saveToStorage('utilities', this.utilities);
+                    this.render();
+                    titleInput.value = '';
+                    descInput.value = '';
+                }
+            }
+
+            updateUtility(index, field, value) {
+                this.utilities[index][field] = value;
+                this.saveToStorage('utilities', this.utilities);
+                this.render();
+            }
+
+            deleteUtility(index) {
+                this.utilities.splice(index, 1);
+                this.saveToStorage('utilities', this.utilities);
+                this.render();
+            }
+
+            render() {
+                this.renderAmenities();
+                this.renderRules();
+                this.renderUtilities();
+                this.updateStats();
+            }
+
+            renderAmenities() {
+                const grid = document.getElementById('amenitiesGrid');
+                grid.innerHTML = this.amenities.map(amenity => `
+                    <div class="item ${this.selectedAmenities.includes(amenity) ? 'selected' : ''}" 
+                         onclick="propertyManager.toggleAmenity('${amenity}')">
+                        <input type="checkbox" class="checkbox" 
+                               ${this.selectedAmenities.includes(amenity) ? 'checked' : ''}>
+                        <span>${amenity}</span>
+                    </div>
+                `).join('');
+            }
+
+            renderRules() {
+                const grid = document.getElementById('rulesGrid');
+                grid.innerHTML = this.rules.map(rule => `
+                    <div class="item ${this.selectedRules.includes(rule) ? 'selected' : ''}" 
+                         onclick="propertyManager.toggleRule('${rule}')">
+                        <input type="checkbox" class="checkbox" 
+                               ${this.selectedRules.includes(rule) ? 'checked' : ''}>
+                        <span>${rule}</span>
+                    </div>
+                `).join('');
+            }
+
+            renderUtilities() {
+                const list = document.getElementById('utilitiesList');
+                list.innerHTML = this.utilities.map((utility, index) => `
+                    <div class="utility-item">
+                        <input type="text" value="${utility.title}" 
+                               onchange="propertyManager.updateUtility(${index}, 'title', this.value)">
+                        <input type="text" value="${utility.description}" 
+                               onchange="propertyManager.updateUtility(${index}, 'description', this.value)">
+                        <div class="utility-actions">
+                            <button class="btn btn-danger" onclick="propertyManager.deleteUtility(${index})">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                document.getElementById('amenities-count').textContent = this.selectedAmenities.length;
+                document.getElementById('rules-count').textContent = this.selectedRules.length;
+                document.getElementById('utilities-count').textContent = this.utilities.length;
+            }
+        }
+
+        // Global functions for HTML onclick handlers
+        function addAmenity() {
+            propertyManager.addAmenity();
+        }
+
+        function addRule() {
+            propertyManager.addRule();
+        }
+
+        function addUtility() {
+            propertyManager.addUtility();
+        }
+
+        // Initialize
+        const propertyManager = new PropertyManager();
+    </script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { X, User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, Upload, Plus, Minus } from 'lucide-react'
+import { userService } from '@/lib/api/services/userService'
+import { getCountryFlag } from '@/lib/utils/countryFlags'
 
 interface AddOwnerModalProps {
   onClose: () => void
@@ -142,23 +144,59 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
     setIsSubmitting(true)
 
     try {
-      // In real app, this would make an API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // Prepare data for API
       const ownerData = {
-        ...formData,
-        commentsHistory,
-        id: Date.now(), // In real app, this would come from the backend
-        reservationCount: 0,
-        totalUnits: formData.units.length,
-        vipStatus: formData.status === 'VIP',
-        createdAt: new Date().toISOString(),
-        createdBy: 'Current User'
+        firstName: formData.name.split(' ')[0] || formData.name,
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        email: formData.email,
+        phone: formData.phone,
+        role: 'OWNER' as const,
+        nationality: formData.nationality,
+        dateOfBirth: formData.dateOfBirth,
+        whatsapp: formData.whatsapp,
+        telegram: formData.telegram,
+        comments: formData.comments,
+        status: formData.status,
+        paymentPreferences: formData.paymentPreferences,
+        personalStayDays: formData.personalStayDays
       }
 
-      onSave(ownerData)
-    } catch (error) {
+      // Call API to create owner
+      const response = await userService.createUser(ownerData)
+      
+      if (response.success && response.data) {
+        // Transform API response to match expected format
+        const transformedOwner = {
+          ...response.data,
+          name: `${response.data.firstName} ${response.data.lastName}`,
+          nationality: formData.nationality,
+          dateOfBirth: formData.dateOfBirth,
+          whatsapp: formData.whatsapp,
+          telegram: formData.telegram,
+          comments: formData.comments,
+          status: formData.status,
+          paymentPreferences: formData.paymentPreferences,
+          personalStayDays: formData.personalStayDays,
+          units: formData.units.map(unit => ({ name: unit, id: Math.random() })),
+          reservationCount: 0,
+          totalUnits: formData.units.length,
+          vipStatus: formData.status === 'VIP',
+          createdBy: 'Current User',
+          createdByEmail: 'current@user.com',
+          lastModifiedBy: 'Current User',
+          lastModifiedByEmail: 'current@user.com',
+          lastModifiedAt: new Date().toISOString()
+        }
+
+        onSave(transformedOwner)
+      } else {
+        throw new Error(response.error?.message || 'Failed to create owner')
+      }
+    } catch (error: any) {
       console.error('Error saving owner:', error)
+      setErrors({ 
+        general: error.message || 'Failed to create owner. Please try again.' 
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -188,6 +226,12 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* General Error Display */}
+          {errors.general && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600 text-sm">{errors.general}</p>
+            </div>
+          )}
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -212,18 +256,25 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                 <MapPin size={16} className="inline mr-2" />
                 Nationality *
               </label>
-              <select
-                value={formData.nationality}
-                onChange={(e) => handleInputChange('nationality', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.nationality ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select nationality</option>
-                {nationalities.map(nationality => (
-                  <option key={nationality} value={nationality}>{nationality}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.nationality}
+                  onChange={(e) => handleInputChange('nationality', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.nationality ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select nationality</option>
+                  {nationalities.map(nationality => (
+                    <option key={nationality} value={nationality}>{nationality}</option>
+                  ))}
+                </select>
+                {formData.nationality && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <span className="text-lg">{getCountryFlag(formData.nationality)}</span>
+                  </div>
+                )}
+              </div>
               {errors.nationality && <p className="mt-1 text-sm text-red-600">{errors.nationality}</p>}
             </div>
 

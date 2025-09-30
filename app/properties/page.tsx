@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import PropertiesTable from '../../components/properties/PropertiesTable'
 import PropertyModal from '../../components/properties/PropertyModal'
 import PropertiesFilters from '../../components/properties/PropertiesFilters'
 import Toast from '../../components/Toast'
 import { Plus, Search, Download, Archive, Trash2, Filter, Home, Building, Users, DollarSign } from 'lucide-react'
+import { propertyService } from '../../lib/api'
 
 export default function PropertiesPage() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
@@ -15,6 +16,11 @@ export default function PropertiesPage() {
   const [selectedProperties, setSelectedProperties] = useState<number[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0) // Key to force refresh
+  const [properties, setProperties] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  console.log('🏠 PropertiesPage render - properties:', properties, 'isLoading:', isLoading)
 
   const handleCreateProperty = () => {
     setSelectedProperty(null)
@@ -25,6 +31,44 @@ export default function PropertiesPage() {
     setToastMessage(message)
     setShowToast(true)
   }
+
+  const loadProperties = useCallback(async () => {
+    console.log('🔥 loadProperties function called!')
+    try {
+      setIsLoading(true)
+      console.log('🔄 Loading properties from API...')
+      const response = await propertyService.getProperties()
+      console.log('📋 API Response:', response)
+      
+      if (response.success && response.data) {
+        console.log('✅ Properties loaded:', response.data)
+        setProperties(response.data)
+      } else {
+        console.error('❌ Failed to load properties:', response.error)
+        setProperties([])
+      }
+    } catch (error) {
+      console.error('💥 Error loading properties:', error)
+      setProperties([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const handlePropertyCreated = useCallback(() => {
+    console.log('🎉 Property created, refreshing list...')
+    // Force refresh by updating the key
+    setRefreshKey(prev => prev + 1)
+    // Also reload properties from API
+    loadProperties()
+  }, [loadProperties])
+
+  useEffect(() => {
+    console.log('🚀 PropertiesPage: useEffect triggered!')
+    console.log('🔧 loadProperties function:', loadProperties)
+    console.log('📞 Calling loadProperties...')
+    loadProperties()
+  }, [loadProperties])
 
   const handleEditProperty = (property: any) => {
     setSelectedProperty(property)
@@ -205,10 +249,13 @@ export default function PropertiesPage() {
           <div className="flex-1 min-h-0">
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
               <PropertiesTable 
+                key={refreshKey} // Force re-render when refreshKey changes
                 searchTerm={searchTerm}
                 onEditProperty={handleEditProperty}
                 selectedProperties={selectedProperties}
                 onSelectionChange={setSelectedProperties}
+                properties={properties}
+                isLoading={isLoading}
               />
             </div>
           </div>
@@ -221,6 +268,7 @@ export default function PropertiesPage() {
         onClose={() => setIsPropertyModalOpen(false)}
         property={selectedProperty}
         onShowToast={handleShowToast}
+        onPropertyCreated={handlePropertyCreated}
       />
 
       {/* Toast Notification */}

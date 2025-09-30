@@ -31,6 +31,7 @@ export default function ReservationsPage() {
     guestName: ''
   })
 
+
   const handleViewReservation = (reservation: any) => {
     setReservationDetailsModal({
       isOpen: true,

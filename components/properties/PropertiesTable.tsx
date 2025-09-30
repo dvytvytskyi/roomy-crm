@@ -8,6 +8,8 @@ interface PropertiesTableProps {
   onEditProperty: (property: any) => void
   selectedProperties: number[]
   onSelectionChange: (selected: number[]) => void
+  properties?: any[]
+  isLoading?: boolean
 }
 
 // Mock data for properties
@@ -396,17 +398,37 @@ const mockProperties = [
   }
 ]
 
-export default function PropertiesTable({ searchTerm, onEditProperty, selectedProperties, onSelectionChange }: PropertiesTableProps) {
+export default function PropertiesTable({ searchTerm, onEditProperty, selectedProperties, onSelectionChange, properties, isLoading }: PropertiesTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
-  const filteredProperties = mockProperties.filter(property => {
-    const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (property.nickname && property.nickname.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      property.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.property_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.base_price.toString().includes(searchTerm)
+  // Use real properties if provided, otherwise fall back to mock data
+  const dataSource = properties || mockProperties
+  console.log('📊 PropertiesTable - dataSource:', dataSource)
+  console.log('📊 PropertiesTable - properties prop:', properties)
+  console.log('📊 PropertiesTable - isLoading:', isLoading)
+
+  // Helper functions to handle both mock and real data formats
+  const getPropertyName = (property: any) => property.nickname || property.name || 'Unnamed Property'
+  const getPropertyArea = (property: any) => property.area || property.city || 'Unknown'
+  const getPropertyType = (property: any) => property.property_type || property.type || 'Unknown'
+  const getPropertyBedrooms = (property: any) => property.bedrooms || 0
+  const getPropertyMaxGuests = (property: any) => property.max_guests || property.capacity || 0
+  const getPropertyPrice = (property: any) => property.base_price || property.pricePerNight || 0
+  const getPropertyAddress = (property: any) => property.address || 'No address'
+  
+  const filteredProperties = dataSource.filter(property => {
+    // Handle both mock data format and real API format
+    const name = property.name || property.nickname || ''
+    const area = property.area || property.city || ''
+    const type = property.property_type || property.type || ''
+    const price = property.base_price || property.pricePerNight || 0
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      price.toString().includes(searchTerm)
     
     return matchesSearch
   })
@@ -469,6 +491,17 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
       default:
         return <Home size={16} className="text-gray-500" />
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading properties...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -562,33 +595,33 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    {getPropertyIcon(property.property_type)}
+                    {getPropertyIcon(getPropertyType(property))}
                   </div>
                   <div>
                     <button
                       onClick={() => window.location.href = `/properties/${property.id}`}
                       className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
                     >
-                      {property.nickname || property.name}
+                      {getPropertyName(property)}
                     </button>
-                    <div className="text-sm text-slate-500">{property.address}</div>
+                    <div className="text-sm text-slate-500">{getPropertyAddress(property)}</div>
                   </div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{property.area}</span>
+                <span className="text-sm text-slate-900">{getPropertyArea(property)}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900 capitalize">{property.property_type}</span>
+                <span className="text-sm text-slate-900 capitalize">{getPropertyType(property)}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{property.bedrooms}</span>
+                <span className="text-sm text-slate-900">{getPropertyBedrooms(property)}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{property.max_guests}</span>
+                <span className="text-sm text-slate-900">{getPropertyMaxGuests(property)}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900 font-medium">AED {property.base_price}</span>
+                <span className="text-sm text-slate-900 font-medium">AED {getPropertyPrice(property)}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === property.id ? 'opacity-100' : 'opacity-70'}`}>

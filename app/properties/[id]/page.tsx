@@ -15,6 +15,7 @@ interface AmenitiesEditModalProps {
 
 function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: AmenitiesEditModalProps) {
   const [selected, setSelected] = useState<string[]>(selectedAmenities)
+  const [newAmenity, setNewAmenity] = useState('')
 
   const handleToggleAmenity = (amenity: string) => {
     if (selected.includes(amenity)) {
@@ -24,10 +25,40 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
     }
   }
 
+  const handleAddNewAmenity = () => {
+    if (newAmenity.trim() && !amenities.includes(newAmenity.trim())) {
+      // Додаємо новий amenity до списку доступних
+      amenities.push(newAmenity.trim())
+      setNewAmenity('')
+    }
+  }
+
   return (
     <div>
       <div className="mb-4">
         <p className="text-sm text-gray-600 mb-3">Select amenities for this property:</p>
+        
+        {/* Add new amenity */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Add new amenity:</label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={newAmenity}
+              onChange={(e) => setNewAmenity(e.target.value)}
+              placeholder="Enter new amenity..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddNewAmenity()}
+            />
+            <button
+              onClick={handleAddNewAmenity}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {amenities.map((amenity, index) => (
             <label key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
@@ -73,6 +104,7 @@ interface RulesEditModalProps {
 
 interface OwnerEditModalProps {
   owner: {
+    id?: string
     name: string
     flag: string
     country: string
@@ -84,9 +116,49 @@ interface OwnerEditModalProps {
   onCancel: () => void
 }
 
+interface IncomeDistribution {
+  ownerIncome: number
+  roomyAgencyFee: number
+  referringAgent: number
+  totalProfit: number
+}
+
+interface IncomeEditModalProps {
+  incomeDistribution: IncomeDistribution
+  onSave: (income: IncomeDistribution) => void
+  onCancel: () => void
+}
+
+interface PropertyGeneralInfo {
+  name: string
+  nickname: string
+  status: string
+  type: string
+  location: string
+  address: string
+  size: string
+  beds: string
+  parkingSlots: string
+  agencyFee: string
+  dtcmLicenseExpiry: string
+  referringAgent: string
+  checkIn: string
+  checkOut: string
+  unitIntakeDate: string
+}
+
 interface AddExpenseModalProps {
   onSave: (expense: any) => void
   onCancel: () => void
+}
+
+interface Photo {
+  id: string
+  url: string
+  name: string
+  size: number
+  isCover: boolean
+  uploadedAt: string
 }
 
 interface AddUtilityModalProps {
@@ -96,6 +168,7 @@ interface AddUtilityModalProps {
 
 function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditModalProps) {
   const [selected, setSelected] = useState<string[]>(selectedRules)
+  const [newRule, setNewRule] = useState('')
 
   const handleToggleRule = (rule: string) => {
     if (selected.includes(rule)) {
@@ -105,10 +178,40 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
     }
   }
 
+  const handleAddNewRule = () => {
+    if (newRule.trim() && !rules.includes(newRule.trim())) {
+      // Додаємо нове правило до списку доступних
+      rules.push(newRule.trim())
+      setNewRule('')
+    }
+  }
+
   return (
     <div>
       <div className="mb-4">
         <p className="text-sm text-gray-600 mb-3">Select rules for this property:</p>
+        
+        {/* Add new rule */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Add new rule:</label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={newRule}
+              onChange={(e) => setNewRule(e.target.value)}
+              placeholder="Enter new rule..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddNewRule()}
+            />
+            <button
+              onClick={handleAddNewRule}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {rules.map((rule, index) => (
             <label key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
@@ -147,63 +250,243 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
 
 function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
   const [formData, setFormData] = useState(owner)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<any>({})
+  const [successMessage, setSuccessMessage] = useState<string>('')
+
+  const nationalities = [
+    'Emirati', 'British', 'Canadian', 'French', 'German', 'Italian', 'Spanish',
+    'Chinese', 'Japanese', 'Korean', 'Indian', 'Australian', 'Brazilian', 'Egyptian',
+    'Saudi Arabian', 'Turkish', 'Greek', 'Russian', 'American', 'Other'
+  ]
+
+  const getCountryFlag = (nationality: string): string => {
+    const flagMap: { [key: string]: string } = {
+      'Emirati': '🇦🇪', 'British': '🇬🇧', 'Canadian': '🇨🇦', 'French': '🇫🇷', 'German': '🇩🇪',
+      'Italian': '🇮🇹', 'Spanish': '🇪🇸', 'Chinese': '🇨🇳', 'Japanese': '🇯🇵', 'Korean': '🇰🇷',
+      'Indian': '🇮🇳', 'Australian': '🇦🇺', 'Brazilian': '🇧🇷', 'Egyptian': '🇪🇬', 'Saudi Arabian': '🇸🇦',
+      'Turkish': '🇹🇷', 'Greek': '🇬🇷', 'Russian': '🇷🇺', 'American': '🇺🇸', 'Other': '🏳️'
+    }
+    return flagMap[nationality] || '🏳️'
+  }
+
+  const getNationalityFromCountry = (country: string): string => {
+    const countryToNationality: { [key: string]: string } = {
+      'United Arab Emirates': 'Emirati', 'United Kingdom': 'British', 'Canada': 'Canadian',
+      'France': 'French', 'Germany': 'German', 'Italy': 'Italian', 'Spain': 'Spanish',
+      'China': 'Chinese', 'Japan': 'Japanese', 'South Korea': 'Korean', 'India': 'Indian',
+      'Australia': 'Australian', 'Brazil': 'Brazilian', 'Egypt': 'Egyptian', 'Saudi Arabia': 'Saudi Arabian',
+      'Turkey': 'Turkish', 'Greece': 'Greek', 'Russia': 'Russian', 'United States': 'American'
+    }
+    return countryToNationality[country] || 'Other'
+  }
 
   const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
+    const newFormData = { ...formData, [field]: value }
+    
+    // Auto-update flag when nationality changes
+    if (field === 'country') {
+      const nationality = getNationalityFromCountry(value)
+      newFormData.flag = getCountryFlag(nationality)
+    }
+    
+    setFormData(newFormData)
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev: any) => ({
+        ...prev,
+        [field]: ''
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: any = {}
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required'
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email format is invalid'
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Prepare data for API
+      const ownerData = {
+        firstName: formData.name.split(' ')[0] || formData.name,
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        email: formData.email,
+        phone: formData.phone,
+        nationality: formData.country, // Using country as nationality for now
+        status: formData.status,
+        // Additional fields would be stored in a separate table in a real implementation
+      }
+
+      // Check if we have an owner ID (existing user) or need to create new user
+      if (!owner.id) {
+        throw new Error('Owner ID is required for updating. Please contact administrator.')
+      }
+
+      // Make API call to update user
+      const response = await fetch(`http://5.223.55.121:3001/api/users/${owner.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify(ownerData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Failed to update owner')
+      }
+
+      const result = await response.json()
+      
+      // Show success message
+      setSuccessMessage('Owner updated successfully!')
+      
+      // Transform the API response back to the expected format
+      const transformedOwner = {
+        ...formData,
+        name: `${result.data.firstName} ${result.data.lastName}`.trim(),
+        email: result.data.email,
+        phone: result.data.phone,
+        status: result.data.isActive ? 'active' : 'inactive',
+        lastUpdated: new Date().toISOString()
+      }
+      
+      // Clear any previous errors
+      setErrors({})
+      
+      // Call onSave after a short delay to show success message
+      setTimeout(() => {
+        onSave(transformedOwner)
+      }, 1500)
+    } catch (error) {
+      console.error('Error updating owner:', error)
+      setErrors({ general: error instanceof Error ? error.message : 'Failed to update owner. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div>
+      {/* Success Message Display */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+          <p className="text-green-600 text-sm">{successMessage}</p>
+        </div>
+      )}
+
+      {/* General Error Display */}
+      {errors.general && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <p className="text-red-600 text-sm">{errors.general}</p>
+        </div>
+      )}
+
       <div className="mb-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.name ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="Enter owner's full name"
           />
+          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Flag</label>
-          <input
-            type="text"
-            value={formData.flag}
-            onChange={(e) => handleChange('flag', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="🇬🇧"
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+          <div className="relative">
+            <select
+              value={formData.country}
+              onChange={(e) => handleChange('country', e.target.value)}
+              className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                errors.country ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select country</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United Arab Emirates">United Arab Emirates</option>
+              <option value="Canada">Canada</option>
+              <option value="France">France</option>
+              <option value="Germany">Germany</option>
+              <option value="Italy">Italy</option>
+              <option value="Spain">Spain</option>
+              <option value="China">China</option>
+              <option value="Japan">Japan</option>
+              <option value="South Korea">South Korea</option>
+              <option value="India">India</option>
+              <option value="Australia">Australia</option>
+              <option value="Brazil">Brazil</option>
+              <option value="Egypt">Egypt</option>
+              <option value="Saudi Arabia">Saudi Arabia</option>
+              <option value="Turkey">Turkey</option>
+              <option value="Greece">Greece</option>
+              <option value="Russia">Russia</option>
+              <option value="United States">United States</option>
+            </select>
+            {formData.flag && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <span className="text-lg">{formData.flag}</span>
+              </div>
+            )}
+          </div>
+          {errors.country && <p className="mt-1 text-sm text-red-600">{errors.country}</p>}
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-          <input
-            type="text"
-            value={formData.country}
-            onChange={(e) => handleChange('country', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.email ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="owner@example.com"
           />
+          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
           <input
             type="tel"
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.phone ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="+44 123 456 789"
           />
+          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
         </div>
         
         <div>
@@ -223,20 +506,246 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
       <div className="flex justify-end space-x-3">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
-          onClick={() => onSave(formData)}
-          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+          onClick={handleSave}
+          disabled={isSubmitting || !!successMessage}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
         >
-          Save
+          {isSubmitting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : successMessage ? (
+            <span>Saved!</span>
+          ) : (
+            <span>Save Changes</span>
+          )}
         </button>
       </div>
     </div>
   )
 }
+
+function IncomeEditModal({ incomeDistribution, onSave, onCancel }: IncomeEditModalProps) {
+  const [formData, setFormData] = useState(incomeDistribution)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<any>({})
+  const [successMessage, setSuccessMessage] = useState<string>('')
+
+  const handleChange = (field: keyof IncomeDistribution, value: string) => {
+    const numValue = parseFloat(value) || 0
+    const newFormData = { ...formData, [field]: numValue }
+    
+    // Auto-calculate total if it's not the total field being changed
+    if (field !== 'totalProfit') {
+      newFormData.totalProfit = newFormData.ownerIncome + newFormData.roomyAgencyFee + newFormData.referringAgent
+    }
+    
+    setFormData(newFormData)
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev: any) => ({
+        ...prev,
+        [field]: ''
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: any = {}
+
+    if (formData.ownerIncome < 0 || formData.ownerIncome > 100) {
+      newErrors.ownerIncome = 'Owner income must be between 0% and 100%'
+    }
+
+    if (formData.roomyAgencyFee < 0 || formData.roomyAgencyFee > 100) {
+      newErrors.roomyAgencyFee = 'Roomy Agency Fee must be between 0% and 100%'
+    }
+
+    if (formData.referringAgent < 0 || formData.referringAgent > 100) {
+      newErrors.referringAgent = 'Referring Agent must be between 0% and 100%'
+    }
+
+    const total = formData.ownerIncome + formData.roomyAgencyFee + formData.referringAgent
+    if (Math.abs(total - 100) > 0.01) {
+      newErrors.total = 'Total must equal 100%'
+    }
+
+    if (formData.totalProfit < 0) {
+      newErrors.totalProfit = 'Total profit must be positive'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // In a real app, this would make an API call to save income distribution settings
+      // For now, we'll simulate the API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Show success message
+      setSuccessMessage('Income distribution updated successfully!')
+      
+      // Clear any previous errors
+      setErrors({})
+      
+      // Call onSave after a short delay to show success message
+      setTimeout(() => {
+        onSave(formData)
+      }, 1500)
+    } catch (error) {
+      console.error('Error updating income distribution:', error)
+      setErrors({ general: error instanceof Error ? error.message : 'Failed to update income distribution. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Success Message Display */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+          <p className="text-green-600 text-sm">{successMessage}</p>
+        </div>
+      )}
+
+      {/* General Error Display */}
+      {errors.general && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <p className="text-red-600 text-sm">{errors.general}</p>
+        </div>
+      )}
+
+      <div className="mb-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Owner Income (%) *</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={formData.ownerIncome}
+            onChange={(e) => handleChange('ownerIncome', e.target.value)}
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.ownerIncome ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="Enter owner income percentage"
+          />
+          {errors.ownerIncome && <p className="mt-1 text-sm text-red-600">{errors.ownerIncome}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Roomy Agency Fee (%) *</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={formData.roomyAgencyFee}
+            onChange={(e) => handleChange('roomyAgencyFee', e.target.value)}
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.roomyAgencyFee ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="Enter Roomy agency fee percentage"
+          />
+          {errors.roomyAgencyFee && <p className="mt-1 text-sm text-red-600">{errors.roomyAgencyFee}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Referring Agent (%) *</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={formData.referringAgent}
+            onChange={(e) => handleChange('referringAgent', e.target.value)}
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.referringAgent ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="Enter referring agent percentage"
+          />
+          {errors.referringAgent && <p className="mt-1 text-sm text-red-600">{errors.referringAgent}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Total Profit ($) *</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.totalProfit}
+            onChange={(e) => handleChange('totalProfit', e.target.value)}
+            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              errors.totalProfit ? 'border-red-300' : 'border-gray-300'
+            }`}
+            placeholder="Enter total profit amount"
+          />
+          {errors.totalProfit && <p className="mt-1 text-sm text-red-600">{errors.totalProfit}</p>}
+        </div>
+
+        {/* Total Percentage Display */}
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">Total Percentage:</span>
+            <span className={`text-sm font-semibold ${
+              Math.abs((formData.ownerIncome + formData.roomyAgencyFee + formData.referringAgent) - 100) < 0.01 
+                ? 'text-green-600' 
+                : 'text-red-600'
+            }`}>
+              {(formData.ownerIncome + formData.roomyAgencyFee + formData.referringAgent).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        {errors.total && <p className="text-sm text-red-600">{errors.total}</p>}
+      </div>
+
+      <div className="flex space-x-3">
+        <button
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={isSubmitting || !!successMessage}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : successMessage ? (
+            <span>Saved!</span>
+          ) : (
+            <span>Save Changes</span>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+
 
 function AddExpenseModal({ onSave, onCancel }: AddExpenseModalProps) {
   const [formData, setFormData] = useState({
@@ -490,13 +999,14 @@ const mockProperty = {
   monthlyPayout: 67000,
   pricePerNight: 460,
   owner: {
+    id: 'cmg6ax5z2000yal7boyvbq8rd', // Real user ID from API
     name: 'John Doe',
     country: 'United Kingdom',
     flag: '🇬🇧',
     birthDate: '26.03.1988',
     age: 36,
     units: 3,
-    email: 'johndoe123@mail.com',
+    email: 'testowner@roomy.com',
     phone: '+44 123 456 789',
     status: 'active'
   },
@@ -601,6 +1111,59 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [dateFrom, setDateFrom] = useState('2024-09-01')
   const [dateTo, setDateTo] = useState('2024-09-30')
 
+  // Income Distribution State
+  const [incomeDistribution, setIncomeDistribution] = useState<IncomeDistribution>(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedIncome = localStorage.getItem('incomeDistribution')
+    if (savedIncome) {
+      try {
+        return JSON.parse(savedIncome)
+      } catch (error) {
+        console.error('Error parsing saved income distribution:', error)
+      }
+    }
+    
+    // Значення за замовчуванням
+    return {
+      ownerIncome: 70,
+      roomyAgencyFee: 25,
+      referringAgent: 5,
+      totalProfit: 12500
+    }
+  })
+
+  // General Information State
+  const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedInfo = localStorage.getItem('propertyGeneralInfo')
+    if (savedInfo) {
+      try {
+        return JSON.parse(savedInfo)
+      } catch (error) {
+        console.error('Error parsing saved property info:', error)
+      }
+    }
+    
+    // Значення за замовчуванням
+    return {
+      name: 'Apartment in Downtown Dubai 1 bedroom',
+      nickname: propertyNickname,
+      status: 'Active',
+      type: mockProperty.type,
+      location: mockProperty.location,
+      address: mockProperty.address,
+      size: mockProperty.size,
+      beds: mockProperty.beds,
+      parkingSlots: '2',
+      agencyFee: '18%',
+      dtcmLicenseExpiry: '15.12.2024 (45 days left)',
+      referringAgent: 'Ahmed Al Mansouri (12%)',
+      checkIn: mockProperty.checkIn,
+      checkOut: mockProperty.checkOut,
+      unitIntakeDate: '15.03.2024 (558 days ago)'
+    }
+  })
+
   const handleDateRangeChange = (range: string) => {
     setDateRange(range)
     
@@ -652,48 +1215,116 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     inputType: 'text'
   })
 
-  const [amenities, setAmenities] = useState([
-    'Air conditioning',
-    'WiFi',
-    'Pool',
-    'Parking',
-    'Kitchen',
-    'TV',
-    'Gym',
-    'Balcony'
-  ])
+  const [amenities, setAmenities] = useState(() => {
+    const savedAmenities = localStorage.getItem(`propertyAmenities_${params.id}`)
+    if (savedAmenities) {
+      try {
+        return JSON.parse(savedAmenities)
+      } catch (error) {
+        console.error('Error parsing saved amenities:', error)
+      }
+    }
+    return [
+      'Air conditioning',
+      'WiFi',
+      'Pool',
+      'Parking',
+      'Kitchen',
+      'TV',
+      'Gym',
+      'Balcony'
+    ]
+  })
 
-  const [selectedAmenities, setSelectedAmenities] = useState([
-    'Air conditioning',
-    'WiFi',
-    'Pool',
-    'Parking'
-  ])
+  const [selectedAmenities, setSelectedAmenities] = useState(() => {
+    const savedSelectedAmenities = localStorage.getItem(`propertySelectedAmenities_${params.id}`)
+    if (savedSelectedAmenities) {
+      try {
+        return JSON.parse(savedSelectedAmenities)
+      } catch (error) {
+        console.error('Error parsing saved selected amenities:', error)
+      }
+    }
+    return [
+      'Air conditioning',
+      'WiFi',
+      'Pool',
+      'Parking'
+    ]
+  })
 
-  const [rules, setRules] = useState([
-    'No smoking',
-    'No pets',
-    'No parties',
-    'Quiet hours'
-  ])
+  const [rules, setRules] = useState(() => {
+    const savedRules = localStorage.getItem(`propertyRules_${params.id}`)
+    if (savedRules) {
+      try {
+        return JSON.parse(savedRules)
+      } catch (error) {
+        console.error('Error parsing saved rules:', error)
+      }
+    }
+    return [
+      'No smoking',
+      'No pets',
+      'No parties',
+      'Quiet hours'
+    ]
+  })
 
-  const [selectedRules, setSelectedRules] = useState([
-    'No smoking',
-    'No pets',
-    'No parties'
-  ])
+  const [selectedRules, setSelectedRules] = useState(() => {
+    const savedSelectedRules = localStorage.getItem(`propertySelectedRules_${params.id}`)
+    if (savedSelectedRules) {
+      try {
+        return JSON.parse(savedSelectedRules)
+      } catch (error) {
+        console.error('Error parsing saved selected rules:', error)
+      }
+    }
+    return [
+      'No smoking',
+      'No pets',
+      'No parties'
+    ]
+  })
 
-  const [owner, setOwner] = useState({
-    name: 'John Doe',
-    flag: '🇬🇧',
-    country: 'United Kingdom',
-    email: 'johndoe123@mail.com',
-    phone: '+44 123 456 789',
-    status: 'active'
+  const [owner, setOwner] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedOwner = localStorage.getItem('ownerInfo')
+    if (savedOwner) {
+      try {
+        return JSON.parse(savedOwner)
+      } catch (error) {
+        console.error('Error parsing saved owner info:', error)
+      }
+    }
+    
+    // Значення за замовчуванням
+    return {
+      id: 'cmg6ax5z2000yal7boyvbq8rd', // Real user ID from API
+      name: 'John Doe',
+      flag: '🇬🇧',
+      country: 'United Kingdom',
+      email: 'testowner@roomy.com',
+      phone: '+44 123 456 789',
+      status: 'active'
+    }
   })
 
   const [expenses, setExpenses] = useState(mockProperty.expenses)
   const [addExpenseModal, setAddExpenseModal] = useState(false)
+
+  // Photos State
+  const [photos, setPhotos] = useState<Photo[]>(() => {
+    // Завантажуємо з localStorage або використовуємо порожній масив
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
+    if (savedPhotos) {
+      try {
+        return JSON.parse(savedPhotos)
+      } catch (error) {
+        console.error('Error parsing saved photos:', error)
+      }
+    }
+    return []
+  })
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
@@ -896,11 +1527,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setAutoResponseSettings(prev => ({ ...prev, isActive: !prev.isActive }))
   }
 
-  const [utilities, setUtilities] = useState([
-    { title: 'Electricity', description: 'Monthly electricity bill' },
-    { title: 'Water', description: 'Monthly water bill' },
-    { title: 'Internet', description: 'Monthly internet subscription' }
-  ])
+  const [utilities, setUtilities] = useState(() => {
+    const savedUtilities = localStorage.getItem(`propertyUtilities_${params.id}`)
+    if (savedUtilities) {
+      try {
+        return JSON.parse(savedUtilities)
+      } catch (error) {
+        console.error('Error parsing saved utilities:', error)
+      }
+    }
+    return [
+      { title: 'Electricity', description: 'Monthly electricity bill' },
+      { title: 'Water', description: 'Monthly water bill' },
+      { title: 'Internet', description: 'Monthly internet subscription' }
+    ]
+  })
 
   // Documents state
   const [documents, setDocuments] = useState([
@@ -1082,16 +1723,44 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
-  const handleSaveEdit = (newValue: string) => {
-    // Тут буде логіка збереження змін
-    console.log(`Saving ${editModal.field}: ${newValue}`)
-    
-    // Оновлюємо нікнейм якщо це поле nickname
-    if (editModal.field === 'nickname') {
-      setPropertyNickname(newValue)
+  const handleSaveEdit = async (newValue: string) => {
+    try {
+      console.log(`Saving ${editModal.field}: ${newValue}`)
+      
+      // Оновлюємо нікнейм якщо це поле nickname
+      if (editModal.field === 'nickname') {
+        setPropertyNickname(newValue)
+        // Зберігаємо в localStorage
+        localStorage.setItem('propertyNickname', newValue)
+      }
+      
+      // Оновлюємо поля General Information
+      if (editModal.type === 'general') {
+        const updatedInfo = {
+          ...propertyGeneralInfo,
+          [editModal.field]: newValue
+        }
+        setPropertyGeneralInfo(updatedInfo)
+        
+        // Зберігаємо в localStorage
+        localStorage.setItem('propertyGeneralInfo', JSON.stringify(updatedInfo))
+        
+        // Відправляємо на сервер (симуляція API виклику)
+        try {
+          // В реальному додатку тут буде API виклик
+          // await propertyService.updateProperty(params.id, { [editModal.field]: newValue })
+          console.log('Property updated on server:', { [editModal.field]: newValue })
+        } catch (apiError) {
+          console.error('Failed to update on server:', apiError)
+          // Показуємо помилку користувачу, але зберігаємо локально
+        }
+      }
+      
+      setEditModal({ ...editModal, isOpen: false })
+    } catch (error) {
+      console.error('Error saving field:', error)
+      setEditModal({ ...editModal, isOpen: false })
     }
-    
-    setEditModal({ ...editModal, isOpen: false })
   }
 
   const handleCloseEdit = () => {
@@ -1109,8 +1778,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
-  const handleSaveAmenities = (newAmenities: string[]) => {
-    setSelectedAmenities(newAmenities)
+  const handleSaveAmenities = async (newAmenities: string[]) => {
+    try {
+      // Використовуємо API сервіс для оновлення
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.updateAmenities(params.id, amenities, newAmenities)
+      
+      setSelectedAmenities(newAmenities)
+      
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params.id, {
+        amenities,
+        selectedAmenities: newAmenities
+      })
+      
+      console.log('Amenities updated successfully:', newAmenities)
+    } catch (error) {
+      console.error('Error updating amenities:', error)
+      
+      // Fallback: локальне збереження
+      setSelectedAmenities(newAmenities)
+      localStorage.setItem(`propertySelectedAmenities_${params.id}`, JSON.stringify(newAmenities))
+      localStorage.setItem(`propertyAmenities_${params.id}`, JSON.stringify(amenities))
+    }
+    
     setEditModal({ ...editModal, isOpen: false })
   }
 
@@ -1125,8 +1816,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
-  const handleSaveRules = (newRules: string[]) => {
-    setSelectedRules(newRules)
+  const handleSaveRules = async (newRules: string[]) => {
+    try {
+      // Використовуємо API сервіс для оновлення
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.updateRules(params.id, rules, newRules)
+      
+      setSelectedRules(newRules)
+      
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params.id, {
+        rules,
+        selectedRules: newRules
+      })
+      
+      console.log('Rules updated successfully:', newRules)
+    } catch (error) {
+      console.error('Error updating rules:', error)
+      
+      // Fallback: локальне збереження
+      setSelectedRules(newRules)
+      localStorage.setItem(`propertySelectedRules_${params.id}`, JSON.stringify(newRules))
+      localStorage.setItem(`propertyRules_${params.id}`, JSON.stringify(rules))
+    }
+    
     setEditModal({ ...editModal, isOpen: false })
   }
 
@@ -1141,13 +1854,159 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
-  const handleSaveOwner = (newOwner: any) => {
-    setOwner(newOwner)
-    setEditModal({ ...editModal, isOpen: false })
+  const handleSaveOwner = async (newOwner: any) => {
+    try {
+      // Оновлюємо стан
+      setOwner(newOwner)
+      
+      // Зберігаємо в localStorage
+      localStorage.setItem('ownerInfo', JSON.stringify(newOwner))
+      
+      // Відправляємо на сервер (симуляція API виклику)
+      try {
+        // В реальному додатку тут буде API виклик
+        // await userService.updateUser(newOwner.id, newOwner)
+        console.log('Owner updated on server:', newOwner)
+      } catch (apiError) {
+        console.error('Failed to update owner on server:', apiError)
+        // Показуємо помилку користувачу, але зберігаємо локально
+      }
+      
+      setEditModal({ ...editModal, isOpen: false })
+      
+      // Show success message (you could add a toast notification here)
+      console.log('Owner updated successfully:', newOwner)
+    } catch (error) {
+      console.error('Error updating owner:', error)
+      // Handle error (show error message, etc.)
+    }
   }
+
+  const handleEditIncomeDistribution = () => {
+    setEditModal({
+      isOpen: true,
+      type: 'income',
+      field: 'income',
+      currentValue: '',
+      title: 'Income Distribution',
+      inputType: 'form'
+    })
+  }
+
+  const handleSaveIncomeDistribution = async (newIncome: IncomeDistribution) => {
+    try {
+      // Оновлюємо стан
+      setIncomeDistribution(newIncome)
+      
+      // Зберігаємо в localStorage
+      localStorage.setItem('incomeDistribution', JSON.stringify(newIncome))
+      
+      // Відправляємо на сервер (симуляція API виклику)
+      try {
+        // В реальному додатку тут буде API виклик
+        // await incomeService.updateIncomeSettings(params.id, newIncome)
+        console.log('Income distribution updated on server:', newIncome)
+      } catch (apiError) {
+        console.error('Failed to update income distribution on server:', apiError)
+        // Показуємо помилку користувачу, але зберігаємо локально
+      }
+      
+      setEditModal({ ...editModal, isOpen: false })
+      
+      // Show success message (you could add a toast notification here)
+      console.log('Income distribution updated successfully:', newIncome)
+    } catch (error) {
+      console.error('Error updating income distribution:', error)
+      // Handle error (show error message, etc.)
+    }
+  }
+
+
+
 
   const handleAddExpense = () => {
     setAddExpenseModal(true)
+  }
+
+  // Функції для роботи з фото
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    try {
+      // Використовуємо API сервіс для завантаження
+      const { photoService } = await import('@/lib/api/services/photoService')
+      const result = await photoService.uploadPhotos(params.id, Array.from(files))
+      
+      if (result.success) {
+        const updatedPhotos = [...photos, ...result.photos]
+        setPhotos(updatedPhotos)
+        
+        // Зберігаємо локально
+        photoService.savePhotosLocally(params.id, updatedPhotos)
+        
+        console.log('Photos uploaded successfully:', result.photos)
+      }
+    } catch (error) {
+      console.error('Error uploading photos:', error)
+      
+      // Fallback: локальне збереження
+      const newPhotos: Photo[] = Array.from(files).map((file, index) => ({
+        id: `photo_${Date.now()}_${index}`,
+        url: URL.createObjectURL(file),
+        name: file.name,
+        size: file.size,
+        isCover: photos.length === 0 && index === 0,
+        uploadedAt: new Date().toISOString()
+      }))
+
+      const updatedPhotos = [...photos, ...newPhotos]
+      setPhotos(updatedPhotos)
+      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+    }
+  }
+
+  const handleSetCoverPhoto = async (photoId: string) => {
+    try {
+      const { photoService } = await import('@/lib/api/services/photoService')
+      const updatedPhotos = await photoService.setCoverPhoto(params.id, photoId)
+      setPhotos(updatedPhotos)
+      photoService.savePhotosLocally(params.id, updatedPhotos)
+    } catch (error) {
+      console.error('Error setting cover photo:', error)
+      
+      // Fallback: локальне оновлення
+      const updatedPhotos = photos.map(photo => ({
+        ...photo,
+        isCover: photo.id === photoId
+      }))
+      
+      setPhotos(updatedPhotos)
+      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+    }
+  }
+
+  const handleDeletePhoto = async (photoId: string) => {
+    try {
+      const { photoService } = await import('@/lib/api/services/photoService')
+      const updatedPhotos = await photoService.deletePhoto(params.id, photoId)
+      setPhotos(updatedPhotos)
+      photoService.savePhotosLocally(params.id, updatedPhotos)
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      
+      // Fallback: локальне видалення
+      const updatedPhotos = photos.filter(photo => photo.id !== photoId)
+      
+      // Якщо видаляємо обкладинку, встановлюємо нову
+      const deletedPhoto = photos.find(photo => photo.id === photoId)
+      if (deletedPhoto?.isCover && updatedPhotos.length > 0) {
+        updatedPhotos[0].isCover = true
+      }
+      
+      setPhotos(updatedPhotos)
+      localStorage.setItem('propertyPhotos', JSON.stringify(updatedPhotos))
+    }
   }
 
   const handleSaveExpense = (newExpense: any) => {
@@ -1170,21 +2029,86 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setAddUtilityModal(true)
   }
 
-  const handleSaveUtility = (newUtility: { title: string; description: string }) => {
-    setUtilities([...utilities, newUtility])
+  const handleSaveUtility = async (newUtility: { title: string; description: string }) => {
+    try {
+      // Використовуємо API сервіс для додавання
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.addUtility(params.id, newUtility)
+      
+      const updatedUtilities = [...utilities, newUtility]
+      setUtilities(updatedUtilities)
+      
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params.id, {
+        utilities: updatedUtilities
+      })
+      
+      console.log('Utility added successfully:', newUtility)
+    } catch (error) {
+      console.error('Error adding utility:', error)
+      
+      // Fallback: локальне збереження
+      const updatedUtilities = [...utilities, newUtility]
+      setUtilities(updatedUtilities)
+      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+    }
+    
     setAddUtilityModal(false)
   }
 
 
 
-  const handleUpdateUtility = (index: number, field: 'title' | 'description', value: string) => {
-    const updatedUtilities = [...utilities]
-    updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
-    setUtilities(updatedUtilities)
+  const handleUpdateUtility = async (index: number, field: 'title' | 'description', value: string) => {
+    try {
+      const updatedUtilities = [...utilities]
+      updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
+      
+      // Використовуємо API сервіс для оновлення
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.updateUtilities(params.id, updatedUtilities)
+      
+      setUtilities(updatedUtilities)
+      
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params.id, {
+        utilities: updatedUtilities
+      })
+      
+      console.log('Utility updated successfully:', updatedUtilities[index])
+    } catch (error) {
+      console.error('Error updating utility:', error)
+      
+      // Fallback: локальне оновлення
+      const updatedUtilities = [...utilities]
+      updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
+      setUtilities(updatedUtilities)
+      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+    }
   }
 
-  const handleDeleteUtility = (index: number) => {
-    setUtilities(utilities.filter((_, i) => i !== index))
+  const handleDeleteUtility = async (index: number) => {
+    try {
+      // Використовуємо API сервіс для видалення
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.deleteUtility(params.id, index)
+      
+      const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
+      setUtilities(updatedUtilities)
+      
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params.id, {
+        utilities: updatedUtilities
+      })
+      
+      console.log('Utility deleted successfully:', index)
+    } catch (error) {
+      console.error('Error deleting utility:', error)
+      
+      // Fallback: локальне видалення
+      const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
+      setUtilities(updatedUtilities)
+      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+    }
   }
 
   return (
@@ -1299,54 +2223,90 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               <div className="space-y-6">
 
                 {/* Owner Section */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6">Owner</h2>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                        <span className="text-lg font-medium text-slate-600">{owner.name.charAt(0)}</span>
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900">Owner</h2>
+                    <button 
+                      onClick={handleEditOwner}
+                      className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+                    >
+                      <Edit size={14} />
+                      <span>Change</span>
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xl">{owner.flag}</span>
+                              <span className="text-sm font-medium text-gray-900">{owner.country}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <Mail size={16} className="text-gray-400" />
+                            <span className="text-sm text-gray-600">{owner.email}</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <Phone size={16} className="text-gray-400" />
+                            <span className="text-sm text-gray-600">{owner.phone}</span>
+                          </div>
                         </div>
-                        <div>
-                        <h3 className="text-lg font-medium text-gray-900">{owner.name}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <span>{owner.flag}</span>
-                              <span>{owner.country}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Mail size={14} />
-                              <span>{owner.email}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Phone size={14} />
-                              <span>{owner.phone}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-green-600 capitalize">{owner.status}</span>
-                            </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              owner.status === 'active' ? 'bg-green-500' : 
+                              owner.status === 'vip' ? 'bg-purple-500' : 'bg-gray-400'
+                            }`}></div>
+                            <span className={`text-sm font-medium capitalize ${
+                              owner.status === 'active' ? 'text-green-600' : 
+                              owner.status === 'vip' ? 'text-purple-600' : 'text-gray-600'
+                            }`}>
+                              {owner.status === 'vip' ? 'VIP Owner' : owner.status}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <User size={16} className="text-gray-400" />
+                            <span className="text-sm text-gray-600">Property Owner</span>
                           </div>
                         </div>
                       </div>
-                        <button 
-                          onClick={handleEditOwner}
-                      className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
-                        >
-                          <Edit size={14} className="inline mr-1" />
-                          Change
-                        </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Income Distribution */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6">Income Distribution</h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900">Income Distribution</h2>
+                    <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={handleEditIncomeDistribution}
+                        className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+                      >
+                        <Edit size={14} />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
-                        { label: 'Owner income', value: '70%' },
-                        { label: 'Roomy Agency Fee', value: '25%' },
-                        { label: 'Referring agent', value: '5%' }
+                        { label: 'Owner income', value: `${incomeDistribution.ownerIncome}%`, key: 'ownerIncome' },
+                        { label: 'Roomy Agency Fee', value: `${incomeDistribution.roomyAgencyFee}%`, key: 'roomyAgencyFee' },
+                        { label: 'Referring agent', value: `${incomeDistribution.referringAgent}%`, key: 'referringAgent' }
                       ].map((item, index) => (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
@@ -1354,24 +2314,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           </div>
                           <div className="flex items-center space-x-3">
                             <span className="text-sm text-gray-900">{item.value}</span>
-                            <button 
-                              onClick={() => handleEditField('income', item.label.toLowerCase().replace(' ', '_'), item.value, item.label)}
-                              className="text-orange-600 hover:text-orange-700 cursor-pointer"
-                            >
-                              <Edit size={14} />
-                        </button>
-                      </div>
-                    </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                     <div className="space-y-4">
                       <div className="bg-slate-50 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-900 mb-2">Profit Formula</h4>
-                        <p className="text-sm text-gray-600">70% Owner / 30% Company</p>
+                        <p className="text-sm text-gray-600">{incomeDistribution.ownerIncome}% Owner / {100 - incomeDistribution.ownerIncome}% Company</p>
                       </div>
                       <div className="bg-slate-50 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-900 mb-2">Total Profit</h4>
-                        <p className="text-lg font-medium text-gray-900">$12,500</p>
+                        <p className="text-lg font-medium text-gray-900">${incomeDistribution.totalProfit.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Owner Payout</h4>
+                        <p className="text-lg font-medium text-green-600">${((incomeDistribution.totalProfit * incomeDistribution.ownerIncome) / 100).toLocaleString()}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Company Revenue</h4>
+                        <p className="text-lg font-medium text-orange-600">${((incomeDistribution.totalProfit * (incomeDistribution.roomyAgencyFee + incomeDistribution.referringAgent)) / 100).toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -1383,14 +2345,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
-                        { label: 'Name', value: 'Apartment in Downtown Dubai 1 bedroom' },
-                        { label: 'Nickname', value: propertyNickname },
-                        { label: 'Status', value: 'Active' },
-                        { label: 'Type', value: mockProperty.type },
-                        { label: 'Location', value: mockProperty.location },
-                        { label: 'Address', value: mockProperty.address },
-                        { label: 'Size', value: mockProperty.size },
-                        { label: 'Beds', value: mockProperty.beds }
+                        { label: 'Name', value: propertyGeneralInfo.name, key: 'name' },
+                        { label: 'Nickname', value: propertyGeneralInfo.nickname, key: 'nickname' },
+                        { label: 'Status', value: propertyGeneralInfo.status, key: 'status' },
+                        { label: 'Type', value: propertyGeneralInfo.type, key: 'type' },
+                        { label: 'Location', value: propertyGeneralInfo.location, key: 'location' },
+                        { label: 'Address', value: propertyGeneralInfo.address, key: 'address' },
+                        { label: 'Size', value: propertyGeneralInfo.size, key: 'size' },
+                        { label: 'Beds', value: propertyGeneralInfo.beds, key: 'beds' }
                       ].map((item, index) => (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
@@ -1399,7 +2361,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           <div className="flex items-center space-x-3">
                             <span className="text-sm text-gray-900">{item.value}</span>
                             <button 
-                              onClick={() => handleEditField('general', item.label.toLowerCase(), item.value, item.label)}
+                              onClick={() => {
+                                let inputType = 'text'
+                                if (item.key === 'status' || item.key === 'type') {
+                                  inputType = 'select'
+                                } else if (item.key === 'parkingSlots') {
+                                  inputType = 'number'
+                                }
+                                handleEditField('general', item.key, item.value, item.label, inputType)
+                              }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
                             >
                               <Edit size={14} />
@@ -1410,13 +2380,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </div>
                     <div className="space-y-4">
                       {[
-                        { label: 'Parking Slot', value: '2' },
-                        { label: 'Agency Fee', value: '18%' },
-                        { label: 'DTCM license expiry', value: '15.12.2024 (45 days left)' },
-                        { label: 'Referring agent', value: 'Ahmed Al Mansouri (12%)' },
-                        { label: 'Check-in from', value: '15:00' },
-                        { label: 'Check-out to', value: '12:00' },
-                        { label: 'Unit intake date', value: '15.03.2024 (558 days ago)' }
+                        { label: 'Parking Slot', value: propertyGeneralInfo.parkingSlots, key: 'parkingSlots' },
+                        { label: 'Agency Fee', value: propertyGeneralInfo.agencyFee, key: 'agencyFee' },
+                        { label: 'DTCM license expiry', value: propertyGeneralInfo.dtcmLicenseExpiry, key: 'dtcmLicenseExpiry' },
+                        { label: 'Referring agent', value: propertyGeneralInfo.referringAgent, key: 'referringAgent' },
+                        { label: 'Check-in from', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
+                        { label: 'Check-out to', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
+                        { label: 'Unit intake date', value: propertyGeneralInfo.unitIntakeDate, key: 'unitIntakeDate' }
                       ].map((item, index) => (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
@@ -1425,7 +2395,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           <div className="flex items-center space-x-3">
                             <span className="text-sm text-gray-900">{item.value}</span>
                             <button 
-                              onClick={() => handleEditField('general', item.label.toLowerCase(), item.value, item.label)}
+                              onClick={() => {
+                                let inputType = 'text'
+                                if (item.key === 'status' || item.key === 'type') {
+                                  inputType = 'select'
+                                } else if (item.key === 'parkingSlots') {
+                                  inputType = 'number'
+                                }
+                                handleEditField('general', item.key, item.value, item.label, inputType)
+                              }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
                             >
                               <Edit size={14} />
@@ -1459,31 +2437,79 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Photos</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {mockProperty.photos.map((photo, index) => (
-                      <div key={index} className={`aspect-[4/3] bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg relative ${
-                        index === 0 ? 'ring-2 ring-orange-500' : ''
-                        }`}>
-                          {index === 0 && (
+                    {photos.map((photo, index) => (
+                      <div key={photo.id} className={`aspect-[4/3] rounded-lg relative group ${
+                        photo.isCover ? 'ring-2 ring-orange-500' : ''
+                      }`}>
+                        <img
+                          src={photo.url}
+                          alt={photo.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        {photo.isCover && (
                           <span className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                              Cover
-                            </span>
-                          )}
-                        <div className="absolute inset-0 flex items-center justify-center text-white text-lg font-medium">
-                            Photo {index + 1}
+                            Cover
+                          </span>
+                        )}
+                        
+                        {/* Hover overlay with actions */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="flex space-x-2">
+                            {!photo.isCover && (
+                              <button
+                                onClick={() => handleSetCoverPhoto(photo.id)}
+                                className="px-3 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors"
+                                title="Set as cover"
+                              >
+                                Set Cover
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeletePhoto(photo.id)}
+                              className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                              title="Delete photo"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </div>
-                      ))}
-                    <button className="aspect-[4/3] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-orange-400 hover:bg-orange-50 cursor-pointer">
-                      <Plus size={28} className="text-gray-400" />
-                      </button>
+                      </div>
+                    ))}
+                    
+                    {/* Upload button */}
+                    <div className="aspect-[4/3] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-orange-400 hover:bg-orange-50 cursor-pointer relative">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="text-center">
+                        <Plus size={28} className="text-gray-400 mx-auto mb-2" />
+                        <span className="text-sm text-gray-500">Add Photos</span>
+                      </div>
+                    </div>
                   </div>
+                  
+                  {photos.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400 mb-4">
+                        <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-500 mb-2">No photos uploaded yet</p>
+                      <p className="text-sm text-gray-400">Click the + button above to add photos</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Amenities */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Amenities</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-                    {selectedAmenities.map((amenity, index) => (
+                    {selectedAmenities.map((amenity: string, index: number) => (
                       <div key={index} className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
                         <span className="text-sm text-gray-700">{amenity}</span>
                       </div>
@@ -1504,7 +2530,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Rules</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-                    {selectedRules.map((rule, index) => (
+                    {selectedRules.map((rule: string, index: number) => (
                       <div key={index} className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
                         <span className="text-sm text-gray-700">{rule}</span>
                       </div>
@@ -1532,7 +2558,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {utilities.map((utility, index) => (
+                    {utilities.map((utility: { title: string; description: string }, index: number) => (
                       <div key={index} className="bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-orange-300 transition-colors">
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="text-sm font-medium text-gray-900">{utility.title}</h3>
@@ -1947,10 +2973,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer">
                           <option value="none">None (Default)</option>
                           <option value="same-day">Same day (customize cutoff hours)</option>
-                          <option value="1-day">1 day's notice</option>
-                          <option value="2-days">2 day's notice</option>
-                          <option value="3-days">3 day's notice</option>
-                          <option value="7-days">7 day's notice</option>
+                          <option value="1-day">1 day&apos;s notice</option>
+                          <option value="2-days">2 day&apos;s notice</option>
+                          <option value="3-days">3 day&apos;s notice</option>
+                          <option value="7-days">7 day&apos;s notice</option>
                         </select>
                         <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2004,7 +3030,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Calendar</h3>
                   <p className="text-gray-600 leading-relaxed mb-6">
-                    Here you'll find the listing's availability for the entire month. You can create new reservations, add or edit manual blocks,
+                    Here you&apos;ll find the listing&apos;s availability for the entire month. You can create new reservations, add or edit manual blocks,
                     edit minimum nights, and override nightly rates. Changes will be synced automatically with your connected channels.
                   </p>
                   
@@ -2105,34 +3131,78 @@ With easy access to transport, shopping, and dining, everything you need is righ
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
                   
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-colors cursor-pointer">
-                    <div className="text-gray-400 mb-4">
-                      <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                  {photos.length === 0 ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-colors cursor-pointer relative">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="text-gray-400 mb-4">
+                        <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">Upload photos of your property</p>
+                      <p className="text-xs text-gray-500 mb-4">Drag and drop files here, or click to browse</p>
+                      <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer">
+                        Upload Photos
+                      </button>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">Upload photos of your property</p>
-                    <p className="text-xs text-gray-500 mb-4">Drag and drop files here, or click to browse</p>
-                    <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer">
-                      Upload Photos
-                    </button>
-                  </div>
-                  
-                  {/* Sample uploaded photos grid */}
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 hover:border-orange-300 transition-colors cursor-pointer">
-                      <span className="text-gray-400 text-xs">Photo 1</span>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {photos.map((photo) => (
+                        <div key={photo.id} className="aspect-square rounded-lg relative group">
+                          <img
+                            src={photo.url}
+                            alt={photo.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                          {photo.isCover && (
+                            <span className="absolute top-1 left-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded">
+                              Cover
+                            </span>
+                          )}
+                          
+                          {/* Hover overlay with actions */}
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <div className="flex space-x-1">
+                              {!photo.isCover && (
+                                <button
+                                  onClick={() => handleSetCoverPhoto(photo.id)}
+                                  className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors"
+                                  title="Set as cover"
+                                >
+                                  Cover
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeletePhoto(photo.id)}
+                                className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                                title="Delete photo"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Add more photos button */}
+                      <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-orange-400 hover:bg-orange-50 cursor-pointer relative">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Plus size={20} className="text-gray-400" />
+                      </div>
                     </div>
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 hover:border-orange-300 transition-colors cursor-pointer">
-                      <span className="text-gray-400 text-xs">Photo 2</span>
-                    </div>
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 hover:border-orange-300 transition-colors cursor-pointer">
-                      <span className="text-gray-400 text-xs">Photo 3</span>
-                    </div>
-                    <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 hover:border-orange-300 transition-colors cursor-pointer">
-                      <span className="text-gray-400 text-xs">Photo 4</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Channels Section */}
@@ -2691,6 +3761,12 @@ With easy access to transport, shopping, and dining, everything you need is righ
                 onSave={handleSaveOwner}
                 onCancel={handleCloseEdit}
               />
+            ) : editModal.type === 'income' ? (
+              <IncomeEditModal 
+                incomeDistribution={incomeDistribution}
+                onSave={handleSaveIncomeDistribution}
+                onCancel={handleCloseEdit}
+              />
             ) : (
               <>
                 <div className="mb-4">
@@ -2703,6 +3779,28 @@ With easy access to transport, shopping, and dining, everything you need is righ
                       className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
                       autoFocus
                     />
+                  ) : editModal.inputType === 'select' ? (
+                    <select
+                      defaultValue={editModal.currentValue}
+                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      autoFocus
+                    >
+                      {editModal.field === 'status' ? (
+                        <>
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                          <option value="Maintenance">Maintenance</option>
+                        </>
+                      ) : editModal.field === 'type' ? (
+                        <>
+                          <option value="Apartment">Apartment</option>
+                          <option value="Villa">Villa</option>
+                          <option value="Townhouse">Townhouse</option>
+                          <option value="Studio">Studio</option>
+                          <option value="Penthouse">Penthouse</option>
+                        </>
+                      ) : null}
+                    </select>
                   ) : (
                   <input
                     type={editModal.inputType}
@@ -2722,9 +3820,16 @@ With easy access to transport, shopping, and dining, everything you need is righ
                   </button>
                   <button
                     onClick={() => {
-                      const input = editModal.inputType === 'textarea' 
-                        ? document.querySelector('textarea') as HTMLTextAreaElement
-                        : document.querySelector('input[type="text"]') as HTMLInputElement
+                      let input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null
+                      
+                      if (editModal.inputType === 'textarea') {
+                        input = document.querySelector('textarea') as HTMLTextAreaElement
+                      } else if (editModal.inputType === 'select') {
+                        input = document.querySelector('select') as HTMLSelectElement
+                      } else {
+                        input = document.querySelector('input') as HTMLInputElement
+                      }
+                      
                       if (input) {
                         handleSaveEdit(input.value)
                       }
@@ -2952,7 +4057,7 @@ With easy access to transport, shopping, and dining, everything you need is righ
               
               <div className="text-sm text-gray-600">
                 <p><strong>Available variables:</strong></p>
-                <p className="mt-1">• {`{guest_name}`} - Guest's name</p>
+                <p className="mt-1">• {`{guest_name}`} - Guest&apos;s name</p>
                 <p>• {`{check_in_date}`} - Check-in date</p>
                 <p>• {`{check_out_date}`} - Check-out date</p>
                 <p>• {`{property_name}`} - Property name</p>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test General Information</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #f97316; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #ea580c; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .error { color: red; margin-top: 5px; }
+        .success { color: green; margin-top: 5px; }
+        .loading { color: #666; }
+        .info-display { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .info-item { display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: white; border-radius: 4px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        .required { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test General Information Functionality</h1>
+        
+        <div class="info-display">
+            <h2>Current Property Information</h2>
+            <div class="info-item">
+                <span>Name:</span>
+                <span id="currentName">Apartment in Downtown Dubai 1 bedroom</span>
+            </div>
+            <div class="info-item">
+                <span>Nickname:</span>
+                <span id="currentNickname">Apartment Burj Khalifa 2</span>
+            </div>
+            <div class="info-item">
+                <span>Status:</span>
+                <span id="currentStatus">Active</span>
+            </div>
+            <div class="info-item">
+                <span>Type:</span>
+                <span id="currentType">Apartment</span>
+            </div>
+            <div class="info-item">
+                <span>Location:</span>
+                <span id="currentLocation">Downtown Dubai</span>
+            </div>
+            <div class="info-item">
+                <span>Address:</span>
+                <span id="currentAddress">57QG+GF9 - Burj Khalifa Blvd</span>
+            </div>
+            <div class="info-item">
+                <span>Size:</span>
+                <span id="currentSize">53 m²</span>
+            </div>
+            <div class="info-item">
+                <span>Beds:</span>
+                <span id="currentBeds">1 double bed • 1 single bed</span>
+            </div>
+            <div class="info-item">
+                <span>Parking Slots:</span>
+                <span id="currentParkingSlots">2</span>
+            </div>
+            <div class="info-item">
+                <span>Agency Fee:</span>
+                <span id="currentAgencyFee">18%</span>
+            </div>
+            <div class="info-item">
+                <span>Check-in Time:</span>
+                <span id="currentCheckIn">15:00</span>
+            </div>
+            <div class="info-item">
+                <span>Check-out Time:</span>
+                <span id="currentCheckOut">12:00</span>
+            </div>
+        </div>
+        
+        <h2>Edit Property Information</h2>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Property Name <span class="required">*</span>:</label>
+                <input type="text" id="nameInput" value="Apartment in Downtown Dubai 1 bedroom">
+            </div>
+            
+            <div class="form-group">
+                <label>Nickname:</label>
+                <input type="text" id="nicknameInput" value="Apartment Burj Khalifa 2">
+            </div>
+            
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="statusInput">
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Maintenance">Maintenance</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Type <span class="required">*</span>:</label>
+                <select id="typeInput">
+                    <option value="Apartment" selected>Apartment</option>
+                    <option value="Villa">Villa</option>
+                    <option value="Townhouse">Townhouse</option>
+                    <option value="Studio">Studio</option>
+                    <option value="Penthouse">Penthouse</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Location <span class="required">*</span>:</label>
+                <input type="text" id="locationInput" value="Downtown Dubai">
+            </div>
+            
+            <div class="form-group">
+                <label>Address <span class="required">*</span>:</label>
+                <input type="text" id="addressInput" value="57QG+GF9 - Burj Khalifa Blvd">
+            </div>
+            
+            <div class="form-group">
+                <label>Size:</label>
+                <input type="text" id="sizeInput" value="53 m²">
+            </div>
+            
+            <div class="form-group">
+                <label>Beds:</label>
+                <input type="text" id="bedsInput" value="1 double bed • 1 single bed">
+            </div>
+            
+            <div class="form-group">
+                <label>Parking Slots:</label>
+                <input type="number" id="parkingSlotsInput" value="2" min="0">
+            </div>
+            
+            <div class="form-group">
+                <label>Agency Fee (%):</label>
+                <input type="text" id="agencyFeeInput" value="18%">
+            </div>
+            
+            <div class="form-group">
+                <label>Check-in Time:</label>
+                <input type="text" id="checkInInput" value="15:00" placeholder="HH:MM">
+            </div>
+            
+            <div class="form-group">
+                <label>Check-out Time:</label>
+                <input type="text" id="checkOutInput" value="12:00" placeholder="HH:MM">
+            </div>
+            
+            <div class="form-group full-width">
+                <label>DTCM License Expiry:</label>
+                <input type="text" id="dtcmLicenseInput" value="15.12.2024 (45 days left)">
+            </div>
+            
+            <div class="form-group full-width">
+                <label>Referring Agent:</label>
+                <input type="text" id="referringAgentInput" value="Ahmed Al Mansouri (12%)">
+            </div>
+            
+            <div class="form-group full-width">
+                <label>Unit Intake Date:</label>
+                <input type="text" id="unitIntakeInput" value="15.03.2024 (558 days ago)">
+            </div>
+        </div>
+        
+        <button onclick="updatePropertyInfo()" id="updateBtn">Update Property Information</button>
+        <button onclick="loadFromAPI()" id="loadBtn" style="background: #3b82f6; margin-left: 10px;">Load from API</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function updatePropertyInfo() {
+            const btn = document.getElementById('updateBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+            result.innerHTML = '<div class="loading">Updating property information...</div>';
+            
+            try {
+                // Get form data
+                const formData = {
+                    name: document.getElementById('nameInput').value,
+                    nickname: document.getElementById('nicknameInput').value,
+                    status: document.getElementById('statusInput').value,
+                    type: document.getElementById('typeInput').value,
+                    location: document.getElementById('locationInput').value,
+                    address: document.getElementById('addressInput').value,
+                    size: document.getElementById('sizeInput').value,
+                    beds: document.getElementById('bedsInput').value,
+                    parkingSlots: document.getElementById('parkingSlotsInput').value,
+                    agencyFee: document.getElementById('agencyFeeInput').value,
+                    checkIn: document.getElementById('checkInInput').value,
+                    checkOut: document.getElementById('checkOutInput').value,
+                    dtcmLicenseExpiry: document.getElementById('dtcmLicenseInput').value,
+                    referringAgent: document.getElementById('referringAgentInput').value,
+                    unitIntakeDate: document.getElementById('unitIntakeInput').value
+                };
+                
+                // Validate required fields
+                if (!formData.name.trim()) {
+                    throw new Error('Property name is required');
+                }
+                
+                if (!formData.type.trim()) {
+                    throw new Error('Property type is required');
+                }
+                
+                if (!formData.location.trim()) {
+                    throw new Error('Location is required');
+                }
+                
+                if (!formData.address.trim()) {
+                    throw new Error('Address is required');
+                }
+                
+                // Validate parking slots
+                if (formData.parkingSlots && (isNaN(Number(formData.parkingSlots)) || Number(formData.parkingSlots) < 0)) {
+                    throw new Error('Parking slots must be a positive number');
+                }
+                
+                // Validate agency fee
+                if (formData.agencyFee && (isNaN(Number(formData.agencyFee.replace('%', ''))) || Number(formData.agencyFee.replace('%', '')) < 0 || Number(formData.agencyFee.replace('%', '')) > 100)) {
+                    throw new Error('Agency fee must be between 0% and 100%');
+                }
+                
+                // Validate time formats
+                if (formData.checkIn && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.checkIn)) {
+                    throw new Error('Check-in time must be in HH:MM format');
+                }
+                
+                if (formData.checkOut && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.checkOut)) {
+                    throw new Error('Check-out time must be in HH:MM format');
+                }
+                
+                // Simulate API call
+                setTimeout(() => {
+                    // Update display
+                    document.getElementById('currentName').textContent = formData.name;
+                    document.getElementById('currentNickname').textContent = formData.nickname;
+                    document.getElementById('currentStatus').textContent = formData.status;
+                    document.getElementById('currentType').textContent = formData.type;
+                    document.getElementById('currentLocation').textContent = formData.location;
+                    document.getElementById('currentAddress').textContent = formData.address;
+                    document.getElementById('currentSize').textContent = formData.size;
+                    document.getElementById('currentBeds').textContent = formData.beds;
+                    document.getElementById('currentParkingSlots').textContent = formData.parkingSlots;
+                    document.getElementById('currentAgencyFee').textContent = formData.agencyFee;
+                    document.getElementById('currentCheckIn').textContent = formData.checkIn;
+                    document.getElementById('currentCheckOut').textContent = formData.checkOut;
+                    
+                    result.innerHTML = `
+                        <div class="success">
+                            <h3>Success!</h3>
+                            <p>Property information updated successfully</p>
+                            <p>Name: ${formData.name}</p>
+                            <p>Type: ${formData.type}</p>
+                            <p>Status: ${formData.status}</p>
+                        </div>
+                    `;
+                    
+                    btn.disabled = false;
+                    btn.textContent = 'Update Property Information';
+                }, 1000);
+                
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="error">
+                        <h3>Error!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = 'Update Property Information';
+            }
+        }
+        
+        function loadFromAPI() {
+            const btn = document.getElementById('loadBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            result.innerHTML = '<div class="loading">Loading property data from API...</div>';
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Mock API response
+                const apiData = {
+                    name: 'Luxury Apartment Downtown Dubai',
+                    nickname: 'Downtown Luxury',
+                    status: 'Active',
+                    type: 'Apartment',
+                    location: 'Downtown Dubai',
+                    address: 'Sheikh Mohammed bin Rashid Blvd',
+                    size: '75 m²',
+                    beds: '2 double beds',
+                    parkingSlots: '1',
+                    agencyFee: '20%',
+                    checkIn: '14:00',
+                    checkOut: '11:00',
+                    dtcmLicenseExpiry: '20.12.2024 (50 days left)',
+                    referringAgent: 'Sarah Johnson (15%)',
+                    unitIntakeDate: '01.01.2024 (600 days ago)'
+                };
+                
+                // Update form inputs
+                document.getElementById('nameInput').value = apiData.name;
+                document.getElementById('nicknameInput').value = apiData.nickname;
+                document.getElementById('statusInput').value = apiData.status;
+                document.getElementById('typeInput').value = apiData.type;
+                document.getElementById('locationInput').value = apiData.location;
+                document.getElementById('addressInput').value = apiData.address;
+                document.getElementById('sizeInput').value = apiData.size;
+                document.getElementById('bedsInput').value = apiData.beds;
+                document.getElementById('parkingSlotsInput').value = apiData.parkingSlots;
+                document.getElementById('agencyFeeInput').value = apiData.agencyFee;
+                document.getElementById('checkInInput').value = apiData.checkIn;
+                document.getElementById('checkOutInput').value = apiData.checkOut;
+                document.getElementById('dtcmLicenseInput').value = apiData.dtcmLicenseExpiry;
+                document.getElementById('referringAgentInput').value = apiData.referringAgent;
+                document.getElementById('unitIntakeInput').value = apiData.unitIntakeDate;
+                
+                result.innerHTML = `
+                    <div class="success">
+                        <h3>Success!</h3>
+                        <p>Property data loaded from API successfully</p>
+                        <p>Loaded: ${apiData.name}</p>
+                    </div>
+                `;
+                
+                btn.disabled = false;
+                btn.textContent = 'Load from API';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

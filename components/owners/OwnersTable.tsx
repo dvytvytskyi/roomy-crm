@@ -2,15 +2,25 @@
 
 import { useState } from 'react'
 import { Eye, Edit, Trash2, Star, Crown, User, Mail, Phone, Calendar, MapPin, Building, Info, ChevronUp, ChevronDown } from 'lucide-react'
+import { User as UserType } from '@/lib/api'
+import { getCountryFlag } from '@/lib/utils/countryFlags'
 
 interface OwnersTableProps {
+  owners?: UserType[]
+  pagination?: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
   searchTerm: string
   filters: any
   selectedOwners: number[]
   onSelectionChange: (selectedIds: number[]) => void
+  onPageChange?: (page: number) => void
 }
 
-export default function OwnersTable({ searchTerm, filters, selectedOwners, onSelectionChange }: OwnersTableProps) {
+export default function OwnersTable({ owners, pagination, searchTerm, filters, selectedOwners, onSelectionChange, onPageChange }: OwnersTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
@@ -187,30 +197,6 @@ export default function OwnersTable({ searchTerm, filters, selectedOwners, onSel
     return age
   }
 
-  const getCountryFlag = (nationality: string) => {
-    const flagMap: { [key: string]: string } = {
-      'Emirati': '🇦🇪',
-      'British': '🇬🇧',
-      'Canadian': '🇨🇦',
-      'French': '🇫🇷',
-      'German': '🇩🇪',
-      'Italian': '🇮🇹',
-      'Spanish': '🇪🇸',
-      'Chinese': '🇨🇳',
-      'Japanese': '🇯🇵',
-      'Korean': '🇰🇷',
-      'Indian': '🇮🇳',
-      'Australian': '🇦🇺',
-      'Brazilian': '🇧🇷',
-      'Egyptian': '🇪🇬',
-      'Saudi Arabian': '🇸🇦',
-      'Turkish': '🇹🇷',
-      'Greek': '🇬🇷',
-      'Russian': '🇷🇺',
-      'American': '🇺🇸'
-    }
-    return flagMap[nationality] || '🏳️'
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
