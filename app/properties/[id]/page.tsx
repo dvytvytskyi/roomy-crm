@@ -1861,46 +1861,33 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
-  // Photos State
-  const [photos, setPhotos] = useState<Photo[]>(() => {
-    // Завантажуємо з localStorage або використовуємо тестові зображення
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
-    if (savedPhotos) {
-      try {
-        return JSON.parse(savedPhotos)
-      } catch (error) {
-        console.error('Error parsing saved photos:', error)
-      }
+  // Photos State - завжди використовуємо тестові зображення
+  const [photos, setPhotos] = useState<Photo[]>([
+    {
+      id: 'demo_photo_1',
+      url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+      name: 'Living Room',
+      size: 1024000,
+      isCover: true,
+      uploadedAt: new Date().toISOString()
+    },
+    {
+      id: 'demo_photo_2',
+      url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
+      name: 'Bedroom',
+      size: 980000,
+      isCover: false,
+      uploadedAt: new Date().toISOString()
+    },
+    {
+      id: 'demo_photo_3',
+      url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+      name: 'Kitchen',
+      size: 1100000,
+      isCover: false,
+      uploadedAt: new Date().toISOString()
     }
-    
-    // Тестові зображення для демонстрації
-    return [
-      {
-        id: 'demo_photo_1',
-        url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-        name: 'Living Room',
-        size: 1024000,
-        isCover: true,
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        id: 'demo_photo_2',
-        url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop',
-        name: 'Bedroom',
-        size: 980000,
-        isCover: false,
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        id: 'demo_photo_3',
-        url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-        name: 'Kitchen',
-        size: 1100000,
-        isCover: false,
-        uploadedAt: new Date().toISOString()
-      }
-    ]
-  })
+  ])
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
@@ -3093,6 +3080,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     localStorage.removeItem(`payments_${params.id}`)
     localStorage.removeItem(`financialData_${params.id}`)
     localStorage.removeItem(`propertyPhotos_${params.id}`)
+    localStorage.removeItem('propertyPhotos') // також очищуємо загальний ключ
     console.log('Test data cleared on component load')
   }, [params.id])
 
@@ -3434,6 +3422,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         onClick={() => {
                           setPhotos([])
                           localStorage.removeItem(`propertyPhotos_${params.id}`)
+                          localStorage.removeItem('propertyPhotos')
                         }}
                         className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg"
                       >
