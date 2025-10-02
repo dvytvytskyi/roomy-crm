@@ -40,18 +40,6 @@ interface Event {
   guestStatus?: string;
   amount?: number;
   paidAmount?: number;
-  
-  // Guest information
-  adults?: number;
-  children?: number;
-  totalGuests?: number;
-  
-  // Pricing
-  pricePerNight?: number;
-  totalPrice?: number;
-  
-  // Comments
-  comments?: string;
 }
 
 interface SchedulerComponentProps {
@@ -112,6 +100,14 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
         document.head.appendChild(link);
       }
 
+      // Load custom modal styles
+      if (!document.querySelector('link[href="/components/scheduler/SchedulerModal.css"]')) {
+        const customLink = document.createElement('link');
+        customLink.rel = 'stylesheet';
+        customLink.href = '/components/scheduler/SchedulerModal.css';
+        document.head.appendChild(customLink);
+      }
+
       // Load the UMD version of scheduler if not already loaded
       if (!document.querySelector('script[src="/build/scheduler.umd.js"]')) {
         console.log('Loading Bryntum script...');
@@ -170,114 +166,137 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
             trial: false,
             // Event editor configuration
             eventEdit: {
+              title: 'Edit Reservation',
+              modal: true,
+              width: 500,
+              height: 'auto',
+              resizable: true,
               items: {
-                nameField: { type: 'text', name: 'name', label: 'NAME', required: true },
-                resourceField: { type: 'combo', name: 'resourceId', label: 'RESOURCE', required: true },
-                startDateField: { type: 'date', name: 'startDate', label: 'START' },
-                endDateField: { type: 'date', name: 'endDate', label: 'END' },
-                
-                // Guest information fields
-                adultsField: {
-                  type: 'number',
-                  name: 'adults',
-                  label: 'ADULTS',
-                  min: 1,
-                  max: 20,
-                  value: 1
+                // Basic information section
+                nameField: { 
+                  type: 'text', 
+                  name: 'name', 
+                  label: 'GUEST NAME', 
+                  required: true,
+                  placeholder: 'Enter guest name',
+                  flex: 1
                 },
-                childrenField: {
-                  type: 'number',
-                  name: 'children',
-                  label: 'CHILDREN',
-                  min: 0,
-                  max: 10,
-                  value: 0
-                },
-                totalGuestsField: {
-                  type: 'number',
-                  name: 'totalGuests',
-                  label: 'TOTAL GUESTS',
-                  min: 1,
-                  max: 30,
-                  readOnly: true,
-                  value: 1
+                resourceField: { 
+                  type: 'combo', 
+                  name: 'resourceId', 
+                  label: 'PROPERTY', 
+                  required: true,
+                  placeholder: 'Select property',
+                  flex: 1
                 },
                 
-                // Pricing fields
-                pricePerNightField: {
-                  type: 'number',
-                  name: 'pricePerNight',
-                  label: 'PRICE PER NIGHT (AED)',
-                  min: 0,
-                  step: 0.01
-                },
-                totalPriceField: {
-                  type: 'number',
-                  name: 'totalPrice',
-                  label: 'TOTAL PRICE (AED)',
-                  min: 0,
-                  step: 0.01,
-                  readOnly: true
-                },
-                
-                // Comments field
-                commentsField: {
-                  type: 'textarea',
-                  name: 'comments',
-                  label: 'COMMENTS',
-                  height: 80,
-                  placeholder: 'Add any special requests or notes...'
+                // Date and time section
+                dateTimeSection: {
+                  type: 'fieldset',
+                  title: 'Date & Time',
+                  items: {
+                    startDateField: { 
+                      type: 'date', 
+                      name: 'startDate', 
+                      label: 'CHECK-IN DATE',
+                      required: true,
+                      flex: 1
+                    },
+                    endDateField: { 
+                      type: 'date', 
+                      name: 'endDate', 
+                      label: 'CHECK-OUT DATE',
+                      required: true,
+                      flex: 1
+                    }
+                  }
                 },
                 
-                // Add custom fields for reservation management
-                reservationTypeField: {
-                  type: 'combo',
-                  name: 'reservationType',
-                  label: 'RESERVATION TYPE',
-                  items: [
-                    { id: 'confirmed', text: 'Confirmed reservation' },
-                    { id: 'owner_confirmed', text: 'Confirmed owner\'s reservation' },
-                    { id: 'reserved', text: 'Reserved reservation' },
-                    { id: 'block', text: 'No availability' }
-                  ],
-                  value: 'confirmed'
+                // Status section
+                statusSection: {
+                  type: 'fieldset',
+                  title: 'Reservation Status',
+                  items: {
+                    reservationTypeField: {
+                      type: 'combo',
+                      name: 'reservationType',
+                      label: 'RESERVATION TYPE',
+                      items: [
+                        { id: 'confirmed', text: '✅ Confirmed reservation' },
+                        { id: 'owner_confirmed', text: '🏠 Owner\'s reservation' },
+                        { id: 'reserved', text: '⏳ Reserved (pending)' },
+                        { id: 'block', text: '🚫 Blocked (no availability)' }
+                      ],
+                      value: 'confirmed',
+                      flex: 1
+                    },
+                    paymentStatusField: {
+                      type: 'combo',
+                      name: 'paymentStatus',
+                      label: 'PAYMENT STATUS',
+                      items: [
+                        { id: 'fully_paid', text: '💚 Fully paid' },
+                        { id: 'partially_paid', text: '🟡 Partially paid' },
+                        { id: 'unpaid', text: '🔴 Unpaid' }
+                      ],
+                      value: 'unpaid',
+                      flex: 1
+                    },
+                    guestStatusField: {
+                      type: 'combo',
+                      name: 'guestStatus',
+                      label: 'GUEST STATUS',
+                      items: [
+                        { id: 'upcoming', text: '📅 Upcoming stay' },
+                        { id: 'checked_in', text: '🏠 Checked-in' },
+                        { id: 'checked_out', text: '✅ Checked-out' },
+                        { id: 'no_show', text: '❌ No show' }
+                      ],
+                      value: 'upcoming',
+                      flex: 1
+                    }
+                  }
                 },
-                paymentStatusField: {
-                  type: 'combo',
-                  name: 'paymentStatus',
-                  label: 'PAYMENT STATUS',
-                  items: [
-                    { id: 'fully_paid', text: 'Fully paid' },
-                    { id: 'partially_paid', text: 'Partially paid' },
-                    { id: 'unpaid', text: 'Unpaid' }
-                  ],
-                  value: 'unpaid'
-                },
-                guestStatusField: {
-                  type: 'combo',
-                  name: 'guestStatus',
-                  label: 'GUEST STATUS',
-                  items: [
-                    { id: 'upcoming', text: 'Upcoming stay' },
-                    { id: 'checked_in', text: 'Checked-in' },
-                    { id: 'checked_out', text: 'Checked-out' },
-                    { id: 'no_show', text: 'No show' }
-                  ],
-                  value: 'upcoming'
-                },
-                amountField: {
-                  type: 'number',
-                  name: 'amount',
-                  label: 'AMOUNT',
-                  min: 0,
-                  step: 0.01
-                },
-                paidAmountField: {
-                  type: 'number',
-                  name: 'paidAmount',
-                  label: 'PAID AMOUNT',
-                  min: 0,
-                  step: 0.01
+                
+                // Financial section
+                financialSection: {
+                  type: 'fieldset',
+                  title: 'Financial Information',
+                  items: {
+                    amountField: {
+                      type: 'number',
+                      name: 'amount',
+                      label: 'TOTAL AMOUNT (AED)',
+                      min: 0,
+                      step: 0.01,
+                      placeholder: '0.00',
+                      flex: 1
+                    },
+                    paidAmountField: {
+                      type: 'number',
+                      name: 'paidAmount',
+                      label: 'PAID AMOUNT (AED)',
+                      min: 0,
+                      step: 0.01,
+                      placeholder: '0.00',
+                      flex: 1
+                    }
+                  }
+                }
+              },
+              bbar: {
+                items: {
+                  saveButton: {
+                    type: 'button',
+                    text: '💾 Save Changes',
+                    cls: 'b-button-primary',
+                    onClick: 'up.onSave'
+                  },
+                  cancelButton: {
+                    type: 'button',
+                    text: '❌ Cancel',
+                    onClick: 'up.onCancel'
+                  }
                 }
               }
             }
@@ -317,58 +336,6 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
                       }
                     }
                   });
-                }
-
-                // Auto-calculate total guests when adults or children change
-                const adultsField = editor.widgetMap.adultsField;
-                const childrenField = editor.widgetMap.childrenField;
-                const totalGuestsField = editor.widgetMap.totalGuestsField;
-                
-                if (adultsField && childrenField && totalGuestsField) {
-                  const updateTotalGuests = () => {
-                    const adults = adultsField.value || 0;
-                    const children = childrenField.value || 0;
-                    const total = adults + children;
-                    totalGuestsField.value = total;
-                    totalGuestsField.refresh();
-                  };
-                  
-                  adultsField.on('change', updateTotalGuests);
-                  childrenField.on('change', updateTotalGuests);
-                  
-                  // Set initial value
-                  updateTotalGuests();
-                }
-
-                // Auto-calculate total price when price per night or duration changes
-                const pricePerNightField = editor.widgetMap.pricePerNightField;
-                const totalPriceField = editor.widgetMap.totalPriceField;
-                const startDateField = editor.widgetMap.startDateField;
-                const endDateField = editor.widgetMap.endDateField;
-                
-                if (pricePerNightField && totalPriceField && startDateField && endDateField) {
-                  const updateTotalPrice = () => {
-                    const pricePerNight = pricePerNightField.value || 0;
-                    const startDate = startDateField.value;
-                    const endDate = endDateField.value;
-                    
-                    if (startDate && endDate) {
-                      const start = new Date(startDate);
-                      const end = new Date(endDate);
-                      const diffTime = Math.abs(end.getTime() - start.getTime());
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      const total = pricePerNight * diffDays;
-                      totalPriceField.value = total;
-                      totalPriceField.refresh();
-                    }
-                  };
-                  
-                  pricePerNightField.on('change', updateTotalPrice);
-                  startDateField.on('change', updateTotalPrice);
-                  endDateField.on('change', updateTotalPrice);
-                  
-                  // Set initial value
-                  updateTotalPrice();
                 }
               }
             });
@@ -427,7 +394,7 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
         schedulerRef.current = null;
       }
     };
-  }, [resources, events, startDate, endDate, viewPreset, rowHeight, barMargin, multiEventSelect, columns, height, width]);
+  }, []);
 
   // Update scheduler data when props change
   useEffect(() => {

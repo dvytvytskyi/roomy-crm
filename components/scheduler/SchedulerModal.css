@@ -1,0 +1,382 @@
+/* Custom styles for Bryntum Scheduler Event Editor Modal */
+
+/* Modal container */
+.b-eventeditor {
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden !important;
+}
+
+/* Modal header */
+.b-eventeditor .b-panel-header {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 16px 20px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.b-eventeditor .b-panel-header .b-panel-title {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.b-eventeditor .b-panel-header .b-panel-close {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 6px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.b-eventeditor .b-panel-header .b-panel-close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Modal body */
+.b-eventeditor .b-panel-body {
+  background: #ffffff !important;
+  padding: 24px !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Form fields container */
+.b-eventeditor .b-fieldset {
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.b-eventeditor .b-fieldset .b-fieldset-legend {
+  display: none !important;
+}
+
+/* Form fields */
+.b-eventeditor .b-field {
+  margin-bottom: 20px !important;
+}
+
+.b-eventeditor .b-field .b-label {
+  color: #374151 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  position: relative !important;
+}
+
+/* Required field indicator */
+.b-eventeditor .b-field.b-required .b-label::after {
+  content: ' *' !important;
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+/* Required field styling */
+.b-eventeditor .b-field.b-required .b-textfield,
+.b-eventeditor .b-field.b-required .b-numberfield,
+.b-eventeditor .b-field.b-required .b-combo,
+.b-eventeditor .b-field.b-required .b-datefield {
+  border-left: 3px solid #f59e0b !important;
+}
+
+/* Input fields */
+.b-eventeditor .b-field .b-textfield,
+.b-eventeditor .b-field .b-numberfield,
+.b-eventeditor .b-field .b-combo,
+.b-eventeditor .b-field .b-datefield,
+.b-eventeditor .b-field .b-timefield {
+  border: 2px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  color: #374151 !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.b-eventeditor .b-field .b-textfield:focus,
+.b-eventeditor .b-field .b-numberfield:focus,
+.b-eventeditor .b-field .b-combo:focus,
+.b-eventeditor .b-field .b-datefield:focus,
+.b-eventeditor .b-field .b-timefield:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+  outline: none !important;
+}
+
+/* Placeholder styling */
+.b-eventeditor .b-textfield::placeholder,
+.b-eventeditor .b-numberfield::placeholder {
+  color: #9ca3af !important;
+  font-style: italic !important;
+}
+
+.b-eventeditor .b-combo .b-field-input::placeholder {
+  color: #9ca3af !important;
+  font-style: italic !important;
+}
+
+.b-eventeditor .b-field .b-textfield:hover,
+.b-eventeditor .b-field .b-numberfield:hover,
+.b-eventeditor .b-field .b-combo:hover,
+.b-eventeditor .b-field .b-datefield:hover,
+.b-eventeditor .b-field .b-timefield:hover {
+  border-color: #d1d5db !important;
+}
+
+/* Combo dropdown */
+.b-eventeditor .b-combo .b-combo-trigger {
+  background: #f9fafb !important;
+  border-left: 1px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  transition: all 0.2s ease !important;
+}
+
+.b-eventeditor .b-combo .b-combo-trigger:hover {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+/* Combo dropdown list */
+.b-eventeditor .b-list {
+  border: 2px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  background: #ffffff !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+.b-eventeditor .b-list .b-list-item {
+  padding: 12px 16px !important;
+  color: #374151 !important;
+  transition: all 0.2s ease !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+.b-eventeditor .b-list .b-list-item:hover {
+  background: #f8fafc !important;
+  color: #1f2937 !important;
+}
+
+.b-eventeditor .b-list .b-list-item.b-selected {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  font-weight: 600 !important;
+}
+
+.b-eventeditor .b-list .b-list-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Date and time fields */
+.b-eventeditor .b-datefield .b-field-icon,
+.b-eventeditor .b-timefield .b-field-icon {
+  color: #6b7280 !important;
+  transition: color 0.2s ease !important;
+}
+
+.b-eventeditor .b-datefield:focus .b-field-icon,
+.b-eventeditor .b-timefield:focus .b-field-icon {
+  color: #f59e0b !important;
+}
+
+/* Time field controls */
+.b-eventeditor .b-timefield .b-spinfield-up,
+.b-eventeditor .b-timefield .b-spinfield-down {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  transition: all 0.2s ease !important;
+}
+
+.b-eventeditor .b-timefield .b-spinfield-up:hover,
+.b-eventeditor .b-timefield .b-spinfield-down:hover {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+}
+
+/* Button container */
+.b-eventeditor .b-panel-footer {
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Buttons */
+.b-eventeditor .b-button {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 10px 20px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+  min-width: 80px !important;
+}
+
+/* Save button */
+.b-eventeditor .b-button.b-button-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3) !important;
+}
+
+.b-eventeditor .b-button.b-button-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4) !important;
+}
+
+.b-eventeditor .b-button.b-button-primary:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Cancel button */
+.b-eventeditor .b-button:not(.b-button-primary) {
+  background: #ffffff !important;
+  color: #6b7280 !important;
+  border: 2px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.b-eventeditor .b-button:not(.b-button-primary):hover {
+  background: #f9fafb !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.b-eventeditor .b-button:not(.b-button-primary):active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Field layout improvements */
+.b-eventeditor .b-field-row {
+  display: flex !important;
+  gap: 16px !important;
+  align-items: flex-end !important;
+}
+
+.b-eventeditor .b-field-row .b-field {
+  flex: 1 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Fieldset styling */
+.b-eventeditor .b-fieldset {
+  border: 2px solid #f3f4f6 !important;
+  border-radius: 12px !important;
+  margin-bottom: 24px !important;
+  padding: 20px !important;
+  background: #fafbfc !important;
+  transition: all 0.2s ease !important;
+}
+
+.b-eventeditor .b-fieldset:hover {
+  border-color: #e5e7eb !important;
+  background: #ffffff !important;
+}
+
+.b-eventeditor .b-fieldset .b-fieldset-legend {
+  color: #374151 !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  padding: 0 12px !important;
+  background: #ffffff !important;
+  border-radius: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 16px !important;
+  display: block !important;
+}
+
+.b-eventeditor .b-fieldset .b-fieldset-legend::before {
+  content: '📋 ' !important;
+  margin-right: 8px !important;
+}
+
+/* Fieldset content */
+.b-eventeditor .b-fieldset .b-fieldset-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.b-eventeditor .b-fieldset .b-fieldset-content .b-field-row {
+  margin-bottom: 0 !important;
+}
+
+/* Special styling for different sections */
+.b-eventeditor .b-fieldset[data-ref="dateTimeSection"] .b-fieldset-legend::before {
+  content: '📅 ' !important;
+}
+
+.b-eventeditor .b-fieldset[data-ref="statusSection"] .b-fieldset-legend::before {
+  content: '📊 ' !important;
+}
+
+.b-eventeditor .b-fieldset[data-ref="financialSection"] .b-fieldset-legend::before {
+  content: '💰 ' !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .b-eventeditor {
+    margin: 20px !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+  
+  .b-eventeditor .b-panel-body {
+    padding: 16px !important;
+  }
+  
+  .b-eventeditor .b-field-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  
+  .b-eventeditor .b-field-row .b-field {
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Animation for modal appearance */
+.b-eventeditor {
+  animation: modalSlideIn 0.3s ease-out !important;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Overlay background */
+.b-modal-mask {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}

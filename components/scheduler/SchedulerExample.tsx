@@ -55,13 +55,7 @@ const sampleEvents: Reservation[] = [
     amount: 360,
     paidAmount: 360,
     eventColor: RESERVATION_COLORS.confirmed,
-    iconCls: 'b-fa b-fa-user',
-    adults: 2,
-    children: 1,
-    totalGuests: 3,
-    pricePerNight: 120,
-    totalPrice: 360,
-    comments: 'Family with one child, requests early check-in'
+    iconCls: 'b-fa b-fa-user'
   },
   {
     id: 2,
@@ -76,13 +70,7 @@ const sampleEvents: Reservation[] = [
     amount: 300,
     paidAmount: 150,
     eventColor: RESERVATION_COLORS.owner_confirmed,
-    iconCls: 'b-fa b-fa-user',
-    adults: 2,
-    children: 0,
-    totalGuests: 2,
-    pricePerNight: 150,
-    totalPrice: 300,
-    comments: 'Business trip, needs late checkout'
+    iconCls: 'b-fa b-fa-user'
   },
   {
     id: 3,
@@ -97,13 +85,7 @@ const sampleEvents: Reservation[] = [
     amount: 600,
     paidAmount: 0,
     eventColor: RESERVATION_COLORS.reserved,
-    iconCls: 'b-fa b-fa-user',
-    adults: 4,
-    children: 2,
-    totalGuests: 6,
-    pricePerNight: 120,
-    totalPrice: 600,
-    comments: 'Large family, needs extra bedding and high chair'
+    iconCls: 'b-fa b-fa-user'
   },
   {
     id: 4,
