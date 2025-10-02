@@ -27,6 +27,56 @@ export enum UserRole {
 }
 
 // ==========================================
+// GUEST TYPES
+// ==========================================
+
+export interface Guest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp?: string;
+  telegram?: string;
+  nationality: string;
+  dateOfBirth: string;
+  age?: number;
+  reservationCount: number;
+  unit?: string;
+  comments?: string;
+  customCategories: string[];
+  starGuest: boolean;
+  primaryGuest: boolean;
+  loyaltyTier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  preferredLanguage?: string;
+  specialRequests?: string;
+  documents?: GuestDocument[];
+  createdBy: string;
+  createdAt: string;
+  lastModifiedBy?: string;
+  lastModifiedAt?: string;
+}
+
+export interface GuestDocument {
+  id: number;
+  name: string;
+  type: string;
+  uploadedAt: string;
+  size: string;
+  url?: string;
+}
+
+export interface GuestFilters {
+  nationality?: string[];
+  dateOfBirth?: { from?: string; to?: string };
+  reservationCount?: { min?: number; max?: number };
+  unit?: string[];
+  customCategories?: string[];
+  starGuest?: boolean;
+  primaryGuest?: boolean;
+  searchTerm?: string;
+}
+
+// ==========================================
 // RESERVATION TYPES
 // ==========================================
 

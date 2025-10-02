@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { X, User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, Upload, Plus, Minus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, Upload, Plus, Minus, ChevronDown } from 'lucide-react'
 import { userService } from '@/lib/api/services/userService'
 import { getCountryFlag } from '@/lib/utils/countryFlags'
 
@@ -31,6 +31,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
   const [commentsHistory, setCommentsHistory] = useState<Array<{id: string, text: string, author: string, timestamp: string}>>([])
   const [errors, setErrors] = useState<any>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isNationalityDropdownOpen, setIsNationalityDropdownOpen] = useState(false)
 
   const nationalities = [
     'Emirati', 'British', 'Canadian', 'French', 'German', 'Italian', 'Spanish',
@@ -202,6 +203,24 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
     }
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.nationality-dropdown')) {
+        setIsNationalityDropdownOpen(false)
+      }
+    }
+
+    if (isNationalityDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isNationalityDropdownOpen])
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -256,22 +275,45 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                 <MapPin size={16} className="inline mr-2" />
                 Nationality *
               </label>
-              <div className="relative">
-                <select
-                  value={formData.nationality}
-                  onChange={(e) => handleInputChange('nationality', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              <div className="relative nationality-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsNationalityDropdownOpen(!isNationalityDropdownOpen)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between ${
                     errors.nationality ? 'border-red-300' : 'border-gray-300'
                   }`}
                 >
-                  <option value="">Select nationality</option>
-                  {nationalities.map(nationality => (
-                    <option key={nationality} value={nationality}>{nationality}</option>
-                  ))}
-                </select>
-                {formData.nationality && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <span className="text-lg">{getCountryFlag(formData.nationality)}</span>
+                  <div className="flex items-center space-x-2">
+                    {formData.nationality ? (
+                      <>
+                        <span className="text-lg">{getCountryFlag(formData.nationality)}</span>
+                        <span className="text-sm text-gray-900">{formData.nationality}</span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-500">Select nationality</span>
+                    )}
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isNationalityDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isNationalityDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="py-1">
+                      {nationalities.map(nationality => (
+                        <button
+                          key={nationality}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange('nationality', nationality)
+                            setIsNationalityDropdownOpen(false)
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-2"
+                        >
+                          <span className="text-lg">{getCountryFlag(nationality)}</span>
+                          <span className="text-sm text-gray-900">{nationality}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

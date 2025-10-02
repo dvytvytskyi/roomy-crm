@@ -2,7 +2,35 @@
 
 import { useState } from 'react'
 import { Eye, Edit, Trash2, Star, Crown, User, Mail, Phone, Calendar, MapPin, Building, Info, ChevronUp, ChevronDown } from 'lucide-react'
-import { User as UserType } from '@/lib/api'
+import { User as UserType, userService } from '@/lib/api'
+import EditOwnerModal from './EditOwnerModal'
+
+// Function to get country flag emoji
+const getCountryFlag = (nationality: string) => {
+  const flagMap: { [key: string]: string } = {
+    'Emirati': '🇦🇪',
+    'British': '🇬🇧',
+    'Canadian': '🇨🇦',
+    'French': '🇫🇷',
+    'German': '🇩🇪',
+    'Italian': '🇮🇹',
+    'Spanish': '🇪🇸',
+    'Chinese': '🇨🇳',
+    'Japanese': '🇯🇵',
+    'Korean': '🇰🇷',
+    'Indian': '🇮🇳',
+    'Australian': '🇦🇺',
+    'Brazilian': '🇧🇷',
+    'Egyptian': '🇪🇬',
+    'Saudi Arabian': '🇸🇦',
+    'Turkish': '🇹🇷',
+    'Greek': '🇬🇷',
+    'Russian': '🇷🇺',
+    'American': '🇺🇸',
+    'Other': '🌍'
+  }
+  return flagMap[nationality] || '🌍'
+}
 
 interface OwnersTableProps {
   owners?: UserType[]
@@ -17,6 +45,7 @@ interface OwnersTableProps {
   selectedOwners: number[]
   onSelectionChange: (selectedIds: number[]) => void
   onPageChange?: (page: number) => void
+  onRefresh?: () => void
 }
 
 export default function OwnersTableSimple({ 
@@ -26,11 +55,13 @@ export default function OwnersTableSimple({
   filters, 
   selectedOwners, 
   onSelectionChange, 
-  onPageChange 
+  onPageChange,
+  onRefresh
 }: OwnersTableProps) {
   const [sortField, setSortField] = useState<string>('firstName')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const [editingOwner, setEditingOwner] = useState<UserType | null>(null)
 
   // Filter and sort owners
   const filteredOwners = owners.filter(owner => {
@@ -111,7 +142,21 @@ export default function OwnersTableSimple({
             <span>Email</span>
             {getSortIcon('email')}
           </div>
-          <div className="col-span-2">Phone</div>
+          <div className="col-span-1">Phone</div>
+          <div 
+            className="col-span-1 cursor-pointer flex items-center space-x-1 hover:text-gray-700"
+            onClick={() => handleSort('nationality')}
+          >
+            <span>Nationality</span>
+            {getSortIcon('nationality')}
+          </div>
+          <div 
+            className="col-span-1 cursor-pointer flex items-center space-x-1 hover:text-gray-700"
+            onClick={() => handleSort('totalUnits')}
+          >
+            <span>Units</span>
+            {getSortIcon('totalUnits')}
+          </div>
           <div 
             className="col-span-1 cursor-pointer flex items-center space-x-1 hover:text-gray-700"
             onClick={() => handleSort('isActive')}
@@ -120,7 +165,7 @@ export default function OwnersTableSimple({
             {getSortIcon('isActive')}
           </div>
           <div className="col-span-2">Created</div>
-          <div className="col-span-2">Actions</div>
+          <div className="col-span-1">Actions</div>
         </div>
       </div>
 
@@ -156,7 +201,11 @@ export default function OwnersTableSimple({
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div 
+                    className="text-sm font-medium text-gray-900 cursor-pointer hover:text-orange-600 transition-colors duration-200"
+                    onClick={() => window.location.href = `/owners/${owner.id}`}
+                    title="Click to view owner details"
+                  >
                     {owner.firstName} {owner.lastName}
                   </div>
                   <div className="text-xs text-gray-500">Owner</div>
@@ -170,10 +219,24 @@ export default function OwnersTableSimple({
                 </div>
               </div>
               
-              <div className="col-span-2 flex items-center">
+              <div className="col-span-1 flex items-center">
                 <div className="flex items-center space-x-2">
                   <Phone size={14} className="text-gray-400" />
                   <span className="text-sm text-gray-900">{owner.phone || 'N/A'}</span>
+                </div>
+              </div>
+              
+              <div className="col-span-1 flex items-center">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{getCountryFlag(owner.nationality || 'Other')}</span>
+                  <span className="text-sm text-gray-900">{owner.nationality || 'N/A'}</span>
+                </div>
+              </div>
+              
+              <div className="col-span-1 flex items-center">
+                <div className="flex items-center space-x-1">
+                  <Building size={14} className="text-gray-400" />
+                  <span className="text-sm text-gray-900">{owner.totalUnits || 0}</span>
                 </div>
               </div>
               
@@ -196,14 +259,37 @@ export default function OwnersTableSimple({
                 </div>
               </div>
               
-              <div className="col-span-2 flex items-center space-x-2">
-                <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+              <div className="col-span-1 flex items-center space-x-2">
+                <button 
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  onClick={() => window.location.href = `/owners/${owner.id}`}
+                  title="View owner details"
+                >
                   <Eye size={16} />
                 </button>
-                <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                <button 
+                  className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
+                  onClick={() => setEditingOwner(owner)}
+                  title="Edit owner"
+                >
                   <Edit size={16} />
                 </button>
-                <button className="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                <button 
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  onClick={async () => {
+                    if (confirm(`Are you sure you want to delete ${owner.firstName} ${owner.lastName}?`)) {
+                      try {
+                        await userService.deleteOwner(owner.id)
+                        console.log('Owner deleted:', owner.id)
+                        onRefresh?.()
+                      } catch (error) {
+                        console.error('Error deleting owner:', error)
+                        alert('Failed to delete owner. Please try again.')
+                      }
+                    }
+                  }}
+                  title="Delete owner"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -242,6 +328,19 @@ export default function OwnersTableSimple({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Owner Modal */}
+      {editingOwner && (
+        <EditOwnerModal
+          owner={editingOwner}
+          onClose={() => setEditingOwner(null)}
+          onSave={(updatedOwner) => {
+            console.log('Owner updated:', updatedOwner)
+            setEditingOwner(null)
+            onRefresh?.()
+          }}
+        />
       )}
     </div>
   )

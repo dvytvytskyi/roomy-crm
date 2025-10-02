@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowLeft, Edit, Trash2, MessageSquare, Mail, Phone, Calendar, MapPin, User, Star, Crown, FileText, Download, Upload, Plus, X, DollarSign, Clock, CheckCircle, XCircle, AlertCircle, XCircle as XCircleIcon } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
+import { guestService, Guest, GuestDetailStats, GuestActivity } from '@/lib/api/services/guestService'
+import { fileService } from '@/lib/api/services/fileService'
 
 interface GuestDetailsPageProps {
   params: {
@@ -11,7 +13,15 @@ interface GuestDetailsPageProps {
 }
 
 export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
+  const [guestData, setGuestData] = useState<Guest | null>(null)
+  const [guestStats, setGuestStats] = useState<GuestDetailStats | null>(null)
+  const [guestReservations, setGuestReservations] = useState<any[]>([])
+  const [guestActivity, setGuestActivity] = useState<GuestActivity[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false)
+  const [uploadDocumentModal, setUploadDocumentModal] = useState(false)
   const [editModal, setEditModal] = useState<{
     isOpen: boolean
     field: string
@@ -27,34 +37,59 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     inputType: 'text',
   })
 
-  // Mock data for the specific guest
-  const mockGuest = {
-    id: parseInt(params.id),
-    name: 'John Smith',
-    nationality: 'American',
-    dateOfBirth: '1985-03-15',
-    email: 'john.smith@example.com',
-    phone: '+1 (555) 123-4567',
-    whatsapp: '+1 (555) 123-4567',
-    telegram: '@johnsmith',
-    comments: '',
-    starGuest: true,
-    primaryGuest: true,
-    loyaltyTier: 'Gold',
-    preferredLanguage: 'English',
-    specialRequests: 'Ground floor units preferred, early check-in',
-    documents: [
-      { id: 1, name: 'passport.pdf', type: 'Passport', uploadedAt: '2024-01-15T10:30:00Z', size: '2.3 MB' },
-      { id: 2, name: 'visa.pdf', type: 'Visa', uploadedAt: '2024-01-15T10:35:00Z', size: '1.8 MB' },
-      { id: 3, name: 'loyalty_card.pdf', type: 'Loyalty Card', uploadedAt: '2024-02-10T14:20:00Z', size: '0.5 MB' }
-    ],
-    createdBy: 'Admin',
-    createdAt: '2024-01-15T10:30:00Z',
-    lastModifiedBy: 'Manager',
-    lastModifiedAt: '2024-07-20T14:20:00Z'
-  }
 
-  const [mockGuestData, setMockGuestData] = useState(mockGuest)
+  // Load guest data, stats, reservations, and activity from API
+  useEffect(() => {
+    const loadAllData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        console.log('👥 Loading guest data:', params.id)
+        
+        // Load guest info
+        const guestResponse = await guestService.getGuestById(params.id)
+        if (guestResponse.success && guestResponse.data) {
+          console.log('👥 Guest loaded:', guestResponse.data)
+          setGuestData(guestResponse.data)
+        } else {
+          setError('Failed to load guest')
+          return
+        }
+
+        // Load guest stats
+        const statsResponse = await guestService.getGuestDetailStats(params.id)
+        if (statsResponse.success && statsResponse.data) {
+          console.log('👥 Guest stats loaded:', statsResponse.data)
+          setGuestStats(statsResponse.data)
+        }
+
+        // Load guest reservations
+        const reservationsResponse = await guestService.getGuestReservations(params.id)
+        if (reservationsResponse.success && reservationsResponse.data) {
+          console.log('👥 Guest reservations loaded:', reservationsResponse.data)
+          setGuestReservations(reservationsResponse.data)
+        }
+
+        // Load guest activity
+        const activityResponse = await guestService.getGuestActivity(params.id)
+        if (activityResponse.success && activityResponse.data) {
+          console.log('👥 Guest activity loaded:', activityResponse.data)
+          setGuestActivity(activityResponse.data)
+        }
+        
+      } catch (err) {
+        console.error('👥 Error loading guest data:', err)
+        setError('Error loading guest')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (params.id) {
+      loadAllData()
+    }
+  }, [params.id])
+
   const [newComment, setNewComment] = useState('')
   const [commentsHistory, setCommentsHistory] = useState<Array<{
     id: string
@@ -173,11 +208,24 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     })
   }
 
-  const handleSaveEdit = (newValue: string) => {
-    setMockGuestData(prev => ({
-      ...prev,
-      [editModal.field]: newValue,
-    }))
+  const handleSaveEdit = async (newValue: string) => {
+    if (!guestData) return
+    
+    try {
+      const response = await guestService.updateGuest(guestData.id, {
+        [editModal.field]: newValue
+      })
+      
+      if (response.success && response.data) {
+        setGuestData(response.data)
+      } else {
+        alert('Failed to update guest')
+      }
+    } catch (err) {
+      console.error('Error updating guest:', err)
+      alert('Error updating guest')
+    }
+    
     handleCloseEdit()
   }
 
@@ -222,7 +270,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
       
       // Update the main comments field to include all comments
       const allComments = [comment, ...commentsHistory].map(c => c.text).join('\n\n')
-      setMockGuestData(prev => ({ ...prev, comments: allComments }))
+      if (guestData) {
+        setGuestData({ ...guestData, comments: allComments })
+      }
     }
   }
 
@@ -232,7 +282,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     
     // Update the main comments field
     const allComments = updatedHistory.map(c => c.text).join('\n\n')
-    setMockGuestData(prev => ({ ...prev, comments: allComments }))
+    if (guestData) {
+      setGuestData({ ...guestData, comments: allComments })
+    }
   }
 
   const getAge = (dateOfBirth: string) => {
@@ -298,21 +350,112 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     }
   }
 
-  const totalSpent = mockReservations.reduce((sum, reservation) => sum + reservation.totalAmount, 0)
-  const totalNights = mockReservations.reduce((sum, reservation) => sum + reservation.nights, 0)
-  const averageSpent = totalSpent / mockReservations.length
-
   const openWhatsApp = (phoneNumber: string) => {
     const cleanNumber = phoneNumber.replace(/[^\d+]/g, '')
     const whatsappUrl = `https://wa.me/${cleanNumber.replace('+', '')}`
     window.open(whatsappUrl, '_blank')
   }
 
-  const handleDeleteGuest = () => {
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <TopNavigation />
+        <div className="flex items-center justify-center h-64" style={{ marginTop: '64px' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading guest...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !guestData) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <TopNavigation />
+        <div className="flex items-center justify-center h-64" style={{ marginTop: '64px' }}>
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <p className="text-slate-900 font-medium mb-2">Failed to load guest</p>
+            <p className="text-slate-600 mb-4">{error || 'Guest not found'}</p>
+            <button
+              onClick={() => window.location.href = '/guests'}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 cursor-pointer"
+            >
+              Back to Guests
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const handleDeleteGuest = async () => {
     if (confirm('Are you sure you want to delete this guest? This action cannot be undone.')) {
-      console.log('Deleting guest:', mockGuestData.id)
-      // In real app, this would make API call to delete guest
-      window.location.href = '/guests'
+      setIsDeleting(true)
+      try {
+        const response = await guestService.deleteGuest(guestData.id)
+        if (response.success) {
+          window.location.href = '/guests'
+        } else {
+          alert('Failed to delete guest')
+        }
+      } catch (err) {
+        console.error('Error deleting guest:', err)
+        alert('Error deleting guest')
+      } finally {
+        setIsDeleting(false)
+      }
+    }
+  }
+
+  const handleUploadDocument = async (file: File) => {
+    if (!guestData) return
+    
+    setIsUploadingDocument(true)
+    try {
+      const response = await guestService.uploadDocument(guestData.id, file)
+      if (response.success && response.data) {
+        // Refresh guest data to show new document
+        const refreshResponse = await guestService.getGuestById(guestData.id)
+        if (refreshResponse.success && refreshResponse.data) {
+          setGuestData(refreshResponse.data)
+        }
+        setUploadDocumentModal(false)
+        alert('Document uploaded successfully')
+      } else {
+        alert('Failed to upload document')
+      }
+    } catch (err) {
+      console.error('Error uploading document:', err)
+      alert('Error uploading document')
+    } finally {
+      setIsUploadingDocument(false)
+    }
+  }
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!guestData) return
+    
+    if (confirm('Are you sure you want to delete this document?')) {
+      try {
+        const response = await guestService.deleteDocument(guestData.id, docId)
+        if (response.success) {
+          // Refresh guest data to remove deleted document
+          const refreshResponse = await guestService.getGuestById(guestData.id)
+          if (refreshResponse.success && refreshResponse.data) {
+            setGuestData(refreshResponse.data)
+          }
+        } else {
+          alert('Failed to delete document')
+        }
+      } catch (err) {
+        console.error('Error deleting document:', err)
+        alert('Error deleting document')
+      }
     }
   }
 
@@ -332,14 +475,14 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-medium text-slate-900">{mockGuestData.name}</h1>
-                <p className="text-sm text-slate-600">{mockGuestData.nationality} • {getAge(mockGuestData.dateOfBirth)} years old</p>
+                <h1 className="text-xl font-medium text-slate-900">{guestData.name}</h1>
+                <p className="text-sm text-slate-600">{guestData.nationality} • {guestData.age || getAge(guestData.dateOfBirth)} years old</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
-                {mockGuestData.starGuest && <Star size={16} className="mr-2 text-yellow-500" />}
-                {mockGuestData.primaryGuest && <Crown size={16} className="mr-2 text-orange-500" />}
+                {guestData.starGuest && <Star size={16} className="mr-2 text-yellow-500" />}
+                {guestData.primaryGuest && <Crown size={16} className="mr-2 text-orange-500" />}
                 <span>VIP Guest</span>
               </span>
               <button 
@@ -363,7 +506,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Reservations</p>
-                  <p className="text-2xl font-medium text-slate-900">{mockReservations.length}</p>
+                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalReservations || 0}</p>
                 </div>
               </div>
             </div>
@@ -374,7 +517,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Lifetime Value</p>
-                  <p className="text-2xl font-medium text-slate-900">${totalSpent.toLocaleString()}</p>
+                  <p className="text-2xl font-medium text-slate-900">AED {guestStats?.lifetimeValue?.toLocaleString() || 0}</p>
                 </div>
               </div>
             </div>
@@ -385,7 +528,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Nights</p>
-                  <p className="text-2xl font-medium text-slate-900">{totalNights}</p>
+                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalNights || 0}</p>
                 </div>
               </div>
             </div>
@@ -403,9 +546,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Email:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{mockGuestData.email}</span>
-                      <button
-                        onClick={() => handleEditField('email', mockGuestData.email, 'Email', 'email')}
+                      <span className="text-sm text-slate-900">{guestData.email}</span>
+                      <button 
+                        onClick={() => handleEditField('email', guestData.email, 'Email', 'email')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -415,9 +558,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Phone:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{mockGuestData.phone}</span>
-                      <button
-                        onClick={() => handleEditField('phone', mockGuestData.phone, 'Phone', 'tel')}
+                      <span className="text-sm text-slate-900">{guestData.phone}</span>
+                      <button 
+                        onClick={() => handleEditField('phone', guestData.phone, 'Phone', 'tel')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -429,10 +572,10 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900 flex items-center space-x-1">
                         <span>🇺🇸</span>
-                        <span>{mockGuestData.nationality}</span>
+                        <span>{guestData.nationality}</span>
                       </span>
                       <button
-                        onClick={() => handleEditField('nationality', mockGuestData.nationality, 'Nationality', 'select')}
+                        onClick={() => handleEditField('nationality', guestData.nationality, 'Nationality', 'select')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -442,9 +585,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Birth Date:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{formatDate(mockGuestData.dateOfBirth)}</span>
+                      <span className="text-sm text-slate-900">{formatDate(guestData.dateOfBirth)}</span>
                       <button
-                        onClick={() => handleEditField('dateOfBirth', mockGuestData.dateOfBirth, 'Birth Date', 'date')}
+                        onClick={() => handleEditField('dateOfBirth', guestData.dateOfBirth, 'Birth Date', 'date')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -453,7 +596,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Age:</span>
-                    <span className="text-sm text-slate-900">{getAge(mockGuestData.dateOfBirth)} years</span>
+                    <span className="text-sm text-slate-900">{getAge(guestData.dateOfBirth)} years</span>
                   </div>
                 </div>
               </div>
@@ -469,14 +612,14 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-medium text-slate-900">Description</h3>
                   <button
-                    onClick={() => handleEditField('comments', mockGuestData.comments, 'Description', 'textarea')}
+                    onClick={() => handleEditField('comments', guestData.comments || '', 'Description', 'textarea')}
                     className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                   >
                     <Edit size={14} />
                   </button>
                 </div>
                 <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 min-h-[60px]">
-                  {mockGuestData.comments || 'No description available'}
+                  {guestData.comments || 'No description available'}
                 </div>
               </div>
 
@@ -484,57 +627,88 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-slate-900 mb-3">Reservation History</h3>
                 <div className="space-y-3">
-                  {mockReservations.map((reservation) => (
-                    <div key={reservation.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-slate-100 rounded">
-                          <Calendar size={16} className="text-slate-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-slate-900">{reservation.unit_nickname}</div>
-                          <div className="text-xs text-slate-500">
-                            {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)} • {reservation.nights} nights
+                  {(guestReservations && guestReservations.length > 0) ? (
+                    guestReservations.map((reservation) => (
+                      <div 
+                        key={reservation.id} 
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => window.location.href = `/reservations/${reservation.id}`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-slate-100 rounded">
+                            <Calendar size={16} className="text-slate-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{reservation.propertyName}</div>
+                            <div className="text-xs text-slate-500">
+                              {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-slate-900">AED {reservation.totalAmount}</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            reservation.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            reservation.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                            reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            reservation.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {reservation.status}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-slate-900">${reservation.totalAmount}</span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          reservation.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          reservation.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {reservation.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">No reservations yet</p>
+                  )}
                 </div>
               </div>
 
               {/* Documents */}
               <div className="mb-6">
-                <h3 className="text-lg font-medium text-slate-900 mb-3">Documents</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium text-slate-900">Documents</h3>
+                  <button
+                    onClick={() => setUploadDocumentModal(true)}
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
+                  >
+                    <Upload size={14} />
+                    <span>Upload</span>
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {mockGuestData.documents.map((document) => (
-                    <div key={document.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText size={16} className="text-slate-600" />
-                        <div>
-                          <div className="text-sm font-medium text-slate-900">{document.name}</div>
-                          <div className="text-xs text-slate-500">{document.type} • {document.size}</div>
+                  {(guestData.documents && guestData.documents.length > 0) ? (
+                    guestData.documents.map((document) => (
+                      <div key={document.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText size={16} className="text-slate-600" />
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{document.name}</div>
+                            <div className="text-xs text-slate-500">{document.type} • {document.size}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={() => document.url && window.open(document.url, '_blank')}
+                            className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer"
+                            title="Download"
+                          >
+                            <Download size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteDocument(document.id)}
+                            className="p-1 text-slate-600 hover:bg-red-100 hover:text-red-600 rounded cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
-                          <Download size={14} />
-                        </button>
-                        <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">No documents uploaded yet</p>
+                  )}
                 </div>
               </div>
 
@@ -542,7 +716,8 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-slate-900 mb-3">Activity Log</h3>
                 <div className="space-y-3">
-                  {mockActivityLog.map((activity) => (
+                  {(guestActivity && guestActivity.length > 0) ? (
+                    guestActivity.map((activity) => (
                     <div key={activity.id} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg">
                       <div className="p-1 bg-slate-100 rounded">
                         {getActivityIcon(activity.type)}
@@ -553,7 +728,10 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                         <div className="text-xs text-slate-500 mt-1">by {activity.user} • {formatDateTime(activity.timestamp)}</div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">No activity yet</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -645,6 +823,50 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
         </div>
       )}
 
+      {/* Upload Document Modal */}
+      {uploadDocumentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Upload Document</h3>
+                <button
+                  onClick={() => setUploadDocumentModal(false)}
+                  className="p-1 hover:bg-gray-100 rounded cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select file to upload
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      handleUploadDocument(file)
+                    }
+                  }}
+                  disabled={isUploadingDocument}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Supported formats: PDF, DOC, DOCX, JPG, PNG (max 10MB)
+                </p>
+              </div>
+              {isUploadingDocument && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {isDeleting && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -660,7 +882,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
               </div>
               <p className="text-sm text-gray-700 mb-6">
-                Are you sure you want to delete <strong>{mockGuestData.name}</strong>? 
+                Are you sure you want to delete <strong>{guestData.name}</strong>? 
                 This will permanently remove the guest profile and all associated data.
               </p>
               <div className="flex justify-end space-x-3">

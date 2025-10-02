@@ -1,29 +1,123 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
 
 interface GuestsFiltersProps {
   isOpen: boolean
   onClose: () => void
   isSidebar?: boolean
+  filters?: any
+  onApplyFilters?: (filters: any) => void
+  onClearFilters?: () => void
 }
 
-export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: GuestsFiltersProps) {
+export default function GuestsFilters({ isOpen, onClose, isSidebar = false, filters, onApplyFilters, onClearFilters }: GuestsFiltersProps) {
   const [openSections, setOpenSections] = useState({
     nationality: true,
     dateOfBirth: true,
     reservationCount: true,
-    unit: true,
-    categories: true,
-    special: true
+    propertyList: true
   })
+
+  // Local state for filter values
+  const [localFilters, setLocalFilters] = useState({
+    nationality: [] as string[],
+    dateOfBirth: { from: '', to: '' },
+    reservationCount: { min: '', max: '' },
+    unit: [] as string[]
+  })
+
+  // Debounce function
+  const debounce = useCallback((func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout
+    return (...args: any[]) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => func.apply(null, args), delay)
+    }
+  }, [])
+
+  // Debounced version for input fields
+  const debouncedApplyFilters = useCallback(
+    (filters: any) => {
+      const timeoutId = setTimeout(() => {
+        if (onApplyFilters) {
+          onApplyFilters(filters)
+        }
+      }, 500)
+      return () => clearTimeout(timeoutId)
+    },
+    [onApplyFilters]
+  )
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
+  }
+
+  // Handler for array filters (nationality, unit, categories)
+  const handleArrayFilterChange = (filterKey: string, value: string, checked: boolean) => {
+    const newFilters = { ...localFilters }
+    const currentArray = newFilters[filterKey as keyof typeof localFilters] as string[]
+    
+    if (checked) {
+      newFilters[filterKey as keyof typeof localFilters] = [...currentArray, value] as any
+    } else {
+      newFilters[filterKey as keyof typeof localFilters] = currentArray.filter(item => item !== value) as any
+    }
+    
+    setLocalFilters(newFilters)
+    
+    if (isSidebar && onApplyFilters) {
+      onApplyFilters(newFilters)
+    }
+  }
+
+  // Handler for date range filter
+  const handleDateRangeChange = (type: 'from' | 'to', value: string) => {
+    const newFilters = {
+      ...localFilters,
+      dateOfBirth: {
+        ...localFilters.dateOfBirth,
+        [type]: value
+      }
+    }
+    setLocalFilters(newFilters)
+    
+    if (isSidebar && onApplyFilters) {
+      debouncedApplyFilters(newFilters)
+    }
+  }
+
+  // Handler for reservation count filter
+  const handleReservationCountChange = (type: 'min' | 'max', value: string) => {
+    const newFilters = {
+      ...localFilters,
+      reservationCount: {
+        ...localFilters.reservationCount,
+        [type]: value
+      }
+    }
+    setLocalFilters(newFilters)
+    
+    if (isSidebar && onApplyFilters) {
+      debouncedApplyFilters(newFilters)
+    }
+  }
+
+  const handleClearFilters = () => {
+    const clearedFilters = {
+      nationality: [],
+      dateOfBirth: { from: '', to: '' },
+      reservationCount: { min: '', max: '' },
+      unit: []
+    }
+    setLocalFilters(clearedFilters)
+    if (onClearFilters) {
+      onClearFilters()
+    }
   }
 
   if (!isOpen) return null
@@ -72,10 +166,12 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
         {openSections.nationality && (
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
               {nationalities.map(nationality => (
-              <label key={nationality} className="flex items-center">
+              <label key={nationality} className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    checked={localFilters.nationality.includes(nationality)}
+                    onChange={(e) => handleArrayFilterChange('nationality', nationality, e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
                 />
                 <span className="ml-2 text-sm text-slate-700">{nationality}</span>
                 </label>
@@ -103,6 +199,8 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
               <label className="block text-xs font-medium text-slate-700 mb-1">From</label>
                   <input
                     type="date"
+                    value={localFilters.dateOfBirth.from}
+                    onChange={(e) => handleDateRangeChange('from', e.target.value)}
                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
@@ -110,6 +208,8 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
               <label className="block text-xs font-medium text-slate-700 mb-1">To</label>
                   <input
                     type="date"
+                    value={localFilters.dateOfBirth.to}
+                    onChange={(e) => handleDateRangeChange('to', e.target.value)}
                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
               </div>
@@ -137,6 +237,8 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
                   <input
                     type="number"
                     min="0"
+                    value={localFilters.reservationCount.min}
+                    onChange={(e) => handleReservationCountChange('min', e.target.value)}
                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                     placeholder="0"
                   />
@@ -146,6 +248,8 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
                   <input
                     type="number"
                     min="0"
+                    value={localFilters.reservationCount.max}
+                    onChange={(e) => handleReservationCountChange('max', e.target.value)}
                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                     placeholder="∞"
                   />
@@ -154,26 +258,28 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
           )}
         </div>
 
-      {/* Unit */}
+      {/* Property List */}
       <div>
           <button
-          onClick={() => toggleSection('unit')}
+          onClick={() => toggleSection('propertyList')}
           className="flex items-center justify-between w-full text-left mb-2"
         >
-          <label className="text-sm font-medium text-slate-700">Unit</label>
-          {openSections.unit ? (
+          <label className="text-sm font-medium text-slate-700">Property List</label>
+          {openSections.propertyList ? (
             <ChevronUp className="w-4 h-4 text-slate-500" />
           ) : (
             <ChevronDown className="w-4 h-4 text-slate-500" />
           )}
           </button>
-        {openSections.unit && (
+        {openSections.propertyList && (
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
               {units.map(unit => (
-              <label key={unit} className="flex items-center">
+              <label key={unit} className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    checked={localFilters.unit.includes(unit)}
+                    onChange={(e) => handleArrayFilterChange('unit', unit, e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
                 />
                 <span className="ml-2 text-sm text-slate-700">{unit}</span>
                 </label>
@@ -182,66 +288,14 @@ export default function GuestsFilters({ isOpen, onClose, isSidebar = false }: Gu
           )}
         </div>
 
-      {/* Categories */}
-      <div>
+      {/* Clear All Button */}
+      <div className="pt-4 border-t border-gray-200">
         <button
-          onClick={() => toggleSection('categories')}
-          className="flex items-center justify-between w-full text-left mb-2"
+          onClick={handleClearFilters}
+          className="w-full px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 cursor-pointer"
         >
-          <label className="text-sm font-medium text-slate-700">Categories</label>
-          {openSections.categories ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
+          Clear All Filters
         </button>
-        {openSections.categories && (
-          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-            {customCategories.map(category => (
-              <label key={category} className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="ml-2 text-sm text-slate-700">{category}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Special Filters */}
-      <div>
-        <button
-          onClick={() => toggleSection('special')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Special Filters</label>
-          {openSections.special ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.special && (
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">⭐ Star Guests Only</span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">👑 Primary Guests Only</span>
-            </label>
-          </div>
-        )}
       </div>
     </div>
   )

@@ -12,11 +12,8 @@ export default function AgentsPage() {
   const [filters, setFilters] = useState({
     status: '',
     nationality: '',
-    minUnits: '',
-    maxUnits: '',
-    minPayouts: '',
-    maxPayouts: '',
-    lastPayoutDate: ''
+    joinDateFrom: '',
+    joinDateTo: ''
   })
   const [selectedAgents, setSelectedAgents] = useState<number[]>([])
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
@@ -55,7 +52,7 @@ export default function AgentsPage() {
     }
   }
 
-  // Mock data for agents (same as in AgentsTable)
+  // Mock data for agents (expanded with more realistic data)
   const agents = [
     {
       id: 1,
@@ -134,6 +131,240 @@ export default function AgentsPage() {
       lastPayoutDate: '2024-01-12',
       status: 'Active' as const,
       joinDate: '2023-06-18'
+    },
+    {
+      id: 7,
+      name: 'Rajesh Kumar',
+      email: 'rajesh.kumar@email.com',
+      phone: '+91 98765 43210',
+      nationality: 'India',
+      birthday: '1986-05-20',
+      unitsAttracted: 18,
+      totalPayouts: 85000,
+      lastPayoutDate: '2024-01-22',
+      status: 'Active' as const,
+      joinDate: '2023-01-10'
+    },
+    {
+      id: 8,
+      name: 'Maria Santos',
+      email: 'maria.santos@email.com',
+      phone: '+63 917 123 4567',
+      nationality: 'Philippines',
+      birthday: '1989-08-12',
+      unitsAttracted: 7,
+      totalPayouts: 28000,
+      lastPayoutDate: '2024-01-08',
+      status: 'Active' as const,
+      joinDate: '2023-07-05'
+    },
+    {
+      id: 9,
+      name: 'Hassan Ali',
+      email: 'hassan.ali@email.com',
+      phone: '+92 300 123 4567',
+      nationality: 'Pakistan',
+      birthday: '1984-12-03',
+      unitsAttracted: 14,
+      totalPayouts: 62000,
+      lastPayoutDate: '2024-01-19',
+      status: 'Active' as const,
+      joinDate: '2023-03-22'
+    },
+    {
+      id: 10,
+      name: 'Jennifer Lee',
+      email: 'jennifer.lee@email.com',
+      phone: '+1 555 987 6543',
+      nationality: 'USA',
+      birthday: '1992-02-28',
+      unitsAttracted: 11,
+      totalPayouts: 48000,
+      lastPayoutDate: '2024-01-16',
+      status: 'Active' as const,
+      joinDate: '2023-05-15'
+    },
+    {
+      id: 11,
+      name: 'Omar Al-Rashid',
+      email: 'omar.alrashid@email.com',
+      phone: '+971 50 234 5678',
+      nationality: 'UAE',
+      birthday: '1987-10-18',
+      unitsAttracted: 13,
+      totalPayouts: 55000,
+      lastPayoutDate: '2024-01-14',
+      status: 'Active' as const,
+      joinDate: '2023-04-08'
+    },
+    {
+      id: 12,
+      name: 'Lisa Thompson',
+      email: 'lisa.thompson@email.com',
+      phone: '+44 20 9876 5432',
+      nationality: 'UK',
+      birthday: '1985-06-25',
+      unitsAttracted: 5,
+      totalPayouts: 15000,
+      lastPayoutDate: '2023-11-30',
+      status: 'Inactive' as const,
+      joinDate: '2023-09-12'
+    },
+    {
+      id: 13,
+      name: 'Ahmed Farouk',
+      email: 'ahmed.farouk@email.com',
+      phone: '+20 2 9876 5432',
+      nationality: 'Egypt',
+      birthday: '1988-01-14',
+      unitsAttracted: 16,
+      totalPayouts: 72000,
+      lastPayoutDate: '2024-01-21',
+      status: 'Active' as const,
+      joinDate: '2023-02-15'
+    },
+    {
+      id: 14,
+      name: 'Priya Sharma',
+      email: 'priya.sharma@email.com',
+      phone: '+91 98765 12345',
+      nationality: 'India',
+      birthday: '1990-09-07',
+      unitsAttracted: 9,
+      totalPayouts: 38000,
+      lastPayoutDate: '2024-01-11',
+      status: 'Active' as const,
+      joinDate: '2023-06-30'
+    },
+    {
+      id: 15,
+      name: 'Michael Brown',
+      email: 'michael.brown@email.com',
+      phone: '+61 2 9876 5432',
+      nationality: 'Australia',
+      birthday: '1983-04-22',
+      unitsAttracted: 12,
+      totalPayouts: 52000,
+      lastPayoutDate: '2024-01-17',
+      status: 'Active' as const,
+      joinDate: '2023-03-05'
+    },
+    {
+      id: 16,
+      name: 'Aisha Mohammed',
+      email: 'aisha.mohammed@email.com',
+      phone: '+971 50 345 6789',
+      nationality: 'UAE',
+      birthday: '1991-07-30',
+      unitsAttracted: 8,
+      totalPayouts: 32000,
+      lastPayoutDate: '2024-01-09',
+      status: 'Active' as const,
+      joinDate: '2023-08-20'
+    },
+    {
+      id: 17,
+      name: 'James Wilson',
+      email: 'james.wilson@email.com',
+      phone: '+44 20 3456 7890',
+      nationality: 'UK',
+      birthday: '1986-11-15',
+      unitsAttracted: 14,
+      totalPayouts: 65000,
+      lastPayoutDate: '2024-01-20',
+      status: 'Active' as const,
+      joinDate: '2023-01-25'
+    },
+    {
+      id: 18,
+      name: 'Nour El-Din',
+      email: 'nour.eldin@email.com',
+      phone: '+20 2 3456 7890',
+      nationality: 'Egypt',
+      birthday: '1989-03-08',
+      unitsAttracted: 10,
+      totalPayouts: 42000,
+      lastPayoutDate: '2024-01-13',
+      status: 'Active' as const,
+      joinDate: '2023-05-28'
+    },
+    {
+      id: 19,
+      name: 'Sofia Rodriguez',
+      email: 'sofia.rodriguez@email.com',
+      phone: '+63 917 234 5678',
+      nationality: 'Philippines',
+      birthday: '1987-12-10',
+      unitsAttracted: 6,
+      totalPayouts: 22000,
+      lastPayoutDate: '2023-12-28',
+      status: 'Inactive' as const,
+      joinDate: '2023-10-15'
+    },
+    {
+      id: 20,
+      name: 'Khalid Al-Maktoum',
+      email: 'khalid.almaktoum@email.com',
+      phone: '+971 50 456 7890',
+      nationality: 'UAE',
+      birthday: '1984-08-05',
+      unitsAttracted: 20,
+      totalPayouts: 95000,
+      lastPayoutDate: '2024-01-23',
+      status: 'Active' as const,
+      joinDate: '2022-12-01'
+    },
+    {
+      id: 21,
+      name: 'Robert Taylor',
+      email: 'robert.taylor@email.com',
+      phone: '+1 555 234 5678',
+      nationality: 'USA',
+      birthday: '1985-05-18',
+      unitsAttracted: 11,
+      totalPayouts: 46000,
+      lastPayoutDate: '2024-01-15',
+      status: 'Active' as const,
+      joinDate: '2023-04-12'
+    },
+    {
+      id: 22,
+      name: 'Amira Hassan',
+      email: 'amira.hassan@email.com',
+      phone: '+20 2 2345 6789',
+      nationality: 'Egypt',
+      birthday: '1992-01-25',
+      unitsAttracted: 7,
+      totalPayouts: 28000,
+      lastPayoutDate: '2024-01-07',
+      status: 'Active' as const,
+      joinDate: '2023-07-18'
+    },
+    {
+      id: 23,
+      name: 'Thomas Anderson',
+      email: 'thomas.anderson@email.com',
+      phone: '+44 20 2345 6789',
+      nationality: 'UK',
+      birthday: '1988-09-12',
+      unitsAttracted: 13,
+      totalPayouts: 58000,
+      lastPayoutDate: '2024-01-18',
+      status: 'Active' as const,
+      joinDate: '2023-03-10'
+    },
+    {
+      id: 24,
+      name: 'Layla Al-Zahra',
+      email: 'layla.alzahra@email.com',
+      phone: '+971 50 567 8901',
+      nationality: 'UAE',
+      birthday: '1990-06-20',
+      unitsAttracted: 9,
+      totalPayouts: 36000,
+      lastPayoutDate: '2024-01-12',
+      status: 'Active' as const,
+      joinDate: '2023-06-05'
     }
   ]
 
@@ -141,17 +372,43 @@ export default function AgentsPage() {
   const filteredAgents = agents.filter(agent => {
     const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          agent.email.toLowerCase().includes(searchTerm.toLowerCase())
+
+    // Join date range filter
+    let matchesJoinDate = true
+    if (filters.joinDateFrom || filters.joinDateTo) {
+      const agentJoinDate = new Date(agent.joinDate)
+      if (filters.joinDateFrom) {
+        const fromDate = new Date(filters.joinDateFrom)
+        matchesJoinDate = matchesJoinDate && agentJoinDate >= fromDate
+      }
+      if (filters.joinDateTo) {
+        const toDate = new Date(filters.joinDateTo)
+        matchesJoinDate = matchesJoinDate && agentJoinDate <= toDate
+      }
+    }
     
     const matchesFilters = 
       (!filters.status || agent.status === filters.status) &&
       (!filters.nationality || agent.nationality === filters.nationality) &&
-      (!filters.minUnits || agent.unitsAttracted >= parseInt(filters.minUnits)) &&
-      (!filters.maxUnits || agent.unitsAttracted <= parseInt(filters.maxUnits)) &&
-      (!filters.minPayouts || agent.totalPayouts >= parseInt(filters.minPayouts)) &&
-      (!filters.maxPayouts || agent.totalPayouts <= parseInt(filters.maxPayouts))
+      matchesJoinDate
 
     return matchesSearch && matchesFilters
   })
+
+  // Calculate real statistics
+  const totalAgents = agents.length
+  const activeAgents = agents.filter(agent => agent.status === 'Active').length
+  const totalUnits = agents.reduce((sum, agent) => sum + agent.unitsAttracted, 0)
+  const totalPayouts = agents.reduce((sum, agent) => sum + agent.totalPayouts, 0)
+  
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) {
+      return `AED ${(amount / 1000000).toFixed(1)}M`
+    } else if (amount >= 1000) {
+      return `AED ${(amount / 1000).toFixed(0)}K`
+    }
+    return `AED ${amount.toLocaleString()}`
+  }
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
@@ -200,7 +457,7 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Agents</p>
-                  <p className="text-2xl font-semibold text-slate-900">24</p>
+                  <p className="text-2xl font-semibold text-slate-900">{totalAgents}</p>
                 </div>
               </div>
             </div>
@@ -214,7 +471,7 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Active Agents</p>
-                  <p className="text-2xl font-semibold text-slate-900">18</p>
+                  <p className="text-2xl font-semibold text-slate-900">{activeAgents}</p>
                 </div>
               </div>
             </div>
@@ -228,7 +485,7 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Units</p>
-                  <p className="text-2xl font-semibold text-slate-900">156</p>
+                  <p className="text-2xl font-semibold text-slate-900">{totalUnits}</p>
                 </div>
               </div>
             </div>
@@ -242,7 +499,7 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Payouts</p>
-                  <p className="text-2xl font-semibold text-slate-900">AED 2.4M</p>
+                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(totalPayouts)}</p>
                 </div>
               </div>
             </div>

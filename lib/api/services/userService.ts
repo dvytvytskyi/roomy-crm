@@ -125,6 +125,21 @@ export class UserService {
   async getGuestStats(guestId: string): Promise<ApiResponse<GuestStats>> {
     return apiClient.get<GuestStats>(API_ENDPOINTS.USERS.GUEST_STATS(guestId));
   }
+
+  // Get owner by ID
+  async getOwnerById(id: string): Promise<ApiResponse<User>> {
+    return apiClient.get<User>(API_ENDPOINTS.USERS.OWNER_BY_ID(id));
+  }
+
+  // Update owner
+  async updateOwner(id: string, ownerData: Partial<User>): Promise<ApiResponse<User>> {
+    return apiClient.put<User>(API_ENDPOINTS.USERS.OWNER_BY_ID(id), ownerData);
+  }
+
+  // Delete owner
+  async deleteOwner(id: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<void>(API_ENDPOINTS.USERS.OWNER_BY_ID(id));
+  }
 }
 
 export const userService = new UserService();

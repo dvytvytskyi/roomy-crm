@@ -2,20 +2,27 @@
 
 import { useState } from 'react'
 import { Eye, Edit, Trash2, Star, Crown, User, Phone, Mail, Calendar, MapPin, MessageSquare, ChevronUp, ChevronDown } from 'lucide-react'
+import { Guest } from '@/lib/api/services/guestService'
 
 interface GuestsTableProps {
   searchTerm: string
   onEditGuest: (guest: any) => void
-  selectedGuests: number[]
-  onSelectionChange: (selected: number[]) => void
+  selectedGuests: string[]
+  onSelectionChange: (selected: string[]) => void
+  guests?: Guest[]
+  isLoading?: boolean
 }
 
-export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, onSelectionChange }: GuestsTableProps) {
+export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, onSelectionChange, guests, isLoading }: GuestsTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
-  // Mock data for guests
-  const mockGuests = [
+  // Use real guests from API
+  const dataSource = guests || []
+  console.log('👥 GuestsTable - dataSource length:', dataSource.length)
+
+  // Mock data removed - using real API data
+  const mockGuests_OLD = [
     {
       id: 1,
       name: 'John Smith',
@@ -190,21 +197,8 @@ export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, o
     return diffDays <= 30 && diffDays >= 0
   }
 
-  // Filter and search logic
-  const filteredGuests = mockGuests.filter(guest => {
-    // Search term filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
-      if (!guest.name.toLowerCase().includes(searchLower) &&
-          !guest.email.toLowerCase().includes(searchLower) &&
-          !guest.phone.includes(searchTerm) &&
-          !guest.nationality.toLowerCase().includes(searchLower) &&
-          !guest.comments.toLowerCase().includes(searchLower)) {
-        return false
-      }
-    }
-    return true
-  })
+  // No local filtering - handled by backend
+  const filteredGuests = dataSource
 
   // Sort guests
   const sortedGuests = [...filteredGuests].sort((a, b) => {
@@ -224,7 +218,7 @@ export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, o
     }
   }
 
-  const handleSelectGuest = (guestId: number) => {
+  const handleSelectGuest = (guestId: string) => {
     if (selectedGuests.includes(guestId)) {
       onSelectionChange(selectedGuests.filter(id => id !== guestId))
     } else {
@@ -261,6 +255,17 @@ export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, o
       'Australian': '🇦🇺'
     }
     return flags[nationality] || '🌍'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading guests...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

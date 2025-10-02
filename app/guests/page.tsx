@@ -1,26 +1,71 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Search, Filter, Download, Mail, MessageSquare, User, Phone, Mail as MailIcon, Calendar, MapPin, Star, Crown, Users, Eye, Edit, Trash2 } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import GuestsTable from '@/components/guests/GuestsTable'
 import GuestsFilters from '@/components/guests/GuestsFilters'
 import AddGuestModal from '@/components/guests/AddGuestModal'
+import { guestService, Guest, GuestFilters } from '@/lib/api/services/guestService'
 
 export default function GuestsPage() {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGuest, setSelectedGuest] = useState<any>(null)
-  const [selectedGuests, setSelectedGuests] = useState<number[]>([])
-  const [filters, setFilters] = useState({
+  const [selectedGuests, setSelectedGuests] = useState<string[]>([])
+  const [guests, setGuests] = useState<Guest[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState<any>(null)
+  const [filters, setFilters] = useState<GuestFilters>({
     nationality: [],
     dateOfBirth: { from: '', to: '' },
     reservationCount: { min: '', max: '' },
-    unit: [],
-    customCategories: [],
-    starGuests: false,
-    primaryGuests: false
+    unit: []
   })
+
+  // Load guests from API
+  const loadGuests = useCallback(async (currentFilters?: GuestFilters) => {
+    console.log('👥 GuestsPage: Loading guests...')
+    console.log('👥 GuestsPage: Using filters:', currentFilters || filters)
+    
+    try {
+      setIsLoading(true)
+      const filtersWithSearch = {
+        ...(currentFilters || filters),
+        searchTerm: searchTerm
+      }
+      const response = await guestService.getGuests(filtersWithSearch)
+      
+      if (response.success && response.data) {
+        console.log('👥 GuestsPage: Guests loaded:', response.data.length)
+        setGuests(response.data)
+      } else {
+        console.error('👥 GuestsPage: Failed to load guests:', response.error)
+      }
+    } catch (error) {
+      console.error('👥 GuestsPage: Error loading guests:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filters, searchTerm])
+
+  // Load stats from API
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await guestService.getGuestStats()
+      if (response.success && response.data) {
+        setStats(response.data)
+      }
+    } catch (error) {
+      console.error('👥 GuestsPage: Error loading stats:', error)
+    }
+  }, [])
+
+  // Load guests on mount and when filters/search change
+  useEffect(() => {
+    loadGuests()
+    loadStats()
+  }, [filters, searchTerm])
 
   const handleCreateGuest = () => {
     setSelectedGuest(null)
@@ -30,6 +75,21 @@ export default function GuestsPage() {
   const handleEditGuest = (guest: any) => {
     setSelectedGuest(guest)
     setIsGuestModalOpen(true)
+  }
+
+  const handleApplyFilters = (newFilters: GuestFilters) => {
+    console.log('👥 GuestsPage: Applying filters:', newFilters)
+    setFilters(newFilters)
+  }
+
+  const handleClearFilters = () => {
+    console.log('👥 GuestsPage: Clearing filters')
+    setFilters({
+      nationality: [],
+      dateOfBirth: { from: '', to: '' },
+      reservationCount: { min: '', max: '' },
+      unit: []
+    })
   }
 
   const handleBulkAction = (action: 'archive' | 'delete' | 'export') => {
@@ -98,7 +158,7 @@ export default function GuestsPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">1,247</p>
+                  <p className="text-2xl font-medium text-slate-900">{stats?.totalGuests || 0}</p>
                 </div>
               </div>
             </div>
@@ -110,7 +170,7 @@ export default function GuestsPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Star Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">89</p>
+                  <p className="text-2xl font-medium text-slate-900">{stats?.starGuests || 0}</p>
                 </div>
               </div>
             </div>
@@ -122,7 +182,7 @@ export default function GuestsPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Primary Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">456</p>
+                  <p className="text-2xl font-medium text-slate-900">{stats?.primaryGuests || 0}</p>
                 </div>
               </div>
             </div>
@@ -134,7 +194,7 @@ export default function GuestsPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Birthdays This Month</p>
-                  <p className="text-2xl font-medium text-slate-900">12</p>
+                  <p className="text-2xl font-medium text-slate-900">{stats?.birthdaysThisMonth || 0}</p>
                 </div>
               </div>
             </div>
@@ -197,6 +257,9 @@ export default function GuestsPage() {
                   isOpen={true}
                   onClose={() => {}}
                   isSidebar={true}
+                  filters={filters}
+                  onApplyFilters={handleApplyFilters}
+                  onClearFilters={handleClearFilters}
                 />
               </div>
             </div>
@@ -210,6 +273,8 @@ export default function GuestsPage() {
                 onEditGuest={handleEditGuest}
                 selectedGuests={selectedGuests}
                 onSelectionChange={setSelectedGuests}
+                guests={guests}
+                isLoading={isLoading}
               />
             </div>
           </div>

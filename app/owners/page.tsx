@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Plus, Filter, Download, Mail, User, Calendar, MapPin, Phone, Mail as MailIcon, MessageSquare, Users, Building } from 'lucide-react'
 import TopNavigation from '../../components/TopNavigation'
 import OwnersTableSimple from '../../components/owners/OwnersTableSimple'
@@ -12,7 +12,6 @@ export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     nationality: [] as string[],
-    units: [] as string[],
     status: [] as string[],
     dateOfBirth: {
       from: '',
@@ -26,13 +25,46 @@ export default function OwnersPage() {
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
 
-  // API hooks
-  const { data: ownersData, loading: ownersLoading, error: ownersError, refetch: refetchOwners } = useOwners({
-    search: searchTerm,
-    page,
-    limit,
-    isActive: filters.status.includes('active') ? true : filters.status.includes('inactive') ? false : undefined
-  })
+  // Debounced search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+    
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Memoized filter params to prevent unnecessary API calls
+  const filterParams = useMemo(() => {
+    const params = {
+      search: debouncedSearchTerm,
+      page,
+      limit,
+      nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
+      isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined,
+      dateOfBirthFrom: filters.dateOfBirth.from || undefined,
+      dateOfBirthTo: filters.dateOfBirth.to || undefined,
+      phoneNumber: filters.phoneNumber || undefined,
+      comments: filters.comments || undefined
+    }
+    console.log('🔍 Owners filter params:', params)
+    return params
+  }, [
+    debouncedSearchTerm, 
+    page, 
+    limit, 
+    filters.nationality, 
+    filters.status, 
+    filters.dateOfBirth.from, 
+    filters.dateOfBirth.to, 
+    filters.phoneNumber, 
+    filters.comments
+  ])
+
+  // API hooks with debounced filters
+  const { data: ownersData, loading: ownersLoading, error: ownersError, refetch: refetchOwners } = useOwners(filterParams)
   const { data: statsData, loading: statsLoading } = useUserStats()
 
   const handleApplyFilters = (newFilters: any) => {
@@ -42,7 +74,6 @@ export default function OwnersPage() {
   const handleClearFilters = () => {
     setFilters({
       nationality: [],
-      units: [],
       status: [],
       dateOfBirth: { from: '', to: '' },
       phoneNumber: '',
@@ -60,15 +91,17 @@ export default function OwnersPage() {
     setShowAddOwnerModal(false)
     // Refresh owners list after adding
     refetchOwners()
+    // Also refresh stats
+    window.location.reload()
   }
 
   return (
     <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
       <TopNavigation />
       
-      <div className="flex-1 flex flex-col min-h-0" style={{ marginTop: '64px' }}>
+      <div className="flex-1 flex flex-col min-h-0" style={{ marginTop: '52px' }}>
         {/* Header */}
-        <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+        <div className="px-4 py-3 flex-shrink-0">
           <div className="bg-white rounded-xl border border-gray-200 p-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -102,7 +135,7 @@ export default function OwnersPage() {
           </div>
 
         {/* Stats Cards */}
-        <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+        <div className="px-4 py-3 flex-shrink-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl border border-gray-200 p-3">
               <div className="flex items-center space-x-3">
@@ -140,7 +173,7 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Units</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : '156'}
+                    {statsLoading ? '...' : (ownersData?.users.reduce((sum, owner) => sum + (owner.totalUnits || 0), 0) || 0)}
                   </p>
                 </div>
               </div>
@@ -154,7 +187,7 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">VIP Owners</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : '8'}
+                    {statsLoading ? '...' : (ownersData?.users.filter(o => filters.status.includes('VIP') || o.comments?.includes('VIP')).length || 0)}
                   </p>
                 </div>
               </div>
@@ -163,7 +196,7 @@ export default function OwnersPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex gap-8 px-2 sm:px-3 lg:px-4 py-1.5 min-h-0 overflow-hidden">
+        <div className="flex-1 flex gap-8 px-4 py-3 min-h-0 overflow-hidden">
           {/* Filters Sidebar */}
           <div className="w-64 flex-shrink-0">
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
@@ -246,15 +279,20 @@ export default function OwnersPage() {
                   </div>
                 </div>
               ) : (
-                <OwnersTableSimple
-                  owners={ownersData?.users || []}
-                  pagination={ownersData?.pagination}
-                  searchTerm={searchTerm}
-                  filters={filters}
-                  selectedOwners={selectedOwners}
-                  onSelectionChange={setSelectedOwners}
-                  onPageChange={setPage}
-                />
+            <OwnersTableSimple
+              owners={ownersData?.users || []}
+              pagination={ownersData?.pagination}
+              searchTerm={searchTerm}
+              filters={filters}
+              selectedOwners={selectedOwners}
+              onSelectionChange={setSelectedOwners}
+              onPageChange={setPage}
+              onRefresh={() => {
+                refetchOwners()
+                // Also refetch stats to update the counts
+                window.location.reload()
+              }}
+            />
               )}
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { userService, User, UserStats, OwnerStats, AgentStats, GuestStats, UsersResponse } from '@/lib/api';
 import { useApi, useApiMutation } from './useApi';
 import { FilterParams, PaginationParams } from '@/lib/api';
@@ -11,10 +11,31 @@ export function useUsers(filters: FilterParams & PaginationParams = {}) {
 }
 
 export function useOwners(filters: FilterParams & PaginationParams = {}) {
-  return useApi<UsersResponse>(
-    () => userService.getOwners(filters),
-    { immediate: true }
-  );
+  const prevFiltersRef = useRef<string>('')
+  
+  const apiCall = useCallback(() => {
+    const filtersString = JSON.stringify(filters)
+    if (prevFiltersRef.current === filtersString) {
+      console.log('🔄 useOwners: Skipping duplicate API call')
+      return Promise.resolve({ success: true, data: null })
+    }
+    
+    prevFiltersRef.current = filtersString
+    console.log('📞 useOwners API call with filters:', filters)
+    return userService.getOwners(filters)
+  }, [
+    filters.search,
+    filters.page,
+    filters.limit,
+    filters.nationality,
+    filters.isActive,
+    filters.dateOfBirthFrom,
+    filters.dateOfBirthTo,
+    filters.phoneNumber,
+    filters.comments
+  ])
+  
+  return useApi<UsersResponse>(apiCall, { immediate: true });
 }
 
 export function useAgents(filters: FilterParams & PaginationParams = {}) {
@@ -32,10 +53,20 @@ export function useGuests(filters: FilterParams & PaginationParams = {}) {
 }
 
 export function useUserStats() {
-  return useApi<UserStats>(
-    () => userService.getUserStats(),
-    { immediate: true }
-  );
+  const hasCalledRef = useRef(false)
+  
+  const apiCall = useCallback(() => {
+    if (hasCalledRef.current) {
+      console.log('🔄 useUserStats: Skipping duplicate API call')
+      return Promise.resolve({ success: true, data: null })
+    }
+    
+    hasCalledRef.current = true
+    console.log('📊 useUserStats API call')
+    return userService.getUserStats()
+  }, [])
+  
+  return useApi<UserStats>(apiCall, { immediate: true });
 }
 
 export function useOwnerStats(ownerId: string) {

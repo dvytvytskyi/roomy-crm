@@ -13,13 +13,11 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     status: true,
     nationality: true,
-    units: false,
-    payouts: false,
-    date: false
+    joinDate: false
   })
 
   const nationalities = [
-    'UAE', 'UK', 'Egypt', 'Australia', 'USA', 'India', 'Pakistan', 'Philippines'
+    'UAE', 'UK', 'Egypt', 'Australia', 'USA', 'India', 'Pakistan', 'Philippines', 'Canada', 'Germany', 'France', 'Italy', 'Spain', 'Netherlands', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Japan', 'South Korea', 'China', 'Thailand', 'Malaysia', 'Singapore', 'Indonesia', 'Brazil', 'Argentina', 'Mexico', 'South Africa', 'Nigeria', 'Kenya', 'Morocco', 'Algeria', 'Tunisia', 'Lebanon', 'Jordan', 'Saudi Arabia', 'Kuwait', 'Qatar', 'Bahrain', 'Oman'
   ]
 
   const toggleSection = (section: string) => {
@@ -37,11 +35,8 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
     onFilterChange({
       status: '',
       nationality: '',
-      minUnits: '',
-      maxUnits: '',
-      minPayouts: '',
-      maxPayouts: '',
-      lastPayoutDate: ''
+      joinDateFrom: '',
+      joinDateTo: ''
     })
   }
 
@@ -51,7 +46,17 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
     return (
       <div className="bg-white rounded-xl border border-gray-200 h-full overflow-y-auto custom-scrollbar">
         <div className="p-4">
-          <h2 className="text-lg font-medium text-slate-900 mb-4">Filters</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-slate-900">Filters</h2>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
           
           {/* Status */}
           <div className="mb-4">
@@ -124,93 +129,36 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
             )}
           </div>
 
-          {/* Units Range */}
+
+          {/* Join Date Range */}
           <div className="mb-4">
             <button
-              onClick={() => toggleSection('units')}
+              onClick={() => toggleSection('joinDate')}
               className="flex items-center justify-between w-full text-left text-sm font-medium text-slate-700 mb-2"
             >
-              Units Attracted
-              {openSections.units ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              Join Date Range
+              {openSections.joinDate ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
-            {openSections.units && (
+            {openSections.joinDate && (
               <div className="space-y-2">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Min Units</label>
+                  <label className="block text-xs text-slate-500 mb-1">From</label>
                   <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minUnits}
-                    onChange={(e) => handleInputChange('minUnits', e.target.value)}
+                    type="date"
+                    value={filters.joinDateFrom || ''}
+                    onChange={(e) => handleInputChange('joinDateFrom', e.target.value)}
                     className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">Max Units</label>
+                  <label className="block text-xs text-slate-500 mb-1">To</label>
                   <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxUnits}
-                    onChange={(e) => handleInputChange('maxUnits', e.target.value)}
+                    type="date"
+                    value={filters.joinDateTo || ''}
+                    onChange={(e) => handleInputChange('joinDateTo', e.target.value)}
                     className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Payouts Range */}
-          <div className="mb-4">
-            <button
-              onClick={() => toggleSection('payouts')}
-              className="flex items-center justify-between w-full text-left text-sm font-medium text-slate-700 mb-2"
-            >
-              Total Payouts (AED)
-              {openSections.payouts ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {openSections.payouts && (
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Min Payouts</label>
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPayouts}
-                    onChange={(e) => handleInputChange('minPayouts', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Max Payouts</label>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPayouts}
-                    onChange={(e) => handleInputChange('maxPayouts', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Last Payout Date */}
-          <div className="mb-4">
-            <button
-              onClick={() => toggleSection('date')}
-              className="flex items-center justify-between w-full text-left text-sm font-medium text-slate-700 mb-2"
-            >
-              Last Payout Date
-              {openSections.date ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {openSections.date && (
-              <div>
-                <input
-                  type="date"
-                  value={filters.lastPayoutDate}
-                  onChange={(e) => handleInputChange('lastPayoutDate', e.target.value)}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                />
               </div>
             )}
           </div>

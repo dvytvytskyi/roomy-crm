@@ -1,8 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3001/api' 
-    : 'http://5.223.55.121:3001/api',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   TIMEOUT: 30000, // Збільшуємо timeout до 30 секунд
   HEADERS: {
     'Content-Type': 'application/json',
@@ -32,6 +30,7 @@ export const API_ENDPOINTS = {
     OWNER_STATS: (id: string) => `/users/owners/${id}/stats`,
     AGENT_STATS: (id: string) => `/users/agents/${id}/stats`,
     GUEST_STATS: (id: string) => `/users/guests/${id}/stats`,
+    OWNER_BY_ID: (id: string) => `/users/owners/${id}`,
   },
   
   // Settings

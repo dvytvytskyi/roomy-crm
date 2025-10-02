@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, 
   Edit, Trash2, Plus, Eye, Star, Crown, Download, Upload, FileText, 
@@ -10,6 +10,9 @@ import TopNavigation from '@/components/TopNavigation'
 import CashPaymentModal from '@/components/owners/CashPaymentModal'
 import BankPaymentModal from '@/components/owners/BankPaymentModal'
 import AddBankAccountModal from '@/components/owners/AddBankAccountModal'
+import UploadDocumentModal from '@/components/owners/UploadDocumentModal'
+import { userService } from '@/lib/api/services/userService'
+import { User as UserType } from '@/lib/api'
 
 interface OwnerDetailsPageProps {
   params: {
@@ -17,10 +20,155 @@ interface OwnerDetailsPageProps {
   }
 }
 
+// Extended owner type that includes all fields from both API and mock data
+interface ExtendedOwner {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  role: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  name?: string
+  nationality?: string
+  dateOfBirth?: string
+  whatsapp?: string
+  telegram?: string
+  reservationCount?: number
+  properties?: string[]
+  totalUnits?: number
+  comments?: string
+  units?: Array<{
+    id: number
+    name: string
+    nickname: string
+    location: string
+    profitFormula: string
+    totalProfit: number
+    photo: string
+  }>
+  bankDetails?: Array<{
+    id: number
+    bankName: string
+    accountHolderName: string
+    accountNumber: string
+    iban: string
+    swiftCode: string
+    bankAddress: string
+    isPrimary: boolean
+    addedDate: string
+    addedBy: string
+    addedByEmail: string
+  }>
+  transactions?: Array<{
+    id: number
+    type: 'payment' | 'cash_payment' | 'refund'
+    amount: number
+    currency: string
+    description: string
+    bankDetailId: number | null
+    status: 'completed' | 'pending' | 'failed'
+    date: string
+    processedBy: string
+    processedByEmail: string
+    reference: string
+    title?: string
+    responsible?: string
+  }>
+  status?: string
+  vipStatus?: boolean
+  paymentPreferences?: string
+  personalStayDays?: number
+  totalProfit?: number
+  lifetimeValue?: number
+  documents?: Array<{
+    id: number
+    name: string
+    type: string
+    uploadedAt: string
+    size: string
+    s3Key?: string
+    s3Url?: string
+    filename?: string
+  }>
+  activityLog?: Array<{
+    id: number
+    action: string
+    description: string
+    user: string
+    timestamp: string
+    type: 'create' | 'update' | 'delete' | 'payment' | 'document' | 'unit'
+  }>
+  createdBy?: string
+  lastModifiedBy?: string
+  lastModifiedAt?: string
+}
+
+// Function to get country flag emoji
+const getCountryFlag = (nationality: string) => {
+  const flagMap: { [key: string]: string } = {
+    'Emirati': '🇦🇪',
+    'British': '🇬🇧',
+    'Canadian': '🇨🇦',
+    'French': '🇫🇷',
+    'German': '🇩🇪',
+    'Italian': '🇮🇹',
+    'Spanish': '🇪🇸',
+    'Chinese': '🇨🇳',
+    'Japanese': '🇯🇵',
+    'Korean': '🇰🇷',
+    'Indian': '🇮🇳',
+    'Australian': '🇦🇺',
+    'Brazilian': '🇧🇷',
+    'Egyptian': '🇪🇬',
+    'Saudi Arabian': '🇸🇦',
+    'Turkish': '🇹🇷',
+    'Greek': '🇬🇷',
+    'Russian': '🇷🇺',
+    'American': '🇺🇸',
+    'Other': '🌍'
+  }
+  return flagMap[nationality] || '🌍'
+}
+
 export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
-  // Mock data for the specific owner
-  const mockOwner = {
-    id: parseInt(params.id),
+  // State for owner data
+  const [owner, setOwner] = useState<ExtendedOwner | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // State for document upload modal
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  
+  // State for activity log
+  const [activityLog, setActivityLog] = useState<Array<{
+    id: number
+    action: string
+    description: string
+    user: string
+    timestamp: string
+    type: 'create' | 'update' | 'delete' | 'payment' | 'document' | 'unit'
+  }>>([])
+  
+  // State for documents
+  const [documents, setDocuments] = useState<Array<{
+    id: number
+    name: string
+    type: string
+    uploadedAt: string
+    size: string
+    s3Key?: string
+    s3Url?: string
+    filename?: string
+  }>>([])
+
+  // Mock data for the specific owner (fallback)
+  const mockOwner: ExtendedOwner = {
+    id: params.id,
+    firstName: 'Ahmed',
+    lastName: 'Al-Rashid',
     name: 'Ahmed Al-Rashid',
     nationality: 'Emirati',
     dateOfBirth: '1975-03-15',
@@ -29,6 +177,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     whatsapp: '+971 50 123 4567',
     telegram: '@ahmedrashid',
     reservationCount: 45,
+    properties: ['Burj Khalifa Studio', 'Marina View', 'Downtown Loft'],
     units: [
       {
         id: 1,
@@ -66,6 +215,10 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     totalUnits: 3,
     totalProfit: 41050,
     lifetimeValue: 287500,
+    role: 'OWNER',
+    isActive: true,
+    createdAt: '2024-01-15T10:30:00Z',
+    updatedAt: '2024-07-20T14:20:00Z',
     documents: [
       {
         id: 1,
@@ -82,8 +235,10 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         size: '1.1 MB'
       }
     ],
+    bankDetails: [],
+    transactions: [],
+    activityLog: [],
     createdBy: 'Admin',
-    createdAt: '2024-01-15T10:30:00Z',
     lastModifiedBy: 'Manager',
     lastModifiedAt: '2024-07-20T14:20:00Z'
   }
@@ -123,6 +278,88 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       type: 'create'
     }
   ]
+
+  // Load owner data
+  useEffect(() => {
+    const loadOwner = async () => {
+      try {
+        setIsLoading(true)
+        const response = await userService.getOwnerById(params.id)
+        if (response.success && response.data) {
+          // Convert API data to ExtendedOwner format
+          const apiData = response.data as any
+          const extendedOwner: ExtendedOwner = {
+            ...response.data,
+            name: `${response.data.firstName} ${response.data.lastName}`,
+            nationality: apiData.nationality || 'Emirati',
+            dateOfBirth: apiData.dateOfBirth || '1975-03-15',
+            whatsapp: response.data.phone,
+            telegram: '@ahmedrashid',
+            reservationCount: 45,
+            properties: apiData.properties || [],
+            units: [
+              {
+                id: 1,
+                name: 'Burj Khalifa Studio',
+                nickname: 'BK Studio',
+                location: 'Downtown Dubai',
+                profitFormula: '70% Owner / 30% Company',
+                totalProfit: 12500,
+                photo: '/api/placeholder/150/100'
+              }
+            ],
+            comments: apiData.comments || 'VIP owner, prefers bank transfer payments',
+            status: response.data.isActive ? 'Active' : 'Inactive',
+            vipStatus: true,
+            paymentPreferences: 'Bank Transfer',
+            personalStayDays: 30,
+            totalUnits: apiData.totalUnits || 1,
+            totalProfit: 41050,
+            lifetimeValue: 287500,
+            documents: apiData.documents || [],
+            bankDetails: apiData.bankDetails || [],
+            transactions: apiData.transactions || [],
+            activityLog: apiData.activityLog || [],
+            createdBy: 'Admin',
+            createdAt: response.data.createdAt,
+            lastModifiedBy: 'Manager',
+            lastModifiedAt: response.data.updatedAt
+          }
+          setOwner(extendedOwner)
+          
+          // Load bank details if available
+          if ((response.data as any).bankDetails && Array.isArray((response.data as any).bankDetails)) {
+            setBankDetails((response.data as any).bankDetails)
+          }
+          
+          // Load transactions if available
+          if ((response.data as any).transactions && Array.isArray((response.data as any).transactions)) {
+            setTransactions((response.data as any).transactions)
+          }
+          
+          // Load activity log if available
+          if ((response.data as any).activityLog && Array.isArray((response.data as any).activityLog)) {
+            setActivityLog((response.data as any).activityLog)
+          }
+          
+          // Load documents if available
+          if ((response.data as any).documents && Array.isArray((response.data as any).documents)) {
+            setDocuments((response.data as any).documents)
+          }
+        } else {
+          setError('Owner not found')
+        }
+      } catch (err) {
+        console.error('Error loading owner:', err)
+        setError('Failed to load owner data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadOwner()
+  }, [params.id])
+
 
   // State declarations
   const [isCashPaymentModalOpen, setIsCashPaymentModalOpen] = useState(false)
@@ -360,27 +597,136 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     })
   }
 
-  const handleSaveEdit = (newValue: string) => {
-    // In real app, this would update the backend
-    console.log(`Updating ${editModal.field} to:`, newValue)
+  const handleSaveEdit = async (newValue: string) => {
+    if (!owner) return
+
+    try {
+      // Convert ExtendedOwner back to API format for update
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        [editModal.field]: newValue
+      }
+      
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success && response.data) {
+        // Update the local state with the new value
+        setOwner(prev => prev ? { ...prev, [editModal.field]: newValue } : null)
+        console.log(`Updated ${editModal.field} to:`, newValue)
+      } else {
+        console.error('Failed to update owner')
+        alert('Failed to update owner. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating owner:', error)
+      alert('Failed to update owner. Please try again.')
+    } finally {
     setEditModal({ isOpen: false, field: '', currentValue: '', title: '', inputType: 'text' })
+    }
   }
 
   const handleCloseEdit = () => {
     setEditModal({ isOpen: false, field: '', currentValue: '', title: '', inputType: 'text' })
   }
 
-  const handleRemoveBankDetail = (bankDetailId: number) => {
-    if (confirm('Are you sure you want to delete this bank detail?')) {
-      setBankDetails(prev => prev.filter(detail => detail.id !== bankDetailId))
+
+
+
+  const handleRemoveBankDetail = async (bankDetailId: number) => {
+    if (!confirm('Are you sure you want to delete this bank detail?')) return
+    if (!owner) return
+
+    const newBankDetails = bankDetails.filter(detail => detail.id !== bankDetailId)
+    
+    // Update local state first
+    setBankDetails(newBankDetails)
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: newBankDetails
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Bank account deleted successfully')
+      } else {
+        console.error('Failed to delete bank account')
+        alert('Failed to delete bank account. Please try again.')
+        // Revert local state on error
+        setBankDetails(bankDetails)
+      }
+    } catch (error) {
+      console.error('Error deleting bank account:', error)
+      alert('Failed to delete bank account. Please try again.')
+      // Revert local state on error
+      setBankDetails(bankDetails)
     }
   }
 
-  const handleSetPrimaryBank = (bankDetailId: number) => {
-    setBankDetails(prev => prev.map(detail => ({
+  const handleSetPrimaryBank = async (bankDetailId: number) => {
+    if (!owner) return
+
+    const newBankDetails = bankDetails.map(detail => ({
       ...detail,
       isPrimary: detail.id === bankDetailId
-    })))
+    }))
+
+    // Update local state first
+    setBankDetails(newBankDetails)
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: newBankDetails
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Primary bank account updated successfully')
+      } else {
+        console.error('Failed to update primary bank account')
+        alert('Failed to update primary bank account. Please try again.')
+        // Revert local state on error
+        setBankDetails(bankDetails)
+      }
+    } catch (error) {
+      console.error('Error updating primary bank account:', error)
+      alert('Failed to update primary bank account. Please try again.')
+      // Revert local state on error
+      setBankDetails(bankDetails)
+    }
   }
 
   const handleMakePayment = () => {
@@ -395,13 +741,368 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     setIsAddBankAccountModalOpen(true)
   }
 
-  const handleSaveCashPayment = (paymentData: {
+  const handleUploadDocument = async (documentData: {
+    name: string
+    type: string
+    file: File
+  }) => {
+    if (!owner) return
+
+    try {
+      // First, upload file to S3
+      const formData = new FormData()
+      formData.append('file', documentData.file)
+      formData.append('folder', 'documents')
+      formData.append('ownerId', owner.id)
+
+      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': 'Bearer mock-token'
+        }
+      })
+
+      const uploadResult = await uploadResponse.json()
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Failed to upload file to S3')
+      }
+
+      // Create new document with S3 info
+      const newDocument = {
+        id: (documents.length || 0) + 1,
+        name: documentData.name,
+        type: documentData.type,
+        uploadedAt: new Date().toISOString(),
+        size: `${(documentData.file.size / 1024 / 1024).toFixed(1)} MB`,
+        s3Key: uploadResult.key,
+        s3Url: uploadResult.url,
+        filename: uploadResult.filename
+      }
+
+      // Update local state first
+      const newDocuments = [...documents, newDocument]
+      setDocuments(newDocuments)
+      setOwner(prev => prev ? {
+        ...prev,
+        documents: newDocuments
+      } : null)
+
+      // Save document metadata to backend
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: owner.transactions || [],
+        documents: newDocuments
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Document uploaded and saved successfully')
+        // Add activity log entry - pass newDocuments to ensure consistency
+        addActivityLogEntry('document', 'Document Uploaded', `Uploaded document: ${documentData.name} (${documentData.type})`, newDocuments)
+      } else {
+        console.error('Failed to save document metadata')
+        alert('Failed to save document metadata. Please try again.')
+        // Revert local state on error
+        setDocuments(documents)
+        setOwner(prev => prev ? {
+          ...prev,
+          documents: documents
+        } : null)
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to upload document: ${errorMessage}`)
+      // Revert local state on error
+      setDocuments(documents)
+      setOwner(prev => prev ? {
+        ...prev,
+        documents: documents
+      } : null)
+    }
+  }
+
+  const handleDeleteDocument = async (documentId: number) => {
+    if (!owner) return
+    if (!confirm('Are you sure you want to delete this document?')) return
+
+    const documentToDelete = documents.find(doc => doc.id === documentId)
+    if (!documentToDelete) return
+
+    const newDocuments = documents.filter(doc => doc.id !== documentId)
+
+    // Update local state first
+    setDocuments(newDocuments)
+    setOwner(prev => prev ? {
+      ...prev,
+      documents: newDocuments
+    } : null)
+
+    try {
+      // Delete file from S3 if it has s3Key
+      if (documentToDelete.s3Key) {
+        const deleteResponse = await fetch(`http://localhost:3001/api/files/${encodeURIComponent(documentToDelete.s3Key)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer mock-token'
+          }
+        })
+
+        const deleteResult = await deleteResponse.json()
+        if (!deleteResult.success) {
+          console.warn('Failed to delete file from S3:', deleteResult.message)
+        }
+      }
+
+      // Save to backend
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: owner.transactions || [],
+        documents: newDocuments
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Document deleted successfully')
+        // Add activity log entry - pass newDocuments to ensure consistency
+        addActivityLogEntry('document', 'Document Deleted', `Deleted document: ${documentToDelete.name}`, newDocuments)
+      } else {
+        console.error('Failed to delete document')
+        alert('Failed to delete document. Please try again.')
+        // Revert local state on error
+        setDocuments(documents)
+        setOwner(prev => prev ? {
+          ...prev,
+          documents: documents
+        } : null)
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to delete document: ${errorMessage}`)
+      // Revert local state on error
+      setDocuments(documents)
+      setOwner(prev => prev ? {
+        ...prev,
+        documents: documents
+      } : null)
+    }
+  }
+
+  // Function to add activity log entry
+  const addActivityLogEntry = async (
+    type: 'create' | 'update' | 'delete' | 'payment' | 'document' | 'unit',
+    action: string,
+    description: string,
+    updatedDocuments?: Array<any>
+  ) => {
+    if (!owner) return
+
+    const newActivity = {
+      id: (activityLog.length || 0) + 1,
+      action,
+      description,
+      user: 'Current User',
+      timestamp: new Date().toISOString(),
+      type
+    }
+
+    // Update local activity log
+    const newActivityLog = [newActivity, ...activityLog]
+    setActivityLog(newActivityLog)
+
+    // Save to backend - use updatedDocuments if provided to ensure we have the latest
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: owner.transactions || [],
+        documents: updatedDocuments !== undefined ? updatedDocuments : documents,
+        activityLog: newActivityLog
+      }
+
+      await userService.updateOwner(owner.id, apiOwnerData)
+    } catch (error) {
+      console.error('Error saving activity log:', error)
+    }
+  }
+
+  const handleAddUnit = async (unitData: {
+    name: string
+    nickname: string
+    location: string
+    profitFormula: string
+  }) => {
+    if (!owner) return
+
+    // Create new unit
+    const newUnit = {
+      id: (currentOwner.units?.length || 0) + 1,
+      name: unitData.name,
+      nickname: unitData.nickname,
+      location: unitData.location,
+      profitFormula: unitData.profitFormula,
+      totalProfit: 0,
+      photo: '/api/placeholder/150/100'
+    }
+
+    // Update local state first
+    setOwner(prev => prev ? {
+      ...prev,
+      units: [...(prev.units || []), newUnit],
+      totalUnits: (prev.totalUnits || 0) + 1
+    } : null)
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: [...(owner.properties || []), unitData.name],
+        totalUnits: (owner.totalUnits || 0) + 1,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: owner.transactions || [],
+        documents: owner.documents || [],
+        units: [...(owner.units || []), newUnit]
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Unit added successfully')
+      } else {
+        console.error('Failed to add unit')
+        alert('Failed to add unit. Please try again.')
+        // Revert local state on error
+        setOwner(prev => prev ? {
+          ...prev,
+          units: prev.units?.filter(unit => unit.id !== newUnit.id) || [],
+          totalUnits: prev.totalUnits || 0
+        } : null)
+      }
+    } catch (error) {
+      console.error('Error adding unit:', error)
+      alert('Failed to add unit. Please try again.')
+      // Revert local state on error
+      setOwner(prev => prev ? {
+        ...prev,
+        units: prev.units?.filter(unit => unit.id !== newUnit.id) || [],
+        totalUnits: prev.totalUnits || 0
+      } : null)
+    }
+  }
+
+  const handleRemoveUnit = async (unitId: number) => {
+    if (!owner) return
+    if (!confirm('Are you sure you want to remove this unit?')) return
+
+    const unitToRemove = owner.units?.find(unit => unit.id === unitId)
+    if (!unitToRemove) return
+
+    const newUnits = (owner.units || []).filter(unit => unit.id !== unitId)
+    const newProperties = (owner.properties || []).filter(prop => prop !== unitToRemove.name)
+
+    // Update local state first
+    setOwner(prev => prev ? {
+      ...prev,
+      units: newUnits,
+      totalUnits: (prev.totalUnits || 0) - 1
+    } : null)
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: newProperties,
+        totalUnits: (owner.totalUnits || 0) - 1,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: owner.transactions || [],
+        documents: owner.documents || [],
+        units: newUnits
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Unit removed successfully')
+      } else {
+        console.error('Failed to remove unit')
+        alert('Failed to remove unit. Please try again.')
+        // Revert local state on error
+        setOwner(prev => prev ? {
+          ...prev,
+          units: owner.units || [],
+          totalUnits: owner.totalUnits || 0
+        } : null)
+      }
+    } catch (error) {
+      console.error('Error removing unit:', error)
+      alert('Failed to remove unit. Please try again.')
+      // Revert local state on error
+      setOwner(prev => prev ? {
+        ...prev,
+        units: owner.units || [],
+        totalUnits: owner.totalUnits || 0
+      } : null)
+    }
+  }
+
+  const handleSaveCashPayment = async (paymentData: {
     amount: number
     date: string
     title: string
     responsible: string
     description: string
   }) => {
+    if (!owner) return
+
     // Create new transaction
     const newTransaction = {
       id: transactions.length + 1,
@@ -419,15 +1120,52 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       responsible: paymentData.responsible
     }
 
+    // Update local state first
     setTransactions(prev => [newTransaction, ...prev])
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: [newTransaction, ...transactions]
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Cash payment saved successfully')
+      } else {
+        console.error('Failed to save cash payment')
+        alert('Failed to save cash payment. Please try again.')
+        // Revert local state on error
+        setTransactions(transactions)
+      }
+    } catch (error) {
+      console.error('Error saving cash payment:', error)
+      alert('Failed to save cash payment. Please try again.')
+      // Revert local state on error
+      setTransactions(transactions)
+    }
   }
 
-  const handleSaveBankPayment = (paymentData: {
+  const handleSaveBankPayment = async (paymentData: {
     amount: number
     date: string
     description: string
     bankAccountId: number
   }) => {
+    if (!owner) return
+
     // Create new transaction
     const newTransaction = {
       id: transactions.length + 1,
@@ -443,10 +1181,45 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       reference: `PAY-2024-${String(transactions.length + 1).padStart(3, '0')}`
     }
 
+    // Update local state first
     setTransactions(prev => [newTransaction, ...prev])
+
+    // Save to backend
+    try {
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: owner.bankDetails || [],
+        transactions: [newTransaction, ...transactions]
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Bank payment saved successfully')
+      } else {
+        console.error('Failed to save bank payment')
+        alert('Failed to save bank payment. Please try again.')
+        // Revert local state on error
+        setTransactions(transactions)
+      }
+    } catch (error) {
+      console.error('Error saving bank payment:', error)
+      alert('Failed to save bank payment. Please try again.')
+      // Revert local state on error
+      setTransactions(transactions)
+    }
   }
 
-  const handleSaveBankAccount = (bankData: {
+  const handleSaveBankAccount = async (bankData: {
     bankName: string
     accountHolderName: string
     accountNumber: string
@@ -454,6 +1227,8 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     swiftCode: string
     bankAddress: string
   }) => {
+    if (!owner) return
+
     // Create new bank account
     const newBankAccount = {
       id: bankDetails.length + 1,
@@ -469,7 +1244,64 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       addedByEmail: 'user@company.com'
     }
 
+    // Update local state first
     setBankDetails(prev => [...prev, newBankAccount])
+
+    // Save to backend
+    try {
+      const updatedOwner = {
+        ...owner,
+        bankDetails: [...bankDetails, newBankAccount]
+      }
+
+      // Convert ExtendedOwner back to API format for update
+      const apiOwnerData = {
+        firstName: owner.firstName || '',
+        lastName: owner.lastName || '',
+        email: owner.email || '',
+        phone: owner.phone || '',
+        nationality: owner.nationality || '',
+        dateOfBirth: owner.dateOfBirth || '',
+        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
+        isActive: owner.isActive,
+        properties: owner.properties,
+        totalUnits: owner.totalUnits,
+        comments: owner.comments || '',
+        bankDetails: [...bankDetails, newBankAccount]
+      }
+
+      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      if (response.success) {
+        console.log('Bank account saved successfully')
+      } else {
+        console.error('Failed to save bank account')
+        alert('Failed to save bank account. Please try again.')
+        // Revert local state on error
+        setBankDetails(bankDetails)
+      }
+    } catch (error) {
+      console.error('Error saving bank account:', error)
+      alert('Failed to save bank account. Please try again.')
+      // Revert local state on error
+      setBankDetails(bankDetails)
+    }
+  }
+
+  // Use real owner data or fallback to mock data
+  const currentOwner = owner || mockOwner
+
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
+        <TopNavigation />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading owner details...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -488,15 +1320,15 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-medium text-slate-900">{mockOwner.name}</h1>
-                <p className="text-sm text-slate-600">{mockOwner.nationality} • {getAge(mockOwner.dateOfBirth)} years old</p>
+                <h1 className="text-xl font-medium text-slate-900">{currentOwner.name}</h1>
+                <p className="text-sm text-slate-600">{currentOwner.nationality} • {getAge(currentOwner.dateOfBirth)} years old</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(mockOwner.status)}`}>
-                {mockOwner.vipStatus && <Star size={16} className="mr-2 text-yellow-500" />}
-                {mockOwner.status === 'VIP' && <Crown size={16} className="mr-2 text-purple-500" />}
-                <span>{mockOwner.status}</span>
+              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(currentOwner.status)}`}>
+                {currentOwner.vipStatus && <Star size={16} className="mr-2 text-yellow-500" />}
+                {currentOwner.status === 'VIP' && <Crown size={16} className="mr-2 text-purple-500" />}
+                <span>{currentOwner.status}</span>
               </span>
               <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center">
                 <Trash2 size={16} className="mr-2" />
@@ -514,9 +1346,9 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <Building className="w-5 h-5 text-orange-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-slate-600 text-xs mb-1">Total Units</p>
-                  <p className="text-2xl font-medium text-slate-900">{mockOwner.totalUnits}</p>
+                  <p className="text-2xl font-medium text-slate-900">{currentOwner.properties?.length || 0}</p>
                 </div>
               </div>
             </div>
@@ -526,9 +1358,15 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <TrendingUp className="w-5 h-5 text-orange-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-slate-600 text-xs mb-1">Total Profit</p>
-                  <p className="text-2xl font-medium text-slate-900">${mockOwner.totalProfit.toLocaleString()}</p>
+                  <p className="text-2xl font-medium text-slate-900">${(() => {
+                    // Calculate total profit from transactions
+                    const totalProfit = (currentOwner.transactions || [])
+                      .filter((t: any) => t.amount > 0)
+                      .reduce((sum: number, t: any) => sum + t.amount, 0)
+                    return totalProfit.toLocaleString()
+                  })()}</p>
                 </div>
               </div>
             </div>
@@ -538,11 +1376,11 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <User className="w-5 h-5 text-orange-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-slate-600 text-xs mb-1">Nationality</p>
                   <p className="text-2xl font-medium text-slate-900 flex items-center space-x-2">
-                    <span>{getCountryFlag(mockOwner.nationality)}</span>
-                    <span>{mockOwner.nationality}</span>
+                    <span>{getCountryFlag(currentOwner.nationality || 'Emirati')}</span>
+                    <span>{currentOwner.nationality}</span>
                   </p>
                 </div>
               </div>
@@ -561,9 +1399,9 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Email:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{mockOwner.email}</span>
+                      <span className="text-sm text-slate-900">{currentOwner.email}</span>
                       <button 
-                        onClick={() => handleEditField('email', mockOwner.email, 'Email', 'email')}
+                        onClick={() => handleEditField('email', currentOwner.email, 'Email', 'email')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -573,9 +1411,9 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Phone:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{mockOwner.phone}</span>
+                      <span className="text-sm text-slate-900">{currentOwner.phone}</span>
                       <button 
-                        onClick={() => handleEditField('phone', mockOwner.phone, 'Phone', 'tel')}
+                        onClick={() => handleEditField('phone', currentOwner.phone, 'Phone', 'tel')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -586,23 +1424,17 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     <span className="text-sm text-slate-600">Nationality:</span>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900 flex items-center space-x-1">
-                        <span>{getCountryFlag(mockOwner.nationality)}</span>
-                        <span>{mockOwner.nationality}</span>
+                        <span>{getCountryFlag(currentOwner.nationality || 'Emirati')}</span>
+                        <span>{currentOwner.nationality}</span>
                       </span>
-                      <button 
-                        onClick={() => handleEditField('nationality', mockOwner.nationality, 'Nationality', 'text')}
-                        className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
-                      >
-                        <Edit size={14} />
-                      </button>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Birth Date:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{formatDate(mockOwner.dateOfBirth)}</span>
+                      <span className="text-sm text-slate-900">{formatDate(currentOwner.dateOfBirth)}</span>
                       <button 
-                        onClick={() => handleEditField('dateOfBirth', mockOwner.dateOfBirth, 'Birth Date', 'date')}
+                        onClick={() => handleEditField('dateOfBirth', currentOwner.dateOfBirth, 'Birth Date', 'date')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -611,7 +1443,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Age:</span>
-                    <span className="text-sm text-slate-900">{getAge(mockOwner.dateOfBirth)} years</span>
+                    <span className="text-sm text-slate-900">{getAge(currentOwner.dateOfBirth)} years</span>
                   </div>
                 </div>
             </div>
@@ -625,14 +1457,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium text-slate-900">Description</h2>
                   <button 
-                    onClick={() => handleEditField('comments', mockOwner.comments, 'Description', 'textarea')}
+                    onClick={() => handleEditField('comments', currentOwner.comments, 'Description', 'textarea')}
                     className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                   >
                     <Edit size={16} />
                   </button>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-sm text-slate-600">{mockOwner.comments || 'No description available for this owner.'}</p>
+                  <p className="text-sm text-slate-600">{currentOwner.comments || 'No description available for this owner.'}</p>
                 </div>
               </div>
 
@@ -640,7 +1472,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
               <div className="mb-6">
                 <h2 className="text-lg font-medium text-slate-900 mb-4">Linked Units</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockOwner.units.map(unit => (
+                  {(currentOwner.units || []).map(unit => (
                     <div key={unit.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -808,36 +1640,99 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium text-slate-900">Documents</h2>
-                  <button className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer">
+                  <button 
+                    onClick={() => setIsUploadModalOpen(true)}
+                    className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
+                  >
                     Upload Document
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {mockOwner.documents.map(document => (
-                    <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  {documents && documents.length > 0 ? (
+                    documents.map(doc => (
+                    <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-medium text-slate-900">{document.name}</h3>
+                          <h3 className="font-medium text-slate-900">{doc.name}</h3>
                           <div className="flex items-center space-x-3 text-sm text-gray-500">
-                            <span>{document.type}</span>
-                            <span>{document.size}</span>
-                            <span>{formatDateTime(document.uploadedAt)}</span>
+                            <span>{doc.type}</span>
+                            <span>{doc.size}</span>
+                            <span>{formatDateTime(doc.uploadedAt)}</span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <button className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer">
+                          <button 
+                            onClick={async () => {
+                              if (doc.s3Key) {
+                                try {
+                                  const response = await fetch(`http://localhost:3001/api/files/signed-url?key=${encodeURIComponent(doc.s3Key)}`, {
+                                    headers: { 'Authorization': 'Bearer mock-token' }
+                                  })
+                                  const result = await response.json()
+                                  if (result.success) {
+                                    window.open(result.url, '_blank')
+                                  } else {
+                                    alert('Failed to generate download URL')
+                                  }
+                                } catch (error) {
+                                  console.error('Error getting download URL:', error)
+                                  alert('Failed to get download URL')
+                                }
+                              } else {
+                                alert('No file available for download')
+                              }
+                            }}
+                            className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer"
+                            title="View document"
+                          >
                             <Eye size={14} />
                           </button>
-                          <button className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer">
+                          <button 
+                            onClick={async () => {
+                              if (doc.s3Key) {
+                                try {
+                                  const response = await fetch(`http://localhost:3001/api/files/signed-url?key=${encodeURIComponent(doc.s3Key)}`, {
+                                    headers: { 'Authorization': 'Bearer mock-token' }
+                                  })
+                                  const result = await response.json()
+                                  if (result.success) {
+                                    const link = document.createElement('a')
+                                    link.href = result.url
+                                    link.download = doc.filename || doc.name
+                                    link.click()
+                                  } else {
+                                    alert('Failed to generate download URL')
+                                  }
+                                } catch (error) {
+                                  console.error('Error getting download URL:', error)
+                                  alert('Failed to get download URL')
+                                }
+                              } else {
+                                alert('No file available for download')
+                              }
+                            }}
+                            className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer"
+                            title="Download document"
+                          >
                             <Download size={14} />
                           </button>
-                          <button className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer">
+                          <button 
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                            title="Delete document"
+                          >
                             <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <FileText size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No documents uploaded yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -845,8 +1740,24 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
               <div>
                 <h2 className="text-lg font-medium text-slate-900 mb-4">Activity Log</h2>
                 <div className="space-y-3">
-                  {mockActivityLog.map(activity => (
+                  {activityLog && activityLog.length > 0 ? (
+                    activityLog.map(activity => {
+                      const getActivityIcon = (type: string) => {
+                        switch (type) {
+                          case 'create': return '➕'
+                          case 'update': return '✏️'
+                          case 'delete': return '🗑️'
+                          case 'payment': return '💰'
+                          case 'document': return '📄'
+                          case 'unit': return '🏠'
+                          default: return '📝'
+                        }
+                      }
+                      
+                      return (
                     <div key={activity.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                          <div className="flex items-start space-x-3">
+                            <span className="text-2xl">{getActivityIcon(activity.type)}</span>
                       <div className="flex-1">
                         <h3 className="font-medium text-slate-900">{activity.action}</h3>
                         <p className="text-sm text-slate-600">{activity.description}</p>
@@ -856,7 +1767,15 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                         </div>
                       </div>
                     </div>
-                  ))}
+                </div>
+                      )
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Clock size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No activity recorded yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -961,6 +1880,13 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         isOpen={isAddBankAccountModalOpen}
         onClose={() => setIsAddBankAccountModalOpen(false)}
         onSave={handleSaveBankAccount}
+      />
+
+      {/* Upload Document Modal */}
+      <UploadDocumentModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={handleUploadDocument}
       />
     </div>
   )

@@ -1,0 +1,145 @@
+[
+  {
+    "id": "owner_1",
+    "firstName": "Mohammed",
+    "lastName": "Al-Maktoum",
+    "email": "mohammed.almaktoum@example.com",
+    "phone": "+971 50 123 4567",
+    "nationality": "Emirati",
+    "dateOfBirth": "1975-03-15",
+    "role": "OWNER",
+    "isActive": true,
+    "properties": [
+      "Burj Khalifa Penthouse",
+      "Palm Jumeirah Villa"
+    ],
+    "totalUnits": 5,
+    "comments": "VIP owner with premium properties",
+    "createdAt": "2023-01-15T10:00:00Z",
+    "createdBy": "admin",
+    "lastModifiedAt": "2024-09-01T14:30:00Z",
+    "lastModifiedBy": "manager",
+    "documents": [],
+    "bankDetails": [],
+    "transactions": [],
+    "activityLog": []
+  },
+  {
+    "id": "owner_2",
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "email": "sarah.johnson@example.com",
+    "phone": "+1 555 234 5678",
+    "nationality": "American",
+    "dateOfBirth": "1982-07-20",
+    "role": "OWNER",
+    "isActive": true,
+    "properties": [
+      "Marina Apartment"
+    ],
+    "totalUnits": 2,
+    "comments": "Reliable owner, on-time payments",
+    "createdAt": "2023-03-20T11:00:00Z",
+    "createdBy": "admin",
+    "lastModifiedAt": "2024-08-15T09:20:00Z",
+    "lastModifiedBy": "admin",
+    "documents": [],
+    "bankDetails": [],
+    "transactions": [],
+    "activityLog": []
+  },
+  {
+    "id": "owner_3",
+    "firstName": "Ahmed",
+    "lastName": "Al-Rashid",
+    "email": "ahmed.rashid@example.com",
+    "phone": "+971 55 987 6543",
+    "nationality": "Emirati",
+    "dateOfBirth": "1988-11-10",
+    "role": "OWNER",
+    "isActive": true,
+    "properties": [
+      "Downtown Loft",
+      "Business Bay Studio"
+    ],
+    "totalUnits": 3,
+    "comments": "New owner, growing portfolio",
+    "createdAt": "2024-01-10T12:00:00Z",
+    "createdBy": "manager",
+    "lastModifiedAt": "2025-10-02T11:09:25.580Z",
+    "lastModifiedBy": "Current User",
+    "documents": [
+      {
+        "id": 1,
+        "name": "INVOICE_res_2_2025-10-01",
+        "type": "Other",
+        "uploadedAt": "2025-10-02T11:09:25.547Z",
+        "size": "0.0 MB",
+        "s3Key": "documents/owner_3/1759403364958_INVOICE_res_2_2025-10-01.pdf",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_3/1759403364958_INVOICE_res_2_2025-10-01.pdf",
+        "filename": "INVOICE_res_2_2025-10-01.pdf"
+      }
+    ],
+    "bankDetails": [],
+    "transactions": [],
+    "activityLog": [
+      {
+        "id": 1,
+        "action": "Document Uploaded",
+        "description": "Uploaded document: INVOICE_res_2_2025-10-01 (Other)",
+        "user": "Current User",
+        "timestamp": "2025-10-02T11:09:25.578Z",
+        "type": "document"
+      }
+    ]
+  },
+  {
+    "id": "owner_4",
+    "firstName": "Elena",
+    "lastName": "Petrova",
+    "email": "elena.petrova@example.com",
+    "phone": "+7 915 123 4567",
+    "nationality": "Russian",
+    "dateOfBirth": "1979-05-25",
+    "role": "OWNER",
+    "isActive": false,
+    "properties": [
+      "Skyline Penthouse"
+    ],
+    "totalUnits": 1,
+    "comments": "Inactive - properties sold",
+    "createdAt": "2022-11-05T09:00:00Z",
+    "createdBy": "admin",
+    "lastModifiedAt": "2024-06-01T10:00:00Z",
+    "lastModifiedBy": "admin",
+    "documents": [],
+    "bankDetails": [],
+    "transactions": [],
+    "activityLog": []
+  },
+  {
+    "id": "owner_5",
+    "firstName": "James",
+    "lastName": "Anderson",
+    "email": "james.anderson@example.com",
+    "phone": "+44 20 7123 4567",
+    "nationality": "British",
+    "dateOfBirth": "1985-09-12",
+    "role": "OWNER",
+    "isActive": true,
+    "properties": [
+      "Beach Villa",
+      "City Apartment"
+    ],
+    "totalUnits": 4,
+    "comments": "International investor",
+    "createdAt": "2023-06-18T14:00:00Z",
+    "createdBy": "admin",
+    "lastModifiedAt": "2024-09-25T11:10:00Z",
+    "lastModifiedBy": "manager",
+    "documents": [],
+    "bankDetails": [],
+    "transactions": [],
+    "activityLog": []
+  }
+]

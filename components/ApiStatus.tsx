@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
+import { API_CONFIG } from '@/lib/api/config'
 
 export default function ApiStatus() {
   const [status, setStatus] = useState<'checking' | 'connected' | 'error'>('checking')
@@ -10,7 +11,8 @@ export default function ApiStatus() {
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
-        const response = await fetch('http://5.223.55.121:3001/health')
+        const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
+        const response = await fetch(`${baseUrl}/health`)
         if (response.ok) {
           setStatus('connected')
           setError('')
@@ -72,7 +74,7 @@ export default function ApiStatus() {
         </span>
       </div>
       <div className="text-xs text-gray-500 mt-1">
-        Backend: 5.223.55.121:3001
+        Backend: {API_CONFIG.BASE_URL.replace('/api', '')}
       </div>
     </div>
   )

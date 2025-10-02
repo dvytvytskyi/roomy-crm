@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
 
 interface OwnersFiltersProps {
@@ -13,7 +13,6 @@ interface OwnersFiltersProps {
 export default function OwnersFilters({ filters, onApplyFilters, onClearFilters, isSidebar = false }: OwnersFiltersProps) {
   const [openSections, setOpenSections] = useState({
     nationality: true,
-    units: true,
     status: true,
     dateOfBirth: true,
     phoneNumber: true,
@@ -33,15 +32,40 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
     'Saudi Arabian', 'Turkish', 'Greek', 'Russian', 'American', 'Other'
   ]
 
-  const units = [
-    'BK Studio', 'Marina Apt', 'DT Loft', 'Palm Villa',
-    'Sky Penthouse', 'BD 1A', 'Beach Villa',
-    'City Apt', 'Garden Suite', 'Lux Penthouse', 'Tech Studio'
-  ]
+  // Function to get country flag emoji
+  const getCountryFlag = (nationality: string) => {
+    const flagMap: { [key: string]: string } = {
+      'Emirati': '🇦🇪',
+      'British': '🇬🇧',
+      'Canadian': '🇨🇦',
+      'French': '🇫🇷',
+      'German': '🇩🇪',
+      'Italian': '🇮🇹',
+      'Spanish': '🇪🇸',
+      'Chinese': '🇨🇳',
+      'Japanese': '🇯🇵',
+      'Korean': '🇰🇷',
+      'Indian': '🇮🇳',
+      'Australian': '🇦🇺',
+      'Brazilian': '🇧🇷',
+      'Egyptian': '🇪🇬',
+      'Saudi Arabian': '🇸🇦',
+      'Turkish': '🇹🇷',
+      'Greek': '🇬🇷',
+      'Russian': '🇷🇺',
+      'American': '🇺🇸',
+      'Other': '🌍'
+    }
+    return flagMap[nationality] || '🌍'
+  }
+
 
   const statuses = ['Active', 'VIP', 'Inactive']
 
-  const handleFilterChange = (filterType: string, value: any) => {
+  // Debounce function for input fields
+  const debounceTimeout = React.useRef<NodeJS.Timeout | null>(null)
+  
+  const handleFilterChange = (filterType: string, value: any, shouldDebounce = false) => {
     const newFilters = { ...filters }
     
     if (filterType === 'nationality') {
@@ -49,12 +73,6 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
         newFilters.nationality = newFilters.nationality.filter((item: string) => item !== value)
       } else {
         newFilters.nationality = [...newFilters.nationality, value]
-      }
-    } else if (filterType === 'units') {
-      if (newFilters.units.includes(value)) {
-        newFilters.units = newFilters.units.filter((item: string) => item !== value)
-      } else {
-        newFilters.units = [...newFilters.units, value]
       }
     } else if (filterType === 'status') {
       if (newFilters.status.includes(value)) {
@@ -66,12 +84,21 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
       newFilters[filterType] = value
     }
     
-    onApplyFilters(newFilters)
+    // Apply filters with debounce for input fields
+    if (shouldDebounce && isSidebar) {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current)
+      }
+      debounceTimeout.current = setTimeout(() => {
+        onApplyFilters(newFilters)
+      }, 500)
+    } else if (isSidebar) {
+      onApplyFilters(newFilters)
+    }
   }
 
   const getSelectedCount = (filterType: string) => {
     if (filterType === 'nationality') return filters.nationality.length
-    if (filterType === 'units') return filters.units.length
     if (filterType === 'status') return filters.status.length
     if (filterType === 'dateOfBirth') {
       return (filters.dateOfBirth.from ? 1 : 0) + (filters.dateOfBirth.to ? 1 : 0)
@@ -99,13 +126,14 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
         {openSections.nationality && (
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
             {nationalities.map(nationality => (
-              <label key={nationality} className="flex items-center">
+              <label key={nationality} className="flex items-center hover:bg-gray-50 rounded-lg p-1 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.nationality.includes(nationality)}
                   onChange={() => handleFilterChange('nationality', nationality)}
                   className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
+                <span className="ml-2 text-lg">{getCountryFlag(nationality)}</span>
                 <span className="ml-2 text-sm text-slate-700">{nationality}</span>
               </label>
             ))}
@@ -113,35 +141,6 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
         )}
       </div>
 
-      {/* Units */}
-      <div>
-        <button
-          onClick={() => toggleSection('units')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Units</label>
-          {openSections.units ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.units && (
-          <div className="space-y-2">
-            {units.map(unit => (
-              <label key={unit} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={filters.units.includes(unit)}
-                  onChange={() => handleFilterChange('units', unit)}
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="ml-2 text-sm text-slate-700">{unit}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Status */}
       <div>
@@ -193,7 +192,7 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
               <input
                 type="date"
                 value={filters.dateOfBirth.from}
-                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, from: e.target.value })}
+                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, from: e.target.value }, true)}
                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
@@ -202,7 +201,7 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
               <input
                 type="date"
                 value={filters.dateOfBirth.to}
-                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, to: e.target.value })}
+                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, to: e.target.value }, true)}
                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
@@ -229,7 +228,7 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
               type="text"
               placeholder="Enter phone number"
               value={filters.phoneNumber}
-              onChange={(e) => handleFilterChange('phoneNumber', e.target.value)}
+              onChange={(e) => handleFilterChange('phoneNumber', e.target.value, true)}
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
@@ -255,13 +254,25 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
               type="text"
               placeholder="Search comments"
               value={filters.comments}
-              onChange={(e) => handleFilterChange('comments', e.target.value)}
+              onChange={(e) => handleFilterChange('comments', e.target.value, true)}
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         )}
       </div>
 
+      {/* Clear All Button */}
+      {isSidebar && (
+        <div className="pt-4 border-t border-gray-200">
+          <button
+            onClick={onClearFilters}
+            className="w-full px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 cursor-pointer"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      )}
+      
       {!isSidebar && (
         <div className="flex space-x-3 pt-4">
           <button 

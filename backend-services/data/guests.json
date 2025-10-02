@@ -1,0 +1,142 @@
+[
+  {
+    "id": "guest_1",
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "phone": "+1 (555) 123-4567",
+    "whatsapp": "+1 (555) 123-4567",
+    "telegram": "@johnsmith",
+    "nationality": "American",
+    "dateOfBirth": "1985-03-15T00:00:00.000Z",
+    "reservationCount": 5,
+    "unit": "Apartment Burj Khalifa 1A",
+    "comments": "VIP guest, prefers high floors",
+    "customCategories": [
+      "Star Guest",
+      "VIP"
+    ],
+    "starGuest": true,
+    "primaryGuest": true,
+    "loyaltyTier": "Gold",
+    "preferredLanguage": "English",
+    "specialRequests": "Ground floor units preferred",
+    "documents": [
+      {
+        "id": 1,
+        "name": "passport.pdf",
+        "type": "Passport",
+        "uploadedAt": "2024-01-15T10:30:00Z",
+        "size": "2.3 MB"
+      }
+    ],
+    "createdBy": "Admin",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "lastModifiedBy": "Manager",
+    "lastModifiedAt": "2024-07-20T14:20:00Z"
+  },
+  {
+    "id": "guest_2",
+    "name": "Maria Garcia",
+    "email": "maria.garcia@example.com",
+    "phone": "+34 612 345 678",
+    "whatsapp": "+34 612 345 678",
+    "telegram": "@mariag",
+    "nationality": "Spanish",
+    "dateOfBirth": "1990-07-22T00:00:00.000Z",
+    "reservationCount": 3,
+    "unit": "Apartment Marina 2B",
+    "comments": "Family with children, needs baby crib",
+    "customCategories": [
+      "Family Guest"
+    ],
+    "starGuest": false,
+    "primaryGuest": true,
+    "loyaltyTier": "Silver",
+    "preferredLanguage": "Spanish",
+    "specialRequests": "Baby crib and high chair needed",
+    "documents": [],
+    "createdBy": "Admin",
+    "createdAt": "2024-02-10T09:15:00Z",
+    "lastModifiedBy": "Admin",
+    "lastModifiedAt": "2024-06-15T11:45:00Z"
+  },
+  {
+    "id": "guest_3",
+    "name": "Ahmed Hassan",
+    "email": "ahmed.hassan@example.com",
+    "phone": "+20 123 456 7890",
+    "whatsapp": "+20 123 456 7890",
+    "telegram": "",
+    "nationality": "Egyptian",
+    "dateOfBirth": "1988-12-03T00:00:00.000Z",
+    "reservationCount": 1,
+    "unit": "Studio Downtown 3C",
+    "comments": "Business traveler, needs quiet room",
+    "customCategories": [
+      "Business Guest"
+    ],
+    "starGuest": false,
+    "primaryGuest": false,
+    "loyaltyTier": "Bronze",
+    "preferredLanguage": "Arabic",
+    "specialRequests": "Quiet room, late checkout",
+    "documents": [],
+    "createdBy": "Manager",
+    "createdAt": "2024-03-05T16:20:00Z",
+    "lastModifiedBy": "Manager",
+    "lastModifiedAt": "2024-03-05T16:20:00Z"
+  },
+  {
+    "id": "guest_4",
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@example.com",
+    "phone": "+44 7700 900123",
+    "whatsapp": "+44 7700 900123",
+    "telegram": "@sarahj",
+    "nationality": "British",
+    "dateOfBirth": "1992-05-18T00:00:00.000Z",
+    "reservationCount": 8,
+    "unit": "Penthouse Skyline 5A",
+    "comments": "Loyalty program member, frequent visitor",
+    "customCategories": [
+      "Star Guest",
+      "Loyalty Program"
+    ],
+    "starGuest": true,
+    "primaryGuest": true,
+    "loyaltyTier": "Platinum",
+    "preferredLanguage": "English",
+    "specialRequests": "City view preferred, early check-in",
+    "documents": [],
+    "createdBy": "Admin",
+    "createdAt": "2023-11-20T08:30:00Z",
+    "lastModifiedBy": "Admin",
+    "lastModifiedAt": "2024-08-10T12:15:00Z"
+  },
+  {
+    "id": "guest_5",
+    "name": "Chen Wei",
+    "email": "chen.wei@example.com",
+    "phone": "+86 138 0013 8000",
+    "whatsapp": "+86 138 0013 8000",
+    "telegram": "@chenwei",
+    "nationality": "Chinese",
+    "dateOfBirth": "1987-09-12T00:00:00.000Z",
+    "reservationCount": 2,
+    "unit": "Apartment Business 4D",
+    "comments": "Corporate booking, group leader",
+    "customCategories": [
+      "Corporate Guest"
+    ],
+    "starGuest": false,
+    "primaryGuest": true,
+    "loyaltyTier": "Silver",
+    "preferredLanguage": "Chinese",
+    "specialRequests": "Meeting room access, group discounts",
+    "documents": [],
+    "createdBy": "Manager",
+    "createdAt": "2024-04-12T13:45:00Z",
+    "lastModifiedBy": "Manager",
+    "lastModifiedAt": "2024-07-25T10:30:00Z"
+  }
+]
