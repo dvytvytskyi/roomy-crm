@@ -242,6 +242,7 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
             <tr>
               <th className="px-6 py-3 text-left">
                 <input
+                  key="select-all"
                   type="checkbox"
                   checked={selectedCleaning.length === sortedCleaning.length && sortedCleaning.length > 0}
                   onChange={(e) => handleSelectAll(e.target.checked)}
@@ -314,6 +315,7 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
+                    key={`checkbox-${task.id}`}
                     type="checkbox"
                     checked={selectedCleaning.includes(task.id)}
                     onChange={(e) => handleSelectTask(task.id, e.target.checked)}
