@@ -17,6 +17,9 @@ export interface CleaningTask {
   createdBy: string
   lastModifiedAt: string
   lastModifiedBy: string
+  includesLaundry?: boolean
+  laundryCount?: number
+  linenComments?: string
 }
 
 export interface CleaningStats {
@@ -65,6 +68,9 @@ export interface CleaningCreateRequest {
   cleanerId: string
   cost: number
   notes?: string
+  includesLaundry?: boolean
+  laundryCount?: number
+  linenComments?: string
 }
 
 export interface CleaningUpdateRequest {
@@ -79,6 +85,9 @@ export interface CleaningUpdateRequest {
   cleanerId?: string
   cost?: number
   notes?: string
+  includesLaundry?: boolean
+  laundryCount?: number
+  linenComments?: string
 }
 
 export interface CleaningDeleteResponse {

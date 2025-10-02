@@ -130,24 +130,16 @@ const mockCleaning = [
 
 export default function CleaningTable({ tasks, loading, selectedCleaning, onSelectionChange }: CleaningTableProps) {
   const router = useRouter()
-  const [sortField, setSortField] = useState<string>('date')
+  const [sortField, setSortField] = useState<string>('scheduledDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
-  const filteredCleaning = mockCleaning.filter(task => {
-    const matchesSearch = task.unit.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.contractor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.notes.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return matchesSearch
-  })
-
-  const sortedCleaning = filteredCleaning.sort((a, b) => {
+  // Sort data (filtering is now handled by API)
+  const sortedCleaning = [...tasks].sort((a, b) => {
     const aValue = a[sortField as keyof typeof a]
     const bValue = b[sortField as keyof typeof b]
     
-    if (sortField === 'date') {
+    if (sortField === 'scheduledDate') {
       return sortDirection === 'asc' 
         ? new Date(aValue as string).getTime() - new Date(bValue as string).getTime()
         : new Date(bValue as string).getTime() - new Date(aValue as string).getTime()
@@ -218,6 +210,27 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
     }
   }
 
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading cleaning tasks...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (sortedCleaning.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">No cleaning tasks found</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-auto custom-scrollbar">
       <table className="w-full">
@@ -233,11 +246,11 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
               </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                onClick={() => handleSort('date')}
+                onClick={() => handleSort('scheduledDate')}
               >
                 <div className="flex items-center space-x-1">
                   <span>Date & Time</span>
-                  {getSortIcon('date')}
+                  {getSortIcon('scheduledDate')}
                 </div>
               </th>
               <th 
@@ -260,11 +273,11 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
               </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                onClick={() => handleSort('contractor')}
+                onClick={() => handleSort('cleaner')}
               >
                 <div className="flex items-center space-x-1">
                   <span>Cleaner</span>
-                  {getSortIcon('contractor')}
+                  {getSortIcon('cleaner')}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -306,9 +319,9 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <span className="text-sm text-slate-900">
-                      {new Date(task.date).toLocaleDateString()}
+                      {new Date(task.scheduledDate).toLocaleDateString()}
                     </span>
-                    <div className="text-xs text-slate-500">{task.time}</div>
+                    <div className="text-xs text-slate-500">{task.scheduledTime}</div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -323,7 +336,7 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
                   <span className="text-sm text-slate-900 capitalize">{task.type}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-slate-900">{task.contractor}</span>
+                  <span className="text-sm text-slate-900">{task.cleaner}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-slate-900">{task.duration}</span>
