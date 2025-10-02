@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import CleaningTable from '../../components/cleaning/CleaningTable'
 import CleaningFilters from '../../components/cleaning/CleaningFilters'
@@ -16,10 +16,10 @@ export default function CleaningPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCleaning, setSelectedCleaning] = useState<number[]>([])
 
-  const handleSelectionChange = (newSelection: number[]) => {
+  const handleSelectionChange = useCallback((newSelection: number[]) => {
     console.log('Selection changed:', newSelection)
     setSelectedCleaning(newSelection)
-  }
+  }, [])
 
   console.log('CleaningPage state:', { tasks: tasks.length, selectedCleaning, loading })
   const [showAddModal, setShowAddModal] = useState(false)

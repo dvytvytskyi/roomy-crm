@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Edit, Trash2, Eye, ChevronUp, ChevronDown, Clock, CheckCircle, Calendar, XCircle } from 'lucide-react'
 import { CleaningTask } from '../../lib/api/services/cleaningService'
@@ -170,23 +170,23 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
     return sortDirection === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
   }
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
     console.log('Select all:', checked, 'tasks:', sortedCleaning.length)
     if (checked) {
       onSelectionChange(sortedCleaning.map(task => task.id))
     } else {
       onSelectionChange([])
     }
-  }
+  }, [sortedCleaning, onSelectionChange])
 
-  const handleSelectTask = (taskId: number, checked: boolean) => {
+  const handleSelectTask = useCallback((taskId: number, checked: boolean) => {
     console.log('Select task:', taskId, checked, 'current selection:', selectedCleaning)
     if (checked) {
       onSelectionChange([...selectedCleaning, taskId])
     } else {
       onSelectionChange(selectedCleaning.filter(id => id !== taskId))
     }
-  }
+  }, [selectedCleaning, onSelectionChange])
 
   const getStatusColor = (status: string) => {
     switch (status) {
