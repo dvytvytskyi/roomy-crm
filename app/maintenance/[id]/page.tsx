@@ -23,56 +23,6 @@ export default function MaintenanceTaskDetailsPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
-  // Mock data for the maintenance task
-  const mockTask = {
-    id: 1,
-    date: '2024-01-15',
-    unit: 'Apartment Burj Khalifa 2',
-    unitId: 'burj-khalifa-2',
-    category: 'Plumbing',
-    description: 'Kitchen sink leak repair - The kitchen sink has been leaking for the past week. Water is dripping from the base of the faucet and pooling under the sink. This needs immediate attention to prevent water damage to the cabinet and floor.',
-    contractor: 'Dubai Plumbing Co.',
-    contractorId: 'dubai-plumbing',
-    price: 450,
-    inspector: 'John Smith',
-    status: 'Completed',
-    comments: [
-      {
-        id: 1,
-        author: 'John Smith',
-        date: '2024-01-15T10:30:00',
-        text: 'Initial inspection completed. Confirmed leak from faucet base. Parts ordered.',
-        type: 'inspection'
-      },
-      {
-        id: 2,
-        author: 'Ahmed Hassan (Dubai Plumbing Co.)',
-        date: '2024-01-15T14:20:00',
-        text: 'Repair completed. Replaced O-ring and tightened connections. Tested - no leaks.',
-        type: 'contractor'
-      },
-      {
-        id: 3,
-        author: 'John Smith',
-        date: '2024-01-15T16:45:00',
-        text: 'Final inspection passed. Work completed to satisfaction.',
-        type: 'approval'
-      }
-    ],
-    attachments: [
-      { id: 1, name: 'Quote_Plumbing_Repair.pdf', size: '245 KB', type: 'pdf' },
-      { id: 2, name: 'Invoice_450_AED.pdf', size: '180 KB', type: 'pdf' },
-      { id: 3, name: 'Warranty_Certificate.pdf', size: '320 KB', type: 'pdf' }
-    ],
-    beforePhotos: [
-      { id: 1, name: 'leak_under_sink.jpg', size: '2.1 MB', url: '/images/maintenance/leak_under_sink.jpg' },
-      { id: 2, name: 'faucet_base_damage.jpg', size: '1.8 MB', url: '/images/maintenance/faucet_base_damage.jpg' }
-    ],
-    afterPhotos: [
-      { id: 1, name: 'repaired_faucet.jpg', size: '2.3 MB', url: '/images/maintenance/repaired_faucet.jpg' },
-      { id: 2, name: 'clean_under_sink.jpg', size: '1.9 MB', url: '/images/maintenance/clean_under_sink.jpg' }
-    ]
-  }
 
   const [loading, setLoading] = useState(true)
   const [task, setTask] = useState<MaintenanceTask | null>(null)
@@ -589,54 +539,55 @@ export default function MaintenanceTaskDetailsPage() {
               </div>
             </div>
 
-                {/* Before Photos */}
-                <div>
-                  <h2 className="text-lg font-medium text-slate-900 mb-4">Before Photos</h2>
-                  <div className="grid grid-cols-4 gap-3">
+            {/* Before Photos */}
+            <div>
+              <h2 className="text-lg font-medium text-slate-900 mb-4">Before Photos</h2>
+              <div className="grid grid-cols-4 gap-3">
                 {beforePhotos.map((photo) => {
                   console.log('Rendering before photo:', photo)
                   return (
-                  <div key={photo.id} className="relative group">
-                    <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
-                      {photo.s3Url ? (
-                        <img 
-                          src={photo.s3Url} 
-                          alt={photo.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            console.log('Image failed to load:', photo.s3Url)
-                            // Fallback to camera icon if image fails to load
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const parent = target.parentElement
-                            if (parent) {
-                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
+                    <div key={photo.id} className="relative group">
+                      <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
+                        {photo.s3Url ? (
+                          <img 
+                            src={photo.s3Url} 
+                            alt={photo.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Image failed to load:', photo.s3Url)
+                              // Fallback to camera icon if image fails to load
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                              const parent = target.parentElement
+                              if (parent) {
+                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Camera className="w-6 h-6 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => {
+                            if (photo.s3Url) {
+                              window.open(photo.s3Url, '_blank')
+                            } else {
+                              console.log('View photo:', photo.name)
                             }
                           }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Camera className="w-6 h-6 text-slate-400" />
-                        </div>
-                      )}
+                          className="text-white hover:text-orange-300 cursor-pointer"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1 truncate">{photo.name}</p>
                     </div>
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => {
-                          if (photo.s3Url) {
-                            window.open(photo.s3Url, '_blank')
-                          } else {
-                            console.log('View photo:', photo.name)
-                          }
-                        }}
-                        className="text-white hover:text-orange-300 cursor-pointer"
-                      >
-                            <Eye size={16} />
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1 truncate">{photo.name}</p>
-                  </div>
-                ))}
+                  )
+                })}
                 <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
                   {uploadingPhoto ? (
                     <div className="text-center">
@@ -705,7 +656,7 @@ export default function MaintenanceTaskDetailsPage() {
                         }}
                         className="text-white hover:text-orange-300 cursor-pointer"
                       >
-                            <Eye size={16} />
+                        <Eye size={16} />
                       </button>
                     </div>
                     <p className="text-xs text-slate-600 mt-1 truncate">{photo.name}</p>
