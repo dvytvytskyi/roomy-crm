@@ -427,7 +427,7 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
         schedulerRef.current = null;
       }
     };
-  }, []);
+  }, [resources, events, startDate, endDate, viewPreset, rowHeight, barMargin, multiEventSelect, columns, height, width]);
 
   // Update scheduler data when props change
   useEffect(() => {
