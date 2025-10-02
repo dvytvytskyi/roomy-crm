@@ -40,6 +40,18 @@ interface Event {
   guestStatus?: string;
   amount?: number;
   paidAmount?: number;
+  
+  // Guest information
+  adults?: number;
+  children?: number;
+  totalGuests?: number;
+  
+  // Pricing
+  pricePerNight?: number;
+  totalPrice?: number;
+  
+  // Comments
+  comments?: string;
 }
 
 interface SchedulerComponentProps {
@@ -163,6 +175,60 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
                 resourceField: { type: 'combo', name: 'resourceId', label: 'RESOURCE', required: true },
                 startDateField: { type: 'date', name: 'startDate', label: 'START' },
                 endDateField: { type: 'date', name: 'endDate', label: 'END' },
+                
+                // Guest information fields
+                adultsField: {
+                  type: 'number',
+                  name: 'adults',
+                  label: 'ADULTS',
+                  min: 1,
+                  max: 20,
+                  value: 1
+                },
+                childrenField: {
+                  type: 'number',
+                  name: 'children',
+                  label: 'CHILDREN',
+                  min: 0,
+                  max: 10,
+                  value: 0
+                },
+                totalGuestsField: {
+                  type: 'number',
+                  name: 'totalGuests',
+                  label: 'TOTAL GUESTS',
+                  min: 1,
+                  max: 30,
+                  readOnly: true,
+                  value: 1
+                },
+                
+                // Pricing fields
+                pricePerNightField: {
+                  type: 'number',
+                  name: 'pricePerNight',
+                  label: 'PRICE PER NIGHT (AED)',
+                  min: 0,
+                  step: 0.01
+                },
+                totalPriceField: {
+                  type: 'number',
+                  name: 'totalPrice',
+                  label: 'TOTAL PRICE (AED)',
+                  min: 0,
+                  step: 0.01,
+                  readOnly: true
+                },
+                
+                // Comments field
+                commentsField: {
+                  type: 'textarea',
+                  name: 'comments',
+                  label: 'COMMENTS',
+                  height: 80,
+                  placeholder: 'Add any special requests or notes...'
+                },
+                
                 // Add custom fields for reservation management
                 reservationTypeField: {
                   type: 'combo',
@@ -251,6 +317,58 @@ const SchedulerComponent: React.FC<SchedulerComponentProps> = ({
                       }
                     }
                   });
+                }
+
+                // Auto-calculate total guests when adults or children change
+                const adultsField = editor.widgetMap.adultsField;
+                const childrenField = editor.widgetMap.childrenField;
+                const totalGuestsField = editor.widgetMap.totalGuestsField;
+                
+                if (adultsField && childrenField && totalGuestsField) {
+                  const updateTotalGuests = () => {
+                    const adults = adultsField.value || 0;
+                    const children = childrenField.value || 0;
+                    const total = adults + children;
+                    totalGuestsField.value = total;
+                    totalGuestsField.refresh();
+                  };
+                  
+                  adultsField.on('change', updateTotalGuests);
+                  childrenField.on('change', updateTotalGuests);
+                  
+                  // Set initial value
+                  updateTotalGuests();
+                }
+
+                // Auto-calculate total price when price per night or duration changes
+                const pricePerNightField = editor.widgetMap.pricePerNightField;
+                const totalPriceField = editor.widgetMap.totalPriceField;
+                const startDateField = editor.widgetMap.startDateField;
+                const endDateField = editor.widgetMap.endDateField;
+                
+                if (pricePerNightField && totalPriceField && startDateField && endDateField) {
+                  const updateTotalPrice = () => {
+                    const pricePerNight = pricePerNightField.value || 0;
+                    const startDate = startDateField.value;
+                    const endDate = endDateField.value;
+                    
+                    if (startDate && endDate) {
+                      const start = new Date(startDate);
+                      const end = new Date(endDate);
+                      const diffTime = Math.abs(end.getTime() - start.getTime());
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      const total = pricePerNight * diffDays;
+                      totalPriceField.value = total;
+                      totalPriceField.refresh();
+                    }
+                  };
+                  
+                  pricePerNightField.on('change', updateTotalPrice);
+                  startDateField.on('change', updateTotalPrice);
+                  endDateField.on('change', updateTotalPrice);
+                  
+                  // Set initial value
+                  updateTotalPrice();
                 }
               }
             });

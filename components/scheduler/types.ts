@@ -63,6 +63,18 @@ export interface Reservation {
   checkInTime?: string;
   checkOutTime?: string;
   notes?: string;
+  
+  // Guest information
+  adults?: number;
+  children?: number;
+  totalGuests?: number;
+  
+  // Pricing
+  pricePerNight?: number;
+  totalPrice?: number;
+  
+  // Comments
+  comments?: string;
 }
 
 // Resource interface
