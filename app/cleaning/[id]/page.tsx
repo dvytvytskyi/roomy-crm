@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TopNavigation from '../../../components/TopNavigation'
 import { ArrowLeft, Edit, Trash2, Clock, User, Building, Sparkles, FileText, MessageSquare, CheckCircle, XCircle, Calendar, Plus, X } from 'lucide-react'
+import { cleaningService, CleaningTask, CleaningComment, CleaningChecklistItem } from '../../../lib/api/services/cleaningService'
 
 export default function CleaningTaskDetailsPage() {
   const params = useParams()
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [newComment, setNewComment] = useState('')
@@ -44,152 +46,173 @@ export default function CleaningTaskDetailsPage() {
     'Empty dishwasher'
   ]
 
-  // Mock data for the cleaning task
-  const mockTask = {
-    id: 1,
-    date: '2024-01-15',
-    time: '10:00',
-    unit: 'Apartment Burj Khalifa 2',
-    unitId: 'burj-khalifa-2',
-    type: 'Deep Clean',
-    cleaner: 'Clean Pro Services',
-    cleanerId: 'clean-pro-services',
-    duration: '3 hours',
-    status: 'Completed',
-    priority: 'High',
-    notes: 'Post-checkout cleaning after guest departure. Guest left the apartment in good condition but requires deep cleaning including kitchen appliances, bathroom sanitization, and carpet cleaning.\n\n[1/15/2024, 2:30:00 PM] Sarah Johnson: Kitchen appliances need extra attention due to guest cooking heavy meals.\n\n[1/15/2024, 3:15:00 PM] John Smith: Bathroom tiles have some stubborn stains that require special cleaning products.',
-    includesLaundry: true,
-    laundryCount: 12,
-    linenComments: 'Bed sheets and towels need special care due to guest allergies',
-    comments: [
-      {
-        id: 1,
-        author: 'Sarah Johnson (Clean Pro Services)',
-        date: '2024-01-15T10:15:00',
-        text: 'Started deep cleaning. Kitchen appliances cleaned and sanitized.',
-        type: 'cleaner'
-      },
-      {
-        id: 2,
-        author: 'Sarah Johnson (Clean Pro Services)',
-        date: '2024-01-15T12:30:00',
-        text: 'Bathroom cleaning completed. All surfaces sanitized and towels replaced.',
-        type: 'cleaner'
-      },
-      {
-        id: 3,
-        author: 'Sarah Johnson (Clean Pro Services)',
-        date: '2024-01-15T13:00:00',
-        text: 'Deep cleaning completed. Carpet cleaned and apartment ready for next guest.',
-        type: 'completion'
-      },
-      {
-        id: 4,
-        author: 'John Smith (Inspector)',
-        date: '2024-01-15T13:30:00',
-        text: 'Quality inspection passed. Apartment meets all cleanliness standards.',
-        type: 'inspection'
-      }
-    ],
-    checklist: [
-      { id: 7, item: 'Floors mopped', completed: true },
-      { id: 8, item: 'Trash emptied', completed: true }
-    ]
-  }
-
-  const [task, setTask] = useState(mockTask)
+  const [task, setTask] = useState<CleaningTask | null>(null)
+  const [comments, setComments] = useState<CleaningComment[]>([])
+  const [checklist, setChecklist] = useState<CleaningChecklistItem[]>([])
   const [staticItemsCompleted, setStaticItemsCompleted] = useState<boolean[]>([
     false, false, false, false, false, false
   ])
+
+  // Load task data
+  useEffect(() => {
+    const loadTaskData = async () => {
+      try {
+        setLoading(true)
+        const taskId = parseInt(params.id as string)
+        
+        // Load task details
+        const taskResponse = await cleaningService.getCleaningTask(taskId)
+        if (taskResponse.success) {
+          setTask(taskResponse.data)
+        }
+        
+        // Load comments
+        const commentsResponse = await cleaningService.getCleaningComments(taskId)
+        if (commentsResponse.success) {
+          setComments(commentsResponse.data)
+        }
+        
+        // Load checklist
+        const checklistResponse = await cleaningService.getCleaningChecklist(taskId)
+        if (checklistResponse.success) {
+          setChecklist(checklistResponse.data.checklist)
+          if (checklistResponse.data.staticChecklist) {
+            setStaticItemsCompleted(checklistResponse.data.staticChecklist)
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error loading task data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadTaskData()
+  }, [params.id])
 
   const handleEditField = (fieldName: string) => {
     setEditingField(fieldName)
   }
 
-  const handleSaveField = (fieldName: string, value: any) => {
-    setTask(prev => ({
-      ...prev,
-      [fieldName]: value
-    }))
+  const handleSaveField = async (fieldName: string, value: any) => {
+    if (!task) return
+    
+    try {
+      const updateData: any = {}
+      updateData[fieldName] = value
+      
+      const response = await cleaningService.updateCleaningTask(task.id, updateData)
+      if (response.success) {
+        setTask(response.data)
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
+    }
+    
     setEditingField(null)
-    // Here you would save the changes to the backend
-    console.log('Saving field change:', fieldName, value)
   }
 
   const handleCancelEdit = () => {
     setEditingField(null)
   }
 
-  const handleDelete = () => {
-    console.log('Deleting task:', task.id)
-    router.push('/cleaning')
-  }
-
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const comment = {
-        id: task.comments.length + 1,
-        author: 'Current User',
-        date: new Date().toISOString(),
-        text: newComment,
-        type: 'user'
-      }
-      setTask(prev => ({
-        ...prev,
-        comments: [...prev.comments, comment]
-      }))
-      setNewComment('')
+  const handleDelete = async () => {
+    if (!task) return
+    
+    try {
+      await cleaningService.deleteCleaningTask(task.id)
+      router.push('/cleaning')
+    } catch (error) {
+      console.error('Error deleting task:', error)
     }
   }
 
-  const handleAddChecklistItem = (itemText?: string) => {
+  const handleAddComment = async () => {
+    if (!task || !newComment.trim()) return
+    
+    try {
+      const response = await cleaningService.addCleaningComment(task.id, {
+        text: newComment,
+        type: 'user'
+      })
+      if (response.success) {
+        setComments(prev => [...prev, response.data])
+        setNewComment('')
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
+  }
+
+  const handleAddChecklistItem = async (itemText?: string) => {
+    if (!task) return
+    
     const itemToAdd = itemText || newChecklistItem.trim()
     if (itemToAdd) {
-      // Check if item already exists
-      const exists = task.checklist.some(item => item.item.toLowerCase() === itemToAdd.toLowerCase())
-      if (!exists) {
-        const newItem = {
-          id: Math.max(...task.checklist.map(item => item.id)) + 1,
-          item: itemToAdd,
-          completed: false
+      try {
+        const response = await cleaningService.addCleaningChecklistItem(task.id, {
+          item: itemToAdd
+        })
+        if (response.success) {
+          setChecklist(prev => [...prev, response.data])
         }
-        setTask(prev => ({
-          ...prev,
-          checklist: [...prev.checklist, newItem]
-        }))
+      } catch (error) {
+        console.error('Error adding checklist item:', error)
       }
       setNewChecklistItem('')
       setShowAddChecklist(false)
     }
   }
 
-  const handleRemoveChecklistItem = (itemId: number) => {
-    setTask(prev => ({
-      ...prev,
-      checklist: prev.checklist.filter(item => item.id !== itemId)
-    }))
+  const handleRemoveChecklistItem = async (itemId: number) => {
+    if (!task) return
+    
+    try {
+      const response = await cleaningService.deleteCleaningChecklistItem(task.id, itemId)
+      if (response.success) {
+        setChecklist(prev => prev.filter(item => item.id !== itemId))
+      }
+    } catch (error) {
+      console.error('Error removing checklist item:', error)
+    }
   }
 
-  const handleToggleStaticItem = (index: number) => {
-    setStaticItemsCompleted(prev => {
-      const newState = [...prev]
-      newState[index] = !newState[index]
-      return newState
-    })
+  const handleToggleStaticItem = async (index: number) => {
+    if (!task) return
+    
+    const newState = [...staticItemsCompleted]
+    newState[index] = !newState[index]
+    setStaticItemsCompleted(newState)
+    
+    try {
+      await cleaningService.updateCleaningStaticChecklist(task.id, {
+        staticChecklist: newState
+      })
+    } catch (error) {
+      console.error('Error updating static checklist:', error)
+    }
   }
 
-  const handleAddNote = () => {
-    if (newNote.trim()) {
+  const handleAddNote = async () => {
+    if (!task || !newNote.trim()) return
+    
+    try {
       const timestamp = new Date().toLocaleString()
       const author = 'Current User' // In real app, this would come from auth context
       const noteWithMeta = `[${timestamp}] ${author}: ${newNote.trim()}`
       const updatedNotes = task.notes + (task.notes ? '\n\n' : '') + noteWithMeta
-      setTask(prev => ({
-        ...prev,
+      
+      const response = await cleaningService.updateCleaningNotes(task.id, {
         notes: updatedNotes
-      }))
+      })
+      if (response.success) {
+        setTask(response.data)
+      }
       setNewNote('')
       setShowAddNote(false)
+    } catch (error) {
+      console.error('Error adding note:', error)
     }
   }
 
@@ -249,6 +272,27 @@ export default function CleaningTaskDetailsPage() {
       default:
         return <MessageSquare className="w-4 h-4 text-gray-500" />
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading cleaning task...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!task) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">Cleaning task not found</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -342,23 +386,30 @@ export default function CleaningTaskDetailsPage() {
                 </div>
                 
                 {/* Dynamic checklist items */}
-                {task.checklist.length > 0 && (
+                {checklist.length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Items</h3>
                     <div className="grid grid-cols-1 gap-2">
-                      {task.checklist.map((item) => (
+                      {checklist.map((item) => (
                         <div 
                           key={item.id} 
                           className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors group"
-                          onClick={() => {
-                            setTask(prev => ({
-                              ...prev,
-                              checklist: prev.checklist.map(checklistItem => 
-                                checklistItem.id === item.id 
-                                  ? { ...checklistItem, completed: !checklistItem.completed }
-                                  : checklistItem
-                              )
-                            }))
+                          onClick={async () => {
+                            if (!task) return
+                            try {
+                              const response = await cleaningService.updateCleaningChecklistItem(task.id, item.id, {
+                                completed: !item.completed
+                              })
+                              if (response.success) {
+                                setChecklist(prev => prev.map(checklistItem => 
+                                  checklistItem.id === item.id 
+                                    ? { ...checklistItem, completed: !checklistItem.completed }
+                                    : checklistItem
+                                ))
+                              }
+                            } catch (error) {
+                              console.error('Error updating checklist item:', error)
+                            }
                           }}
                         >
                           <div className="flex-shrink-0">
@@ -453,9 +504,9 @@ export default function CleaningTaskDetailsPage() {
                   <div className="bg-slate-50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">Additional Items</h4>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-900 mb-1">{task.checklist.length}</div>
+                      <div className="text-3xl font-bold text-gray-900 mb-1">{checklist.length}</div>
                       <div className="text-sm text-blue-600 font-medium">
-                        {task.checklist.filter(item => item.completed).length} completed
+                        {checklist.filter(item => item.completed).length} completed
                       </div>
                     </div>
                   </div>
@@ -466,8 +517,8 @@ export default function CleaningTaskDetailsPage() {
                   <div className="text-center mb-3">
                     <div className="text-2xl font-bold text-orange-600 mb-1">
                       {(() => {
-                        const totalItems = staticChecklistItems.length + task.checklist.length
-                        const completedItems = staticItemsCompleted.filter(Boolean).length + task.checklist.filter(item => item.completed).length
+                        const totalItems = staticChecklistItems.length + checklist.length
+                        const completedItems = staticItemsCompleted.filter(Boolean).length + checklist.filter(item => item.completed).length
                         return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
                       })()}%
                     </div>
@@ -478,8 +529,8 @@ export default function CleaningTaskDetailsPage() {
                       className="bg-orange-500 h-3 rounded-full transition-all duration-500"
                       style={{ 
                         width: `${(() => {
-                          const totalItems = staticChecklistItems.length + task.checklist.length
-                          const completedItems = staticItemsCompleted.filter(Boolean).length + task.checklist.filter(item => item.completed).length
+                          const totalItems = staticChecklistItems.length + checklist.length
+                          const completedItems = staticItemsCompleted.filter(Boolean).length + checklist.filter(item => item.completed).length
                           return totalItems > 0 ? (completedItems / totalItems) * 100 : 0
                         })()}%` 
                       }}
@@ -507,18 +558,18 @@ export default function CleaningTaskDetailsPage() {
                           <div className="flex items-center space-x-2">
                       <input
                         type="date"
-                        value={task.date}
-                        onChange={(e) => setTask(prev => ({ ...prev, date: e.target.value }))}
+                        value={task.scheduledDate}
+                        onChange={(e) => setTask(prev => ({ ...prev, scheduledDate: e.target.value }))}
                               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm min-w-[140px]"
                       />
                       <input
                         type="time"
-                        value={task.time}
-                        onChange={(e) => setTask(prev => ({ ...prev, time: e.target.value }))}
+                        value={task.scheduledTime}
+                        onChange={(e) => setTask(prev => ({ ...prev, scheduledTime: e.target.value }))}
                               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm min-w-[120px]"
                             />
                             <button
-                              onClick={() => handleSaveField('datetime', { date: task.date, time: task.time })}
+                              onClick={() => handleSaveField('datetime', { scheduledDate: task.scheduledDate, scheduledTime: task.scheduledTime })}
                               className="text-green-600 hover:text-green-700 cursor-pointer"
                             >
                               <CheckCircle size={14} />
@@ -533,7 +584,7 @@ export default function CleaningTaskDetailsPage() {
                   ) : (
                           <>
                             <span className="text-sm text-gray-900">
-                      {new Date(task.date).toLocaleDateString()} at {task.time}
+                      {new Date(task.scheduledDate).toLocaleDateString()} at {task.scheduledTime}
                             </span>
                             <button 
                               onClick={() => handleEditField('datetime')}
@@ -985,7 +1036,7 @@ export default function CleaningTaskDetailsPage() {
             <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Comments & Updates</h2>
               <div className="space-y-4">
-                {task.comments.map((comment) => (
+                {comments.map((comment) => (
                   <div key={comment.id} className="flex space-x-3 p-3 bg-slate-50 rounded-lg">
                     <div className="flex-shrink-0">
                       {getCommentIcon(comment.type)}

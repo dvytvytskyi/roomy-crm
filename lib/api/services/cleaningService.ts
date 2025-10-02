@@ -1,5 +1,19 @@
 import { apiClient } from '../config'
 
+export interface CleaningComment {
+  id: number
+  author: string
+  date: string
+  text: string
+  type: 'cleaner' | 'completion' | 'inspection' | 'user'
+}
+
+export interface CleaningChecklistItem {
+  id: number
+  item: string
+  completed: boolean
+}
+
 export interface CleaningTask {
   id: number
   unit: string
@@ -20,6 +34,9 @@ export interface CleaningTask {
   includesLaundry?: boolean
   laundryCount?: number
   linenComments?: string
+  comments?: CleaningComment[]
+  checklist?: CleaningChecklistItem[]
+  staticChecklist?: boolean[]
 }
 
 export interface CleaningStats {
@@ -144,6 +161,60 @@ class CleaningService {
   // Delete cleaning task
   async deleteCleaningTask(id: number): Promise<CleaningDeleteResponse> {
     const response = await apiClient.delete(`/cleaning/${id}`)
+    return response.data
+  }
+
+  // ==================== COMMENTS ====================
+  
+  // Get comments for a cleaning task
+  async getCleaningComments(id: number): Promise<{ success: boolean; data: CleaningComment[] }> {
+    const response = await apiClient.get(`/cleaning/${id}/comments`)
+    return response.data
+  }
+
+  // Add comment to a cleaning task
+  async addCleaningComment(id: number, data: { text: string; type?: string }): Promise<{ success: boolean; data: CleaningComment; message: string }> {
+    const response = await apiClient.post(`/cleaning/${id}/comments`, data)
+    return response.data
+  }
+
+  // ==================== CHECKLIST ====================
+  
+  // Get checklist for a cleaning task
+  async getCleaningChecklist(id: number): Promise<{ success: boolean; data: { checklist: CleaningChecklistItem[]; staticChecklist: boolean[] } }> {
+    const response = await apiClient.get(`/cleaning/${id}/checklist`)
+    return response.data
+  }
+
+  // Add checklist item to a cleaning task
+  async addCleaningChecklistItem(id: number, data: { item: string }): Promise<{ success: boolean; data: CleaningChecklistItem; message: string }> {
+    const response = await apiClient.post(`/cleaning/${id}/checklist`, data)
+    return response.data
+  }
+
+  // Update checklist item
+  async updateCleaningChecklistItem(id: number, itemId: number, data: { completed: boolean }): Promise<{ success: boolean; data: CleaningChecklistItem; message: string }> {
+    const response = await apiClient.put(`/cleaning/${id}/checklist/${itemId}`, data)
+    return response.data
+  }
+
+  // Delete checklist item
+  async deleteCleaningChecklistItem(id: number, itemId: number): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.delete(`/cleaning/${id}/checklist/${itemId}`)
+    return response.data
+  }
+
+  // Update static checklist
+  async updateCleaningStaticChecklist(id: number, data: { staticChecklist: boolean[] }): Promise<{ success: boolean; data: boolean[]; message: string }> {
+    const response = await apiClient.put(`/cleaning/${id}/static-checklist`, data)
+    return response.data
+  }
+
+  // ==================== NOTES ====================
+  
+  // Update notes for a cleaning task
+  async updateCleaningNotes(id: number, data: { notes: string }): Promise<{ success: boolean; data: CleaningTask; message: string }> {
+    const response = await apiClient.put(`/cleaning/${id}/notes`, data)
     return response.data
   }
 }

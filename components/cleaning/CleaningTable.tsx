@@ -134,6 +134,8 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
+  console.log('CleaningTable props:', { tasks: tasks.length, loading, selectedCleaning, onSelectionChange: !!onSelectionChange })
+
   // Sort data (filtering is now handled by API)
   const sortedCleaning = [...tasks].sort((a, b) => {
     const aValue = a[sortField as keyof typeof a]
@@ -169,6 +171,7 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
   }
 
   const handleSelectAll = (checked: boolean) => {
+    console.log('Select all:', checked, 'tasks:', sortedCleaning.length)
     if (checked) {
       onSelectionChange(sortedCleaning.map(task => task.id))
     } else {
@@ -177,6 +180,7 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
   }
 
   const handleSelectTask = (taskId: number, checked: boolean) => {
+    console.log('Select task:', taskId, checked, 'current selection:', selectedCleaning)
     if (checked) {
       onSelectionChange([...selectedCleaning, taskId])
     } else {

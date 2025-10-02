@@ -1,0 +1,169 @@
+[
+  {
+    "id": 1,
+    "unit": "Apartment Burj Khalifa 2",
+    "unitId": "burj-khalifa-2",
+    "type": "Regular Clean",
+    "status": "Scheduled",
+    "scheduledDate": "2024-01-15",
+    "scheduledTime": "10:00",
+    "duration": "2 hours",
+    "cleaner": "Clean Pro Services",
+    "cleanerId": "clean-pro-services",
+    "cost": 120,
+    "notes": "Regular weekly cleaning",
+    "createdAt": "2024-01-14T10:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T10:00:00.000Z",
+    "lastModifiedBy": "System",
+    "comments": [
+      {
+        "id": 1,
+        "author": "Clean Pro Services",
+        "date": "2024-01-15T10:15:00.000Z",
+        "text": "Started regular cleaning. Kitchen appliances cleaned and sanitized.",
+        "type": "cleaner"
+      },
+      {
+        "id": 2,
+        "author": "Clean Pro Services",
+        "date": "2024-01-15T12:30:00.000Z",
+        "text": "Bathroom cleaning completed. All surfaces sanitized and towels replaced.",
+        "type": "cleaner"
+      }
+    ],
+    "checklist": [
+      {
+        "id": 1,
+        "item": "Floors mopped",
+        "completed": true
+      },
+      {
+        "id": 2,
+        "item": "Trash emptied",
+        "completed": true
+      },
+      {
+        "id": 3,
+        "item": "Dust all surfaces",
+        "completed": false
+      }
+    ],
+    "staticChecklist": [
+      true,
+      true,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  {
+    "id": 2,
+    "unit": "Marina View Studio",
+    "unitId": "marina-view-studio",
+    "type": "Office Clean",
+    "status": "Completed",
+    "scheduledDate": "2024-01-14",
+    "scheduledTime": "14:00",
+    "duration": "4 hours",
+    "cleaner": "Sparkle Clean",
+    "cleanerId": "sparkle-clean",
+    "cost": 200,
+    "notes": "Deep cleaning after guest checkout",
+    "createdAt": "2024-01-13T15:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2025-10-02T14:10:03.988Z",
+    "lastModifiedBy": "Current User"
+  },
+  {
+    "id": 3,
+    "unit": "Downtown Loft 2BR",
+    "unitId": "downtown-loft-2br",
+    "type": "Post-Checkout",
+    "status": "Scheduled",
+    "scheduledDate": "2024-01-16",
+    "scheduledTime": "09:00",
+    "duration": "3 hours",
+    "cleaner": "Professional Cleaners",
+    "cleanerId": "professional-cleaners",
+    "cost": 150,
+    "notes": "Post-checkout cleaning for new guest arrival",
+    "createdAt": "2024-01-15T08:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-15T08:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 4,
+    "unit": "JBR Beach Apartment",
+    "unitId": "jbr-beach-apartment",
+    "type": "Pre-Arrival",
+    "status": "Completed",
+    "scheduledDate": "2024-01-13",
+    "scheduledTime": "11:00",
+    "duration": "2.5 hours",
+    "cleaner": "Quick Clean",
+    "cleanerId": "quick-clean",
+    "cost": 130,
+    "notes": "Pre-arrival cleaning completed",
+    "createdAt": "2024-01-12T16:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-13T13:30:00.000Z",
+    "lastModifiedBy": "Quick Clean"
+  },
+  {
+    "id": 5,
+    "unit": "Business Bay Office",
+    "unitId": "business-bay-office",
+    "type": "Office Clean",
+    "status": "Scheduled",
+    "scheduledDate": "2024-01-17",
+    "scheduledTime": "08:00",
+    "duration": "1.5 hours",
+    "cleaner": "Elite Cleaning",
+    "cleanerId": "elite-cleaning",
+    "cost": 100,
+    "notes": "Weekly office cleaning",
+    "createdAt": "2024-01-16T09:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-16T09:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 7,
+    "unit": "JLT Studio",
+    "unitId": "jlt-studio",
+    "type": "Regular Clean",
+    "status": "Cancelled",
+    "scheduledDate": "2024-01-14",
+    "scheduledTime": "16:00",
+    "duration": "1.5 hours",
+    "cleaner": "Sparkle Clean",
+    "cleanerId": "sparkle-clean",
+    "cost": 90,
+    "notes": "Cancelled due to guest request",
+    "createdAt": "2024-01-13T14:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T10:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 8,
+    "unit": "Arabian Ranches Villa",
+    "unitId": "arabian-ranches-villa",
+    "type": "Deep Clean",
+    "status": "Scheduled",
+    "scheduledDate": "2024-01-18",
+    "scheduledTime": "10:00",
+    "duration": "5 hours",
+    "cleaner": "Professional Cleaners",
+    "cleanerId": "professional-cleaners",
+    "cost": 300,
+    "notes": "Deep cleaning for villa after long-term rental",
+    "createdAt": "2024-01-17T11:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-17T11:00:00.000Z",
+    "lastModifiedBy": "System"
+  }
+]

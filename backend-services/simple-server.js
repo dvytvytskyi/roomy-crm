@@ -944,7 +944,29 @@ let mockCleaningTasks = [
     createdAt: '2024-01-14T10:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-14T10:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    comments: [
+      {
+        id: 1,
+        author: 'Clean Pro Services',
+        date: '2024-01-15T10:15:00.000Z',
+        text: 'Started regular cleaning. Kitchen appliances cleaned and sanitized.',
+        type: 'cleaner'
+      },
+      {
+        id: 2,
+        author: 'Clean Pro Services',
+        date: '2024-01-15T12:30:00.000Z',
+        text: 'Bathroom cleaning completed. All surfaces sanitized and towels replaced.',
+        type: 'cleaner'
+      }
+    ],
+    checklist: [
+      { id: 1, item: 'Floors mopped', completed: true },
+      { id: 2, item: 'Trash emptied', completed: true },
+      { id: 3, item: 'Dust all surfaces', completed: false }
+    ],
+    staticChecklist: [true, true, false, false, true, false]
   },
   {
     id: 2,
@@ -1030,11 +1052,52 @@ let mockCleaningTasks = [
     cleaner: 'Clean Pro Services',
     cleanerId: 'clean-pro-services',
     cost: 140,
-    notes: 'Mid-stay cleaning for long-term guest',
+    notes: 'Mid-stay cleaning for long-term guest. Guest requested extra attention to kitchen appliances and bathroom sanitization.\n\n[1/12/2024, 3:30:00 PM] Sarah Johnson: Kitchen appliances need extra attention due to guest cooking heavy meals.\n\n[1/12/2024, 4:15:00 PM] John Smith: Bathroom tiles have some stubborn stains that require special cleaning products.',
     createdAt: '2024-01-11T12:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-12T17:00:00.000Z',
-    lastModifiedBy: 'Clean Pro Services'
+    lastModifiedBy: 'Clean Pro Services',
+    includesLaundry: true,
+    laundryCount: 12,
+    linenComments: 'Bed sheets and towels need special care due to guest allergies',
+    comments: [
+      {
+        id: 1,
+        author: 'Sarah Johnson (Clean Pro Services)',
+        date: '2024-01-12T15:15:00.000Z',
+        text: 'Started mid-stay cleaning. Kitchen appliances cleaned and sanitized.',
+        type: 'cleaner'
+      },
+      {
+        id: 2,
+        author: 'Sarah Johnson (Clean Pro Services)',
+        date: '2024-01-12T16:30:00.000Z',
+        text: 'Bathroom cleaning completed. All surfaces sanitized and towels replaced.',
+        type: 'cleaner'
+      },
+      {
+        id: 3,
+        author: 'Sarah Johnson (Clean Pro Services)',
+        date: '2024-01-12T17:00:00.000Z',
+        text: 'Mid-stay cleaning completed. Apartment ready for guest continuation.',
+        type: 'completion'
+      },
+      {
+        id: 4,
+        author: 'John Smith (Inspector)',
+        date: '2024-01-12T17:30:00.000Z',
+        text: 'Quality inspection passed. Apartment meets all cleanliness standards.',
+        type: 'inspection'
+      }
+    ],
+    checklist: [
+      { id: 1, item: 'Floors mopped', completed: true },
+      { id: 2, item: 'Trash emptied', completed: true },
+      { id: 3, item: 'Dust all surfaces', completed: true },
+      { id: 4, item: 'Vacuum carpets', completed: true },
+      { id: 5, item: 'Clean mirrors', completed: true }
+    ],
+    staticChecklist: [true, true, true, true, true, true]
   },
   {
     id: 7,
@@ -1693,6 +1756,269 @@ app.delete('/api/cleaning/:id', mockAuth, (req, res) => {
   res.json({
     success: true,
     message: 'Cleaning task deleted successfully'
+  });
+});
+
+// ==================== CLEANING TASK DETAILS API ====================
+
+// GET /api/cleaning/:id/comments - Get comments for a cleaning task
+app.get('/api/cleaning/:id/comments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`💬 GET /api/cleaning/${id}/comments - Fetching comments`);
+  
+  const task = mockCleaningTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: task.comments || []
+  });
+});
+
+// POST /api/cleaning/:id/comments - Add a comment to a cleaning task
+app.post('/api/cleaning/:id/comments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { text, type = 'user' } = req.body;
+  console.log(`💬 POST /api/cleaning/${id}/comments - Adding comment`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  const newComment = {
+    id: Math.max(...(mockCleaningTasks[taskIndex].comments || []).map(c => c.id), 0) + 1,
+    author: 'Current User',
+    date: new Date().toISOString(),
+    text,
+    type
+  };
+  
+  if (!mockCleaningTasks[taskIndex].comments) {
+    mockCleaningTasks[taskIndex].comments = [];
+  }
+  mockCleaningTasks[taskIndex].comments.push(newComment);
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    data: newComment,
+    message: 'Comment added successfully'
+  });
+});
+
+// GET /api/cleaning/:id/checklist - Get checklist for a cleaning task
+app.get('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`✅ GET /api/cleaning/${id}/checklist - Fetching checklist`);
+  
+  const task = mockCleaningTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: {
+      checklist: task.checklist || [],
+      staticChecklist: task.staticChecklist || []
+    }
+  });
+});
+
+// POST /api/cleaning/:id/checklist - Add a checklist item to a cleaning task
+app.post('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { item } = req.body;
+  console.log(`✅ POST /api/cleaning/${id}/checklist - Adding checklist item`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  if (!mockCleaningTasks[taskIndex].checklist) {
+    mockCleaningTasks[taskIndex].checklist = [];
+  }
+  
+  // Check if item already exists
+  const exists = mockCleaningTasks[taskIndex].checklist.some(item => item.item.toLowerCase() === item.toLowerCase());
+  if (exists) {
+    return res.status(400).json({
+      success: false,
+      message: 'Checklist item already exists'
+    });
+  }
+  
+  const newItem = {
+    id: Math.max(...mockCleaningTasks[taskIndex].checklist.map(item => item.id), 0) + 1,
+    item,
+    completed: false
+  };
+  
+  mockCleaningTasks[taskIndex].checklist.push(newItem);
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    data: newItem,
+    message: 'Checklist item added successfully'
+  });
+});
+
+// PUT /api/cleaning/:id/checklist/:itemId - Update a checklist item
+app.put('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
+  const { id, itemId } = req.params;
+  const { completed } = req.body;
+  console.log(`✅ PUT /api/cleaning/${id}/checklist/${itemId} - Updating checklist item`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  if (!mockCleaningTasks[taskIndex].checklist) {
+    return res.status(404).json({
+      success: false,
+      message: 'Checklist not found'
+    });
+  }
+  
+  const itemIndex = mockCleaningTasks[taskIndex].checklist.findIndex(item => item.id === parseInt(itemId));
+  if (itemIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Checklist item not found'
+    });
+  }
+  
+  mockCleaningTasks[taskIndex].checklist[itemIndex].completed = completed;
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    data: mockCleaningTasks[taskIndex].checklist[itemIndex],
+    message: 'Checklist item updated successfully'
+  });
+});
+
+// DELETE /api/cleaning/:id/checklist/:itemId - Delete a checklist item
+app.delete('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
+  const { id, itemId } = req.params;
+  console.log(`✅ DELETE /api/cleaning/${id}/checklist/${itemId} - Deleting checklist item`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  if (!mockCleaningTasks[taskIndex].checklist) {
+    return res.status(404).json({
+      success: false,
+      message: 'Checklist not found'
+    });
+  }
+  
+  const itemIndex = mockCleaningTasks[taskIndex].checklist.findIndex(item => item.id === parseInt(itemId));
+  if (itemIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Checklist item not found'
+    });
+  }
+  
+  mockCleaningTasks[taskIndex].checklist.splice(itemIndex, 1);
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    message: 'Checklist item deleted successfully'
+  });
+});
+
+// PUT /api/cleaning/:id/static-checklist - Update static checklist items
+app.put('/api/cleaning/:id/static-checklist', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { staticChecklist } = req.body;
+  console.log(`✅ PUT /api/cleaning/${id}/static-checklist - Updating static checklist`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  mockCleaningTasks[taskIndex].staticChecklist = staticChecklist;
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    data: mockCleaningTasks[taskIndex].staticChecklist,
+    message: 'Static checklist updated successfully'
+  });
+});
+
+// PUT /api/cleaning/:id/notes - Update notes for a cleaning task
+app.put('/api/cleaning/:id/notes', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+  console.log(`📝 PUT /api/cleaning/${id}/notes - Updating notes`);
+  
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+  
+  mockCleaningTasks[taskIndex].notes = notes;
+  mockCleaningTasks[taskIndex].lastModifiedAt = new Date().toISOString();
+  mockCleaningTasks[taskIndex].lastModifiedBy = 'Current User';
+  
+  saveCleaningData(mockCleaningTasks);
+  
+  res.json({
+    success: true,
+    data: mockCleaningTasks[taskIndex],
+    message: 'Notes updated successfully'
   });
 });
 
