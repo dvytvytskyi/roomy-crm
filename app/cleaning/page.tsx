@@ -15,6 +15,13 @@ export default function CleaningPage() {
   const [filters, setFilters] = useState<CleaningFiltersType>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCleaning, setSelectedCleaning] = useState<number[]>([])
+
+  const handleSelectionChange = (newSelection: number[]) => {
+    console.log('Selection changed:', newSelection)
+    setSelectedCleaning(newSelection)
+  }
+
+  console.log('CleaningPage state:', { tasks: tasks.length, selectedCleaning, loading })
   const [showAddModal, setShowAddModal] = useState(false)
 
   // Load data
@@ -200,7 +207,7 @@ export default function CleaningPage() {
                 tasks={tasks}
                 loading={loading}
                 selectedCleaning={selectedCleaning}
-                onSelectionChange={setSelectedCleaning}
+                onSelectionChange={handleSelectionChange}
               />
             </div>
           </div>
