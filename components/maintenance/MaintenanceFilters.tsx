@@ -7,15 +7,23 @@ interface MaintenanceFiltersProps {
   isOpen: boolean
   onClose: () => void
   isSidebar?: boolean
+  filters?: {
+    status?: string[]
+    priority?: string[]
+    type?: string[]
+  }
+  onFiltersChange?: (filters: {
+    status?: string[]
+    priority?: string[]
+    type?: string[]
+  }) => void
 }
 
-export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false }: MaintenanceFiltersProps) {
+export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false, filters = {}, onFiltersChange }: MaintenanceFiltersProps) {
   const [openSections, setOpenSections] = useState({
     status: true,
     priority: true,
     type: true,
-    technician: true,
-    unit: true,
     dateRange: true
   })
 
@@ -24,6 +32,30 @@ export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false 
       ...prev,
       [section]: !prev[section]
     }))
+  }
+
+  const handleFilterChange = (filterType: 'status' | 'priority' | 'type', value: string, checked: boolean) => {
+    if (!onFiltersChange) return
+
+    const currentFilters = filters[filterType] || []
+    let newFilters: string[]
+
+    if (checked) {
+      newFilters = [...currentFilters, value]
+    } else {
+      newFilters = currentFilters.filter(f => f !== value)
+    }
+
+    onFiltersChange({
+      ...filters,
+      [filterType]: newFilters.length > 0 ? newFilters : undefined
+    })
+  }
+
+  const clearFilters = () => {
+    if (onFiltersChange) {
+      onFiltersChange({})
+    }
   }
 
   if (!isOpen) return null
@@ -45,41 +77,17 @@ export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false 
         </button>
         {openSections.status && (
           <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Scheduled</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">In Progress</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Completed</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Cancelled</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">On Hold</span>
-            </label>
+            {['Scheduled', 'In Progress', 'Completed', 'Cancelled', 'On Hold'].map((status) => (
+              <label key={status} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={filters.status?.includes(status) || false}
+                  onChange={(e) => handleFilterChange('status', status, e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <span className="ml-2 text-sm text-slate-700">{status}</span>
+              </label>
+            ))}
           </div>
         )}
       </div>
@@ -99,34 +107,17 @@ export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false 
         </button>
         {openSections.priority && (
           <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Low</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Normal</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">High</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Urgent</span>
-            </label>
+            {['Low', 'Normal', 'High', 'Urgent'].map((priority) => (
+              <label key={priority} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={filters.priority?.includes(priority) || false}
+                  onChange={(e) => handleFilterChange('priority', priority, e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <span className="ml-2 text-sm text-slate-700">{priority}</span>
+              </label>
+            ))}
           </div>
         )}
       </div>
@@ -146,152 +137,28 @@ export default function MaintenanceFilters({ isOpen, onClose, isSidebar = false 
         </button>
         {openSections.type && (
           <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Plumbing</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Electrical</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">HVAC</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">General</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Emergency</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Preventive</span>
-            </label>
+            {['Plumbing', 'Electrical', 'HVAC', 'General', 'Emergency', 'Preventive'].map((type) => (
+              <label key={type} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={filters.type?.includes(type) || false}
+                  onChange={(e) => handleFilterChange('type', type, e.target.checked)}
+                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <span className="ml-2 text-sm text-slate-700">{type}</span>
+              </label>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Technician */}
-      <div>
-        <button
-          onClick={() => toggleSection('technician')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Technician</label>
-          {openSections.technician ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.technician && (
-          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Mike Johnson</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Sarah Wilson</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">David Chen</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Alex Rodriguez</span>
-            </label>
-          </div>
-        )}
-      </div>
-
-      {/* Unit */}
-      <div>
-        <button
-          onClick={() => toggleSection('unit')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Unit</label>
-          {openSections.unit ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.unit && (
-          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Apartment Burj Khalifa 2</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Marina View Studio</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Downtown Loft 2BR</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">JBR Beach Apartment</span>
-            </label>
-          </div>
-        )}
-      </div>
 
       {!isSidebar && (
         <div className="flex space-x-3 pt-4">
-          <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            Apply Filter
-          </button>
-          <button className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 hover:border-orange-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
+          <button 
+            onClick={clearFilters}
+            className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 hover:border-orange-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium"
+          >
             Clear
           </button>
         </div>

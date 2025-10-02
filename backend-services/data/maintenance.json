@@ -1,0 +1,201 @@
+[
+  {
+    "id": 1,
+    "title": "Fix Kitchen Faucet",
+    "unit": "Apartment Burj Khalifa 2",
+    "unitId": "burj-khalifa-2",
+    "technician": "Mike Johnson",
+    "technicianId": "mike-johnson",
+    "status": "In Progress",
+    "priority": "High",
+    "type": "Plumbing",
+    "scheduledDate": "2024-01-15",
+    "estimatedDuration": "2 hours",
+    "description": "Kitchen faucet is leaking and needs repair",
+    "cost": 150,
+    "notes": "Guest reported leak in kitchen",
+    "createdAt": "2024-01-14T10:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-15T08:30:00.000Z",
+    "lastModifiedBy": "Mike Johnson"
+  },
+  {
+    "id": 2,
+    "title": "AC Unit Maintenance",
+    "unit": "Marina View Studio",
+    "unitId": "marina-view-studio",
+    "technician": "Sarah Wilson",
+    "technicianId": "sarah-wilson",
+    "status": "Scheduled",
+    "priority": "Normal",
+    "type": "HVAC",
+    "scheduledDate": "2024-01-16",
+    "estimatedDuration": "3 hours",
+    "description": "Regular AC maintenance and filter replacement",
+    "cost": 200,
+    "createdAt": "2024-01-14T11:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T11:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 3,
+    "title": "Electrical Outlet Repair",
+    "unit": "Downtown Loft 2BR",
+    "unitId": "downtown-loft-2br",
+    "technician": "David Chen",
+    "technicianId": "david-chen",
+    "status": "Completed",
+    "priority": "Urgent",
+    "type": "Electrical",
+    "scheduledDate": "2024-01-14",
+    "estimatedDuration": "1 hour",
+    "description": "Master bedroom outlet not working",
+    "cost": 120,
+    "notes": "Fixed loose wire connection",
+    "createdAt": "2024-01-13T14:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T16:00:00.000Z",
+    "lastModifiedBy": "David Chen"
+  },
+  {
+    "id": 4,
+    "title": "Door Lock Replacement",
+    "unit": "JBR Beach Apartment",
+    "unitId": "jbr-beach-apartment",
+    "technician": "Alex Rodriguez",
+    "technicianId": "alex-rodriguez",
+    "status": "On Hold",
+    "priority": "Normal",
+    "type": "General",
+    "scheduledDate": "2024-01-17",
+    "estimatedDuration": "1.5 hours",
+    "description": "Replace faulty door lock mechanism",
+    "cost": 180,
+    "createdAt": "2024-01-14T12:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-15T09:00:00.000Z",
+    "lastModifiedBy": "Alex Rodriguez"
+  },
+  {
+    "id": 5,
+    "title": "Water Heater Inspection",
+    "unit": "Apartment Burj Khalifa 2",
+    "unitId": "burj-khalifa-2",
+    "technician": "Mike Johnson",
+    "technicianId": "mike-johnson",
+    "status": "Scheduled",
+    "priority": "Low",
+    "type": "Plumbing",
+    "scheduledDate": "2024-01-18",
+    "estimatedDuration": "2 hours",
+    "description": "Annual water heater inspection and maintenance",
+    "cost": 100,
+    "createdAt": "2024-01-14T13:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T13:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 6,
+    "title": "Light Fixture Installation",
+    "unit": "Palm Villa 4BR",
+    "unitId": "palm-villa-4br",
+    "technician": "Sarah Wilson",
+    "technicianId": "sarah-wilson",
+    "status": "Scheduled",
+    "priority": "Normal",
+    "type": "Electrical",
+    "scheduledDate": "2024-01-19",
+    "estimatedDuration": "2.5 hours",
+    "description": "Install new chandelier in dining room",
+    "cost": 250,
+    "createdAt": "2024-01-14T14:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-14T14:00:00.000Z",
+    "lastModifiedBy": "System"
+  },
+  {
+    "id": 7,
+    "title": "HVAC Filter Replacement",
+    "unit": "Marina Penthouse",
+    "unitId": "marina-penthouse",
+    "technician": "Electric Solutions",
+    "technicianId": "david-chen",
+    "status": "Completed",
+    "priority": "Low",
+    "type": "HVAC",
+    "scheduledDate": "2024-01-13",
+    "estimatedDuration": "1 hour",
+    "description": "Replace all HVAC filtersаіцуа",
+    "cost": 80,
+    "notes": "All filters replaced successfully",
+    "createdAt": "2024-01-12T10:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2025-10-02T12:49:06.440Z",
+    "lastModifiedBy": "Current User",
+    "comments": [
+      {
+        "id": 1,
+        "author": "Current User",
+        "date": "2025-10-02T12:27:32.952Z",
+        "text": "фіаоуцащоуца",
+        "type": "user"
+      }
+    ],
+    "attachments": [
+      {
+        "id": 1,
+        "name": "RECEIPT_res_2_2025-09-30 (1).pdf",
+        "size": "7.1 KB",
+        "type": "application/pdf"
+      }
+    ],
+    "beforePhotos": [
+      {
+        "id": 1,
+        "name": "Porsche 911 GT3 wallpaper side view mobile.jpeg",
+        "size": "104.0 KB"
+      },
+      {
+        "id": 2,
+        "name": "IMG_0540.jpg",
+        "size": "99.1 KB"
+      },
+      {
+        "id": 3,
+        "name": "Porsche 911 GT3 wallpaper side view mobile.jpeg",
+        "size": "104.0 KB"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Emergency Pipe Repair",
+    "unit": "Downtown Loft 1BR",
+    "unitId": "downtown-loft-1br",
+    "technician": "Mike Johnson",
+    "technicianId": "mike-johnson",
+    "status": "In Progress",
+    "priority": "Urgent",
+    "type": "Emergency",
+    "scheduledDate": "2024-01-15",
+    "estimatedDuration": "4 hours",
+    "description": "Burst pipe in bathroom causing water damage",
+    "cost": 400,
+    "notes": "Emergency repair in progress",
+    "createdAt": "2024-01-15T07:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2025-10-02T12:32:20.050Z",
+    "lastModifiedBy": "Current User",
+    "comments": [
+      {
+        "id": 1,
+        "author": "Current User",
+        "date": "2025-10-02T12:32:20.050Z",
+        "text": "Test comment from API",
+        "type": "user"
+      }
+    ]
+  }
+]

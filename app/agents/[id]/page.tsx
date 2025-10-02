@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import TopNavigation from '../../../components/TopNavigation'
 import { 
   Edit, Trash2, Plus, Download, Eye, Flag, Home, Percent, Calendar, DollarSign, FileText,
   ArrowLeft, Star, Crown, User, Mail, Phone, Building, TrendingUp, Clock
 } from 'lucide-react'
+import { agentService, Agent, AgentUnit, AgentPayout, AgentDocument } from '../../../lib/api/services/agentService'
+import { propertyService, Property } from '../../../lib/api/services/propertyService'
 
 export default function AgentDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -16,112 +18,62 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
     value: ''
   })
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showAddUnitModal, setShowAddUnitModal] = useState(false)
+  const [showAddPayoutModal, setShowAddPayoutModal] = useState(false)
+  const [showAddDocumentModal, setShowAddDocumentModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [agent, setAgent] = useState<Agent | null>(null)
+  const [units, setUnits] = useState<AgentUnit[]>([])
+  const [payouts, setPayouts] = useState<AgentPayout[]>([])
+  const [documents, setDocuments] = useState<AgentDocument[]>([])
+  const [availableProperties, setAvailableProperties] = useState<Property[]>([])
 
-  // Mock data for the specific agent
-  const agent = {
-    id: parseInt(params.id),
-    name: 'Ahmed Al-Mansouri',
-    email: 'ahmed.almansouri@email.com',
-    phone: '+971 50 123 4567',
-    nationality: 'UAE',
-    birthday: '1985-03-15',
-    unitsAttracted: 12,
-    totalPayouts: 45000,
-    lastPayoutDate: '2024-01-15',
-    status: 'Active',
-    joinDate: '2023-03-15',
-    comments: 'Excellent performance, consistently brings high-value properties. Strong relationships with property owners in Downtown Dubai area.'
-  }
+  // Load agent data
+  useEffect(() => {
+    const loadAgentData = async () => {
+      try {
+        setLoading(true)
+        const agentId = parseInt(params.id)
+        
+        // Load agent details
+        const agentResponse = await agentService.getAgentById(agentId)
+        if (agentResponse.success) {
+          setAgent(agentResponse.data)
+        }
 
-  const units = [
-    {
-      id: 1,
-      name: 'Downtown Loft 1BR',
-      location: 'Downtown Dubai',
-      referralDate: '2023-04-10',
-      revenue: 85000,
-      commission: 8,
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Marina View Studio',
-      location: 'Dubai Marina',
-      referralDate: '2023-05-15',
-      revenue: 65000,
-      commission: 10,
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Burj Khalifa 2BR',
-      location: 'Downtown Dubai',
-      referralDate: '2023-06-20',
-      revenue: 120000,
-      commission: 7,
-      status: 'Active'
-    },
-    {
-      id: 4,
-      name: 'JBR Beachfront 3BR',
-      location: 'JBR',
-      referralDate: '2023-07-05',
-      revenue: 95000,
-      commission: 9,
-      status: 'Active'
+        // Load agent units
+        const unitsResponse = await agentService.getAgentUnits(agentId)
+        if (unitsResponse.success) {
+          setUnits(unitsResponse.data)
+        }
+
+        // Load agent payouts
+        const payoutsResponse = await agentService.getAgentPayouts(agentId)
+        if (payoutsResponse.success) {
+          setPayouts(payoutsResponse.data)
+        }
+
+        // Load agent documents
+        const documentsResponse = await agentService.getAgentDocuments(agentId)
+        if (documentsResponse.success) {
+          setDocuments(documentsResponse.data)
+        }
+        
+        // Load available properties (unassigned)
+        const propertiesResponse = await propertyService.getProperties()
+        if (propertiesResponse.success) {
+          const unassignedProperties = propertiesResponse.data.filter(p => !p.agentId)
+          setAvailableProperties(unassignedProperties)
+        }
+      } catch (error) {
+        console.error('Error loading agent data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
 
-  const payouts = [
-    {
-      id: 1,
-      date: '2024-01-15',
-      amount: 8500,
-      units: ['Downtown Loft 1BR', 'Marina View Studio'],
-      status: 'Completed',
-      description: 'Monthly commission payout'
-    },
-    {
-      id: 2,
-      date: '2023-12-15',
-      amount: 7200,
-      units: ['Burj Khalifa 2BR', 'JBR Beachfront 3BR'],
-      status: 'Completed',
-      description: 'Monthly commission payout'
-    },
-    {
-      id: 3,
-      date: '2023-11-15',
-      amount: 6800,
-      units: ['Downtown Loft 1BR', 'Marina View Studio'],
-      status: 'Completed',
-      description: 'Monthly commission payout'
-    }
-  ]
-
-  const documents = [
-    {
-      id: 1,
-      name: 'Agent Contract.pdf',
-      type: 'Contract',
-      uploadDate: '2023-03-15',
-      size: '2.4 MB'
-    },
-    {
-      id: 2,
-      name: 'Commission Agreement.pdf',
-      type: 'Agreement',
-      uploadDate: '2023-03-20',
-      size: '1.8 MB'
-    },
-    {
-      id: 3,
-      name: 'ID Copy.jpg',
-      type: 'Identification',
-      uploadDate: '2023-03-15',
-      size: '1.2 MB'
-    }
-  ]
+    loadAgentData()
+  }, [params.id])
 
   const getCountryFlag = (nationality: string) => {
     const flags: { [key: string]: string } = {
@@ -174,21 +126,173 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
     })
   }
 
-  const handleSaveEdit = () => {
-    // Here you would typically save the changes to your backend
-    console.log(`Saving ${editModal.field}:`, editModal.value)
-    setEditModal({ isOpen: false, field: '', value: '' })
+  const handleSaveEdit = async () => {
+    if (!agent) return
+    
+    try {
+      const updateData = { [editModal.field]: editModal.value }
+      const response = await agentService.updateAgent(agent.id, updateData)
+      
+      if (response.success) {
+        setAgent(response.data)
+        setEditModal({ isOpen: false, field: '', value: '' })
+      }
+    } catch (error) {
+      console.error('Error updating agent:', error)
+    }
   }
 
   const handleCloseEdit = () => {
     setEditModal({ isOpen: false, field: '', value: '' })
   }
 
-  const handleDeleteAgent = () => {
-    // Here you would typically delete the agent from your backend
-    console.log('Deleting agent:', agent.id)
-    setShowDeleteModal(false)
-    router.push('/agents')
+  const handleDeleteAgent = async () => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.deleteAgent(agent.id)
+      if (response.success) {
+        setShowDeleteModal(false)
+        router.push('/agents')
+      }
+    } catch (error) {
+      console.error('Error deleting agent:', error)
+    }
+  }
+
+  const handleAddUnit = async (unitData: Omit<AgentUnit, 'id'>) => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.addAgentUnit(agent.id, unitData)
+      if (response.success) {
+        setUnits([...units, response.data])
+        // Update agent stats
+        if (agent) {
+          setAgent({ ...agent, unitsAttracted: agent.unitsAttracted + 1 })
+        }
+      }
+    } catch (error) {
+      console.error('Error adding unit:', error)
+    }
+  }
+
+  const handleRemoveUnit = async (unitId: number) => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.removeAgentUnit(agent.id, unitId)
+      if (response.success) {
+        setUnits(units.filter(unit => unit.id !== unitId))
+        // Update agent stats
+        if (agent) {
+          setAgent({ ...agent, unitsAttracted: Math.max(0, agent.unitsAttracted - 1) })
+        }
+      }
+    } catch (error) {
+      console.error('Error removing unit:', error)
+    }
+  }
+
+  const handleAddPayout = async (payoutData: Omit<AgentPayout, 'id'>) => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.addAgentPayout(agent.id, payoutData)
+      if (response.success) {
+        setPayouts([...payouts, response.data])
+        // Update agent stats
+        if (agent) {
+          setAgent({ 
+            ...agent, 
+            totalPayouts: agent.totalPayouts + payoutData.amount,
+            lastPayoutDate: payoutData.date
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error adding payout:', error)
+    }
+  }
+
+  const handleRemovePayout = async (payoutId: number) => {
+    if (!agent) return
+    
+    try {
+      const payout = payouts.find(p => p.id === payoutId)
+      const response = await agentService.removeAgentPayout(agent.id, payoutId)
+      if (response.success) {
+        setPayouts(payouts.filter(p => p.id !== payoutId))
+        // Update agent stats
+        if (agent && payout) {
+          setAgent({ 
+            ...agent, 
+            totalPayouts: Math.max(0, agent.totalPayouts - payout.amount)
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error removing payout:', error)
+    }
+  }
+
+  const handleAddDocument = async (documentData: Omit<AgentDocument, 'id'>) => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.addAgentDocument(agent.id, documentData)
+      if (response.success) {
+        setDocuments([...documents, response.data])
+      }
+    } catch (error) {
+      console.error('Error adding document:', error)
+    }
+  }
+
+  const handleRemoveDocument = async (documentId: number) => {
+    if (!agent) return
+    
+    try {
+      const response = await agentService.removeAgentDocument(agent.id, documentId)
+      if (response.success) {
+        setDocuments(documents.filter(doc => doc.id !== documentId))
+      }
+    } catch (error) {
+      console.error('Error removing document:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <TopNavigation />
+        <div style={{ marginTop: '52px' }} className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading agent details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!agent) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <TopNavigation />
+        <div style={{ marginTop: '52px' }} className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-slate-600">Agent not found</p>
+            <button
+              onClick={() => router.push('/agents')}
+              className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+            >
+              Back to Agents
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -369,7 +473,10 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium text-slate-900">Units Attracted</h3>
-                    <button className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center">
+                    <button 
+                      onClick={() => setShowAddUnitModal(true)}
+                      className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center"
+                    >
                       <Plus size={14} className="mr-1" />
                       Add Unit
                     </button>
@@ -394,7 +501,10 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                             <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
                               <Eye size={16} />
                             </button>
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
+                            <button 
+                              onClick={() => handleRemoveUnit(unit.id)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            >
                               <Trash2 size={16} />
                             </button>
                           </div>
@@ -409,7 +519,10 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium text-slate-900">Payout History</h3>
                     <div className="flex items-center space-x-2">
-                      <button className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center">
+                      <button 
+                        onClick={() => setShowAddPayoutModal(true)}
+                        className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center"
+                      >
                         <Plus size={14} className="mr-1" />
                         Add Payout
                       </button>
@@ -441,6 +554,12 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                             <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
                               <Download size={16} />
                             </button>
+                            <button 
+                              onClick={() => handleRemovePayout(payout.id)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -452,7 +571,10 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium text-slate-900">Documents</h3>
-                    <button className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center">
+                    <button 
+                      onClick={() => setShowAddDocumentModal(true)}
+                      className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center"
+                    >
                       <Plus size={14} className="mr-1" />
                       Upload
                     </button>
@@ -472,13 +594,22 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                             </div>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
+                            <button 
+                              onClick={() => doc.s3Url && window.open(doc.s3Url, '_blank')}
+                              className="p-1 text-slate-600 hover:bg-gray-100 rounded"
+                            >
                               <Eye size={16} />
                             </button>
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
+                            <button 
+                              onClick={() => doc.s3Url && window.open(doc.s3Url, '_blank')}
+                              className="p-1 text-slate-600 hover:bg-gray-100 rounded"
+                            >
                               <Download size={16} />
                             </button>
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded">
+                            <button 
+                              onClick={() => handleRemoveDocument(doc.id)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            >
                               <Trash2 size={16} />
                             </button>
                           </div>
@@ -560,6 +691,271 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Unit Modal */}
+      {showAddUnitModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+            <h3 className="text-lg font-medium text-slate-900 mb-4">Add Unit</h3>
+            
+            {availableProperties.length > 0 ? (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Select Property</label>
+                <select
+                  id="propertySelect"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-4"
+                >
+                  <option value="">Choose a property...</option>
+                  {availableProperties.map((property) => (
+                    <option key={property.id} value={property.id}>
+                      {property.name} - {property.address} (AED {property.pricePerNight}/night)
+                    </option>
+                  ))}
+                </select>
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUnitModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const selectElement = document.getElementById('propertySelect') as HTMLSelectElement
+                      const selectedPropertyId = selectElement.value
+                      
+                      if (!selectedPropertyId) {
+                        alert('Please select a property')
+                        return
+                      }
+                      
+                      try {
+                        await propertyService.assignToAgent(selectedPropertyId, parseInt(params.id))
+                        // Reload data
+                        const unitsResponse = await agentService.getAgentUnits(parseInt(params.id))
+                        if (unitsResponse.success) {
+                          setUnits(unitsResponse.data)
+                        }
+                        const propertiesResponse = await propertyService.getProperties()
+                        if (propertiesResponse.success) {
+                          const unassignedProperties = propertiesResponse.data.filter(p => !p.agentId)
+                          setAvailableProperties(unassignedProperties)
+                        }
+                        setShowAddUnitModal(false)
+                      } catch (error) {
+                        console.error('Error assigning property:', error)
+                      }
+                    }}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                  >
+                    Assign Property
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-slate-500 mb-4">No available properties to assign</div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddUnitModal(false)}
+                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add Payout Modal */}
+      {showAddPayoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+            <h3 className="text-lg font-medium text-slate-900 mb-4">Add Payout</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target as HTMLFormElement)
+              const payoutData = {
+                date: formData.get('date') as string,
+                amount: parseInt(formData.get('amount') as string),
+                units: (formData.get('units') as string).split(',').map(u => u.trim()).filter(u => u),
+                status: 'Completed' as const,
+                description: formData.get('description') as string,
+                paymentMethod: formData.get('paymentMethod') as string
+              }
+              await handleAddPayout(payoutData)
+              setShowAddPayoutModal(false)
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
+                  <input
+                    name="date"
+                    type="date"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Amount (AED)</label>
+                  <input
+                    name="amount"
+                    type="number"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Units (comma-separated)</label>
+                  <input
+                    name="units"
+                    type="text"
+                    placeholder="Unit 1, Unit 2, Unit 3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                  <input
+                    name="description"
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Payment Method</label>
+                  <select
+                    name="paymentMethod"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Check">Check</option>
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPayoutModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                  >
+                    Add Payout
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Document Modal */}
+      {showAddDocumentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+            <h3 className="text-lg font-medium text-slate-900 mb-4">Upload Document</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target as HTMLFormElement)
+              const file = formData.get('file') as File
+              
+              if (!file) return
+              
+              try {
+                // Upload file to S3
+                const uploadFormData = new FormData()
+                uploadFormData.append('file', file)
+                uploadFormData.append('folder', `agent_${agent?.id}`)
+                
+                const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+                  method: 'POST',
+                  body: uploadFormData
+                })
+                
+                if (uploadResponse.ok) {
+                  const uploadResult = await uploadResponse.json()
+                  
+                  const documentData = {
+                    name: formData.get('name') as string,
+                    type: formData.get('type') as string,
+                    size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+                    s3Key: uploadResult.key,
+                    s3Url: uploadResult.url,
+                    filename: file.name
+                  }
+                  
+                  await handleAddDocument(documentData)
+                  setShowAddDocumentModal(false)
+                }
+              } catch (error) {
+                console.error('Error uploading document:', error)
+              }
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Document Name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Document Type</label>
+                  <select
+                    name="type"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option value="Contract">Contract</option>
+                    <option value="Agreement">Agreement</option>
+                    <option value="Identification">Identification</option>
+                    <option value="Certificate">Certificate</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">File</label>
+                  <input
+                    name="file"
+                    type="file"
+                    required
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddDocumentModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                  >
+                    Upload
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,16 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import MaintenanceTable from '../../components/maintenance/MaintenanceTable'
 import MaintenanceFilters from '../../components/maintenance/MaintenanceFilters'
 import AddMaintenanceModal from '../../components/maintenance/AddMaintenanceModal'
 import { Plus, Filter, Wrench, Home, Calendar, Search } from 'lucide-react'
+import { maintenanceService, MaintenanceTask, MaintenanceStats, MaintenanceFilters as MaintenanceFiltersType } from '../../lib/api/services/maintenanceService'
 
 export default function MaintenancePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMaintenance, setSelectedMaintenance] = useState<number[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [tasks, setTasks] = useState<MaintenanceTask[]>([])
+  const [stats, setStats] = useState<MaintenanceStats | null>(null)
+  const [filters, setFilters] = useState<MaintenanceFiltersType>({})
+
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load tasks
+        const tasksResponse = await maintenanceService.getMaintenanceTasks({
+          ...filters,
+          search: searchTerm || undefined
+        })
+        if (tasksResponse.success) {
+          setTasks(tasksResponse.data)
+        }
+        
+        // Load stats
+        const statsResponse = await maintenanceService.getMaintenanceStats()
+        if (statsResponse.success) {
+          setStats(statsResponse.data)
+        }
+        
+      } catch (error) {
+        console.error('Error loading maintenance data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [filters, searchTerm])
 
   const handleBulkAction = (action: 'complete' | 'export' | 'assign') => {
     if (selectedMaintenance.length === 0) return
@@ -76,7 +112,9 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Tasks</p>
-                  <p className="text-2xl font-medium text-slate-900">24</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {loading ? '...' : stats?.totalTasks || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -88,7 +126,9 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Scheduled</p>
-                  <p className="text-2xl font-medium text-slate-900">8</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {loading ? '...' : stats?.scheduledTasks || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -100,7 +140,9 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">In Progress</p>
-                  <p className="text-2xl font-medium text-slate-900">5</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {loading ? '...' : stats?.inProgressTasks || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -112,7 +154,9 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Completed</p>
-                  <p className="text-2xl font-medium text-slate-900">11</p>
+                  <p className="text-2xl font-medium text-slate-900">
+                    {loading ? '...' : stats?.completedTasks || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -175,6 +219,8 @@ export default function MaintenancePage() {
                   isOpen={true}
                   onClose={() => {}}
                   isSidebar={true}
+                  filters={filters}
+                  onFiltersChange={setFilters}
                 />
               </div>
             </div>
@@ -184,7 +230,8 @@ export default function MaintenancePage() {
           <div className="flex-1 min-h-0">
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
               <MaintenanceTable 
-                searchTerm={searchTerm}
+                tasks={tasks}
+                loading={loading}
                 selectedMaintenance={selectedMaintenance}
                 onSelectionChange={setSelectedMaintenance}
               />

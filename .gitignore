@@ -86,3 +86,8 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# AWS S3 Configuration
+backend-services/S3_SETUP.md
+backend-services/s3-config.js
+backend-services/s3-service.js

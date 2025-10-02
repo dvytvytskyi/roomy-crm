@@ -1,0 +1,271 @@
+[
+  {
+    "id": 1,
+    "name": "Ahmed Al-Mansouri",
+    "email": "ahmed.almansouri@email.com",
+    "phone": "+971 50 123 4567",
+    "nationality": "UAEу",
+    "birthday": "1985-03-15",
+    "unitsAttracted": 12,
+    "totalPayouts": 45000,
+    "lastPayoutDate": "2024-01-15",
+    "status": "Active",
+    "joinDate": "2023-03-15",
+    "comments": "Excellent performance, consistently brings high-value properties. Strong relationships with property owners in Downtown Dubai area.\nФіаьфва",
+    "createdAt": "2023-03-15T00:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2025-10-02T11:58:02.283Z",
+    "lastModifiedBy": "Current User",
+    "units": [
+      {
+        "id": 1,
+        "name": "Downtown Loft 1BR",
+        "location": "Downtown Dubai",
+        "referralDate": "2023-04-10",
+        "revenue": 85000,
+        "commission": 8,
+        "status": "Active",
+        "propertyId": "prop_1"
+      },
+      {
+        "id": 2,
+        "name": "Marina View Studio",
+        "location": "Dubai Marina",
+        "referralDate": "2023-05-15",
+        "revenue": 65000,
+        "commission": 10,
+        "status": "Active",
+        "propertyId": "prop_2"
+      },
+      {
+        "id": 3,
+        "name": "Burj Khalifa 2BR",
+        "location": "Downtown Dubai",
+        "referralDate": "2023-06-20",
+        "revenue": 120000,
+        "commission": 7,
+        "status": "Active",
+        "propertyId": "prop_3"
+      },
+      {
+        "id": 4,
+        "name": "JBR Beachfront 3BR",
+        "location": "JBR",
+        "referralDate": "2023-07-05",
+        "revenue": 95000,
+        "commission": 9,
+        "status": "Active",
+        "propertyId": "prop_4"
+      }
+    ],
+    "payouts": [
+      {
+        "id": 1,
+        "date": "2024-01-15",
+        "amount": 8500,
+        "units": [
+          "Downtown Loft 1BR",
+          "Marina View Studio"
+        ],
+        "status": "Completed",
+        "description": "Monthly commission payout",
+        "paymentMethod": "Bank Transfer"
+      },
+      {
+        "id": 2,
+        "date": "2023-12-15",
+        "amount": 7200,
+        "units": [
+          "Burj Khalifa 2BR",
+          "JBR Beachfront 3BR"
+        ],
+        "status": "Completed",
+        "description": "Monthly commission payout",
+        "paymentMethod": "Bank Transfer"
+      },
+      {
+        "id": 3,
+        "date": "2023-11-15",
+        "amount": 6800,
+        "units": [
+          "Downtown Loft 1BR",
+          "Marina View Studio"
+        ],
+        "status": "Completed",
+        "description": "Monthly commission payout",
+        "paymentMethod": "Bank Transfer"
+      }
+    ],
+    "documents": [
+      {
+        "id": 1,
+        "name": "Agent Contract.pdf",
+        "type": "Contract",
+        "uploadDate": "2023-03-15",
+        "size": "2.4 MB",
+        "s3Key": "documents/agent_1/contract.pdf",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/contract.pdf",
+        "filename": "Agent Contract.pdf"
+      },
+      {
+        "id": 2,
+        "name": "Commission Agreement.pdf",
+        "type": "Agreement",
+        "uploadDate": "2023-03-20",
+        "size": "1.8 MB",
+        "s3Key": "documents/agent_1/commission_agreement.pdf",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/commission_agreement.pdf",
+        "filename": "Commission Agreement.pdf"
+      },
+      {
+        "id": 3,
+        "name": "ID Copy.jpg",
+        "type": "Identification",
+        "uploadDate": "2023-03-15",
+        "size": "1.2 MB",
+        "s3Key": "documents/agent_1/id_copy.jpg",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/id_copy.jpg",
+        "filename": "ID Copy.jpg"
+      },
+      {
+        "id": 1759406282283,
+        "name": "івафа",
+        "type": "Contract",
+        "size": "0.0 MB",
+        "s3Key": "agent_1/unknown/1759406281635_RECEIPT_res_2_2025-09-30 (1).pdf",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/agent_1/unknown/1759406281635_RECEIPT_res_2_2025-09-30 (1).pdf",
+        "filename": "RECEIPT_res_2_2025-09-30 (1).pdf",
+        "uploadDate": "2025-10-02"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@email.com",
+    "phone": "+44 20 1234 5678",
+    "nationality": "UK",
+    "birthday": "1988-07-22",
+    "unitsAttracted": 8,
+    "totalPayouts": 32000,
+    "lastPayoutDate": "2024-01-10",
+    "status": "Active",
+    "joinDate": "2023-05-10",
+    "comments": "Strong performer with excellent communication skills. Specializes in luxury properties in Palm Jumeirah.",
+    "createdAt": "2023-05-10T00:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-10T00:00:00.000Z",
+    "lastModifiedBy": "System",
+    "units": [
+      {
+        "id": 5,
+        "name": "Palm Villa 4BR",
+        "location": "Palm Jumeirah",
+        "referralDate": "2023-06-01",
+        "revenue": 180000,
+        "commission": 6,
+        "status": "Active",
+        "propertyId": "prop_5"
+      },
+      {
+        "id": 6,
+        "name": "Marina Penthouse",
+        "location": "Dubai Marina",
+        "referralDate": "2023-07-15",
+        "revenue": 220000,
+        "commission": 5,
+        "status": "Active",
+        "propertyId": "prop_6"
+      }
+    ],
+    "payouts": [
+      {
+        "id": 4,
+        "date": "2024-01-10",
+        "amount": 12000,
+        "units": [
+          "Palm Villa 4BR",
+          "Marina Penthouse"
+        ],
+        "status": "Completed",
+        "description": "Monthly commission payout",
+        "paymentMethod": "Bank Transfer"
+      }
+    ],
+    "documents": [
+      {
+        "id": 4,
+        "name": "Agent Contract.pdf",
+        "type": "Contract",
+        "uploadDate": "2023-05-10",
+        "size": "2.1 MB",
+        "s3Key": "documents/agent_2/contract.pdf",
+        "s3Url": "https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_2/contract.pdf",
+        "filename": "Agent Contract.pdf"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Mohammed Hassan",
+    "email": "mohammed.hassan@email.com",
+    "phone": "+20 2 1234 5678",
+    "nationality": "Egypt",
+    "birthday": "1990-11-08",
+    "unitsAttracted": 15,
+    "totalPayouts": 68000,
+    "lastPayoutDate": "2024-01-20",
+    "status": "Active",
+    "joinDate": "2023-02-28",
+    "comments": "Top performer with extensive network in the Egyptian community. Consistently exceeds targets.",
+    "createdAt": "2023-02-28T00:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-20T00:00:00.000Z",
+    "lastModifiedBy": "System",
+    "units": [],
+    "payouts": [],
+    "documents": []
+  },
+  {
+    "id": 4,
+    "name": "Emma Davis",
+    "email": "emma.davis@email.com",
+    "phone": "+61 2 1234 5678",
+    "nationality": "Australia",
+    "birthday": "1987-04-14",
+    "unitsAttracted": 6,
+    "totalPayouts": 18000,
+    "lastPayoutDate": "2023-12-15",
+    "status": "Inactive",
+    "joinDate": "2023-08-15",
+    "comments": "Good performer but recently inactive. May need follow-up.",
+    "createdAt": "2023-08-15T00:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2023-12-15T00:00:00.000Z",
+    "lastModifiedBy": "System",
+    "units": [],
+    "payouts": [],
+    "documents": []
+  },
+  {
+    "id": 5,
+    "name": "David Wilson",
+    "email": "david.wilson@email.com",
+    "phone": "+1 555 123 4567",
+    "nationality": "USA",
+    "birthday": "1983-09-30",
+    "unitsAttracted": 10,
+    "totalPayouts": 42000,
+    "lastPayoutDate": "2024-01-18",
+    "status": "Active",
+    "joinDate": "2023-04-20",
+    "comments": "Reliable agent with good track record. Focuses on mid-range properties.",
+    "createdAt": "2023-04-20T00:00:00.000Z",
+    "createdBy": "System",
+    "lastModifiedAt": "2024-01-18T00:00:00.000Z",
+    "lastModifiedBy": "System",
+    "units": [],
+    "payouts": [],
+    "documents": []
+  }
+]

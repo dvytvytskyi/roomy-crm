@@ -22,101 +22,22 @@ interface MaintenanceTask {
 }
 
 interface MaintenanceTableProps {
-  searchTerm: string
+  tasks: MaintenanceTask[]
+  loading: boolean
   selectedMaintenance: number[]
   onSelectionChange: (selected: number[]) => void
 }
 
-export default function MaintenanceTable({ searchTerm, selectedMaintenance, onSelectionChange }: MaintenanceTableProps) {
+export default function MaintenanceTable({ tasks, loading, selectedMaintenance, onSelectionChange }: MaintenanceTableProps) {
   const router = useRouter()
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const [sortField, setSortField] = useState<keyof MaintenanceTask>('scheduledDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
-  // Mock data
-  const mockTasks: MaintenanceTask[] = [
-    {
-      id: 1,
-      title: 'Fix Kitchen Faucet',
-      unit: 'Apartment Burj Khalifa 2',
-      unitId: 'burj-khalifa-2',
-      technician: 'Mike Johnson',
-      technicianId: 'mike-johnson',
-      status: 'In Progress',
-      priority: 'High',
-      type: 'Plumbing',
-      scheduledDate: '2024-01-15',
-      estimatedDuration: '2 hours',
-      description: 'Kitchen faucet is leaking and needs repair',
-      cost: 150,
-      notes: 'Guest reported leak in kitchen'
-    },
-    {
-      id: 2,
-      title: 'AC Unit Maintenance',
-      unit: 'Marina View Studio',
-      unitId: 'marina-view-studio',
-      technician: 'Sarah Wilson',
-      technicianId: 'sarah-wilson',
-      status: 'Scheduled',
-      priority: 'Normal',
-      type: 'HVAC',
-      scheduledDate: '2024-01-16',
-      estimatedDuration: '3 hours',
-      description: 'Regular AC maintenance and filter replacement',
-      cost: 200
-    },
-    {
-      id: 3,
-      title: 'Electrical Outlet Repair',
-      unit: 'Downtown Loft 2BR',
-      unitId: 'downtown-loft-2br',
-      technician: 'David Chen',
-      technicianId: 'david-chen',
-      status: 'Completed',
-      priority: 'Urgent',
-      type: 'Electrical',
-      scheduledDate: '2024-01-14',
-      estimatedDuration: '1 hour',
-      description: 'Master bedroom outlet not working',
-      cost: 120,
-      notes: 'Fixed loose wire connection'
-    },
-    {
-      id: 4,
-      title: 'Door Lock Replacement',
-      unit: 'JBR Beach Apartment',
-      unitId: 'jbr-beach-apartment',
-      technician: 'Alex Rodriguez',
-      technicianId: 'alex-rodriguez',
-      status: 'On Hold',
-      priority: 'Normal',
-      type: 'General',
-      scheduledDate: '2024-01-17',
-      estimatedDuration: '1.5 hours',
-      description: 'Replace faulty door lock mechanism',
-      cost: 180
-    },
-    {
-      id: 5,
-      title: 'Water Heater Inspection',
-      unit: 'Apartment Burj Khalifa 2',
-      unitId: 'burj-khalifa-2',
-      technician: 'Mike Johnson',
-      technicianId: 'mike-johnson',
-      status: 'Scheduled',
-      priority: 'Low',
-      type: 'Plumbing',
-      scheduledDate: '2024-01-18',
-      estimatedDuration: '2 hours',
-      description: 'Annual water heater inspection and maintenance',
-      cost: 100
-    }
-  ]
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      onSelectionChange(mockTasks.map(task => task.id))
+      onSelectionChange(tasks.map(task => task.id))
     } else {
       onSelectionChange([])
     }
@@ -175,14 +96,7 @@ export default function MaintenanceTable({ searchTerm, selectedMaintenance, onSe
     }
   }
 
-  const filteredTasks = mockTasks.filter(task =>
-    task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.unit.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.technician.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.type.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
+  const sortedTasks = [...tasks].sort((a, b) => {
     const aValue = a[sortField]
     const bValue = b[sortField]
     
@@ -217,7 +131,7 @@ export default function MaintenanceTable({ searchTerm, selectedMaintenance, onSe
             <th className="px-6 py-3 text-left">
               <input
                 type="checkbox"
-                checked={selectedMaintenance.length === mockTasks.length && mockTasks.length > 0}
+                checked={selectedMaintenance.length === tasks.length && tasks.length > 0}
                 onChange={(e) => handleSelectAll(e.target.checked)}
                 className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
               />
@@ -291,7 +205,23 @@ export default function MaintenanceTable({ searchTerm, selectedMaintenance, onSe
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {sortedTasks.map((task) => (
+          {loading ? (
+            <tr>
+              <td colSpan={9} className="px-6 py-12 text-center">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                  <span className="ml-2 text-slate-500">Loading maintenance tasks...</span>
+                </div>
+              </td>
+            </tr>
+          ) : sortedTasks.length === 0 ? (
+            <tr>
+              <td colSpan={9} className="px-6 py-12 text-center">
+                <div className="text-slate-500">No maintenance tasks found</div>
+              </td>
+            </tr>
+          ) : (
+            sortedTasks.map((task) => (
             <tr 
               key={task.id}
               className={`hover:bg-gray-50 transition-colors ${hoveredRow === task.id ? 'bg-orange-50' : ''}`}
@@ -375,7 +305,8 @@ export default function MaintenanceTable({ searchTerm, selectedMaintenance, onSe
                 </div>
               </td>
             </tr>
-          ))}
+            ))
+          )}
         </tbody>
       </table>
     </div>

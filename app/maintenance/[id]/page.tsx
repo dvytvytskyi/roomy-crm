@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TopNavigation from '../../../components/TopNavigation'
 import { ArrowLeft, Edit, Trash2, Download, Upload, Eye, CheckCircle, XCircle, Clock, User, Building, DollarSign, FileText, Camera, MessageSquare, Wrench } from 'lucide-react'
+import { maintenanceService, MaintenanceTask, MaintenanceComment, MaintenanceAttachment, MaintenancePhoto } from '../../../lib/api/services/maintenanceService'
 
 export default function MaintenanceTaskDetailsPage() {
   const params = useParams()
@@ -18,6 +19,9 @@ export default function MaintenanceTaskDetailsPage() {
     title: '',
     inputType: 'text'
   })
+  const [editValue, setEditValue] = useState('')
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   // Mock data for the maintenance task
   const mockTask = {
@@ -70,7 +74,61 @@ export default function MaintenanceTaskDetailsPage() {
     ]
   }
 
-  const [task, setTask] = useState(mockTask)
+  const [loading, setLoading] = useState(true)
+  const [task, setTask] = useState<MaintenanceTask | null>(null)
+  const [comments, setComments] = useState<MaintenanceComment[]>([])
+  const [attachments, setAttachments] = useState<MaintenanceAttachment[]>([])
+  const [beforePhotos, setBeforePhotos] = useState<MaintenancePhoto[]>([])
+  const [afterPhotos, setAfterPhotos] = useState<MaintenancePhoto[]>([])
+
+  // Load task data
+  useEffect(() => {
+    const loadTaskData = async () => {
+      try {
+        setLoading(true)
+        const taskId = parseInt(params.id as string)
+        
+        // Load task details
+        const taskResponse = await maintenanceService.getMaintenanceTask(taskId)
+        if (taskResponse.success) {
+          setTask(taskResponse.data)
+        }
+        
+        // Load comments
+        const commentsResponse = await maintenanceService.getMaintenanceComments(taskId)
+        if (commentsResponse.success) {
+          setComments(commentsResponse.data)
+        }
+        
+        // Load attachments
+        const attachmentsResponse = await maintenanceService.getMaintenanceAttachments(taskId)
+        if (attachmentsResponse.success) {
+          setAttachments(attachmentsResponse.data)
+        }
+        
+        // Load before photos
+        const beforePhotosResponse = await maintenanceService.getMaintenancePhotos(taskId, 'before')
+        if (beforePhotosResponse.success) {
+          console.log('Before photos loaded:', beforePhotosResponse.data)
+          setBeforePhotos(beforePhotosResponse.data)
+        }
+        
+        // Load after photos
+        const afterPhotosResponse = await maintenanceService.getMaintenancePhotos(taskId, 'after')
+        if (afterPhotosResponse.success) {
+          console.log('After photos loaded:', afterPhotosResponse.data)
+          setAfterPhotos(afterPhotosResponse.data)
+        }
+        
+      } catch (error) {
+        console.error('Error loading task data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadTaskData()
+  }, [params.id])
 
   const handleEditField = (type: string, field: string, currentValue: string, title: string, inputType: string = 'text') => {
     setEditModal({
@@ -81,43 +139,144 @@ export default function MaintenanceTaskDetailsPage() {
       title,
       inputType
     })
+    setEditValue(currentValue)
   }
 
-  const handleSaveEdit = (newValue: string) => {
-    console.log(`Saving ${editModal.field}: ${newValue}`)
+  const handleSaveEdit = async () => {
+    if (!task || !editValue.trim()) return
     
-    // Update the task data
-    setTask(prev => ({
-      ...prev,
-      [editModal.field]: newValue
-    }))
+    try {
+      const updateData: any = {}
+      updateData[editModal.field] = editModal.inputType === 'number' ? parseInt(editValue) : editValue
+      
+      const response = await maintenanceService.updateMaintenanceTask(task.id, updateData)
+      if (response.success) {
+        setTask(response.data)
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
+    }
     
     setEditModal({ ...editModal, isOpen: false })
+    setEditValue('')
   }
 
   const handleCloseEdit = () => {
     setEditModal({ ...editModal, isOpen: false })
+    setEditValue('')
   }
 
-  const handleDelete = () => {
-    console.log('Deleting task:', task.id)
-    router.push('/maintenance')
+  const handleDelete = async () => {
+    if (!task) return
+    
+    try {
+      await maintenanceService.deleteMaintenanceTask(task.id)
+      router.push('/maintenance')
+    } catch (error) {
+      console.error('Error deleting task:', error)
+    }
   }
 
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const comment = {
-        id: task.comments.length + 1,
-        author: 'Current User',
-        date: new Date().toISOString(),
+  const handleAddComment = async () => {
+    if (!task || !newComment.trim()) return
+    
+    try {
+      const response = await maintenanceService.addMaintenanceComment(task.id, {
         text: newComment,
         type: 'user'
+      })
+      if (response.success) {
+        setComments(prev => [...prev, response.data])
+        setNewComment('')
       }
-      setTask(prev => ({
-        ...prev,
-        comments: [...prev.comments, comment]
-      }))
-      setNewComment('')
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!task || !event.target.files) return
+    
+    const file = event.target.files[0]
+    if (!file) return
+    
+    setUploadingFile(true)
+    try {
+      // Upload to S3
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', `maintenance/${task.id}`)
+      
+      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json()
+        
+        // Add to maintenance task
+        const response = await maintenanceService.addMaintenanceAttachment(task.id, {
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          type: file.type,
+          s3Key: uploadData.s3Key,
+          s3Url: uploadData.s3Url
+        })
+        
+        if (response.success) {
+          setAttachments(prev => [...prev, response.data])
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
+    if (!task || !event.target.files) return
+    
+    const file = event.target.files[0]
+    if (!file) return
+    
+    setUploadingPhoto(true)
+    try {
+      // Upload to S3
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', `maintenance/${task.id}/${type}`)
+      
+      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json()
+        
+        // Add to maintenance task
+        const response = await maintenanceService.addMaintenancePhoto(task.id, {
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          type,
+          s3Key: uploadData.s3Key,
+          s3Url: uploadData.s3Url
+        })
+        
+        if (response.success) {
+          if (type === 'before') {
+            setBeforePhotos(prev => [...prev, response.data])
+          } else {
+            setAfterPhotos(prev => [...prev, response.data])
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+    } finally {
+      setUploadingPhoto(false)
     }
   }
 
@@ -164,6 +323,27 @@ export default function MaintenanceTaskDetailsPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading maintenance task...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!task) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">Maintenance task not found</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Navigation */}
@@ -181,7 +361,7 @@ export default function MaintenanceTaskDetailsPage() {
             </button>
             <div>
               <h1 className="text-xl font-medium text-slate-900">Maintenance Task #{task.id}</h1>
-              <p className="text-sm text-slate-600">{task.category} - {task.unit}</p>
+              <p className="text-sm text-slate-600">{task.type} - {task.unit}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -218,7 +398,7 @@ export default function MaintenanceTaskDetailsPage() {
               {/* Task Title */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900">{task.category}</h3>
+                  <h3 className="text-lg font-medium text-slate-900">{task.type}</h3>
                   <p className="text-sm text-slate-500">{task.unit}</p>
                 </div>
                 <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
@@ -235,9 +415,9 @@ export default function MaintenanceTaskDetailsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-slate-600">Date:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-900">{new Date(task.date).toLocaleDateString()}</span>
+                    <span className="text-sm font-medium text-slate-900">{new Date(task.scheduledDate).toLocaleDateString()}</span>
                     <button 
-                      onClick={() => handleEditField('date', 'date', task.date, 'Task Date', 'date')}
+                      onClick={() => handleEditField('date', 'scheduledDate', task.scheduledDate, 'Task Date', 'date')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={12} />
@@ -247,9 +427,9 @@ export default function MaintenanceTaskDetailsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-slate-600">Contractor:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-900">{task.contractor}</span>
+                    <span className="text-sm font-medium text-slate-900">{task.technician}</span>
                     <button 
-                      onClick={() => handleEditField('contractor', 'contractor', task.contractor, 'Contractor', 'select')}
+                      onClick={() => handleEditField('contractor', 'technician', task.technician, 'Contractor', 'select')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={12} />
@@ -259,9 +439,9 @@ export default function MaintenanceTaskDetailsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-slate-600">Inspector:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-900">{task.inspector}</span>
+                    <span className="text-sm font-medium text-slate-900">{task.createdBy}</span>
                     <button 
-                      onClick={() => handleEditField('inspector', 'inspector', task.inspector, 'Inspector', 'text')}
+                      onClick={() => handleEditField('inspector', 'createdBy', task.createdBy, 'Inspector', 'text')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={12} />
@@ -271,9 +451,9 @@ export default function MaintenanceTaskDetailsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-slate-600">Price:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-900">AED {task.price}</span>
+                    <span className="text-sm font-medium text-slate-900">AED {task.cost || 0}</span>
                     <button 
-                      onClick={() => handleEditField('price', 'price', task.price.toString(), 'Price (AED)', 'number')}
+                      onClick={() => handleEditField('price', 'cost', (task.cost || 0).toString(), 'Price (AED)', 'number')}
                       className="text-orange-600 hover:text-orange-700 cursor-pointer"
                     >
                       <Edit size={12} />
@@ -309,7 +489,7 @@ export default function MaintenanceTaskDetailsPage() {
                 <div>
               <h2 className="text-lg font-medium text-slate-900 mb-4">Comments & Updates</h2>
               <div className="space-y-4">
-                {task.comments.map((comment) => (
+                {comments.map((comment) => (
                   <div key={comment.id} className="flex space-x-3 p-3 bg-slate-50 rounded-lg">
                     <div className="flex-shrink-0">
                       {getCommentIcon(comment.type)}
@@ -357,7 +537,7 @@ export default function MaintenanceTaskDetailsPage() {
                 <div>
               <h2 className="text-lg font-medium text-slate-900 mb-4">File Attachments</h2>
               <div className="space-y-3">
-                {task.attachments.map((file) => (
+                {attachments.map((file) => (
                   <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <FileText className="w-5 h-5 text-slate-400" />
@@ -367,7 +547,13 @@ export default function MaintenanceTaskDetailsPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => console.log('Download file:', file.name)}
+                      onClick={() => {
+                        if (file.s3Url) {
+                          window.open(file.s3Url, '_blank')
+                        } else {
+                          console.log('Download file:', file.name)
+                        }
+                      }}
                       className="text-orange-500 hover:text-orange-600 cursor-pointer"
                     >
                       <Download size={16} />
@@ -375,20 +561,30 @@ export default function MaintenanceTaskDetailsPage() {
                   </div>
                 ))}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Click to upload files</p>
-                    <input
-                      type="file"
-                      multiple
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="text-orange-500 hover:text-orange-600 text-sm cursor-pointer"
-                    >
-                      Choose Files
-                    </label>
+                    {uploadingFile ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mr-2"></div>
+                        <p className="text-sm text-gray-600">Uploading...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Click to upload files</p>
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          id="file-upload"
+                          onChange={handleFileUpload}
+                        />
+                        <label
+                          htmlFor="file-upload"
+                          className="text-orange-500 hover:text-orange-600 text-sm cursor-pointer"
+                        >
+                          Choose Files
+                        </label>
+                      </>
+                    )}
                   </div>
               </div>
             </div>
@@ -397,14 +593,42 @@ export default function MaintenanceTaskDetailsPage() {
                 <div>
                   <h2 className="text-lg font-medium text-slate-900 mb-4">Before Photos</h2>
                   <div className="grid grid-cols-4 gap-3">
-                {task.beforePhotos.map((photo) => (
+                {beforePhotos.map((photo) => {
+                  console.log('Rendering before photo:', photo)
+                  return (
                   <div key={photo.id} className="relative group">
-                    <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
-                      <Camera className="w-6 h-6 text-slate-400" />
+                    <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
+                      {photo.s3Url ? (
+                        <img 
+                          src={photo.s3Url} 
+                          alt={photo.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.log('Image failed to load:', photo.s3Url)
+                            // Fallback to camera icon if image fails to load
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-6 h-6 text-slate-400" />
+                        </div>
+                      )}
                     </div>
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                       <button
-                        onClick={() => console.log('View photo:', photo.name)}
+                        onClick={() => {
+                          if (photo.s3Url) {
+                            window.open(photo.s3Url, '_blank')
+                          } else {
+                            console.log('View photo:', photo.name)
+                          }
+                        }}
                         className="text-white hover:text-orange-300 cursor-pointer"
                       >
                             <Eye size={16} />
@@ -414,10 +638,30 @@ export default function MaintenanceTaskDetailsPage() {
                   </div>
                 ))}
                 <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                    <p className="text-xs text-gray-600">Add Photo</p>
-                  </div>
+                  {uploadingPhoto ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mx-auto mb-1"></div>
+                      <p className="text-xs text-gray-600">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                      <p className="text-xs text-gray-600">Add Photo</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="before-photo-upload"
+                        onChange={(e) => handlePhotoUpload(e, 'before')}
+                      />
+                      <label
+                        htmlFor="before-photo-upload"
+                        className="text-orange-500 hover:text-orange-600 text-xs cursor-pointer"
+                      >
+                        Choose
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -426,14 +670,39 @@ export default function MaintenanceTaskDetailsPage() {
                 <div>
                   <h2 className="text-lg font-medium text-slate-900 mb-4">After Photos</h2>
                   <div className="grid grid-cols-4 gap-3">
-                {task.afterPhotos.map((photo) => (
+                {afterPhotos.map((photo) => (
                   <div key={photo.id} className="relative group">
-                    <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
-                      <Camera className="w-6 h-6 text-slate-400" />
+                    <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
+                      {photo.s3Url ? (
+                        <img 
+                          src={photo.s3Url} 
+                          alt={photo.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to camera icon if image fails to load
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-6 h-6 text-slate-400" />
+                        </div>
+                      )}
                     </div>
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                       <button
-                        onClick={() => console.log('View photo:', photo.name)}
+                        onClick={() => {
+                          if (photo.s3Url) {
+                            window.open(photo.s3Url, '_blank')
+                          } else {
+                            console.log('View photo:', photo.name)
+                          }
+                        }}
                         className="text-white hover:text-orange-300 cursor-pointer"
                       >
                             <Eye size={16} />
@@ -443,10 +712,30 @@ export default function MaintenanceTaskDetailsPage() {
                   </div>
                 ))}
                 <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                    <p className="text-xs text-gray-600">Add Photo</p>
-                  </div>
+                  {uploadingPhoto ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mx-auto mb-1"></div>
+                      <p className="text-xs text-gray-600">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                      <p className="text-xs text-gray-600">Add Photo</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="after-photo-upload"
+                        onChange={(e) => handlePhotoUpload(e, 'after')}
+                      />
+                      <label
+                        htmlFor="after-photo-upload"
+                        className="text-orange-500 hover:text-orange-600 text-xs cursor-pointer"
+                      >
+                        Choose
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -475,14 +764,16 @@ export default function MaintenanceTaskDetailsPage() {
               <div className="mb-6">
                 {editModal.inputType === 'textarea' ? (
                   <textarea
-                    defaultValue={editModal.currentValue}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder={`Enter ${editModal.title.toLowerCase()}`}
                   />
                 ) : editModal.inputType === 'select' ? (
                   <select
-                    defaultValue={editModal.currentValue}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
                     <option value="Dubai Plumbing Co.">Dubai Plumbing Co.</option>
@@ -493,7 +784,8 @@ export default function MaintenanceTaskDetailsPage() {
                 ) : (
                   <input
                     type={editModal.inputType}
-                    defaultValue={editModal.currentValue}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder={`Enter ${editModal.title.toLowerCase()}`}
                   />
@@ -508,12 +800,7 @@ export default function MaintenanceTaskDetailsPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    const input = document.querySelector('input, textarea, select') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-                    if (input && input.value.trim()) {
-                      handleSaveEdit(input.value.trim())
-                    }
-                  }}
+                  onClick={handleSaveEdit}
                   className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors cursor-pointer"
                 >
                   Save Changes

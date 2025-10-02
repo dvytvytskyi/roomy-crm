@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Edit, Trash2, Eye, ChevronUp, ChevronDown, Clock, CheckCircle, Calendar, XCircle } from 'lucide-react'
+import { CleaningTask } from '../../lib/api/services/cleaningService'
 
 interface CleaningTableProps {
-  searchTerm: string
+  tasks: CleaningTask[]
+  loading: boolean
   selectedCleaning: number[]
   onSelectionChange: (selected: number[]) => void
 }
@@ -126,7 +128,7 @@ const mockCleaning = [
   }
 ]
 
-export default function CleaningTable({ searchTerm, selectedCleaning, onSelectionChange }: CleaningTableProps) {
+export default function CleaningTable({ tasks, loading, selectedCleaning, onSelectionChange }: CleaningTableProps) {
   const router = useRouter()
   const [sortField, setSortField] = useState<string>('date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')

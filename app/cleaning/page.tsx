@@ -1,16 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import CleaningTable from '../../components/cleaning/CleaningTable'
 import CleaningFilters from '../../components/cleaning/CleaningFilters'
 import AddCleaningModal from '../../components/cleaning/AddCleaningModal'
 import { Plus, Filter, Sparkles, Home, Calendar } from 'lucide-react'
+import { cleaningService, CleaningTask, CleaningStats, CleaningFilters as CleaningFiltersType } from '../../lib/api/services/cleaningService'
 
 export default function CleaningPage() {
+  const [loading, setLoading] = useState(true)
+  const [tasks, setTasks] = useState<CleaningTask[]>([])
+  const [stats, setStats] = useState<CleaningStats | null>(null)
+  const [filters, setFilters] = useState<CleaningFiltersType>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCleaning, setSelectedCleaning] = useState<number[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load tasks with filters
+        const tasksResponse = await cleaningService.getCleaningTasks({
+          ...filters,
+          search: searchTerm || undefined
+        })
+        if (tasksResponse.success) {
+          setTasks(tasksResponse.data)
+        }
+        
+        // Load stats
+        const statsResponse = await cleaningService.getCleaningStats()
+        if (statsResponse.success) {
+          setStats(statsResponse.data)
+        }
+        
+      } catch (error) {
+        console.error('Error loading cleaning data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [filters, searchTerm])
 
   const handleBulkAction = (action: 'complete' | 'export' | 'assign') => {
     if (selectedCleaning.length === 0) return
@@ -63,7 +99,7 @@ export default function CleaningPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Tasks</p>
-                  <p className="text-2xl font-medium text-slate-900">32</p>
+                  <p className="text-2xl font-medium text-slate-900">{loading ? '...' : stats?.totalTasks || 0}</p>
                 </div>
               </div>
             </div>
@@ -75,7 +111,7 @@ export default function CleaningPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Scheduled</p>
-                  <p className="text-2xl font-medium text-slate-900">18</p>
+                  <p className="text-2xl font-medium text-slate-900">{loading ? '...' : stats?.scheduledTasks || 0}</p>
                 </div>
               </div>
             </div>
@@ -87,7 +123,7 @@ export default function CleaningPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Completed</p>
-                  <p className="text-2xl font-medium text-slate-900">8</p>
+                  <p className="text-2xl font-medium text-slate-900">{loading ? '...' : stats?.completedTasks || 0}</p>
                 </div>
               </div>
             </div>
@@ -150,6 +186,8 @@ export default function CleaningPage() {
                   isOpen={true}
                   onClose={() => {}}
                   isSidebar={true}
+                  filters={filters}
+                  onFiltersChange={setFilters}
                 />
               </div>
             </div>
@@ -159,7 +197,8 @@ export default function CleaningPage() {
           <div className="flex-1 min-h-0">
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
               <CleaningTable 
-                searchTerm={searchTerm}
+                tasks={tasks}
+                loading={loading}
                 selectedCleaning={selectedCleaning}
                 onSelectionChange={setSelectedCleaning}
               />

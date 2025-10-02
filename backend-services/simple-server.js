@@ -574,39 +574,1202 @@ app.get('/api/reservations/calendar', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
-  console.log('🏠 GET /api/reservations/available-properties - Fetching available properties');
+// ==================== PROPERTIES API ====================
   
-  const properties = [
+// Mock properties data with agent assignments
+let mockProperties = [
     {
       id: 'prop_1',
-      name: 'Luxury Downtown Apartment',
+    name: 'Downtown Loft 1BR',
       type: 'APARTMENT',
-      address: '123 Main St, Dubai',
+    address: 'Downtown Dubai, UAE',
+    city: 'Dubai',
+    capacity: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    pricePerNight: 300,
+    primaryImage: 'https://example.com/image1.jpg',
+    agentId: 1, // Assigned to Ahmed Al-Mansouri
+    agentName: 'Ahmed Al-Mansouri',
+    status: 'Active',
+    createdAt: '2023-04-10T00:00:00.000Z',
+    lastModifiedAt: '2023-04-10T00:00:00.000Z'
+  },
+  {
+    id: 'prop_2',
+    name: 'Marina View Studio',
+    type: 'STUDIO',
+    address: 'Dubai Marina, UAE',
+    city: 'Dubai',
+    capacity: 2,
+    bedrooms: 0,
+    bathrooms: 1,
+    pricePerNight: 250,
+    primaryImage: 'https://example.com/image2.jpg',
+    agentId: 1, // Assigned to Ahmed Al-Mansouri
+    agentName: 'Ahmed Al-Mansouri',
+    status: 'Active',
+    createdAt: '2023-05-15T00:00:00.000Z',
+    lastModifiedAt: '2023-05-15T00:00:00.000Z'
+  },
+  {
+    id: 'prop_3',
+    name: 'Burj Khalifa 2BR',
+    type: 'APARTMENT',
+    address: 'Downtown Dubai, UAE',
       city: 'Dubai',
       capacity: 4,
       bedrooms: 2,
       bathrooms: 2,
-      pricePerNight: 300,
-      primaryImage: 'https://example.com/image1.jpg'
-    },
-    {
-      id: 'prop_2',
-      name: 'Beach Villa Palm Jumeirah',
+    pricePerNight: 400,
+    primaryImage: 'https://example.com/image3.jpg',
+    agentId: 1, // Assigned to Ahmed Al-Mansouri
+    agentName: 'Ahmed Al-Mansouri',
+    status: 'Active',
+    createdAt: '2023-06-20T00:00:00.000Z',
+    lastModifiedAt: '2023-06-20T00:00:00.000Z'
+  },
+  {
+    id: 'prop_4',
+    name: 'JBR Beachfront 3BR',
+    type: 'APARTMENT',
+    address: 'JBR, Dubai, UAE',
+    city: 'Dubai',
+    capacity: 6,
+    bedrooms: 3,
+    bathrooms: 2,
+    pricePerNight: 450,
+    primaryImage: 'https://example.com/image4.jpg',
+    agentId: 1, // Assigned to Ahmed Al-Mansouri
+    agentName: 'Ahmed Al-Mansouri',
+    status: 'Active',
+    createdAt: '2023-07-05T00:00:00.000Z',
+    lastModifiedAt: '2023-07-05T00:00:00.000Z'
+  },
+  {
+    id: 'prop_5',
+    name: 'Palm Villa 4BR',
       type: 'VILLA',
-      address: '456 Beach Rd, Dubai',
+    address: 'Palm Jumeirah, Dubai, UAE',
       city: 'Dubai',
       capacity: 8,
       bedrooms: 4,
+    bathrooms: 4,
+    pricePerNight: 800,
+    primaryImage: 'https://example.com/image5.jpg',
+    agentId: 2, // Assigned to Sarah Johnson
+    agentName: 'Sarah Johnson',
+    status: 'Active',
+    createdAt: '2023-06-01T00:00:00.000Z',
+    lastModifiedAt: '2023-06-01T00:00:00.000Z'
+  },
+  {
+    id: 'prop_6',
+    name: 'Marina Penthouse',
+    type: 'PENTHOUSE',
+    address: 'Dubai Marina, UAE',
+    city: 'Dubai',
+    capacity: 6,
+    bedrooms: 3,
       bathrooms: 3,
-      pricePerNight: 500,
-      primaryImage: 'https://example.com/image2.jpg'
+    pricePerNight: 1000,
+    primaryImage: 'https://example.com/image6.jpg',
+    agentId: 2, // Assigned to Sarah Johnson
+    agentName: 'Sarah Johnson',
+    status: 'Active',
+    createdAt: '2023-07-15T00:00:00.000Z',
+    lastModifiedAt: '2023-07-15T00:00:00.000Z'
+  }
+];
+
+// Function to save properties data
+function savePropertiesData(properties) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'properties.json');
+    fs.writeFileSync(dataPath, JSON.stringify(properties, null, 2));
+    console.log('✅ Properties data saved to file');
+  } catch (error) {
+    console.error('❌ Error saving properties data:', error);
+  }
+}
+
+// Function to load properties data
+function loadPropertiesData() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'properties.json');
+    if (fs.existsSync(dataPath)) {
+      const data = fs.readFileSync(dataPath, 'utf8');
+      mockProperties = JSON.parse(data);
+      console.log('📁 Initial properties data loaded from file');
+    } else {
+      savePropertiesData(mockProperties);
     }
-  ];
+  } catch (error) {
+    console.error('❌ Error loading properties data:', error);
+  }
+}
+
+// Load properties data on startup
+loadPropertiesData();
+
+// ==================== MAINTENANCE API ====================
+
+// Mock maintenance data
+let mockMaintenanceTasks = [
+  {
+    id: 1,
+    title: 'Fix Kitchen Faucet',
+    unit: 'Apartment Burj Khalifa 2',
+    unitId: 'burj-khalifa-2',
+    technician: 'Mike Johnson',
+    technicianId: 'mike-johnson',
+    status: 'In Progress',
+    priority: 'High',
+    type: 'Plumbing',
+    scheduledDate: '2024-01-15',
+    estimatedDuration: '2 hours',
+    description: 'Kitchen faucet is leaking and needs repair',
+    cost: 150,
+    notes: 'Guest reported leak in kitchen',
+    createdAt: '2024-01-14T10:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-15T08:30:00.000Z',
+    lastModifiedBy: 'Mike Johnson'
+  },
+  {
+    id: 2,
+    title: 'AC Unit Maintenance',
+    unit: 'Marina View Studio',
+    unitId: 'marina-view-studio',
+    technician: 'Sarah Wilson',
+    technicianId: 'sarah-wilson',
+    status: 'Scheduled',
+    priority: 'Normal',
+    type: 'HVAC',
+    scheduledDate: '2024-01-16',
+    estimatedDuration: '3 hours',
+    description: 'Regular AC maintenance and filter replacement',
+    cost: 200,
+    createdAt: '2024-01-14T11:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T11:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 3,
+    title: 'Electrical Outlet Repair',
+    unit: 'Downtown Loft 2BR',
+    unitId: 'downtown-loft-2br',
+    technician: 'David Chen',
+    technicianId: 'david-chen',
+    status: 'Completed',
+    priority: 'Urgent',
+    type: 'Electrical',
+    scheduledDate: '2024-01-14',
+    estimatedDuration: '1 hour',
+    description: 'Master bedroom outlet not working',
+    cost: 120,
+    notes: 'Fixed loose wire connection',
+    createdAt: '2024-01-13T14:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T16:00:00.000Z',
+    lastModifiedBy: 'David Chen'
+  },
+  {
+    id: 4,
+    title: 'Door Lock Replacement',
+    unit: 'JBR Beach Apartment',
+    unitId: 'jbr-beach-apartment',
+    technician: 'Alex Rodriguez',
+    technicianId: 'alex-rodriguez',
+    status: 'On Hold',
+    priority: 'Normal',
+    type: 'General',
+    scheduledDate: '2024-01-17',
+    estimatedDuration: '1.5 hours',
+    description: 'Replace faulty door lock mechanism',
+    cost: 180,
+    createdAt: '2024-01-14T12:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-15T09:00:00.000Z',
+    lastModifiedBy: 'Alex Rodriguez'
+  },
+  {
+    id: 5,
+    title: 'Water Heater Inspection',
+    unit: 'Apartment Burj Khalifa 2',
+    unitId: 'burj-khalifa-2',
+    technician: 'Mike Johnson',
+    technicianId: 'mike-johnson',
+    status: 'Scheduled',
+    priority: 'Low',
+    type: 'Plumbing',
+    scheduledDate: '2024-01-18',
+    estimatedDuration: '2 hours',
+    description: 'Annual water heater inspection and maintenance',
+    cost: 100,
+    createdAt: '2024-01-14T13:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T13:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 6,
+    title: 'Light Fixture Installation',
+    unit: 'Palm Villa 4BR',
+    unitId: 'palm-villa-4br',
+    technician: 'Sarah Wilson',
+    technicianId: 'sarah-wilson',
+    status: 'Scheduled',
+    priority: 'Normal',
+    type: 'Electrical',
+    scheduledDate: '2024-01-19',
+    estimatedDuration: '2.5 hours',
+    description: 'Install new chandelier in dining room',
+    cost: 250,
+    createdAt: '2024-01-14T14:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T14:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 7,
+    title: 'HVAC Filter Replacement',
+    unit: 'Marina Penthouse',
+    unitId: 'marina-penthouse',
+    technician: 'David Chen',
+    technicianId: 'david-chen',
+    status: 'Completed',
+    priority: 'Low',
+    type: 'HVAC',
+    scheduledDate: '2024-01-13',
+    estimatedDuration: '1 hour',
+    description: 'Replace all HVAC filters',
+    cost: 80,
+    notes: 'All filters replaced successfully',
+    createdAt: '2024-01-12T10:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-13T11:00:00.000Z',
+    lastModifiedBy: 'David Chen',
+    comments: [
+      {
+        id: 1,
+        author: 'Current User',
+        date: '2025-10-02T12:27:32.952Z',
+        text: 'фіаоуцащоуца',
+        type: 'user'
+      }
+    ],
+    attachments: [
+      { id: 1, name: 'RECEIPT_res_2_2025-09-30 (1).pdf', size: '7.1 KB', type: 'application/pdf', s3Key: 'maintenance/7/receipt.pdf', s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/maintenance/7/receipt.pdf' }
+    ],
+    beforePhotos: [
+      { id: 1, name: 'Porsche 911 GT3 wallpaper side view mobile.jpeg', size: '104.0 KB', s3Key: 'maintenance/7/before/porsche.jpg', s3Url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=400&fit=crop&crop=center' },
+      { id: 2, name: 'IMG_0540.jpg', size: '99.1 KB', s3Key: 'maintenance/7/before/img_0540.jpg', s3Url: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center' }
+    ],
+    afterPhotos: [
+      { id: 1, name: 'clean_hvac.jpg', size: '1.2 MB', s3Key: 'maintenance/7/after/clean_hvac.jpg', s3Url: 'https://images.unsplash.com/photo-1581578731548-c6a0c3f2f6c5?w=400&h=400&fit=crop&crop=center' }
+    ]
+  },
+  {
+    id: 8,
+    title: 'Emergency Pipe Repair',
+    unit: 'Downtown Loft 1BR',
+    unitId: 'downtown-loft-1br',
+    technician: 'Mike Johnson',
+    technicianId: 'mike-johnson',
+    status: 'In Progress',
+    priority: 'Urgent',
+    type: 'Emergency',
+    scheduledDate: '2024-01-15',
+    estimatedDuration: '4 hours',
+    description: 'Burst pipe in bathroom causing water damage',
+    cost: 400,
+    notes: 'Emergency repair in progress',
+    createdAt: '2024-01-15T07:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-15T07:30:00.000Z',
+    lastModifiedBy: 'Mike Johnson',
+    comments: [
+      {
+        id: 1,
+        author: 'Mike Johnson',
+        date: '2024-01-15T07:00:00.000Z',
+        text: 'Emergency call received. On my way to assess the damage.',
+        type: 'contractor'
+      },
+      {
+        id: 2,
+        author: 'Mike Johnson',
+        date: '2024-01-15T07:30:00.000Z',
+        text: 'Arrived on site. Pipe burst confirmed. Starting emergency repair.',
+        type: 'contractor'
+      }
+    ],
+    attachments: [
+      { id: 1, name: 'Emergency_Quote.pdf', size: '245 KB', type: 'pdf', s3Key: 'maintenance/8/emergency_quote.pdf', s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/maintenance/8/emergency_quote.pdf' },
+      { id: 2, name: 'Damage_Assessment.pdf', size: '180 KB', type: 'pdf', s3Key: 'maintenance/8/damage_assessment.pdf', s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/maintenance/8/damage_assessment.pdf' }
+    ],
+    beforePhotos: [
+      { id: 1, name: 'burst_pipe.jpg', size: '2.1 MB', s3Key: 'maintenance/8/before/burst_pipe.jpg', s3Url: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center' },
+      { id: 2, name: 'water_damage.jpg', size: '1.8 MB', s3Key: 'maintenance/8/before/water_damage.jpg', s3Url: 'https://images.unsplash.com/photo-1581578731548-c6a0c3f2f6c5?w=400&h=400&fit=crop&crop=center' }
+    ],
+    afterPhotos: [
+      { id: 1, name: 'repaired_pipe.jpg', size: '2.3 MB', s3Key: 'maintenance/8/after/repaired_pipe.jpg', s3Url: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop&crop=center' }
+    ]
+  }
+];
+
+// ==================== CLEANING TASKS DATA ====================
+
+// Mock cleaning tasks data
+let mockCleaningTasks = [
+  {
+    id: 1,
+    unit: 'Apartment Burj Khalifa 2',
+    unitId: 'burj-khalifa-2',
+    type: 'Regular Clean',
+    status: 'Scheduled',
+    scheduledDate: '2024-01-15',
+    scheduledTime: '10:00',
+    duration: '2 hours',
+    cleaner: 'Clean Pro Services',
+    cleanerId: 'clean-pro-services',
+    cost: 120,
+    notes: 'Regular weekly cleaning',
+    createdAt: '2024-01-14T10:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T10:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 2,
+    unit: 'Marina View Studio',
+    unitId: 'marina-view-studio',
+    type: 'Deep Clean',
+    status: 'Completed',
+    scheduledDate: '2024-01-14',
+    scheduledTime: '14:00',
+    duration: '4 hours',
+    cleaner: 'Sparkle Clean',
+    cleanerId: 'sparkle-clean',
+    cost: 200,
+    notes: 'Deep cleaning after guest checkout',
+    createdAt: '2024-01-13T15:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T18:00:00.000Z',
+    lastModifiedBy: 'Sparkle Clean'
+  },
+  {
+    id: 3,
+    unit: 'Downtown Loft 2BR',
+    unitId: 'downtown-loft-2br',
+    type: 'Post-Checkout',
+    status: 'Scheduled',
+    scheduledDate: '2024-01-16',
+    scheduledTime: '09:00',
+    duration: '3 hours',
+    cleaner: 'Professional Cleaners',
+    cleanerId: 'professional-cleaners',
+    cost: 150,
+    notes: 'Post-checkout cleaning for new guest arrival',
+    createdAt: '2024-01-15T08:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-15T08:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 4,
+    unit: 'JBR Beach Apartment',
+    unitId: 'jbr-beach-apartment',
+    type: 'Pre-Arrival',
+    status: 'Completed',
+    scheduledDate: '2024-01-13',
+    scheduledTime: '11:00',
+    duration: '2.5 hours',
+    cleaner: 'Quick Clean',
+    cleanerId: 'quick-clean',
+    cost: 130,
+    notes: 'Pre-arrival cleaning completed',
+    createdAt: '2024-01-12T16:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-13T13:30:00.000Z',
+    lastModifiedBy: 'Quick Clean'
+  },
+  {
+    id: 5,
+    unit: 'Business Bay Office',
+    unitId: 'business-bay-office',
+    type: 'Office Clean',
+    status: 'Scheduled',
+    scheduledDate: '2024-01-17',
+    scheduledTime: '08:00',
+    duration: '1.5 hours',
+    cleaner: 'Elite Cleaning',
+    cleanerId: 'elite-cleaning',
+    cost: 100,
+    notes: 'Weekly office cleaning',
+    createdAt: '2024-01-16T09:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-16T09:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 6,
+    unit: 'DIFC Penthouse',
+    unitId: 'difc-penthouse',
+    type: 'Mid-Stay',
+    status: 'Completed',
+    scheduledDate: '2024-01-12',
+    scheduledTime: '15:00',
+    duration: '2 hours',
+    cleaner: 'Clean Pro Services',
+    cleanerId: 'clean-pro-services',
+    cost: 140,
+    notes: 'Mid-stay cleaning for long-term guest',
+    createdAt: '2024-01-11T12:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-12T17:00:00.000Z',
+    lastModifiedBy: 'Clean Pro Services'
+  },
+  {
+    id: 7,
+    unit: 'JLT Studio',
+    unitId: 'jlt-studio',
+    type: 'Regular Clean',
+    status: 'Cancelled',
+    scheduledDate: '2024-01-14',
+    scheduledTime: '16:00',
+    duration: '1.5 hours',
+    cleaner: 'Sparkle Clean',
+    cleanerId: 'sparkle-clean',
+    cost: 90,
+    notes: 'Cancelled due to guest request',
+    createdAt: '2024-01-13T14:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-14T10:00:00.000Z',
+    lastModifiedBy: 'System'
+  },
+  {
+    id: 8,
+    unit: 'Arabian Ranches Villa',
+    unitId: 'arabian-ranches-villa',
+    type: 'Deep Clean',
+    status: 'Scheduled',
+    scheduledDate: '2024-01-18',
+    scheduledTime: '10:00',
+    duration: '5 hours',
+    cleaner: 'Professional Cleaners',
+    cleanerId: 'professional-cleaners',
+    cost: 300,
+    notes: 'Deep cleaning for villa after long-term rental',
+    createdAt: '2024-01-17T11:00:00.000Z',
+    createdBy: 'System',
+    lastModifiedAt: '2024-01-17T11:00:00.000Z',
+    lastModifiedBy: 'System'
+  }
+];
+
+// Function to save cleaning data
+function saveCleaningData(tasks) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'cleaning.json');
+    fs.writeFileSync(dataPath, JSON.stringify(tasks, null, 2));
+  } catch (error) {
+    console.error('Error saving cleaning data:', error);
+  }
+}
+
+// Function to load cleaning data
+function loadCleaningData() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'cleaning.json');
+    if (fs.existsSync(dataPath)) {
+      const data = fs.readFileSync(dataPath, 'utf8');
+      mockCleaningTasks = JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading cleaning data:', error);
+  }
+}
+
+// Load cleaning data on startup
+loadCleaningData();
+
+// Function to save maintenance data
+function saveMaintenanceData(tasks) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'maintenance.json');
+    fs.writeFileSync(dataPath, JSON.stringify(tasks, null, 2));
+    console.log('✅ Maintenance data saved to file');
+  } catch (error) {
+    console.error('❌ Error saving maintenance data:', error);
+  }
+}
+
+// Function to load maintenance data
+function loadMaintenanceData() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dataPath = path.join(__dirname, 'data', 'maintenance.json');
+    if (fs.existsSync(dataPath)) {
+      const data = fs.readFileSync(dataPath, 'utf8');
+      mockMaintenanceTasks = JSON.parse(data);
+      console.log('📁 Initial maintenance data loaded from file');
+    } else {
+      saveMaintenanceData(mockMaintenanceTasks);
+    }
+  } catch (error) {
+    console.error('❌ Error loading maintenance data:', error);
+  }
+}
+
+// Load maintenance data on startup
+loadMaintenanceData();
+
+// GET /api/maintenance - Get all maintenance tasks
+app.get('/api/maintenance', mockAuth, (req, res) => {
+  console.log('🔧 GET /api/maintenance - Fetching maintenance tasks');
+  
+  const { 
+    search, 
+    status, 
+    priority, 
+    type, 
+    scheduledDateFrom,
+    scheduledDateTo,
+    page = 1,
+    limit = 50
+  } = req.query;
+
+  let filteredTasks = [...mockMaintenanceTasks];
+
+  // Apply filters
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredTasks = filteredTasks.filter(task =>
+      task.title.toLowerCase().includes(searchLower) ||
+      task.description.toLowerCase().includes(searchLower) ||
+      task.unit.toLowerCase().includes(searchLower) ||
+      task.technician.toLowerCase().includes(searchLower)
+    );
+  }
+
+  if (status) {
+    const statusArray = Array.isArray(status) ? status : [status];
+    filteredTasks = filteredTasks.filter(task => statusArray.includes(task.status));
+  }
+
+  if (priority) {
+    const priorityArray = Array.isArray(priority) ? priority : [priority];
+    filteredTasks = filteredTasks.filter(task => priorityArray.includes(task.priority));
+  }
+
+  if (type) {
+    const typeArray = Array.isArray(type) ? type : [type];
+    filteredTasks = filteredTasks.filter(task => typeArray.includes(task.type));
+  }
+
+
+  if (scheduledDateFrom) {
+    filteredTasks = filteredTasks.filter(task => task.scheduledDate >= scheduledDateFrom);
+  }
+
+  if (scheduledDateTo) {
+    filteredTasks = filteredTasks.filter(task => task.scheduledDate <= scheduledDateTo);
+  }
+
+  // Pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const startIndex = (pageNum - 1) * limitNum;
+  const endIndex = startIndex + limitNum;
+  const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
 
   res.json({
     success: true,
-    data: properties,
+    data: paginatedTasks,
+    total: filteredTasks.length,
+    page: pageNum,
+    limit: limitNum
+  });
+});
+
+// GET /api/maintenance/stats - Get maintenance statistics
+app.get('/api/maintenance/stats', mockAuth, (req, res) => {
+  console.log('📊 GET /api/maintenance/stats - Fetching maintenance statistics');
+  
+  const totalTasks = mockMaintenanceTasks.length;
+  const scheduledTasks = mockMaintenanceTasks.filter(task => task.status === 'Scheduled').length;
+  const inProgressTasks = mockMaintenanceTasks.filter(task => task.status === 'In Progress').length;
+  const completedTasks = mockMaintenanceTasks.filter(task => task.status === 'Completed').length;
+
+  const stats = {
+    totalTasks,
+    scheduledTasks,
+    inProgressTasks,
+    completedTasks
+  };
+
+  res.json({
+    success: true,
+    data: stats
+  });
+});
+
+// GET /api/maintenance/:id - Get maintenance task by ID
+app.get('/api/maintenance/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🔧 GET /api/maintenance/${id} - Fetching maintenance task by ID`);
+
+  const task = mockMaintenanceTasks.find(t => t.id === parseInt(id));
+  
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: task
+  });
+});
+
+// POST /api/maintenance - Create new maintenance task
+app.post('/api/maintenance', mockAuth, (req, res) => {
+  console.log('🔧 POST /api/maintenance - Creating new maintenance task');
+  const taskData = req.body;
+
+  const newTask = {
+    id: Math.max(...mockMaintenanceTasks.map(t => t.id)) + 1,
+    ...taskData,
+    status: taskData.status || 'Scheduled',
+    createdAt: new Date().toISOString(),
+    createdBy: 'Current User',
+    lastModifiedAt: new Date().toISOString(),
+    lastModifiedBy: 'Current User'
+  };
+
+  mockMaintenanceTasks.push(newTask);
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    data: newTask,
+    message: 'Maintenance task created successfully'
+  });
+});
+
+// PUT /api/maintenance/:id - Update maintenance task
+app.put('/api/maintenance/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  console.log(`🔧 PUT /api/maintenance/${id} - Updating maintenance task`);
+
+  const taskIndex = mockMaintenanceTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  mockMaintenanceTasks[taskIndex] = {
+    ...mockMaintenanceTasks[taskIndex],
+    ...updateData,
+    lastModifiedAt: new Date().toISOString(),
+    lastModifiedBy: 'Current User'
+  };
+
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    data: mockMaintenanceTasks[taskIndex],
+    message: 'Maintenance task updated successfully'
+  });
+});
+
+// DELETE /api/maintenance/:id - Delete maintenance task
+app.delete('/api/maintenance/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🔧 DELETE /api/maintenance/${id} - Deleting maintenance task`);
+
+  const taskIndex = mockMaintenanceTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  mockMaintenanceTasks.splice(taskIndex, 1);
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    message: 'Maintenance task deleted successfully'
+  });
+});
+
+// ==================== MAINTENANCE COMMENTS API ====================
+
+// GET /api/maintenance/:id/comments - Get comments for maintenance task
+app.get('/api/maintenance/:id/comments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`💬 GET /api/maintenance/${id}/comments - Fetching comments`);
+
+  const task = mockMaintenanceTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: task.comments || []
+  });
+});
+
+// POST /api/maintenance/:id/comments - Add comment to maintenance task
+app.post('/api/maintenance/:id/comments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { text, type = 'user' } = req.body;
+  console.log(`💬 POST /api/maintenance/${id}/comments - Adding comment`);
+
+  const taskIndex = mockMaintenanceTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  const task = mockMaintenanceTasks[taskIndex];
+  if (!task.comments) {
+    task.comments = [];
+  }
+
+  const newComment = {
+    id: Math.max(...task.comments.map(c => c.id), 0) + 1,
+    author: 'Current User',
+    date: new Date().toISOString(),
+    text,
+    type
+  };
+
+  task.comments.push(newComment);
+  task.lastModifiedAt = new Date().toISOString();
+  task.lastModifiedBy = 'Current User';
+
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    data: newComment,
+    message: 'Comment added successfully'
+  });
+});
+
+// ==================== MAINTENANCE ATTACHMENTS API ====================
+
+// GET /api/maintenance/:id/attachments - Get attachments for maintenance task
+app.get('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`📎 GET /api/maintenance/${id}/attachments - Fetching attachments`);
+
+  const task = mockMaintenanceTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: task.attachments || []
+  });
+});
+
+// POST /api/maintenance/:id/attachments - Add attachment to maintenance task
+app.post('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { name, size, type, s3Key, s3Url } = req.body;
+  console.log(`📎 POST /api/maintenance/${id}/attachments - Adding attachment`);
+
+  const taskIndex = mockMaintenanceTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  const task = mockMaintenanceTasks[taskIndex];
+  if (!task.attachments) {
+    task.attachments = [];
+  }
+
+  const newAttachment = {
+    id: Math.max(...task.attachments.map(a => a.id), 0) + 1,
+    name,
+    size,
+    type,
+    s3Key,
+    s3Url
+  };
+
+  task.attachments.push(newAttachment);
+  task.lastModifiedAt = new Date().toISOString();
+  task.lastModifiedBy = 'Current User';
+
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    data: newAttachment,
+    message: 'Attachment added successfully'
+  });
+});
+
+// ==================== MAINTENANCE PHOTOS API ====================
+
+// GET /api/maintenance/:id/photos - Get photos for maintenance task
+app.get('/api/maintenance/:id/photos', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { type } = req.query; // 'before' or 'after'
+  console.log(`📸 GET /api/maintenance/${id}/photos - Fetching photos`);
+
+  const task = mockMaintenanceTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  let photos = [];
+  if (type === 'before') {
+    photos = task.beforePhotos || [];
+  } else if (type === 'after') {
+    photos = task.afterPhotos || [];
+  } else {
+    photos = [...(task.beforePhotos || []), ...(task.afterPhotos || [])];
+  }
+
+  res.json({
+    success: true,
+    data: photos
+  });
+});
+
+// POST /api/maintenance/:id/photos - Add photo to maintenance task
+app.post('/api/maintenance/:id/photos', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const { name, size, type, s3Key, s3Url } = req.body; // type: 'before' or 'after'
+  console.log(`📸 POST /api/maintenance/${id}/photos - Adding photo`);
+
+  const taskIndex = mockMaintenanceTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Maintenance task not found'
+    });
+  }
+
+  const task = mockMaintenanceTasks[taskIndex];
+  const photoArray = type === 'before' ? 'beforePhotos' : 'afterPhotos';
+  
+  if (!task[photoArray]) {
+    task[photoArray] = [];
+  }
+
+  const newPhoto = {
+    id: Math.max(...task[photoArray].map(p => p.id), 0) + 1,
+    name,
+    size,
+    s3Key,
+    s3Url
+  };
+
+  task[photoArray].push(newPhoto);
+  task.lastModifiedAt = new Date().toISOString();
+  task.lastModifiedBy = 'Current User';
+
+  saveMaintenanceData(mockMaintenanceTasks);
+
+  res.json({
+    success: true,
+    data: newPhoto,
+    message: 'Photo added successfully'
+  });
+});
+
+// ==================== CLEANING TASKS API ====================
+
+// GET /api/cleaning - Get all cleaning tasks with filters
+app.get('/api/cleaning', mockAuth, (req, res) => {
+  const { 
+    search, 
+    status, 
+    type, 
+    cleaner,
+    page = 1, 
+    limit = 50 
+  } = req.query;
+  
+  console.log('🧹 GET /api/cleaning - Fetching cleaning tasks');
+
+  let filteredTasks = [...mockCleaningTasks];
+
+  // Apply search filter
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredTasks = filteredTasks.filter(task => 
+      task.unit.toLowerCase().includes(searchLower) ||
+      task.type.toLowerCase().includes(searchLower) ||
+      task.cleaner.toLowerCase().includes(searchLower) ||
+      task.notes?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Apply status filter
+  if (status) {
+    const statusArray = Array.isArray(status) ? status : [status];
+    filteredTasks = filteredTasks.filter(task => statusArray.includes(task.status));
+  }
+
+  // Apply type filter
+  if (type) {
+    const typeArray = Array.isArray(type) ? type : [type];
+    filteredTasks = filteredTasks.filter(task => typeArray.includes(task.type));
+  }
+
+  // Apply cleaner filter
+  if (cleaner) {
+    const cleanerArray = Array.isArray(cleaner) ? cleaner : [cleaner];
+    filteredTasks = filteredTasks.filter(task => cleanerArray.includes(task.cleaner));
+  }
+
+  // Pagination
+  const startIndex = (parseInt(page) - 1) * parseInt(limit);
+  const endIndex = startIndex + parseInt(limit);
+  const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
+
+  res.json({
+    success: true,
+    data: paginatedTasks,
+    total: filteredTasks.length,
+    page: parseInt(page),
+    limit: parseInt(limit)
+  });
+});
+
+// GET /api/cleaning/stats - Get cleaning statistics
+app.get('/api/cleaning/stats', mockAuth, (req, res) => {
+  console.log('📊 GET /api/cleaning/stats - Fetching cleaning statistics');
+
+  const totalTasks = mockCleaningTasks.length;
+  const scheduledTasks = mockCleaningTasks.filter(task => task.status === 'Scheduled').length;
+  const completedTasks = mockCleaningTasks.filter(task => task.status === 'Completed').length;
+  const cancelledTasks = mockCleaningTasks.filter(task => task.status === 'Cancelled').length;
+
+  res.json({
+    success: true,
+    data: {
+      totalTasks,
+      scheduledTasks,
+      completedTasks,
+      cancelledTasks
+    }
+  });
+});
+
+// GET /api/cleaning/:id - Get single cleaning task
+app.get('/api/cleaning/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🧹 GET /api/cleaning/${id} - Fetching cleaning task`);
+
+  const task = mockCleaningTasks.find(t => t.id === parseInt(id));
+  if (!task) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: task
+  });
+});
+
+// POST /api/cleaning - Create new cleaning task
+app.post('/api/cleaning', mockAuth, (req, res) => {
+  const taskData = req.body;
+  console.log('🧹 POST /api/cleaning - Creating cleaning task');
+
+  const newTask = {
+    id: Math.max(...mockCleaningTasks.map(t => t.id), 0) + 1,
+    ...taskData,
+    createdAt: new Date().toISOString(),
+    createdBy: 'Current User',
+    lastModifiedAt: new Date().toISOString(),
+    lastModifiedBy: 'Current User'
+  };
+
+  mockCleaningTasks.push(newTask);
+  saveCleaningData(mockCleaningTasks);
+
+  res.status(201).json({
+    success: true,
+    data: newTask,
+    message: 'Cleaning task created successfully'
+  });
+});
+
+// PUT /api/cleaning/:id - Update cleaning task
+app.put('/api/cleaning/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  console.log(`🧹 PUT /api/cleaning/${id} - Updating cleaning task`);
+
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+
+  mockCleaningTasks[taskIndex] = {
+    ...mockCleaningTasks[taskIndex],
+    ...updateData,
+    lastModifiedAt: new Date().toISOString(),
+    lastModifiedBy: 'Current User'
+  };
+
+  saveCleaningData(mockCleaningTasks);
+
+  res.json({
+    success: true,
+    data: mockCleaningTasks[taskIndex],
+    message: 'Cleaning task updated successfully'
+  });
+});
+
+// DELETE /api/cleaning/:id - Delete cleaning task
+app.delete('/api/cleaning/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🧹 DELETE /api/cleaning/${id} - Deleting cleaning task`);
+
+  const taskIndex = mockCleaningTasks.findIndex(t => t.id === parseInt(id));
+  if (taskIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Cleaning task not found'
+    });
+  }
+
+  mockCleaningTasks.splice(taskIndex, 1);
+  saveCleaningData(mockCleaningTasks);
+
+  res.json({
+    success: true,
+    message: 'Cleaning task deleted successfully'
+  });
+});
+
+// GET /api/properties - Get all properties
+app.get('/api/properties', mockAuth, (req, res) => {
+  console.log('🏠 GET /api/properties - Fetching properties');
+  
+  res.json({
+    success: true,
+    data: mockProperties,
+    total: mockProperties.length
+  });
+});
+
+// GET /api/properties/:id - Get property by ID
+app.get('/api/properties/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🏠 GET /api/properties/${id} - Fetching property by ID`);
+
+  const property = mockProperties.find(p => p.id === id);
+  
+  if (!property) {
+    return res.status(404).json({
+      success: false,
+      message: 'Property not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: property
+  });
+});
+
+// PUT /api/properties/:id - Update property (including agent assignment)
+app.put('/api/properties/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  console.log(`🏠 PUT /api/properties/${id} - Updating property`);
+
+  const propertyIndex = mockProperties.findIndex(p => p.id === id);
+  if (propertyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Property not found'
+    });
+  }
+
+  // If agentId is being updated, also update agentName
+  if (updateData.agentId) {
+    const agent = mockAgents.find(a => a.id === updateData.agentId);
+    if (agent) {
+      updateData.agentName = agent.name;
+    }
+  }
+
+  mockProperties[propertyIndex] = {
+    ...mockProperties[propertyIndex],
+    ...updateData,
+    lastModifiedAt: new Date().toISOString()
+  };
+
+  savePropertiesData(mockProperties);
+
+  res.json({
+    success: true,
+    data: mockProperties[propertyIndex],
+    message: 'Property updated successfully'
+  });
+});
+
+app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
+  console.log('🏠 GET /api/reservations/available-properties - Fetching available properties');
+  
+  res.json({
+    success: true,
+    data: mockProperties,
     message: 'Available properties retrieved successfully'
   });
 });
@@ -2200,7 +3363,7 @@ app.put('/api/users/owners/:id', mockAuth, (req, res) => {
 
   // Auto-calculate totalUnits based on properties array length
   const calculatedTotalUnits = updateData.properties ? updateData.properties.length : mockOwners[ownerIndex].properties?.length || 0
-  
+
   mockOwners[ownerIndex] = {
     ...mockOwners[ownerIndex],
     ...updateData,
@@ -2273,7 +3436,7 @@ app.get('/api/users/stats', mockAuth, (req, res) => {
 
 // ==================== AGENTS API ====================
 
-// Mock agents data
+// Mock agents data with detailed information
 let mockAgents = [
   {
     id: 1,
@@ -2287,10 +3450,117 @@ let mockAgents = [
     lastPayoutDate: '2024-01-15',
     status: 'Active',
     joinDate: '2023-03-15',
+    comments: 'Excellent performance, consistently brings high-value properties. Strong relationships with property owners in Downtown Dubai area.',
     createdAt: '2023-03-15T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-15T00:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    // Detailed units data
+    units: [
+      {
+        id: 1,
+        name: 'Downtown Loft 1BR',
+        location: 'Downtown Dubai',
+        referralDate: '2023-04-10',
+        revenue: 85000,
+        commission: 8,
+        status: 'Active',
+        propertyId: 'prop_1'
+      },
+      {
+        id: 2,
+        name: 'Marina View Studio',
+        location: 'Dubai Marina',
+        referralDate: '2023-05-15',
+        revenue: 65000,
+        commission: 10,
+        status: 'Active',
+        propertyId: 'prop_2'
+      },
+      {
+        id: 3,
+        name: 'Burj Khalifa 2BR',
+        location: 'Downtown Dubai',
+        referralDate: '2023-06-20',
+        revenue: 120000,
+        commission: 7,
+        status: 'Active',
+        propertyId: 'prop_3'
+      },
+      {
+        id: 4,
+        name: 'JBR Beachfront 3BR',
+        location: 'JBR',
+        referralDate: '2023-07-05',
+        revenue: 95000,
+        commission: 9,
+        status: 'Active',
+        propertyId: 'prop_4'
+      }
+    ],
+    // Detailed payouts data
+    payouts: [
+      {
+        id: 1,
+        date: '2024-01-15',
+        amount: 8500,
+        units: ['Downtown Loft 1BR', 'Marina View Studio'],
+        status: 'Completed',
+        description: 'Monthly commission payout',
+        paymentMethod: 'Bank Transfer'
+      },
+      {
+        id: 2,
+        date: '2023-12-15',
+        amount: 7200,
+        units: ['Burj Khalifa 2BR', 'JBR Beachfront 3BR'],
+        status: 'Completed',
+        description: 'Monthly commission payout',
+        paymentMethod: 'Bank Transfer'
+      },
+      {
+        id: 3,
+        date: '2023-11-15',
+        amount: 6800,
+        units: ['Downtown Loft 1BR', 'Marina View Studio'],
+        status: 'Completed',
+        description: 'Monthly commission payout',
+        paymentMethod: 'Bank Transfer'
+      }
+    ],
+    // Documents data
+    documents: [
+      {
+        id: 1,
+        name: 'Agent Contract.pdf',
+        type: 'Contract',
+        uploadDate: '2023-03-15',
+        size: '2.4 MB',
+        s3Key: 'documents/agent_1/contract.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/contract.pdf',
+        filename: 'Agent Contract.pdf'
+      },
+      {
+        id: 2,
+        name: 'Commission Agreement.pdf',
+        type: 'Agreement',
+        uploadDate: '2023-03-20',
+        size: '1.8 MB',
+        s3Key: 'documents/agent_1/commission_agreement.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/commission_agreement.pdf',
+        filename: 'Commission Agreement.pdf'
+      },
+      {
+        id: 3,
+        name: 'ID Copy.jpg',
+        type: 'Identification',
+        uploadDate: '2023-03-15',
+        size: '1.2 MB',
+        s3Key: 'documents/agent_1/id_copy.jpg',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_1/id_copy.jpg',
+        filename: 'ID Copy.jpg'
+      }
+    ]
   },
   {
     id: 2,
@@ -2304,10 +3574,56 @@ let mockAgents = [
     lastPayoutDate: '2024-01-10',
     status: 'Active',
     joinDate: '2023-05-10',
+    comments: 'Strong performer with excellent communication skills. Specializes in luxury properties in Palm Jumeirah.',
     createdAt: '2023-05-10T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-10T00:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    units: [
+      {
+        id: 5,
+        name: 'Palm Villa 4BR',
+        location: 'Palm Jumeirah',
+        referralDate: '2023-06-01',
+        revenue: 180000,
+        commission: 6,
+        status: 'Active',
+        propertyId: 'prop_5'
+      },
+      {
+        id: 6,
+        name: 'Marina Penthouse',
+        location: 'Dubai Marina',
+        referralDate: '2023-07-15',
+        revenue: 220000,
+        commission: 5,
+        status: 'Active',
+        propertyId: 'prop_6'
+      }
+    ],
+    payouts: [
+      {
+        id: 4,
+        date: '2024-01-10',
+        amount: 12000,
+        units: ['Palm Villa 4BR', 'Marina Penthouse'],
+        status: 'Completed',
+        description: 'Monthly commission payout',
+        paymentMethod: 'Bank Transfer'
+      }
+    ],
+    documents: [
+      {
+        id: 4,
+        name: 'Agent Contract.pdf',
+        type: 'Contract',
+        uploadDate: '2023-05-10',
+        size: '2.1 MB',
+        s3Key: 'documents/agent_2/contract.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_2/contract.pdf',
+        filename: 'Agent Contract.pdf'
+      }
+    ]
   },
   {
     id: 3,
@@ -2321,10 +3637,14 @@ let mockAgents = [
     lastPayoutDate: '2024-01-20',
     status: 'Active',
     joinDate: '2023-02-28',
+    comments: 'Top performer with extensive network in the Egyptian community. Consistently exceeds targets.',
     createdAt: '2023-02-28T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-20T00:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    units: [],
+    payouts: [],
+    documents: []
   },
   {
     id: 4,
@@ -2338,10 +3658,14 @@ let mockAgents = [
     lastPayoutDate: '2023-12-15',
     status: 'Inactive',
     joinDate: '2023-08-15',
+    comments: 'Good performer but recently inactive. May need follow-up.',
     createdAt: '2023-08-15T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2023-12-15T00:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    units: [],
+    payouts: [],
+    documents: []
   },
   {
     id: 5,
@@ -2355,10 +3679,14 @@ let mockAgents = [
     lastPayoutDate: '2024-01-18',
     status: 'Active',
     joinDate: '2023-04-20',
+    comments: 'Reliable agent with good track record. Focuses on mid-range properties.',
     createdAt: '2023-04-20T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-18T00:00:00.000Z',
-    lastModifiedBy: 'System'
+    lastModifiedBy: 'System',
+    units: [],
+    payouts: [],
+    documents: []
   }
 ];
 
@@ -2473,8 +3801,17 @@ app.get('/api/agents/stats', mockAuth, (req, res) => {
   
   const totalAgents = mockAgents.length;
   const activeAgents = mockAgents.filter(agent => agent.status === 'Active').length;
-  const totalUnits = mockAgents.reduce((sum, agent) => sum + agent.unitsAttracted, 0);
-  const totalPayouts = mockAgents.reduce((sum, agent) => sum + agent.totalPayouts, 0);
+  
+  // Calculate total units from properties assigned to agents
+  const totalUnits = mockProperties.filter(p => p.agentId).length;
+  
+  // Calculate total payouts from agent payouts
+  const totalPayouts = mockAgents.reduce((sum, agent) => {
+    if (agent.payouts) {
+      return sum + agent.payouts.reduce((payoutSum, payout) => payoutSum + payout.amount, 0);
+    }
+    return sum + (agent.totalPayouts || 0);
+  }, 0);
 
   const stats = {
     totalAgents,
@@ -2503,9 +3840,16 @@ app.get('/api/agents/:id', mockAuth, (req, res) => {
     });
   }
 
+  // Calculate unitsAttracted from properties
+  const agentProperties = mockProperties.filter(p => p.agentId === parseInt(id));
+  const agentWithCalculatedStats = {
+    ...agent,
+    unitsAttracted: agentProperties.length
+  };
+
   res.json({
     success: true,
-    data: agent
+    data: agentWithCalculatedStats
   });
 });
 
@@ -2583,6 +3927,347 @@ app.delete('/api/agents/:id', mockAuth, (req, res) => {
   res.json({
     success: true,
     message: 'Agent deleted successfully'
+  });
+});
+
+// ==================== AGENT UNITS API ====================
+
+// GET /api/agents/:id/units - Get agent units
+app.get('/api/agents/:id/units', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🏠 GET /api/agents/${id}/units - Fetching agent units`);
+
+  const agent = mockAgents.find(a => a.id === parseInt(id));
+  if (!agent) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  // Get properties assigned to this agent
+  const agentProperties = mockProperties.filter(p => p.agentId === parseInt(id));
+  
+  // Convert properties to units format
+  const units = agentProperties.map(prop => ({
+    id: prop.id,
+    name: prop.name,
+    location: prop.address,
+    referralDate: prop.createdAt,
+    revenue: prop.pricePerNight * 30, // Monthly revenue estimate
+    commission: 8, // Default commission
+    status: prop.status,
+    propertyId: prop.id
+  }));
+
+  res.json({
+    success: true,
+    data: units
+  });
+});
+
+// POST /api/agents/:id/units - Add unit to agent (creates property)
+app.post('/api/agents/:id/units', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const unitData = req.body;
+  console.log(`🏠 POST /api/agents/${id}/units - Adding unit to agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  const agent = mockAgents[agentIndex];
+
+  // Create new property
+  const newProperty = {
+    id: `prop_${Date.now()}`,
+    name: unitData.name,
+    type: 'APARTMENT',
+    address: unitData.location,
+    city: 'Dubai',
+    capacity: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    pricePerNight: Math.round(unitData.revenue / 30), // Convert monthly revenue to daily
+    primaryImage: 'https://example.com/default.jpg',
+    agentId: parseInt(id),
+    agentName: agent.name,
+    status: unitData.status || 'Active',
+    createdAt: unitData.referralDate || new Date().toISOString(),
+    lastModifiedAt: new Date().toISOString()
+  };
+
+  // Add property to mockProperties
+  mockProperties.push(newProperty);
+  savePropertiesData(mockProperties);
+
+  // Convert property to unit format for response
+  const newUnit = {
+    id: newProperty.id,
+    name: newProperty.name,
+    location: newProperty.address,
+    referralDate: newProperty.createdAt,
+    revenue: unitData.revenue,
+    commission: unitData.commission,
+    status: newProperty.status,
+    propertyId: newProperty.id
+  };
+
+  res.json({
+    success: true,
+    data: newUnit,
+    message: 'Unit added successfully'
+  });
+});
+
+// DELETE /api/agents/:id/units/:unitId - Remove unit from agent (removes property)
+app.delete('/api/agents/:id/units/:unitId', mockAuth, (req, res) => {
+  const { id, unitId } = req.params;
+  console.log(`🏠 DELETE /api/agents/${id}/units/${unitId} - Removing unit from agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  // Find and remove property
+  const propertyIndex = mockProperties.findIndex(p => p.id === unitId && p.agentId === parseInt(id));
+  if (propertyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Unit not found'
+    });
+  }
+
+  // Remove property from mockProperties
+  mockProperties.splice(propertyIndex, 1);
+  savePropertiesData(mockProperties);
+
+  res.json({
+    success: true,
+    message: 'Unit removed successfully'
+  });
+});
+
+// ==================== AGENT PAYOUTS API ====================
+
+// GET /api/agents/:id/payouts - Get agent payouts
+app.get('/api/agents/:id/payouts', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`💰 GET /api/agents/${id}/payouts - Fetching agent payouts`);
+
+  const agent = mockAgents.find(a => a.id === parseInt(id));
+  if (!agent) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: agent.payouts || []
+  });
+});
+
+// POST /api/agents/:id/payouts - Add payout to agent
+app.post('/api/agents/:id/payouts', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const payoutData = req.body;
+  console.log(`💰 POST /api/agents/${id}/payouts - Adding payout to agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  const newPayout = {
+    id: Date.now(), // Simple ID generation
+    ...payoutData,
+    date: payoutData.date || new Date().toISOString().split('T')[0],
+    status: payoutData.status || 'Completed',
+    paymentMethod: payoutData.paymentMethod || 'Bank Transfer'
+  };
+
+  if (!mockAgents[agentIndex].payouts) {
+    mockAgents[agentIndex].payouts = [];
+  }
+  mockAgents[agentIndex].payouts.push(newPayout);
+  
+  // Update agent stats
+  mockAgents[agentIndex].totalPayouts = (mockAgents[agentIndex].totalPayouts || 0) + newPayout.amount;
+  mockAgents[agentIndex].lastPayoutDate = newPayout.date;
+  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+
+  saveAgentsData(mockAgents);
+
+  res.json({
+    success: true,
+    data: newPayout,
+    message: 'Payout added successfully'
+  });
+});
+
+// DELETE /api/agents/:id/payouts/:payoutId - Remove payout from agent
+app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
+  const { id, payoutId } = req.params;
+  console.log(`💰 DELETE /api/agents/${id}/payouts/${payoutId} - Removing payout from agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  if (!mockAgents[agentIndex].payouts) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payout not found'
+    });
+  }
+
+  const payoutIndex = mockAgents[agentIndex].payouts.findIndex(p => p.id === parseInt(payoutId));
+  if (payoutIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payout not found'
+    });
+  }
+
+  const payout = mockAgents[agentIndex].payouts[payoutIndex];
+  mockAgents[agentIndex].payouts.splice(payoutIndex, 1);
+  
+  // Update agent stats
+  mockAgents[agentIndex].totalPayouts = Math.max(0, (mockAgents[agentIndex].totalPayouts || 0) - payout.amount);
+  
+  // Update last payout date
+  if (mockAgents[agentIndex].payouts.length > 0) {
+    const sortedPayouts = mockAgents[agentIndex].payouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    mockAgents[agentIndex].lastPayoutDate = sortedPayouts[0].date;
+  } else {
+    mockAgents[agentIndex].lastPayoutDate = null;
+  }
+  
+  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+
+  saveAgentsData(mockAgents);
+
+  res.json({
+    success: true,
+    message: 'Payout removed successfully'
+  });
+});
+
+// ==================== AGENT DOCUMENTS API ====================
+
+// GET /api/agents/:id/documents - Get agent documents
+app.get('/api/agents/:id/documents', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`📄 GET /api/agents/${id}/documents - Fetching agent documents`);
+
+  const agent = mockAgents.find(a => a.id === parseInt(id));
+  if (!agent) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: agent.documents || []
+  });
+});
+
+// POST /api/agents/:id/documents - Add document to agent
+app.post('/api/agents/:id/documents', mockAuth, (req, res) => {
+  const { id } = req.params;
+  const documentData = req.body;
+  console.log(`📄 POST /api/agents/${id}/documents - Adding document to agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  const newDocument = {
+    id: Date.now(), // Simple ID generation
+    ...documentData,
+    uploadDate: documentData.uploadDate || new Date().toISOString().split('T')[0]
+  };
+
+  if (!mockAgents[agentIndex].documents) {
+    mockAgents[agentIndex].documents = [];
+  }
+  mockAgents[agentIndex].documents.push(newDocument);
+  
+  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+
+  saveAgentsData(mockAgents);
+
+  res.json({
+    success: true,
+    data: newDocument,
+    message: 'Document added successfully'
+  });
+});
+
+// DELETE /api/agents/:id/documents/:documentId - Remove document from agent
+app.delete('/api/agents/:id/documents/:documentId', mockAuth, (req, res) => {
+  const { id, documentId } = req.params;
+  console.log(`📄 DELETE /api/agents/${id}/documents/${documentId} - Removing document from agent`);
+
+  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  if (agentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agent not found'
+    });
+  }
+
+  if (!mockAgents[agentIndex].documents) {
+    return res.status(404).json({
+      success: false,
+      message: 'Document not found'
+    });
+  }
+
+  const documentIndex = mockAgents[agentIndex].documents.findIndex(d => d.id === parseInt(documentId));
+  if (documentIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Document not found'
+    });
+  }
+
+  mockAgents[agentIndex].documents.splice(documentIndex, 1);
+  
+  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+
+  saveAgentsData(mockAgents);
+
+  res.json({
+    success: true,
+    message: 'Document removed successfully'
   });
 });
 
