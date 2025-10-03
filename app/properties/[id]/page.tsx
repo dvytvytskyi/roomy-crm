@@ -1790,6 +1790,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [owner, setOwner] = useState(() => {
+    // Try to load saved owner from localStorage
+    const savedOwner = localStorage.getItem(`propertyOwner_${params?.id || 'default'}`)
+    if (savedOwner) {
+      try {
+        return JSON.parse(savedOwner)
+      } catch (error) {
+        console.error('Error parsing saved owner:', error)
+      }
+    }
+    
     // Default empty owner structure
     return {
       id: '',
@@ -2598,21 +2608,29 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveOwner = async (newOwner: any) => {
     try {
+      // Update property with selected owner
+      const response = await fetch(`http://localhost:3001/api/properties/${params?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test`
+        },
+        body: JSON.stringify({
+          owner: { id: newOwner.id }
+        })
+      })
+
+      if (response.ok) {
+        console.log('Property owner updated on server:', newOwner.id)
+      } else {
+        console.error('Failed to update property owner on server')
+      }
+
       // Оновлюємо стан
       setOwner(newOwner)
       
-      // Зберігаємо в localStorage
-      localStorage.setItem('ownerInfo', JSON.stringify(newOwner))
-      
-      // Відправляємо на сервер (симуляція API виклику)
-      try {
-        // В реальному додатку тут буде API виклик
-        // await userService.updateUser(newOwner.id, newOwner)
-        console.log('Owner updated on server:', newOwner)
-      } catch (apiError) {
-        console.error('Failed to update owner on server:', apiError)
-        // Показуємо помилку користувачу, але зберігаємо локально
-      }
+      // Зберігаємо в localStorage з property-specific key
+      localStorage.setItem(`propertyOwner_${params?.id || 'default'}`, JSON.stringify(newOwner))
       
       setEditModal({ ...editModal, isOpen: false })
       
@@ -3153,8 +3171,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.log('Updated owner data:', updatedOwner)
         setOwner(updatedOwner)
         
-        // Save to localStorage
-        localStorage.setItem('ownerInfo', JSON.stringify(updatedOwner))
+        // Save to localStorage with property-specific key
+        localStorage.setItem(`propertyOwner_${params?.id || 'default'}`, JSON.stringify(updatedOwner))
         
       } else {
         console.error('Failed to fetch owner data:', result.message)
@@ -3261,12 +3279,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.agentId || ''
         console.log('Found owner ID in property:', ownerId)
         
-        // Fetch owner data if we have an owner ID
-        if (ownerId) {
+        // Fetch owner data if we have an owner ID and no saved owner
+        const savedOwner = localStorage.getItem(`propertyOwner_${params?.id || 'default'}`)
+        if (ownerId && !savedOwner) {
           await fetchOwnerData(ownerId)
+        } else if (!ownerId) {
+          console.log('No owner ID found in property data')
+          // Keep current state (either saved owner or default "Unknown" values)
         } else {
-          console.log('No owner ID found in property data, using default unknown values')
-          // Keep default "Unknown" values that are already set in state
+          console.log('Using saved owner data instead of fetching from API')
         }
       } else {
         console.error('Failed to fetch property data:', result.message)
