@@ -12,7 +12,8 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   phone?: string;
-  role: 'ADMIN' | 'MANAGER' | 'AGENT' | 'OWNER' | 'GUEST' | 'CLEANER' | 'MAINTENANCE';
+  company?: string;
+  role?: 'ADMIN' | 'MANAGER' | 'AGENT' | 'OWNER' | 'GUEST' | 'CLEANER' | 'MAINTENANCE';
 }
 
 export interface User {
@@ -52,12 +53,12 @@ export class AuthService {
 
   // Get current user profile
   async getProfile(): Promise<ApiResponse<User>> {
-    return apiClient.get<User>(API_ENDPOINTS.AUTH.PROFILE);
+    return apiClient.get<User>('/api/auth/profile');
   }
 
   // Refresh token
   async refreshToken(): Promise<ApiResponse<{ accessToken: string; refreshToken: string }>> {
-    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH);
+    return apiClient.post('/api/auth/refresh-token');
   }
 
   // Check if user is authenticated

@@ -2528,6 +2528,62 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+// Register new user
+app.post('/api/auth/register', (req, res) => {
+  console.log('📝 POST /api/auth/register - Mock registration');
+  
+  const { email, password, firstName, lastName, phone, company, role } = req.body;
+  
+  // Check if user already exists
+  if (email === 'admin2@roomy.com') {
+    return res.status(409).json({
+      success: false,
+      message: 'User already exists'
+    });
+  }
+  
+  // Validate required fields
+  if (!email || !password || !firstName || !lastName) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing required fields'
+    });
+  }
+  
+  // Validate password length
+  if (password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 6 characters long'
+    });
+  }
+  
+  // Create new user
+  const newUser = {
+    id: 'user_' + Date.now(),
+    email: email,
+    firstName: firstName,
+    lastName: lastName,
+    phone: phone || null,
+    company: company || 'Roomy CRM',
+    role: role || 'USER',
+    isActive: true,
+    isVerified: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  res.json({
+    success: true,
+    data: {
+      accessToken: 'mock-jwt-token-' + Date.now(),
+      refreshToken: 'mock-refresh-token-' + Date.now(),
+      user: newUser
+    },
+    message: 'Registration successful'
+  });
+});
+
 // Get user profile
 app.get('/api/auth/profile', mockAuth, (req, res) => {
   console.log('👤 GET /api/auth/profile - Mock profile');

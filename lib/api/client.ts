@@ -151,7 +151,7 @@ class ApiClient {
       const refreshToken = this.tokenManager.getRefreshToken();
       if (!refreshToken) return false;
 
-      const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
+      const response = await fetch(`${this.baseURL}/api/auth/refresh-token`, {
         method: 'POST',
         headers: API_CONFIG.HEADERS,
         body: JSON.stringify({ refreshToken }),
@@ -212,7 +212,7 @@ class ApiClient {
 
   // Auth methods
   async login(email: string, password: string): Promise<ApiResponse> {
-    const response = await this.post('/auth/login', { email, password });
+    const response = await this.post('/api/auth/login', { email, password });
     if (response.success && response.data) {
       this.tokenManager.setTokens(
         response.data.accessToken,
@@ -223,7 +223,7 @@ class ApiClient {
   }
 
   async register(userData: any): Promise<ApiResponse> {
-    const response = await this.post('/auth/register', userData);
+    const response = await this.post('/api/auth/register', userData);
     if (response.success && response.data) {
       this.tokenManager.setTokens(
         response.data.accessToken,
