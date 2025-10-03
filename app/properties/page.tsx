@@ -108,35 +108,7 @@ export default function PropertiesPage() {
     console.log('🔧 loadProperties function:', loadProperties)
     console.log('📞 Calling loadProperties...')
     
-    // Test API endpoint directly
-    console.log('🧪 Testing API endpoint directly...')
-    fetch('http://5.223.55.121:3001/api/properties', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    })
-      .then(response => {
-        console.log('🧪 Direct API test response status:', response.status)
-        console.log('🧪 Direct API test response ok:', response.ok)
-        console.log('🧪 Direct API test response headers:', response.headers)
-        if (response.ok) {
-          return response.json()
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-      })
-      .then(data => {
-        console.log('🧪 Direct API test data:', data)
-        console.log('🧪 Direct API test data type:', typeof data)
-        console.log('🧪 Direct API test data keys:', data ? Object.keys(data) : 'No data')
-      })
-      .catch(error => {
-        console.error('🧪 Direct API test error:', error)
-        console.error('🧪 Direct API test error message:', error.message)
-      })
-    
+    // Load properties from API
     loadProperties()
   }, [loadProperties])
 
@@ -367,10 +339,7 @@ export default function PropertiesPage() {
                 onSelectionChange={setSelectedProperties}
                 properties={properties}
                 isLoading={isLoading}
-                filters={{
-                  ...filters,
-                  areas: []
-                }}
+                filters={filters}
               />
             </div>
           </div>

@@ -61,7 +61,6 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
   const clearAllFilters = () => {
     const clearedFilters = {
       propertyTypes: [],
-      areas: [],
       occupancyRates: [],
       maxGuests: [],
       bedrooms: []

@@ -11,8 +11,7 @@ export default function ApiStatus() {
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
-        const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
-        const response = await fetch(`${baseUrl}/health`)
+        const response = await fetch(`${API_CONFIG.BASE_URL}/health`)
         if (response.ok) {
           setStatus('connected')
           setError('')
@@ -74,7 +73,7 @@ export default function ApiStatus() {
         </span>
       </div>
       <div className="text-xs text-gray-500 mt-1">
-        Backend: {API_CONFIG.BASE_URL.replace('/api', '')}
+        Backend: {API_CONFIG.BASE_URL}
       </div>
     </div>
   )

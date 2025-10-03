@@ -50,6 +50,12 @@ export function useAuth() {
         console.log('✅ useAuth: Setting user and auth state...')
         setUser(response.data.user);
         setIsAuthenticated(true);
+        
+        // Store token in cookie for middleware
+        if (typeof document !== 'undefined' && response.data.accessToken) {
+          document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+        }
+        
         console.log('🎯 useAuth: Auth state updated, user:', response.data.user)
         return { success: true, data: response.data };
       } else {
@@ -69,6 +75,12 @@ export function useAuth() {
       if (response.success && response.data) {
         setUser(response.data.user);
         setIsAuthenticated(true);
+        
+        // Store token in cookie for middleware
+        if (typeof document !== 'undefined' && response.data.accessToken) {
+          document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+        }
+        
         return { success: true, data: response.data };
       } else {
         return { success: false, error: response.error?.message || 'Registration failed' };
@@ -84,6 +96,11 @@ export function useAuth() {
       await authService.logout();
       setUser(null);
       setIsAuthenticated(false);
+      
+      // Clear token from cookie
+      if (typeof document !== 'undefined') {
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     }

@@ -430,7 +430,7 @@ const mockAuth = (req, res, next) => {
 };
 
 // Reservations routes
-app.get('/api/reservations', mockAuth, (req, res) => {
+app.get('/api/reservations', authMiddleware, (req, res) => {
   console.log('📅 GET /api/reservations - Fetching reservations');
   console.log('📅 Query params:', req.query);
   
@@ -564,7 +564,7 @@ app.get('/api/reservations', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/:id', mockAuth, (req, res) => {
+app.get('/api/reservations/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`📅 GET /api/reservations/${id} - Fetching reservation by ID`);
   
@@ -584,7 +584,7 @@ app.get('/api/reservations/:id', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/stats', mockAuth, (req, res) => {
+app.get('/api/reservations/stats', authMiddleware, (req, res) => {
   console.log('📊 GET /api/reservations/stats - Fetching statistics');
   
   const stats = {
@@ -605,7 +605,7 @@ app.get('/api/reservations/stats', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/sources', mockAuth, (req, res) => {
+app.get('/api/reservations/sources', authMiddleware, (req, res) => {
   console.log('📋 GET /api/reservations/sources - Fetching sources');
   
   const sources = [
@@ -622,7 +622,7 @@ app.get('/api/reservations/sources', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/calendar', mockAuth, (req, res) => {
+app.get('/api/reservations/calendar', authMiddleware, (req, res) => {
   console.log('📅 GET /api/reservations/calendar - Fetching calendar');
   
   const calendar = realReservations.map(r => ({
@@ -1321,7 +1321,7 @@ function loadMaintenanceData() {
 loadMaintenanceData();
 
 // GET /api/maintenance - Get all maintenance tasks
-app.get('/api/maintenance', mockAuth, (req, res) => {
+app.get('/api/maintenance', authMiddleware, (req, res) => {
   console.log('🔧 GET /api/maintenance - Fetching maintenance tasks');
   
   const { 
@@ -1389,7 +1389,7 @@ app.get('/api/maintenance', mockAuth, (req, res) => {
 });
 
 // GET /api/maintenance/stats - Get maintenance statistics
-app.get('/api/maintenance/stats', mockAuth, (req, res) => {
+app.get('/api/maintenance/stats', authMiddleware, (req, res) => {
   console.log('📊 GET /api/maintenance/stats - Fetching maintenance statistics');
   
   const totalTasks = mockMaintenanceTasks.length;
@@ -1411,7 +1411,7 @@ app.get('/api/maintenance/stats', mockAuth, (req, res) => {
 });
 
 // GET /api/maintenance/:id - Get maintenance task by ID
-app.get('/api/maintenance/:id', mockAuth, (req, res) => {
+app.get('/api/maintenance/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🔧 GET /api/maintenance/${id} - Fetching maintenance task by ID`);
 
@@ -1431,7 +1431,7 @@ app.get('/api/maintenance/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/maintenance - Create new maintenance task
-app.post('/api/maintenance', mockAuth, (req, res) => {
+app.post('/api/maintenance', authMiddleware, (req, res) => {
   console.log('🔧 POST /api/maintenance - Creating new maintenance task');
   const taskData = req.body;
 
@@ -1456,7 +1456,7 @@ app.post('/api/maintenance', mockAuth, (req, res) => {
 });
 
 // PUT /api/maintenance/:id - Update maintenance task
-app.put('/api/maintenance/:id', mockAuth, (req, res) => {
+app.put('/api/maintenance/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`🔧 PUT /api/maintenance/${id} - Updating maintenance task`);
@@ -1486,7 +1486,7 @@ app.put('/api/maintenance/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/maintenance/:id - Delete maintenance task
-app.delete('/api/maintenance/:id', mockAuth, (req, res) => {
+app.delete('/api/maintenance/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🔧 DELETE /api/maintenance/${id} - Deleting maintenance task`);
 
@@ -1510,7 +1510,7 @@ app.delete('/api/maintenance/:id', mockAuth, (req, res) => {
 // ==================== MAINTENANCE COMMENTS API ====================
 
 // GET /api/maintenance/:id/comments - Get comments for maintenance task
-app.get('/api/maintenance/:id/comments', mockAuth, (req, res) => {
+app.get('/api/maintenance/:id/comments', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`💬 GET /api/maintenance/${id}/comments - Fetching comments`);
 
@@ -1529,7 +1529,7 @@ app.get('/api/maintenance/:id/comments', mockAuth, (req, res) => {
 });
 
 // POST /api/maintenance/:id/comments - Add comment to maintenance task
-app.post('/api/maintenance/:id/comments', mockAuth, (req, res) => {
+app.post('/api/maintenance/:id/comments', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { text, type = 'user' } = req.body;
   console.log(`💬 POST /api/maintenance/${id}/comments - Adding comment`);
@@ -1571,7 +1571,7 @@ app.post('/api/maintenance/:id/comments', mockAuth, (req, res) => {
 // ==================== MAINTENANCE ATTACHMENTS API ====================
 
 // GET /api/maintenance/:id/attachments - Get attachments for maintenance task
-app.get('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
+app.get('/api/maintenance/:id/attachments', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`📎 GET /api/maintenance/${id}/attachments - Fetching attachments`);
 
@@ -1590,7 +1590,7 @@ app.get('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
 });
 
 // POST /api/maintenance/:id/attachments - Add attachment to maintenance task
-app.post('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
+app.post('/api/maintenance/:id/attachments', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { name, size, type, s3Key, s3Url } = req.body;
   console.log(`📎 POST /api/maintenance/${id}/attachments - Adding attachment`);
@@ -1633,7 +1633,7 @@ app.post('/api/maintenance/:id/attachments', mockAuth, (req, res) => {
 // ==================== MAINTENANCE PHOTOS API ====================
 
 // GET /api/maintenance/:id/photos - Get photos for maintenance task
-app.get('/api/maintenance/:id/photos', mockAuth, (req, res) => {
+app.get('/api/maintenance/:id/photos', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { type } = req.query; // 'before' or 'after'
   console.log(`📸 GET /api/maintenance/${id}/photos - Fetching photos`);
@@ -1662,7 +1662,7 @@ app.get('/api/maintenance/:id/photos', mockAuth, (req, res) => {
 });
 
 // POST /api/maintenance/:id/photos - Add photo to maintenance task
-app.post('/api/maintenance/:id/photos', mockAuth, (req, res) => {
+app.post('/api/maintenance/:id/photos', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { name, size, type, s3Key, s3Url } = req.body; // type: 'before' or 'after'
   console.log(`📸 POST /api/maintenance/${id}/photos - Adding photo`);
@@ -1706,7 +1706,7 @@ app.post('/api/maintenance/:id/photos', mockAuth, (req, res) => {
 // ==================== CLEANING TASKS API ====================
 
 // GET /api/cleaning - Get all cleaning tasks with filters
-app.get('/api/cleaning', mockAuth, (req, res) => {
+app.get('/api/cleaning', authMiddleware, (req, res) => {
   const { 
     search, 
     status, 
@@ -1764,7 +1764,7 @@ app.get('/api/cleaning', mockAuth, (req, res) => {
 });
 
 // GET /api/cleaning/stats - Get cleaning statistics
-app.get('/api/cleaning/stats', mockAuth, (req, res) => {
+app.get('/api/cleaning/stats', authMiddleware, (req, res) => {
   console.log('📊 GET /api/cleaning/stats - Fetching cleaning statistics');
 
   const totalTasks = mockCleaningTasks.length;
@@ -1784,7 +1784,7 @@ app.get('/api/cleaning/stats', mockAuth, (req, res) => {
 });
 
 // GET /api/cleaning/:id - Get single cleaning task
-app.get('/api/cleaning/:id', mockAuth, (req, res) => {
+app.get('/api/cleaning/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🧹 GET /api/cleaning/${id} - Fetching cleaning task`);
 
@@ -1803,7 +1803,7 @@ app.get('/api/cleaning/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/cleaning - Create new cleaning task
-app.post('/api/cleaning', mockAuth, (req, res) => {
+app.post('/api/cleaning', authMiddleware, (req, res) => {
   const taskData = req.body;
   console.log('🧹 POST /api/cleaning - Creating cleaning task');
 
@@ -1827,7 +1827,7 @@ app.post('/api/cleaning', mockAuth, (req, res) => {
 });
 
 // PUT /api/cleaning/:id - Update cleaning task
-app.put('/api/cleaning/:id', mockAuth, (req, res) => {
+app.put('/api/cleaning/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`🧹 PUT /api/cleaning/${id} - Updating cleaning task`);
@@ -1857,7 +1857,7 @@ app.put('/api/cleaning/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/cleaning/:id - Delete cleaning task
-app.delete('/api/cleaning/:id', mockAuth, (req, res) => {
+app.delete('/api/cleaning/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🧹 DELETE /api/cleaning/${id} - Deleting cleaning task`);
 
@@ -1881,7 +1881,7 @@ app.delete('/api/cleaning/:id', mockAuth, (req, res) => {
 // ==================== CLEANING TASK DETAILS API ====================
 
 // GET /api/cleaning/:id/comments - Get comments for a cleaning task
-app.get('/api/cleaning/:id/comments', mockAuth, (req, res) => {
+app.get('/api/cleaning/:id/comments', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`💬 GET /api/cleaning/${id}/comments - Fetching comments`);
   
@@ -1900,7 +1900,7 @@ app.get('/api/cleaning/:id/comments', mockAuth, (req, res) => {
 });
 
 // POST /api/cleaning/:id/comments - Add a comment to a cleaning task
-app.post('/api/cleaning/:id/comments', mockAuth, (req, res) => {
+app.post('/api/cleaning/:id/comments', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { text, type = 'user' } = req.body;
   console.log(`💬 POST /api/cleaning/${id}/comments - Adding comment`);
@@ -1938,7 +1938,7 @@ app.post('/api/cleaning/:id/comments', mockAuth, (req, res) => {
 });
 
 // GET /api/cleaning/:id/checklist - Get checklist for a cleaning task
-app.get('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
+app.get('/api/cleaning/:id/checklist', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`✅ GET /api/cleaning/${id}/checklist - Fetching checklist`);
   
@@ -1960,7 +1960,7 @@ app.get('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
 });
 
 // POST /api/cleaning/:id/checklist - Add a checklist item to a cleaning task
-app.post('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
+app.post('/api/cleaning/:id/checklist', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { item } = req.body;
   console.log(`✅ POST /api/cleaning/${id}/checklist - Adding checklist item`);
@@ -2006,7 +2006,7 @@ app.post('/api/cleaning/:id/checklist', mockAuth, (req, res) => {
 });
 
 // PUT /api/cleaning/:id/checklist/:itemId - Update a checklist item
-app.put('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
+app.put('/api/cleaning/:id/checklist/:itemId', authMiddleware, (req, res) => {
   const { id, itemId } = req.params;
   const { completed } = req.body;
   console.log(`✅ PUT /api/cleaning/${id}/checklist/${itemId} - Updating checklist item`);
@@ -2048,7 +2048,7 @@ app.put('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
 });
 
 // DELETE /api/cleaning/:id/checklist/:itemId - Delete a checklist item
-app.delete('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
+app.delete('/api/cleaning/:id/checklist/:itemId', authMiddleware, (req, res) => {
   const { id, itemId } = req.params;
   console.log(`✅ DELETE /api/cleaning/${id}/checklist/${itemId} - Deleting checklist item`);
   
@@ -2088,7 +2088,7 @@ app.delete('/api/cleaning/:id/checklist/:itemId', mockAuth, (req, res) => {
 });
 
 // PUT /api/cleaning/:id/static-checklist - Update static checklist items
-app.put('/api/cleaning/:id/static-checklist', mockAuth, (req, res) => {
+app.put('/api/cleaning/:id/static-checklist', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { staticChecklist } = req.body;
   console.log(`✅ PUT /api/cleaning/${id}/static-checklist - Updating static checklist`);
@@ -2115,7 +2115,7 @@ app.put('/api/cleaning/:id/static-checklist', mockAuth, (req, res) => {
 });
 
 // PUT /api/cleaning/:id/notes - Update notes for a cleaning task
-app.put('/api/cleaning/:id/notes', mockAuth, (req, res) => {
+app.put('/api/cleaning/:id/notes', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { notes } = req.body;
   console.log(`📝 PUT /api/cleaning/${id}/notes - Updating notes`);
@@ -2142,7 +2142,7 @@ app.put('/api/cleaning/:id/notes', mockAuth, (req, res) => {
 });
 
 // GET /api/properties - Get all properties
-app.get('/api/properties', mockAuth, (req, res) => {
+app.get('/api/properties', authMiddleware, (req, res) => {
   console.log('🏠 GET /api/properties - Fetching properties');
   
   res.json({
@@ -2153,7 +2153,7 @@ app.get('/api/properties', mockAuth, (req, res) => {
 });
 
 // GET /api/properties/:id - Get property by ID
-app.get('/api/properties/:id', mockAuth, (req, res) => {
+app.get('/api/properties/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🏠 GET /api/properties/${id} - Fetching property by ID`);
 
@@ -2173,7 +2173,7 @@ app.get('/api/properties/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/properties - Create new property
-app.post('/api/properties', mockAuth, (req, res) => {
+app.post('/api/properties', authMiddleware, (req, res) => {
   console.log('🏠 POST /api/properties - Creating new property');
   console.log('📝 Property data:', req.body);
 
@@ -2220,7 +2220,7 @@ app.post('/api/properties', mockAuth, (req, res) => {
 });
 
 // PUT /api/properties/:id - Update property (including agent assignment)
-app.put('/api/properties/:id', mockAuth, (req, res) => {
+app.put('/api/properties/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`🏠 PUT /api/properties/${id} - Updating property`);
@@ -2257,7 +2257,7 @@ app.put('/api/properties/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/properties/:id - Delete property
-app.delete('/api/properties/:id', mockAuth, (req, res) => {
+app.delete('/api/properties/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🗑️ DELETE /api/properties/${id} - Deleting property`);
 
@@ -2282,7 +2282,7 @@ app.delete('/api/properties/:id', mockAuth, (req, res) => {
   });
 });
 
-app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
+app.get('/api/reservations/available-properties', authMiddleware, (req, res) => {
   console.log('🏠 GET /api/reservations/available-properties - Fetching available properties');
   
   res.json({
@@ -2294,7 +2294,7 @@ app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
 
 // PriceLab Integration Routes
 // GET /api/pricing/pricelab/recommendations - Get price recommendations
-app.get('/api/pricing/pricelab/recommendations', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/recommendations', authMiddleware, (req, res) => {
   const { propertyId, startDate, endDate } = req.query;
   console.log(`💰 GET /api/pricing/pricelab/recommendations - Property: ${propertyId}, Dates: ${startDate} to ${endDate}`);
   
@@ -2346,7 +2346,7 @@ app.get('/api/pricing/pricelab/recommendations', mockAuth, (req, res) => {
 });
 
 // GET /api/pricing/pricelab/market-data - Get market data
-app.get('/api/pricing/pricelab/market-data', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/market-data', authMiddleware, (req, res) => {
   const { location } = req.query;
   console.log(`📊 GET /api/pricing/pricelab/market-data - Location: ${location}`);
   
@@ -2375,7 +2375,7 @@ app.get('/api/pricing/pricelab/market-data', mockAuth, (req, res) => {
 });
 
 // POST /api/pricing/pricelab/apply - Apply price recommendations
-app.post('/api/pricing/pricelab/apply', mockAuth, (req, res) => {
+app.post('/api/pricing/pricelab/apply', authMiddleware, (req, res) => {
   const { propertyId, recommendationIds } = req.body;
   console.log(`✅ POST /api/pricing/pricelab/apply - Property: ${propertyId}, Recommendations: ${recommendationIds?.length || 0}`);
   
@@ -2391,7 +2391,7 @@ app.post('/api/pricing/pricelab/apply', mockAuth, (req, res) => {
 });
 
 // POST /api/pricing/pricelab/sync - Sync property data
-app.post('/api/pricing/pricelab/sync', mockAuth, (req, res) => {
+app.post('/api/pricing/pricelab/sync', authMiddleware, (req, res) => {
   const { propertyId } = req.body;
   console.log(`🔄 POST /api/pricing/pricelab/sync - Property: ${propertyId}`);
   
@@ -2406,7 +2406,7 @@ app.post('/api/pricing/pricelab/sync', mockAuth, (req, res) => {
 });
 
 // POST /api/pricing/pricelab/optimize - Optimize prices
-app.post('/api/pricing/pricelab/optimize', mockAuth, (req, res) => {
+app.post('/api/pricing/pricelab/optimize', authMiddleware, (req, res) => {
   const { propertyId, strategy } = req.body;
   console.log(`🎯 POST /api/pricing/pricelab/optimize - Property: ${propertyId}, Strategy: ${strategy}`);
   
@@ -2435,7 +2435,7 @@ app.post('/api/pricing/pricelab/optimize', mockAuth, (req, res) => {
 });
 
 // GET /api/pricing/pricelab/insights - Get market insights
-app.get('/api/pricing/pricelab/insights', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/insights', authMiddleware, (req, res) => {
   const { propertyId } = req.query;
   console.log(`🔍 GET /api/pricing/pricelab/insights - Property: ${propertyId}`);
   
@@ -2460,7 +2460,7 @@ app.get('/api/pricing/pricelab/insights', mockAuth, (req, res) => {
 });
 
 // GET /api/pricing/pricelab/strategies - Get pricing strategies
-app.get('/api/pricing/pricelab/strategies', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/strategies', authMiddleware, (req, res) => {
   console.log('📋 GET /api/pricing/pricelab/strategies - Fetching pricing strategies');
   
   const mockStrategies = [
@@ -2498,7 +2498,7 @@ app.get('/api/pricing/pricelab/strategies', mockAuth, (req, res) => {
 });
 
 // PUT /api/pricing/pricelab/config - Update PriceLab configuration
-app.put('/api/pricing/pricelab/config', mockAuth, (req, res) => {
+app.put('/api/pricing/pricelab/config', authMiddleware, (req, res) => {
   const config = req.body;
   console.log('⚙️ PUT /api/pricing/pricelab/config - Updating PriceLab configuration');
   
@@ -2514,7 +2514,7 @@ app.put('/api/pricing/pricelab/config', mockAuth, (req, res) => {
 });
 
 // GET /api/pricing/pricelab/config - Get PriceLab configuration
-app.get('/api/pricing/pricelab/config', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/config', authMiddleware, (req, res) => {
   console.log('⚙️ GET /api/pricing/pricelab/config - Fetching PriceLab configuration');
   
   // Load from settings file
@@ -2539,7 +2539,7 @@ app.get('/api/pricing/pricelab/config', mockAuth, (req, res) => {
 });
 
 // GET /api/pricing/pricelab/test - Test API connection
-app.get('/api/pricing/pricelab/test', mockAuth, (req, res) => {
+app.get('/api/pricing/pricelab/test', authMiddleware, (req, res) => {
   console.log('🔌 GET /api/pricing/pricelab/test - Testing PriceLab API connection');
   
   // Mock connection test
@@ -2809,7 +2809,7 @@ app.post('/api/auth/refresh-token', (req, res) => {
 });
 
 // Logout
-app.post('/api/auth/logout', mockAuth, (req, res) => {
+app.post('/api/auth/logout', authMiddleware, (req, res) => {
   console.log('🚪 POST /api/auth/logout - Mock logout');
   
   res.json({
@@ -2821,7 +2821,7 @@ app.post('/api/auth/logout', mockAuth, (req, res) => {
 // ===== RESERVATION DETAILS ENDPOINTS =====
 
 // Update reservation
-app.put('/api/reservations/:id', mockAuth, (req, res) => {
+app.put('/api/reservations/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`📝 PUT /api/reservations/${id} - Updating reservation`);
@@ -2850,7 +2850,7 @@ app.put('/api/reservations/:id', mockAuth, (req, res) => {
 });
 
 // Add note to reservation
-app.post('/api/reservations/:id/notes', mockAuth, (req, res) => {
+app.post('/api/reservations/:id/notes', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { content, type = 'internal', priority = 'normal' } = req.body;
   console.log(`📝 POST /api/reservations/${id}/notes - Adding note`);
@@ -2886,7 +2886,7 @@ app.post('/api/reservations/:id/notes', mockAuth, (req, res) => {
 });
 
 // Update note
-app.put('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
+app.put('/api/reservations/:id/notes/:noteId', authMiddleware, (req, res) => {
   const { id, noteId } = req.params;
   const { content } = req.body;
   console.log(`📝 PUT /api/reservations/${id}/notes/${noteId} - Updating note`);
@@ -2927,7 +2927,7 @@ app.put('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
 });
 
 // Delete note
-app.delete('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
+app.delete('/api/reservations/:id/notes/:noteId', authMiddleware, (req, res) => {
   const { id, noteId } = req.params;
   console.log(`🗑️ DELETE /api/reservations/${id}/notes/${noteId} - Deleting note`);
   
@@ -2965,7 +2965,7 @@ app.delete('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
 });
 
 // Add payment to reservation
-app.post('/api/reservations/:id/payments', mockAuth, (req, res) => {
+app.post('/api/reservations/:id/payments', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { amount, method, date, reference, description, type = 'payment' } = req.body;
   console.log(`💳 POST /api/reservations/${id}/payments - Adding payment`);
@@ -3015,7 +3015,7 @@ app.post('/api/reservations/:id/payments', mockAuth, (req, res) => {
 });
 
 // Add adjustment to reservation
-app.post('/api/reservations/:id/adjustments', mockAuth, (req, res) => {
+app.post('/api/reservations/:id/adjustments', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { type, amount, reason } = req.body;
   console.log(`⚖️ POST /api/reservations/${id}/adjustments - Adding adjustment`);
@@ -3056,7 +3056,7 @@ app.post('/api/reservations/:id/adjustments', mockAuth, (req, res) => {
 });
 
 // Delete adjustment
-app.delete('/api/reservations/:id/adjustments/:adjustmentId', mockAuth, (req, res) => {
+app.delete('/api/reservations/:id/adjustments/:adjustmentId', authMiddleware, (req, res) => {
   const { id, adjustmentId } = req.params;
   console.log(`🗑️ DELETE /api/reservations/${id}/adjustments/${adjustmentId} - Deleting adjustment`);
   
@@ -3099,7 +3099,7 @@ app.delete('/api/reservations/:id/adjustments/:adjustmentId', mockAuth, (req, re
 });
 
 // Update reservation dates
-app.put('/api/reservations/:id/dates', mockAuth, (req, res) => {
+app.put('/api/reservations/:id/dates', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { checkIn, checkOut } = req.body;
   console.log(`📅 PUT /api/reservations/${id}/dates - Updating dates`);
@@ -3130,7 +3130,7 @@ app.put('/api/reservations/:id/dates', mockAuth, (req, res) => {
 });
 
 // Update reservation pricing
-app.put('/api/reservations/:id/pricing', mockAuth, (req, res) => {
+app.put('/api/reservations/:id/pricing', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { pricePerNight, totalAmount } = req.body;
   console.log(`💰 PUT /api/reservations/${id}/pricing - Updating pricing`);
@@ -3171,7 +3171,7 @@ app.put('/api/reservations/:id/pricing', mockAuth, (req, res) => {
 });
 
 // Send communication
-app.post('/api/reservations/:id/communications', mockAuth, (req, res) => {
+app.post('/api/reservations/:id/communications', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { type, subject, content } = req.body;
   console.log(`📧 POST /api/reservations/${id}/communications - Sending communication`);
@@ -3208,7 +3208,7 @@ app.post('/api/reservations/:id/communications', mockAuth, (req, res) => {
 });
 
 // Generate invoice
-app.post('/api/reservations/:id/invoices', mockAuth, (req, res) => {
+app.post('/api/reservations/:id/invoices', authMiddleware, (req, res) => {
   const { id } = req.params;
   const { type = 'standard' } = req.body;
   console.log(`🧾 POST /api/reservations/${id}/invoices - Generating invoice`);
@@ -3388,7 +3388,7 @@ if (!loadGuestsData()) {
 }
 
 // GET /api/guests - Get all guests with filtering
-app.get('/api/guests', mockAuth, (req, res) => {
+app.get('/api/guests', authMiddleware, (req, res) => {
   console.log('👥 GET /api/guests - Fetching guests');
   console.log('👥 Query params:', req.query);
 
@@ -3522,7 +3522,7 @@ function calculateAge(dateOfBirth) {
 }
 
 // GET /api/guests/stats - Get guest statistics (MUST be before /:id route)
-app.get('/api/guests/stats', mockAuth, (req, res) => {
+app.get('/api/guests/stats', authMiddleware, (req, res) => {
   console.log('👥 GET /api/guests/stats - Fetching guest statistics');
 
   const stats = {
@@ -3546,7 +3546,7 @@ app.get('/api/guests/stats', mockAuth, (req, res) => {
 });
 
 // GET /api/guests/:id - Get guest by ID
-app.get('/api/guests/:id', mockAuth, (req, res) => {
+app.get('/api/guests/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/guests/${id} - Fetching guest by ID`);
 
@@ -3571,7 +3571,7 @@ app.get('/api/guests/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/guests - Create new guest
-app.post('/api/guests', mockAuth, (req, res) => {
+app.post('/api/guests', authMiddleware, (req, res) => {
   console.log('👥 POST /api/guests - Creating new guest');
   const guestData = req.body;
 
@@ -3596,7 +3596,7 @@ app.post('/api/guests', mockAuth, (req, res) => {
 });
 
 // PUT /api/guests/:id - Update guest
-app.put('/api/guests/:id', mockAuth, (req, res) => {
+app.put('/api/guests/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`👥 PUT /api/guests/${id} - Updating guest`);
@@ -3626,7 +3626,7 @@ app.put('/api/guests/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/guests/:id - Delete guest
-app.delete('/api/guests/:id', mockAuth, (req, res) => {
+app.delete('/api/guests/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 DELETE /api/guests/${id} - Deleting guest`);
 
@@ -3648,7 +3648,7 @@ app.delete('/api/guests/:id', mockAuth, (req, res) => {
 });
 
 // GET /api/guests/:id/reservations - Get guest's reservations
-app.get('/api/guests/:id/reservations', mockAuth, (req, res) => {
+app.get('/api/guests/:id/reservations', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/guests/${id}/reservations - Fetching guest reservations`);
 
@@ -3670,7 +3670,7 @@ app.get('/api/guests/:id/reservations', mockAuth, (req, res) => {
 });
 
 // GET /api/guests/:id/activity - Get guest's activity log
-app.get('/api/guests/:id/activity', mockAuth, (req, res) => {
+app.get('/api/guests/:id/activity', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/guests/${id}/activity - Fetching guest activity`);
 
@@ -3744,7 +3744,7 @@ app.get('/api/guests/:id/activity', mockAuth, (req, res) => {
 });
 
 // GET /api/guests/:id/stats - Get guest statistics
-app.get('/api/guests/:id/stats', mockAuth, (req, res) => {
+app.get('/api/guests/:id/stats', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/guests/${id}/stats - Fetching guest statistics`);
 
@@ -3796,7 +3796,7 @@ app.get('/api/guests/:id/stats', mockAuth, (req, res) => {
 });
 
 // POST /api/guests/:id/documents - Upload document for guest
-app.post('/api/guests/:id/documents', mockAuth, async (req, res) => {
+app.post('/api/guests/:id/documents', authMiddleware, async (req, res) => {
   const { id } = req.params;
   console.log(`👥 POST /api/guests/${id}/documents - Uploading document`);
 
@@ -3853,7 +3853,7 @@ app.post('/api/guests/:id/documents', mockAuth, async (req, res) => {
 });
 
 // DELETE /api/guests/:id/documents/:docId - Delete guest document
-app.delete('/api/guests/:id/documents/:docId', mockAuth, async (req, res) => {
+app.delete('/api/guests/:id/documents/:docId', authMiddleware, async (req, res) => {
   const { id, docId } = req.params;
   console.log(`👥 DELETE /api/guests/${id}/documents/${docId} - Deleting document`);
 
@@ -3906,7 +3906,7 @@ app.delete('/api/guests/:id/documents/:docId', mockAuth, async (req, res) => {
 // ===== S3 FILE STORAGE ENDPOINTS =====
 
 // Upload file endpoint with S3 integration
-app.post('/api/upload', mockAuth, upload.single('file'), async (req, res) => {
+app.post('/api/upload', authMiddleware, upload.single('file'), async (req, res) => {
   console.log('📤 POST /api/upload - Upload file to S3');
   
   try {
@@ -3955,7 +3955,7 @@ app.post('/api/upload', mockAuth, upload.single('file'), async (req, res) => {
 });
 
 // Get signed URL for download
-app.get('/api/files/signed-url', mockAuth, async (req, res) => {
+app.get('/api/files/signed-url', authMiddleware, async (req, res) => {
   const { key } = req.query;
   console.log(`📥 GET /api/files/signed-url - Generate signed URL for: ${key}`);
   
@@ -3993,7 +3993,7 @@ app.get('/api/files/signed-url', mockAuth, async (req, res) => {
 });
 
 // Delete file
-app.delete('/api/files/:key(*)', mockAuth, async (req, res) => {
+app.delete('/api/files/:key(*)', authMiddleware, async (req, res) => {
   const key = req.params.key;
   console.log(`🗑️ DELETE /api/files/${key} - Delete file from S3`);
   
@@ -4023,7 +4023,7 @@ app.delete('/api/files/:key(*)', mockAuth, async (req, res) => {
 });
 
 // List files in folder
-app.get('/api/files/list', mockAuth, (req, res) => {
+app.get('/api/files/list', authMiddleware, (req, res) => {
   const { folder = '' } = req.query;
   console.log(`📁 GET /api/files/list - List files in folder: ${folder}`);
   
@@ -4498,7 +4498,7 @@ if (!loadOwnersData()) {
 }
 
 // GET /api/users/owners - Get all owners with filtering
-app.get('/api/users/owners', mockAuth, (req, res) => {
+app.get('/api/users/owners', authMiddleware, (req, res) => {
   console.log('👤 GET /api/users/owners - Fetching owners');
   console.log('Query params:', req.query);
 
@@ -4593,7 +4593,7 @@ app.get('/api/users/owners', mockAuth, (req, res) => {
 });
 
 // GET /api/users/owners/:id - Get owner by ID
-app.get('/api/users/owners/:id', mockAuth, (req, res) => {
+app.get('/api/users/owners/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👤 GET /api/users/owners/${id} - Fetching owner by ID`);
 
@@ -4620,7 +4620,7 @@ app.get('/api/users/owners/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/users/owners - Create new owner
-app.post('/api/users/owners', mockAuth, (req, res) => {
+app.post('/api/users/owners', authMiddleware, (req, res) => {
   console.log('👤 POST /api/users/owners - Creating new owner');
   const ownerData = req.body;
 
@@ -4647,7 +4647,7 @@ app.post('/api/users/owners', mockAuth, (req, res) => {
 });
 
 // PUT /api/users/owners/:id - Update owner
-app.put('/api/users/owners/:id', mockAuth, (req, res) => {
+app.put('/api/users/owners/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`👤 PUT /api/users/owners/${id} - Updating owner`);
@@ -4683,7 +4683,7 @@ app.put('/api/users/owners/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/users/owners/:id - Delete owner
-app.delete('/api/users/owners/:id', mockAuth, (req, res) => {
+app.delete('/api/users/owners/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👤 DELETE /api/users/owners/${id} - Deleting owner`);
 
@@ -4705,7 +4705,7 @@ app.delete('/api/users/owners/:id', mockAuth, (req, res) => {
 });
 
 // GET /api/users/stats - Get user statistics
-app.get('/api/users/stats', mockAuth, (req, res) => {
+app.get('/api/users/stats', authMiddleware, (req, res) => {
   console.log('📊 GET /api/users/stats - Fetching user statistics');
 
   const stats = {
@@ -4891,7 +4891,7 @@ function loadAgentsData() {
 loadAgentsData();
 
 // GET /api/agents - Get all agents with filters
-app.get('/api/agents', mockAuth, (req, res) => {
+app.get('/api/agents', authMiddleware, (req, res) => {
   console.log('👥 GET /api/agents - Fetching agents');
   const {
     search = '',
@@ -4962,7 +4962,7 @@ app.get('/api/agents', mockAuth, (req, res) => {
 });
 
 // GET /api/agents/stats - Get agent statistics
-app.get('/api/agents/stats', mockAuth, (req, res) => {
+app.get('/api/agents/stats', authMiddleware, (req, res) => {
   console.log('📊 GET /api/agents/stats - Fetching agent statistics');
   
   const totalAgents = realAgents.length;
@@ -4993,7 +4993,7 @@ app.get('/api/agents/stats', mockAuth, (req, res) => {
 });
 
 // GET /api/agents/:id - Get agent by ID
-app.get('/api/agents/:id', mockAuth, (req, res) => {
+app.get('/api/agents/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/agents/${id} - Fetching agent by ID`);
 
@@ -5020,7 +5020,7 @@ app.get('/api/agents/:id', mockAuth, (req, res) => {
 });
 
 // POST /api/agents - Create new agent
-app.post('/api/agents', mockAuth, (req, res) => {
+app.post('/api/agents', authMiddleware, (req, res) => {
   console.log('👥 POST /api/agents - Creating new agent');
   const agentData = req.body;
 
@@ -5045,7 +5045,7 @@ app.post('/api/agents', mockAuth, (req, res) => {
 });
 
 // PUT /api/agents/:id - Update agent
-app.put('/api/agents/:id', mockAuth, (req, res) => {
+app.put('/api/agents/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
   console.log(`👥 PUT /api/agents/${id} - Updating agent`);
@@ -5075,7 +5075,7 @@ app.put('/api/agents/:id', mockAuth, (req, res) => {
 });
 
 // DELETE /api/agents/:id - Delete agent
-app.delete('/api/agents/:id', mockAuth, (req, res) => {
+app.delete('/api/agents/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`👥 DELETE /api/agents/${id} - Deleting agent`);
 
@@ -5099,7 +5099,7 @@ app.delete('/api/agents/:id', mockAuth, (req, res) => {
 // ==================== AGENT UNITS API ====================
 
 // GET /api/agents/:id/units - Get agent units
-app.get('/api/agents/:id/units', mockAuth, (req, res) => {
+app.get('/api/agents/:id/units', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`🏠 GET /api/agents/${id}/units - Fetching agent units`);
 
@@ -5133,7 +5133,7 @@ app.get('/api/agents/:id/units', mockAuth, (req, res) => {
 });
 
 // POST /api/agents/:id/units - Add unit to agent (creates property)
-app.post('/api/agents/:id/units', mockAuth, (req, res) => {
+app.post('/api/agents/:id/units', authMiddleware, (req, res) => {
   const { id } = req.params;
   const unitData = req.body;
   console.log(`🏠 POST /api/agents/${id}/units - Adding unit to agent`);
@@ -5191,7 +5191,7 @@ app.post('/api/agents/:id/units', mockAuth, (req, res) => {
 });
 
 // DELETE /api/agents/:id/units/:unitId - Remove unit from agent (removes property)
-app.delete('/api/agents/:id/units/:unitId', mockAuth, (req, res) => {
+app.delete('/api/agents/:id/units/:unitId', authMiddleware, (req, res) => {
   const { id, unitId } = req.params;
   console.log(`🏠 DELETE /api/agents/${id}/units/${unitId} - Removing unit from agent`);
 
@@ -5225,7 +5225,7 @@ app.delete('/api/agents/:id/units/:unitId', mockAuth, (req, res) => {
 // ==================== AGENT PAYOUTS API ====================
 
 // GET /api/agents/:id/payouts - Get agent payouts
-app.get('/api/agents/:id/payouts', mockAuth, (req, res) => {
+app.get('/api/agents/:id/payouts', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`💰 GET /api/agents/${id}/payouts - Fetching agent payouts`);
 
@@ -5244,7 +5244,7 @@ app.get('/api/agents/:id/payouts', mockAuth, (req, res) => {
 });
 
 // POST /api/agents/:id/payouts - Add payout to agent
-app.post('/api/agents/:id/payouts', mockAuth, (req, res) => {
+app.post('/api/agents/:id/payouts', authMiddleware, (req, res) => {
   const { id } = req.params;
   const payoutData = req.body;
   console.log(`💰 POST /api/agents/${id}/payouts - Adding payout to agent`);
@@ -5286,7 +5286,7 @@ app.post('/api/agents/:id/payouts', mockAuth, (req, res) => {
 });
 
 // DELETE /api/agents/:id/payouts/:payoutId - Remove payout from agent
-app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
+app.delete('/api/agents/:id/payouts/:payoutId', authMiddleware, (req, res) => {
   const { id, payoutId } = req.params;
   console.log(`💰 DELETE /api/agents/${id}/payouts/${payoutId} - Removing payout from agent`);
 
@@ -5341,7 +5341,7 @@ app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
 // ==================== AGENT DOCUMENTS API ====================
 
 // GET /api/agents/:id/documents - Get agent documents
-app.get('/api/agents/:id/documents', mockAuth, (req, res) => {
+app.get('/api/agents/:id/documents', authMiddleware, (req, res) => {
   const { id } = req.params;
   console.log(`📄 GET /api/agents/${id}/documents - Fetching agent documents`);
 
@@ -5360,7 +5360,7 @@ app.get('/api/agents/:id/documents', mockAuth, (req, res) => {
 });
 
 // POST /api/agents/:id/documents - Add document to agent
-app.post('/api/agents/:id/documents', mockAuth, (req, res) => {
+app.post('/api/agents/:id/documents', authMiddleware, (req, res) => {
   const { id } = req.params;
   const documentData = req.body;
   console.log(`📄 POST /api/agents/${id}/documents - Adding document to agent`);
@@ -5397,7 +5397,7 @@ app.post('/api/agents/:id/documents', mockAuth, (req, res) => {
 });
 
 // DELETE /api/agents/:id/documents/:documentId - Remove document from agent
-app.delete('/api/agents/:id/documents/:documentId', mockAuth, (req, res) => {
+app.delete('/api/agents/:id/documents/:documentId', authMiddleware, (req, res) => {
   const { id, documentId } = req.params;
   console.log(`📄 DELETE /api/agents/${id}/documents/${documentId} - Removing document from agent`);
 

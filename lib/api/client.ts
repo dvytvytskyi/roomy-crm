@@ -22,7 +22,19 @@ class TokenManager {
 
   getAccessToken(): string | null {
     if (!this.accessToken) {
+      // Check localStorage first
       this.accessToken = localStorage.getItem('accessToken');
+      
+      // If not in localStorage, check cookies (for middleware compatibility)
+      if (!this.accessToken && typeof document !== 'undefined') {
+        const cookies = document.cookie.split(';');
+        const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('accessToken='));
+        if (tokenCookie) {
+          this.accessToken = tokenCookie.split('=')[1];
+          // Store in localStorage for consistency
+          localStorage.setItem('accessToken', this.accessToken);
+        }
+      }
     }
     return this.accessToken;
   }

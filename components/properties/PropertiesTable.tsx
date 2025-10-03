@@ -12,7 +12,6 @@ interface PropertiesTableProps {
   isLoading?: boolean
   filters?: {
     propertyTypes: string[]
-    areas: string[]
     occupancyRates: string[]
     maxGuests: string[]
     bedrooms: string[]
@@ -51,7 +50,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
 
   // Helper functions to handle real API data formats
   const getPropertyName = (property: any) => {
-    // Get the best available name field
+    // Get the best available name field - prioritize nickname for real data
     const name = property.nickname || property.name || property.title || property.propertyName
     
     // Clean up the name if it has encoding issues
@@ -174,11 +173,50 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   })
 
   const sortedProperties = filteredProperties.sort((a, b) => {
-    const aValue = a[sortField as keyof typeof a]
-    const bValue = b[sortField as keyof typeof b]
+    let aValue: any
+    let bValue: any
     
-    if ((aValue || '') < (bValue || '')) return sortDirection === 'asc' ? -1 : 1
-    if ((aValue || '') > (bValue || '')) return sortDirection === 'asc' ? 1 : -1
+    switch (sortField) {
+      case 'name':
+        aValue = getPropertyName(a).toLowerCase()
+        bValue = getPropertyName(b).toLowerCase()
+        break
+      case 'type':
+        aValue = getPropertyType(a).toLowerCase()
+        bValue = getPropertyType(b).toLowerCase()
+        break
+      case 'bedrooms':
+        aValue = getBedrooms(a)
+        bValue = getBedrooms(b)
+        break
+      case 'capacity':
+        aValue = getMaxGuests(a)
+        bValue = getMaxGuests(b)
+        break
+      case 'pricePerNight':
+        aValue = getPrice(a)
+        bValue = getPrice(b)
+        break
+      case 'status':
+        aValue = getStatus(a).toLowerCase()
+        bValue = getStatus(b).toLowerCase()
+        break
+      case 'owner':
+        aValue = getOwnerName(a).toLowerCase()
+        bValue = getOwnerName(b).toLowerCase()
+        break
+      default:
+        aValue = getPropertyName(a).toLowerCase()
+        bValue = getPropertyName(b).toLowerCase()
+    }
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+    } else {
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+    }
     return 0
   })
 
@@ -240,12 +278,12 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full flex flex-col">
+      <div className="overflow-x-auto overflow-y-auto flex-1">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <input
                 type="checkbox"
                   checked={allSelected}
@@ -257,7 +295,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               />
             </th>
             <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('name')}
             >
               <div className="flex items-center space-x-1">
@@ -266,7 +304,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('type')}
             >
               <div className="flex items-center space-x-1">
@@ -275,7 +313,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('bedrooms')}
             >
               <div className="flex items-center space-x-1">
@@ -284,7 +322,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('capacity')}
             >
               <div className="flex items-center space-x-1">
@@ -293,7 +331,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                 </div>
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('pricePerNight')}
               >
                 <div className="flex items-center space-x-1">
@@ -302,7 +340,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                 </div>
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('status')}
               >
                 <div className="flex items-center space-x-1">
@@ -311,7 +349,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('owner')}
             >
               <div className="flex items-center space-x-1">
@@ -319,7 +357,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                   {getSortIcon('owner')}
               </div>
             </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -334,7 +372,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               onMouseEnter={() => setHoveredRow(property.id)}
               onMouseLeave={() => setHoveredRow(null)}
             >
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-4 whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={selectedProperties.includes(property.id)}
@@ -342,43 +380,43 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                     className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                 />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-3 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                    <div className="flex-shrink-0 h-8 w-8">
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                         {getPropertyType(property) === 'villa' ? (
-                          <Home className="h-5 w-5 text-orange-600" />
+                          <Home className="h-4 w-4 text-orange-600" />
                         ) : (
-                          <Building className="h-5 w-5 text-orange-600" />
+                          <Building className="h-4 w-4 text-orange-600" />
                         )}
                       </div>
                   </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
                       {getPropertyName(property)}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500 truncate max-w-[200px]">
                         {property.address || 'No address'}
                       </div>
-                    </div>
+                  </div>
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+              <td className="px-3 py-4 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                     {getPropertyType(property)}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                   {getBedrooms(property)}
               </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                   {getMaxGuests(property)}
               </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                   AED {getPrice(property).toLocaleString()}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              <td className="px-3 py-4 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                     getStatus(property) === 'Active' 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-gray-100 text-gray-800'
@@ -386,10 +424,10 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                     {getStatus(property)}
                   </span>
               </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                   {getOwnerName(property)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === property.id ? 'opacity-100' : 'opacity-70'}`}>
                   <button
                     className="text-slate-400 hover:text-red-600 transition-colors"

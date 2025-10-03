@@ -22,9 +22,9 @@ export default function RootLayout({
         <script src="/build/scheduler.umd.js" />
       </head>
       <body className="antialiased">
-        <ClientAuthGuard>
-          {children}
-        </ClientAuthGuard>
+      <ClientAuthGuard>
+        {children}
+      </ClientAuthGuard>
         <ApiStatus />
       </body>
     </html>
