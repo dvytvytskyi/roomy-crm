@@ -19,393 +19,10 @@ interface PropertiesTableProps {
   }
 }
 
-// Mock data for properties
-const mockProperties = [
-  {
-    id: 1,
-    name: 'Apartment in Downtown Dubai 1 bedroom',
-    nickname: 'Luxury Downtown Apt',
-    area: 'Downtown',
-    property_type: 'apartment',
-    bedrooms: 1,
-    max_guests: 2,
-    address: 'Burj Khalifa, Downtown Dubai',
-    city: 'Dubai',
-    base_price: 550,
-    is_active: true,
-    status: 'active',
-    description: 'Luxury apartment with stunning views of Burj Khalifa',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking'],
-    owner: {
-      name: 'Ahmed Al Mansouri',
-      flag: '🇦🇪',
-      country: 'United Arab Emirates',
-      email: 'ahmed@example.com',
-      phone: '+971 50 123 4567',
-      status: 'active'
-    },
-    occupancy_rate: 85,
-    last_booking: '2024-08-15',
-    revenue: 12500,
-    bathrooms: 1,
-    parking_slots: 1,
-    unit_intake_date: '2024-01-15',
-    dtcm_license_expiry: '2025-01-15',
-    rules: ['No smoking', 'No pets', 'No parties'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: false,
-      bayut: false
-    }
-  },
-  {
-    id: 2,
-    name: 'Studio in Dubai Marina 0 bedrooms',
-    nickname: 'Marina View Studio',
-    area: 'Dubai Marina',
-    property_type: 'studio',
-    bedrooms: 0,
-    max_guests: 2,
-    address: 'Dubai Marina, Dubai',
-    city: 'Dubai',
-    base_price: 440,
-    is_active: true,
-    status: 'active',
-    description: 'Modern studio with marina views',
-    amenities: ['WiFi', 'Pool', 'Gym'],
-    owner: {
-      name: 'Sarah Johnson',
-      flag: '🇺🇸',
-      country: 'United States',
-      email: 'sarah@example.com',
-      phone: '+1 555 123 4567',
-      status: 'active'
-    },
-    occupancy_rate: 92,
-    last_booking: '2024-08-20',
-    revenue: 8800,
-    bathrooms: 1,
-    parking_slots: 0,
-    unit_intake_date: '2024-02-01',
-    dtcm_license_expiry: '2025-02-01',
-    rules: ['No smoking', 'No pets'],
-    quiet_hours: '23:00 - 07:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: false
-    }
-  },
-  {
-    id: 3,
-    name: 'Palm Villa 3BR',
-    area: 'Palm Jumeirah',
-    property_type: 'villa',
-    bedrooms: 3,
-    max_guests: 6,
-    address: 'Palm Jumeirah, Dubai',
-    city: 'Dubai',
-    base_price: 1100,
-    is_active: true,
-    status: 'active',
-    description: 'Luxury villa on Palm Jumeirah',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking', 'Beach Access'],
-    owner: {
-      name: 'Mohammed Al Rashid',
-      flag: '🇦🇪',
-      country: 'United Arab Emirates',
-      email: 'mohammed@example.com',
-      phone: '+971 50 987 6543',
-      status: 'active'
-    },
-    occupancy_rate: 78,
-    last_booking: '2024-08-10',
-    revenue: 18500,
-    bathrooms: 3,
-    parking_slots: 2,
-    unit_intake_date: '2024-01-01',
-    dtcm_license_expiry: '2025-01-01',
-    rules: ['No smoking', 'No pets', 'No parties'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: true
-    }
-  },
-  {
-    id: 4,
-    name: 'Downtown Loft 2BR',
-    area: 'Downtown',
-    property_type: 'apartment',
-    bedrooms: 2,
-    max_guests: 4,
-    address: 'Downtown Dubai, Dubai',
-    city: 'Dubai',
-    base_price: 735,
-    is_active: true,
-    status: 'active',
-    description: 'Modern loft in downtown',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking'],
-    owner: {
-      name: 'Emma Wilson',
-      flag: '🇬🇧',
-      country: 'United Kingdom',
-      email: 'emma@example.com',
-      phone: '+44 20 1234 5678',
-      status: 'active'
-    },
-    occupancy_rate: 88,
-    last_booking: '2024-08-18',
-    revenue: 15200,
-    bathrooms: 2,
-    parking_slots: 1,
-    unit_intake_date: '2024-03-15',
-    dtcm_license_expiry: '2025-03-15',
-    rules: ['No smoking', 'No pets'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: false,
-      bayut: false
-    }
-  },
-  {
-    id: 5,
-    name: 'JBR Beach Apartment',
-    area: 'JBR',
-    property_type: 'apartment',
-    bedrooms: 2,
-    max_guests: 4,
-    address: 'JBR, Dubai',
-    city: 'Dubai',
-    base_price: 660,
-    is_active: true,
-    status: 'active',
-    description: 'Beachfront apartment in JBR',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking', 'Beach Access'],
-    owner: {
-      name: 'David Chen',
-      flag: '🇨🇳',
-      country: 'China',
-      email: 'david@example.com',
-      phone: '+86 138 0013 8000',
-      status: 'active'
-    },
-    occupancy_rate: 95,
-    last_booking: '2024-08-22',
-    revenue: 16800,
-    bathrooms: 2,
-    parking_slots: 1,
-    unit_intake_date: '2024-02-20',
-    dtcm_license_expiry: '2025-02-20',
-    rules: ['No smoking', 'No pets', 'No parties'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: true
-    }
-  },
-  {
-    id: 6,
-    name: 'Business Bay Office',
-    area: 'Business Bay',
-    property_type: 'office',
-    bedrooms: 0,
-    max_guests: 8,
-    address: 'Business Bay, Dubai',
-    city: 'Dubai',
-    base_price: 920,
-    is_active: true,
-    status: 'active',
-    description: 'Modern office space in Business Bay',
-    amenities: ['WiFi', 'Parking', 'Meeting Rooms'],
-    owner: {
-      name: 'Lisa Anderson',
-      flag: '🇺🇸',
-      country: 'United States',
-      email: 'lisa@example.com',
-      phone: '+1 555 987 6543',
-      status: 'active'
-    },
-    occupancy_rate: 70,
-    last_booking: '2024-08-12',
-    revenue: 11200,
-    bathrooms: 2,
-    parking_slots: 2,
-    unit_intake_date: '2024-04-01',
-    dtcm_license_expiry: '2025-04-01',
-    rules: ['No smoking', 'Business use only'],
-    quiet_hours: '18:00 - 08:00',
-    platforms: {
-      airbnb: false,
-      booking: true,
-      property_finder: true,
-      bayut: false
-    }
-  },
-  {
-    id: 7,
-    name: 'DIFC Penthouse',
-    area: 'DIFC',
-    property_type: 'penthouse',
-    bedrooms: 3,
-    max_guests: 6,
-    address: 'DIFC, Dubai',
-    city: 'Dubai',
-    base_price: 1470,
-    is_active: true,
-    status: 'active',
-    description: 'Luxury penthouse in DIFC',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking', 'Concierge'],
-    owner: {
-      name: 'James Thompson',
-      flag: '🇬🇧',
-      country: 'United Kingdom',
-      email: 'james@example.com',
-      phone: '+44 20 9876 5432',
-      status: 'active'
-    },
-    occupancy_rate: 82,
-    last_booking: '2024-08-25',
-    revenue: 22500,
-    bathrooms: 3,
-    parking_slots: 2,
-    unit_intake_date: '2024-01-10',
-    dtcm_license_expiry: '2025-01-10',
-    rules: ['No smoking', 'No pets', 'No parties'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: true
-    }
-  },
-  {
-    id: 8,
-    name: 'JLT Studio',
-    area: 'JLT',
-    property_type: 'studio',
-    bedrooms: 0,
-    max_guests: 2,
-    address: 'JLT, Dubai',
-    city: 'Dubai',
-    base_price: 405,
-    is_active: true,
-    status: 'active',
-    description: 'Compact studio in JLT',
-    amenities: ['WiFi', 'Pool', 'Gym'],
-    owner: {
-      name: 'Anna Kowalski',
-      flag: '🇵🇱',
-      country: 'Poland',
-      email: 'anna@example.com',
-      phone: '+48 123 456 789',
-      status: 'active'
-    },
-    occupancy_rate: 90,
-    last_booking: '2024-08-19',
-    revenue: 8900,
-    bathrooms: 1,
-    parking_slots: 0,
-    unit_intake_date: '2024-03-01',
-    dtcm_license_expiry: '2025-03-01',
-    rules: ['No smoking', 'No pets'],
-    quiet_hours: '23:00 - 07:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: false,
-      bayut: false
-    }
-  },
-  {
-    id: 9,
-    name: 'Arabian Ranches Villa',
-    area: 'Arabian Ranches',
-    property_type: 'villa',
-    bedrooms: 4,
-    max_guests: 8,
-    address: 'Arabian Ranches, Dubai',
-    city: 'Dubai',
-    base_price: 350,
-    is_active: true,
-    status: 'active',
-    description: 'Spacious villa in Arabian Ranches',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking', 'Garden'],
-    owner: {
-      name: 'Ahmed Hassan',
-      flag: '🇦🇪',
-      country: 'United Arab Emirates',
-      email: 'ahmed.hassan@example.com',
-      phone: '+971 50 555 1234',
-      status: 'active'
-    },
-    occupancy_rate: 75,
-    last_booking: '2024-08-14',
-    revenue: 19800,
-    bathrooms: 4,
-    parking_slots: 3,
-    unit_intake_date: '2024-01-20',
-    dtcm_license_expiry: '2025-01-20',
-    rules: ['No smoking', 'No pets', 'No parties'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: true
-    }
-  },
-  {
-    id: 10,
-    name: 'Dubai Hills Apartment',
-    area: 'Dubai Hills',
-    property_type: 'apartment',
-    bedrooms: 2,
-    max_guests: 4,
-    address: 'Dubai Hills, Dubai',
-    city: 'Dubai',
-    base_price: 160,
-    is_active: true,
-    status: 'active',
-    description: 'Modern apartment in Dubai Hills',
-    amenities: ['WiFi', 'Pool', 'Gym', 'Parking'],
-    owner: {
-      name: 'Maria Rodriguez',
-      flag: '🇪🇸',
-      country: 'Spain',
-      email: 'maria@example.com',
-      phone: '+34 123 456 789',
-      status: 'active'
-    },
-    occupancy_rate: 87,
-    last_booking: '2024-08-21',
-    revenue: 13400,
-    bathrooms: 2,
-    parking_slots: 1,
-    unit_intake_date: '2024-02-15',
-    dtcm_license_expiry: '2025-02-15',
-    rules: ['No smoking', 'No pets'],
-    quiet_hours: '22:00 - 08:00',
-    platforms: {
-      airbnb: true,
-      booking: true,
-      property_finder: true,
-      bayut: false
-    }
-  }
-]
+// PropertiesTable now uses real API data passed as props
+// Removed mock data for production readiness
 
-export default function PropertiesTable({ searchTerm, onDeleteProperty, selectedProperties, onSelectionChange, properties, isLoading, filters }: PropertiesTableProps) {
+export default function PropertiesTable({ searchTerm, onDeleteProperty, selectedProperties, onSelectionChange, properties = [], isLoading, filters }: PropertiesTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<string | number | null>(null)
@@ -418,9 +35,9 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   // Debug logging for props
   console.log('🔧 PropertiesTable render - isLoading:', isLoading, 'properties:', properties?.length)
 
-  // Use real properties if provided, otherwise fall back to mock data
-  const dataSource = properties && properties.length > 0 ? properties : mockProperties
-  console.log('📊 PropertiesTable - dataSource length:', dataSource.length, 'using mock:', !properties || properties.length === 0)
+  // Use real properties data passed as props
+  const dataSource = properties || []
+  console.log('📊 PropertiesTable - dataSource length:', dataSource.length)
 
   // Helper function to clean text from encoding issues
   const cleanText = (text: string) => {
@@ -432,7 +49,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
       .trim()
   }
 
-  // Helper functions to handle both mock and real data formats
+  // Helper functions to handle real API data formats
   const getPropertyName = (property: any) => {
     // Get the best available name field
     const name = property.nickname || property.name || property.title || property.propertyName
@@ -451,87 +68,69 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
     return name || 'Unnamed Property'
   }
   
-  const getPropertyArea = (property: any) => {
-    // API format: location
-    // Mock format: area || city
-    const area = property.location || property.area || property.city || 'Unknown'
-    return cleanText(area)
-  }
-  
   const getPropertyType = (property: any) => {
-    // API format: type
-    // Mock format: property_type || type
-    const type = property.type || property.property_type || 'Unknown'
-    return cleanText(type)
+    return property.type || property.property_type || property.propertyType || 'Unknown'
   }
-  
-  const getPropertyBedrooms = (property: any) => {
-    // API format: beds (string)
-    // Mock format: bedrooms (number)
-    const beds = property.beds || property.bedrooms || 0
-    if (typeof beds === 'string') {
-      // Parse string like "1 double bed • 1 single bed" or just "1"
-      const match = beds.match(/(\d+)/)
-      return match ? parseInt(match[1]) : 0
+
+  const getBedrooms = (property: any) => {
+    return property.bedrooms || property.bedroom || property.numberOfBedrooms || 0
+  }
+
+  const getMaxGuests = (property: any) => {
+    return property.capacity || property.max_guests || property.maxGuests || property.guestCapacity || 0
+  }
+
+  const getPrice = (property: any) => {
+    return property.pricePerNight || property.base_price || property.basePrice || property.price || 0
+  }
+
+  const getStatus = (property: any) => {
+    return property.status || (property.is_active !== undefined ? (property.is_active ? 'Active' : 'Inactive') : 'Unknown')
+  }
+
+  const getOwnerName = (property: any) => {
+    if (property.owner) {
+      if (typeof property.owner === 'string') {
+        return property.owner
+      }
+      return property.owner.name || property.owner.firstName + ' ' + property.owner.lastName || 'Unknown Owner'
     }
-    return typeof beds === 'number' ? beds : 0
-  }
-  
-  const getPropertyMaxGuests = (property: any) => {
-    // API format: might not have this field
-    // Mock format: max_guests || capacity
-    const guests = property.max_guests || property.capacity || property.maxGuests || 0
-    return typeof guests === 'string' ? parseInt(guests) || 0 : guests
-  }
-  
-  const getPropertyPrice = (property: any) => {
-    // API format: might not have price field
-    // Mock format: base_price || pricePerNight || price
-    const price = property.base_price || property.pricePerNight || property.price || property.pricePerNight || 0
-    return typeof price === 'string' ? parseFloat(price) || 0 : price
-  }
-  
-  const getPropertyAddress = (property: any) => {
-    // API format: address
-    // Mock format: address
-    const address = property.address || 'No address'
-    return cleanText(address)
+    return 'No Owner'
   }
   
   const filteredProperties = dataSource.filter(property => {
-    // Use helper functions for consistent data handling
-    const name = getPropertyName(property)
-    const area = getPropertyArea(property)
-    const type = getPropertyType(property)
-    const price = getPropertyPrice(property)
-    const bedrooms = getPropertyBedrooms(property)
-    const maxGuests = getPropertyMaxGuests(property)
-    const occupancyRate = property.occupancy_rate || property.occupancyRate || 0
+    if (!property) return false
     
     // Search filter
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      price.toString().includes(searchTerm)
-    
-    if (!matchesSearch) return false
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const name = getPropertyName(property).toLowerCase()
+      const address = (property.address || '').toLowerCase()
+      const city = (property.city || '').toLowerCase()
+      const ownerName = getOwnerName(property).toLowerCase()
+      
+      if (!name.includes(searchLower) && 
+          !address.includes(searchLower) && 
+          !city.includes(searchLower) &&
+          !ownerName.includes(searchLower)) {
+        return false
+      }
+    }
     
     // Property type filter
     if (filters?.propertyTypes && filters.propertyTypes.length > 0) {
-      const propertyType = type.toLowerCase()
-      if (!filters.propertyTypes.includes(propertyType)) return false
+      const propertyType = getPropertyType(property).toLowerCase()
+      if (!filters.propertyTypes.some(filter => filter.toLowerCase() === propertyType)) {
+        return false
     }
-    
-    // Area filter
-    if (filters?.areas && filters.areas.length > 0) {
-      if (!filters.areas.includes(area)) return false
     }
     
     // Bedrooms filter
     if (filters?.bedrooms && filters.bedrooms.length > 0) {
+      const bedrooms = getBedrooms(property)
       const bedroomMatch = filters.bedrooms.some(filter => {
         switch (filter) {
-          case 'studio': return bedrooms === 0
+          case '0': return bedrooms === 0
           case '1': return bedrooms === 1
           case '2': return bedrooms === 2
           case '3': return bedrooms === 3
@@ -544,6 +143,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
     
     // Max guests filter
     if (filters?.maxGuests && filters.maxGuests.length > 0) {
+      const maxGuests = getMaxGuests(property)
       const guestMatch = filters.maxGuests.some(filter => {
         switch (filter) {
           case '1-2': return maxGuests >= 1 && maxGuests <= 2
@@ -556,8 +156,9 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
       if (!guestMatch) return false
     }
     
-    // Occupancy rate filter
-    if (filters?.occupancyRates && filters.occupancyRates.length > 0) {
+    // Occupancy rate filter (if available)
+    if (filters?.occupancyRates && filters.occupancyRates.length > 0 && property.occupancy_rate) {
+      const occupancyRate = property.occupancy_rate
       const occupancyMatch = filters.occupancyRates.some(filter => {
         switch (filter) {
           case 'high': return occupancyRate >= 80
@@ -590,77 +191,73 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
     }
   }
 
-  const handleSelectProperty = (propertyId: number) => {
-    onSelectionChange(
-      selectedProperties.includes(propertyId)
-        ? selectedProperties.filter(id => id !== propertyId)
-        : [...selectedProperties, propertyId]
-    )
-  }
-
-  const handleSelectAll = () => {
-    if (selectedProperties.length === sortedProperties.length) {
-      onSelectionChange([])
-    } else {
-      onSelectionChange(sortedProperties.map(p => p.id))
-    }
-  }
-
   const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ChevronUp size={14} className="text-gray-300" />
-    }
-    return sortDirection === 'asc' 
-      ? <ChevronUp size={14} className="text-orange-600" />
-      : <ChevronDown size={14} className="text-orange-600" />
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
   }
 
-  const getPropertyIcon = (type: string) => {
-    switch (type) {
-      case 'apartment':
-        return <Building size={16} className="text-gray-500" />
-      case 'villa':
-        return <Home size={16} className="text-gray-500" />
-      case 'studio':
-        return <Building size={16} className="text-gray-500" />
-      case 'office':
-        return <Building size={16} className="text-gray-500" />
-      case 'penthouse':
-        return <Home size={16} className="text-gray-500" />
-      default:
-        return <Home size={16} className="text-gray-500" />
+  const handleSelectProperty = (property: any, checked: boolean) => {
+    const newSelection = checked 
+      ? [...selectedProperties, property.id]
+      : selectedProperties.filter(id => id !== property.id)
+    
+    onSelectionChange(newSelection)
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = sortedProperties.map(property => property.id)
+      onSelectionChange(allIds)
+    } else {
+      onSelectionChange([])
     }
   }
+
+  const allSelected = sortedProperties.length > 0 && sortedProperties.every(property => selectedProperties.includes(property.id))
+  const someSelected = selectedProperties.length > 0 && !allSelected
 
   if (isLoading) {
-    console.log('🔄 PropertiesTable: Showing loading spinner because isLoading is true')
     return (
-      <div className="flex items-center justify-center h-64" data-testid="loading">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading properties...</p>
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          <span className="ml-3 text-gray-600">Loading properties...</span>
         </div>
       </div>
     )
   }
 
-  console.log('📋 PropertiesTable: Rendering table because isLoading is false')
+  if (dataSource.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="text-center py-12">
+          <Building className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No properties</h3>
+          <p className="mt-1 text-sm text-gray-500">Get started by creating a new property.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="h-full overflow-auto custom-scrollbar" data-testid="properties-table">
-      <table className="w-full">
-        <thead className="bg-slate-50 border-b border-gray-200 sticky top-0 z-10">
-          <tr>
-            <th className="px-6 py-3 text-left">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               <input
                 type="checkbox"
-                checked={selectedProperties.length === sortedProperties.length && sortedProperties.length > 0}
-                onChange={handleSelectAll}
-                className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                  checked={allSelected}
+                  ref={(input) => {
+                    if (input) input.indeterminate = someSelected
+                  }}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
               />
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('name')}
             >
               <div className="flex items-center space-x-1">
@@ -669,25 +266,16 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('area')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>Area</span>
-                {getSortIcon('area')}
-              </div>
-            </th>
-            <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('property_type')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('type')}
             >
               <div className="flex items-center space-x-1">
                 <span>Type</span>
-                {getSortIcon('property_type')}
+                  {getSortIcon('type')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               onClick={() => handleSort('bedrooms')}
             >
               <div className="flex items-center space-x-1">
@@ -696,24 +284,42 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('max_guests')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('capacity')}
             >
               <div className="flex items-center space-x-1">
                 <span>Max Guests</span>
-                {getSortIcon('max_guests')}
+                  {getSortIcon('capacity')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('pricePerNight')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Price/Night</span>
+                  {getSortIcon('pricePerNight')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('status')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Status</span>
+                  {getSortIcon('status')}
               </div>
             </th>
             <th 
-              className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-              onClick={() => handleSort('base_price')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('owner')}
             >
               <div className="flex items-center space-x-1">
-                <span>Price (AED)</span>
-                {getSortIcon('base_price')}
+                  <span>Owner</span>
+                  {getSortIcon('owner')}
               </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -722,7 +328,9 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
           {sortedProperties.map((property) => (
             <tr 
               key={property.id} 
-              className={`hover:bg-gray-50 transition-colors ${hoveredRow === property.id ? 'bg-orange-50' : ''}`}
+                className={`hover:bg-gray-50 transition-colors ${
+                  selectedProperties.includes(property.id) ? 'bg-orange-50' : ''
+                }`}
               onMouseEnter={() => setHoveredRow(property.id)}
               onMouseLeave={() => setHoveredRow(null)}
             >
@@ -730,41 +338,56 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                 <input
                   type="checkbox"
                   checked={selectedProperties.includes(property.id)}
-                  onChange={() => handleSelectProperty(property.id)}
-                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    onChange={(e) => handleSelectProperty(property, e.target.checked)}
+                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                 />
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    {getPropertyIcon(getPropertyType(property))}
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                        {getPropertyType(property) === 'villa' ? (
+                          <Home className="h-5 w-5 text-orange-600" />
+                        ) : (
+                          <Building className="h-5 w-5 text-orange-600" />
+                        )}
+                      </div>
                   </div>
-                  <div>
-                    <button
-                      onClick={() => window.location.href = `/properties/${property.id}`}
-                      className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
-                      data-testid={`property-name-${property.id}`}
-                    >
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
                       {getPropertyName(property)}
-                    </button>
-                    <div className="text-sm text-slate-500">{getPropertyAddress(property)}</div>
-                  </div>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {property.address || 'No address'}
+                      </div>
+                    </div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{getPropertyArea(property)}</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                    {getPropertyType(property)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getBedrooms(property)}
+              </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getMaxGuests(property)}
+              </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  AED {getPrice(property).toLocaleString()}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900 capitalize">{getPropertyType(property)}</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    getStatus(property) === 'Active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {getStatus(property)}
+                  </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{getPropertyBedrooms(property)}</span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900">{getPropertyMaxGuests(property)}</span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-slate-900 font-medium">AED {getPropertyPrice(property)}</span>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getOwnerName(property)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === property.id ? 'opacity-100' : 'opacity-70'}`}>
@@ -773,7 +396,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                     title="Delete Property"
                     onClick={() => {
                       if (confirm('Are you sure you want to delete this property?')) {
-                        onDeleteProperty(property)
+                          onDeleteProperty(property)
                       }
                     }}
                   >
@@ -785,6 +408,15 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
           ))}
         </tbody>
       </table>
+      </div>
+      
+      {filteredProperties.length === 0 && searchTerm && (
+        <div className="text-center py-12">
+          <Building className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No properties found</h3>
+          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
+        </div>
+      )}
     </div>
   )
 }

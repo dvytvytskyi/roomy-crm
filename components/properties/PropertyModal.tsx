@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react'
 import { X, Save, Home, MapPin, User, DollarSign } from 'lucide-react'
 import { propertyService } from '../../lib/api'
+import { 
+  PROPERTY_TYPES, 
+  DUBAI_AREAS, 
+  PROPERTY_STATUSES, 
+  DEFAULT_PROPERTY_VALUES,
+  type PropertyType,
+  type DubaiArea,
+  type PropertyStatus
+} from '../../lib/config/property-config'
 
 interface PropertyModalProps {
   isOpen: boolean
@@ -15,94 +24,24 @@ interface PropertyModalProps {
 export default function PropertyModal({ isOpen, onClose, property, onShowToast, onPropertyCreated }: PropertyModalProps) {
   const [formData, setFormData] = useState({
     nickname: '',
-    type: 'apartment',
-    location: '',
+    type: 'apartment' as PropertyType,
+    location: '' as DubaiArea | '',
     address: '',
     bedrooms: 1,
     owner_name: '',
     owner_email: '',
     owner_phone: '',
-    price_per_night: 100, // Default to 100 AED instead of 0
-    status: 'active'
+    price_per_night: DEFAULT_PROPERTY_VALUES.pricePerNight,
+    status: 'active' as PropertyStatus
   })
 
-  const propertyTypes = [
-    { value: 'apartment', label: 'Apartment' },
-    { value: 'villa', label: 'Villa' },
-    { value: 'penthouse', label: 'Penthouse' },
-    { value: 'studio', label: 'Studio' },
-    { value: 'townhouse', label: 'Townhouse' },
-    { value: 'office', label: 'Office' }
-  ]
+  // Use centralized configuration
+  const propertyTypes = PROPERTY_TYPES
+  const dubaiAreas = DUBAI_AREAS
+  const propertyStatuses = PROPERTY_STATUSES
 
-  const dubaiAreas = [
-    'Al Barari',
-    'Al Barsha & Barsha Heights',
-    'Al Furjan',
-    'Al Jaddaf',
-    'Al Jafiliya',
-    'Al Karama',
-    'Al Khabisi',
-    'Al Mamzar',
-    'Al Mankhool',
-    'Al Mizhar',
-    'Al Nahda',
-    'Al Qusais',
-    'Al Quoz',
-    'Al Rashidiya',
-    'Al Rigga',
-    'Al Safa',
-    'Al Satwa',
-    'Al Twar',
-    'Al Warqa',
-    'Arabian Ranches',
-    'Business Bay',
-    'City Walk',
-    'DIFC',
-    'Discovery Gardens',
-    'Downtown Dubai',
-    'Dubai Hills Estate',
-    'Dubai Investment Park',
-    'Dubai Marina',
-    'Dubai Silicon Oasis',
-    'Dubai Sports City',
-    'Dubai Studio City',
-    'Dubai Waterfront',
-    'Emirates Hills',
-    'Green Community',
-    'International City',
-    'JBR',
-    'JLT',
-    'Jumeirah',
-    'Jumeirah Beach Residence',
-    'Jumeirah Golf Estates',
-    'Jumeirah Islands',
-    'Jumeirah Lake Towers',
-    'Jumeirah Park',
-    'Jumeirah Village Circle',
-    'Jumeirah Village Triangle',
-    'Liwan',
-    'Meadows',
-    'Mirdif',
-    'Motor City',
-    'Mudon',
-    'Palm Jumeirah',
-    'Remraam',
-    'Silicon Oasis',
-    'Springs',
-    'The Greens',
-    'The Lakes',
-    'The Meadows',
-    'The Springs',
-    'The Villa',
-    'Umm Suqeim'
-  ]
-
-  const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'maintenance', label: 'Maintenance' }
-  ]
+  // Use centralized configuration
+  const statusOptions = propertyStatuses
 
   // Auto-generate property name
   const propertyName = `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} in ${formData.location} ${formData.bedrooms} bedroom${formData.bedrooms !== 1 ? 's' : ''}`
@@ -171,12 +110,12 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         name: propertyName, // Auto-generated name
         type: formData.type.toUpperCase(), // Convert to uppercase for backend
         address: formData.address,
-        city: 'Dubai', // Default city
-        country: 'UAE', // Default country
-        capacity: 4, // Default capacity
+        city: DEFAULT_PROPERTY_VALUES.city,
+        country: DEFAULT_PROPERTY_VALUES.country,
+        capacity: DEFAULT_PROPERTY_VALUES.capacity,
         bedrooms: formData.bedrooms,
-        bathrooms: 2, // Default bathrooms
-        area: 100, // Default area
+        bathrooms: DEFAULT_PROPERTY_VALUES.bathrooms,
+        area: DEFAULT_PROPERTY_VALUES.area,
         pricePerNight: formData.price_per_night,
         description: `Property in ${formData.location}`,
         amenities: []
