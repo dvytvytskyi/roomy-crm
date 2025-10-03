@@ -270,142 +270,109 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
 }
 
 function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
-  const [formData, setFormData] = useState(owner)
+  const [selectedOwnerId, setSelectedOwnerId] = useState(owner.id || '')
+  const [availableOwners, setAvailableOwners] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<any>({})
   const [successMessage, setSuccessMessage] = useState<string>('')
 
-  const nationalities = [
-    'Emirati', 'British', 'Canadian', 'French', 'German', 'Italian', 'Spanish',
-    'Chinese', 'Japanese', 'Korean', 'Indian', 'Australian', 'Brazilian', 'Egyptian',
-    'Saudi Arabian', 'Turkish', 'Greek', 'Russian', 'American', 'Other'
-  ]
+  // Fetch available owners on component mount
+  useEffect(() => {
+    const fetchOwners = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('http://localhost:3001/api/users/owners', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer test`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const result = await response.json()
+        console.log('Available owners:', result)
+
+        if (result.success && result.data?.users) {
+          setAvailableOwners(result.data.users)
+        } else {
+          console.error('Failed to fetch owners:', result.message)
+        }
+      } catch (error) {
+        console.error('Error fetching owners:', error)
+        setErrors({ general: 'Failed to load owners list' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchOwners()
+  }, [])
 
   const getCountryFlag = (nationality: string): string => {
     const flagMap: { [key: string]: string } = {
-      'Emirati': '🇦🇪', 'British': '🇬🇧', 'Canadian': '🇨🇦', 'French': '🇫🇷', 'German': '🇩🇪',
-      'Italian': '🇮🇹', 'Spanish': '🇪🇸', 'Chinese': '🇨🇳', 'Japanese': '🇯🇵', 'Korean': '🇰🇷',
-      'Indian': '🇮🇳', 'Australian': '🇦🇺', 'Brazilian': '🇧🇷', 'Egyptian': '🇪🇬', 'Saudi Arabian': '🇸🇦',
-      'Turkish': '🇹🇷', 'Greek': '🇬🇷', 'Russian': '🇷🇺', 'American': '🇺🇸', 'Other': '🏳️'
+      'Emirati': '🇦🇪', 'American': '🇺🇸', 'British': '🇬🇧', 'Canadian': '🇨🇦', 
+      'French': '🇫🇷', 'German': '🇩🇪', 'Italian': '🇮🇹', 'Spanish': '🇪🇸', 
+      'Chinese': '🇨🇳', 'Japanese': '🇯🇵', 'Korean': '🇰🇷', 'Indian': '🇮🇳', 
+      'Australian': '🇦🇺', 'Brazilian': '🇧🇷', 'Egyptian': '🇪🇬', 'Saudi Arabian': '🇸🇦',
+      'Turkish': '🇹🇷', 'Greek': '🇬🇷', 'Russian': '🇷🇺'
     }
     return flagMap[nationality] || '🏳️'
   }
 
-  const getNationalityFromCountry = (country: string): string => {
-    const countryToNationality: { [key: string]: string } = {
-      'United Arab Emirates': 'Emirati', 'United Kingdom': 'British', 'Canada': 'Canadian',
-      'France': 'French', 'Germany': 'German', 'Italy': 'Italian', 'Spain': 'Spanish',
-      'China': 'Chinese', 'Japan': 'Japanese', 'South Korea': 'Korean', 'India': 'Indian',
-      'Australia': 'Australian', 'Brazil': 'Brazilian', 'Egypt': 'Egyptian', 'Saudi Arabia': 'Saudi Arabian',
-      'Turkey': 'Turkish', 'Greece': 'Greek', 'Russia': 'Russian', 'United States': 'American'
+  const handleOwnerSelect = (ownerId: string) => {
+    setSelectedOwnerId(ownerId)
+    // Clear any previous errors
+    if (errors.owner) {
+      setErrors({ ...errors, owner: '' })
     }
-    return countryToNationality[country] || 'Other'
-  }
-
-  const handleChange = (field: string, value: string) => {
-    const newFormData = { ...formData, [field]: value }
-    
-    // Auto-update flag when nationality changes
-    if (field === 'country') {
-      const nationality = getNationalityFromCountry(value)
-      newFormData.flag = getCountryFlag(nationality)
-    }
-    
-    setFormData(newFormData)
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev: any) => ({
-        ...prev,
-        [field]: ''
-      }))
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors: any = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email format is invalid'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
   }
 
   const handleSave = async () => {
-    if (!validateForm()) {
+    if (!selectedOwnerId) {
+      setErrors({ owner: 'Please select an owner' })
       return
     }
 
     setIsSubmitting(true)
+    setErrors({})
+    setSuccessMessage('')
+
     try {
-      // Prepare data for API
-      const ownerData = {
-        firstName: formData.name.split(' ')[0] || formData.name,
-        lastName: formData.name.split(' ').slice(1).join(' ') || '',
-        email: formData.email,
-        phone: formData.phone,
-        nationality: formData.country, // Using country as nationality for now
-        status: formData.status,
-        // Additional fields would be stored in a separate table in a real implementation
+      // Find the selected owner from available owners
+      const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
+      if (!selectedOwner) {
+        throw new Error('Selected owner not found')
       }
 
-      // Check if we have an owner ID (existing user) or need to create new user
-      if (!owner.id) {
-        throw new Error('Owner ID is required for updating. Please contact administrator.')
-      }
-
-      // Make API call to update user
-      const response = await fetch(`http://5.223.55.121:3001/api/users/${owner.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify(ownerData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error?.message || 'Failed to update owner')
-      }
-
-      const result = await response.json()
-      
-      // Show success message
-      setSuccessMessage('Owner updated successfully!')
-      
-      // Transform the API response back to the expected format
+      // Transform the owner data to the expected format
       const transformedOwner = {
-        ...formData,
-        name: `${result.data.firstName} ${result.data.lastName}`.trim(),
-        email: result.data.email,
-        phone: result.data.phone,
-        status: result.data.isActive ? 'active' : 'inactive',
-        lastUpdated: new Date().toISOString()
+        id: selectedOwner.id,
+        name: `${selectedOwner.firstName} ${selectedOwner.lastName}`.trim(),
+        flag: getCountryFlag(selectedOwner.nationality || 'Unknown'),
+        country: selectedOwner.nationality || 'Unknown',
+        email: selectedOwner.email || 'Unknown',
+        phone: selectedOwner.phone || 'Unknown',
+        status: selectedOwner.isActive ? 'active' : 'inactive'
       }
+
+      // Show success message
+      setSuccessMessage('Owner selected successfully!')
       
       // Clear any previous errors
       setErrors({})
       
       // Call onSave after a short delay to show success message
       setTimeout(() => {
-      onSave(transformedOwner)
+        onSave(transformedOwner)
       }, 1500)
     } catch (error) {
-      console.error('Error updating owner:', error)
-      setErrors({ general: error instanceof Error ? error.message : 'Failed to update owner. Please try again.' })
+      console.error('Error selecting owner:', error)
+      setErrors({ general: error instanceof Error ? error.message : 'Failed to select owner. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -428,100 +395,70 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
       )}
 
       <div className="mb-4 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-              errors.name ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="Enter owner's full name"
-          />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
-          <div className="relative">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <span className="ml-2 text-gray-600">Loading owners...</span>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Owner *</label>
             <select
-              value={formData.country}
-              onChange={(e) => handleChange('country', e.target.value)}
+              value={selectedOwnerId}
+              onChange={(e) => handleOwnerSelect(e.target.value)}
               className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-                errors.country ? 'border-red-300' : 'border-gray-300'
+                errors.owner ? 'border-red-300' : 'border-gray-300'
               }`}
             >
-              <option value="">Select country</option>
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="United Arab Emirates">United Arab Emirates</option>
-              <option value="Canada">Canada</option>
-              <option value="France">France</option>
-              <option value="Germany">Germany</option>
-              <option value="Italy">Italy</option>
-              <option value="Spain">Spain</option>
-              <option value="China">China</option>
-              <option value="Japan">Japan</option>
-              <option value="South Korea">South Korea</option>
-              <option value="India">India</option>
-              <option value="Australia">Australia</option>
-              <option value="Brazil">Brazil</option>
-              <option value="Egypt">Egypt</option>
-              <option value="Saudi Arabia">Saudi Arabia</option>
-              <option value="Turkey">Turkey</option>
-              <option value="Greece">Greece</option>
-              <option value="Russia">Russia</option>
-              <option value="United States">United States</option>
+              <option value="">Select an owner</option>
+              {availableOwners.map((ownerOption) => (
+                <option key={ownerOption.id} value={ownerOption.id}>
+                  {ownerOption.firstName} {ownerOption.lastName} - {ownerOption.email}
+                </option>
+              ))}
             </select>
-            {formData.flag && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <span className="text-lg">{formData.flag}</span>
+            {errors.owner && <p className="mt-1 text-sm text-red-600">{errors.owner}</p>}
+            
+            {/* Show selected owner details */}
+            {selectedOwnerId && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                {(() => {
+                  const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
+                  if (!selectedOwner) return null
+                  
+                  return (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-900">Owner Information:</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="font-medium">Name:</span> {selectedOwner.firstName} {selectedOwner.lastName}
+                        </div>
+                        <div>
+                          <span className="font-medium">Email:</span> {selectedOwner.email}
+                        </div>
+                        <div>
+                          <span className="font-medium">Phone:</span> {selectedOwner.phone}
+                        </div>
+                        <div>
+                          <span className="font-medium">Nationality:</span> {selectedOwner.nationality}
+                        </div>
+                        <div>
+                          <span className="font-medium">Status:</span> 
+                          <span className={`ml-1 ${selectedOwner.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                            {selectedOwner.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Properties:</span> {selectedOwner.totalUnits || 0}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>
-          {errors.country && <p className="mt-1 text-sm text-red-600">{errors.country}</p>}
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-              errors.email ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="owner@example.com"
-          />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            className={`w-full h-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-              errors.phone ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="+44 123 456 789"
-          />
-          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => handleChange('status', e.target.value)}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
+        )}
       </div>
       
       <div className="flex justify-end space-x-3">
@@ -3434,7 +3371,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       data-testid="edit-owner-btn"
                     >
                       <Edit size={14} />
-                      <span>Change</span>
+                      <span>Select Owner</span>
                     </button>
                   </div>
                   
