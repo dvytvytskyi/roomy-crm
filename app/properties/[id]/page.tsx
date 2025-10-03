@@ -1597,24 +1597,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Income Distribution State
   const [incomeDistribution, setIncomeDistribution] = useState<IncomeDistribution>(() => {
-    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedIncome = localStorage.getItem('incomeDistribution')
-    if (savedIncome) {
-      try {
-        return JSON.parse(savedIncome)
-      } catch (error) {
-        console.error('Error parsing saved income distribution:', error)
-      }
-    }
-    
-    // Значення за замовчуванням
+    // Значення за замовчуванням - будуть оновлені з налаштувань
     return {
       ownerIncome: 70,
       roomyAgencyFee: 25,
       referringAgent: 5,
-      totalProfit: 12500
+      totalProfit: 0 // Буде розраховано автоматично
     }
   })
+
+  // Settings State
+  const [settings, setSettings] = useState<any>(null)
 
   // General Information State
   const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
@@ -3171,6 +3164,77 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
+  // Function to fetch settings and update income distribution
+  const fetchSettings = async () => {
+    try {
+      console.log('Fetching settings for income distribution')
+      const response = await fetch('http://localhost:3001/api/settings/automation', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('Settings API response:', result)
+
+      if (result.success && result.data) {
+        const settingsData = result.data
+        setSettings(settingsData)
+        
+        // Update income distribution from settings
+        if (settingsData.defaultIncomeDistribution) {
+          const newIncomeDistribution = {
+            ownerIncome: settingsData.defaultIncomeDistribution.owner || 70,
+            roomyAgencyFee: settingsData.defaultIncomeDistribution.agency || 25,
+            referringAgent: settingsData.defaultIncomeDistribution.agent || 5,
+            totalProfit: 0 // Will be calculated from financial data
+          }
+          
+          console.log('Updated income distribution from settings:', newIncomeDistribution)
+          setIncomeDistribution(newIncomeDistribution)
+        }
+      } else {
+        console.error('Failed to fetch settings:', result.message)
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+    }
+  }
+
+  // Function to calculate income distribution from financial data
+  const calculateIncomeDistribution = (financialData: any) => {
+    if (!financialData.totalRevenue || financialData.totalRevenue === 0) {
+      return null // Don't show if no revenue data
+    }
+
+    const totalRevenue = financialData.totalRevenue
+    const expenses = financialData.cleaning + financialData.vat + financialData.dtcm + 
+                    financialData.maintenanceOwner + financialData.maintenanceRoomy + 
+                    financialData.purchases || 0
+
+    // Calculate agent profit and Roomy agency fee based on percentages
+    const agentProfit = (totalRevenue * incomeDistribution.referringAgent) / 100
+    const roomyAgencyFee = (totalRevenue * incomeDistribution.roomyAgencyFee) / 100
+
+    // Calculate owner payout: total revenue minus expenses minus agent profit minus Roomy agency fee
+    const ownerPayout = totalRevenue - expenses - agentProfit - roomyAgencyFee
+
+    return {
+      totalProfit: totalRevenue - expenses,
+      ownerPayout: Math.max(0, ownerPayout), // Ensure non-negative
+      companyRevenue: agentProfit + roomyAgencyFee,
+      agentProfit,
+      roomyAgencyFee,
+      expenses
+    }
+  }
+
   // Function to fetch property data and extract owner ID
   const fetchPropertyData = async (propertyId: string) => {
     try {
@@ -3236,8 +3300,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     
     console.log('Test data cleared on component load')
     
-    // Fetch property and owner data
+    // Fetch settings, property and owner data
     if (params?.id) {
+      fetchSettings()
       fetchPropertyData(params.id)
     }
   }, [params?.id || 'default'])
@@ -3428,56 +3493,90 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 </div>
 
                 {/* Income Distribution */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900">Income Distribution</h2>
-                    <div className="flex items-center space-x-3">
-                      <button 
-                        onClick={handleEditIncomeDistribution}
-                        className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
-                      >
-                        <Edit size={14} />
-                        <span>Edit</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      {[
-                        { label: 'Owner income', value: `${incomeDistribution.ownerIncome}%`, key: 'ownerIncome' },
-                        { label: 'Roomy Agency Fee', value: `${incomeDistribution.roomyAgencyFee}%`, key: 'roomyAgencyFee' },
-                        { label: 'Referring agent', value: `${incomeDistribution.referringAgent}%`, key: 'referringAgent' }
-                      ].map((item, index) => (
-                        <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-600">{item.label}:</span>
+                {(() => {
+                  const calculatedData = calculateIncomeDistribution(financialData)
+                  if (!calculatedData) {
+                    return (
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center justify-between mb-6">
+                          <h2 className="text-lg font-semibold text-gray-900">Income Distribution</h2>
+                          <div className="text-sm text-gray-500">No financial data available</div>
+                        </div>
+                        <div className="text-center py-8 text-gray-500">
+                          <p>Income distribution will be calculated automatically when financial data is available.</p>
+                          <p className="text-sm mt-2">Add reservations and expenses to see the breakdown.</p>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900">Income Distribution</h2>
+                        <div className="text-sm text-gray-500">Calculated from financial data</div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Owner income', value: `${incomeDistribution.ownerIncome}%`, key: 'ownerIncome' },
+                            { label: 'Roomy Agency Fee', value: `${incomeDistribution.roomyAgencyFee}%`, key: 'roomyAgencyFee' },
+                            { label: 'Referring agent', value: `${incomeDistribution.referringAgent}%`, key: 'referringAgent' }
+                          ].map((item, index) => (
+                            <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-gray-600">{item.label}:</span>
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                <span className="text-sm text-gray-900">{item.value}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-3">
-                            <span className="text-sm text-gray-900">{item.value}</span>
+                          ))}
+                        </div>
+                        <div className="space-y-4">
+                          <div className="bg-slate-50 rounded-lg p-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Total Profit</h4>
+                            <p className="text-lg font-medium text-gray-900">AED {calculatedData.totalProfit.toLocaleString()}</p>
+                            <p className="text-xs text-gray-500 mt-1">Total Revenue - Expenses</p>
+                          </div>
+                          <div className="bg-slate-50 rounded-lg p-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Owner Payout</h4>
+                            <p className="text-lg font-medium text-green-600">AED {calculatedData.ownerPayout.toLocaleString()}</p>
+                            <p className="text-xs text-gray-500 mt-1">Revenue - Expenses - Agent Profit - Roomy Fee</p>
+                          </div>
+                          <div className="bg-slate-50 rounded-lg p-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Company Revenue</h4>
+                            <p className="text-lg font-medium text-orange-600">AED {calculatedData.companyRevenue.toLocaleString()}</p>
+                            <p className="text-xs text-gray-500 mt-1">Agent Profit + Roomy Agency Fee</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Calculation Breakdown */}
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">Calculation Breakdown</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Total Revenue:</span>
+                            <p className="font-medium">AED {financialData.totalRevenue.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Total Expenses:</span>
+                            <p className="font-medium">AED {calculatedData.expenses.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Agent Profit ({incomeDistribution.referringAgent}%):</span>
+                            <p className="font-medium">AED {calculatedData.agentProfit.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Roomy Fee ({incomeDistribution.roomyAgencyFee}%):</span>
+                            <p className="font-medium">AED {calculatedData.roomyAgencyFee.toLocaleString()}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                      ))}
-                    </div>
-                    <div className="space-y-4">
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Profit Formula</h4>
-                        <p className="text-sm text-gray-600">{incomeDistribution.ownerIncome}% Owner / {100 - incomeDistribution.ownerIncome}% Company</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Total Profit</h4>
-                        <p className="text-lg font-medium text-gray-900">${incomeDistribution.totalProfit.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Owner Payout</h4>
-                        <p className="text-lg font-medium text-green-600">${((incomeDistribution.totalProfit * incomeDistribution.ownerIncome) / 100).toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Company Revenue</h4>
-                        <p className="text-lg font-medium text-orange-600">${((incomeDistribution.totalProfit * (incomeDistribution.roomyAgencyFee + incomeDistribution.referringAgent)) / 100).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  )
+                })()}
 
                 {/* General Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
