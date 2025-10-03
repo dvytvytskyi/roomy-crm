@@ -1,4 +1,5 @@
 import { ApiResponse } from '../client';
+import { getAuthToken, buildApiUrl, getDefaultHeaders } from '../production-utils';
 
 // Owner interface
 export interface Owner {
@@ -173,12 +174,12 @@ class OwnerService {
     const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
     
     try {
-      console.log('🌐 OwnerService: Fetching owners from:', url);
-      const response = await fetch(url, {
+      const fullUrl = buildApiUrl(url);
+      console.log('🌐 OwnerService: Fetching owners from:', fullUrl);
+      const response = await fetch(fullUrl, {
         headers: {
-          'Content-Type': 'application/json',
+          ...getDefaultHeaders(),
           'Accept': 'application/json',
-          'Authorization': 'Bearer test', // Add auth header for testing
         },
       });
       console.log('📡 OwnerService: Response status:', response.status);
@@ -192,88 +193,90 @@ class OwnerService {
   }
 
   async getOwner(id: string): Promise<ApiResponse<Owner>> {
-    return fetch(`${this.baseUrl}/${id}`).then(res => res.json());
+    const url = buildApiUrl(`${this.baseUrl}/${id}`);
+    return fetch(url, { headers: getDefaultHeaders() }).then(res => res.json());
   }
 
   async createOwner(data: CreateOwnerRequest): Promise<ApiResponse<Owner>> {
-    return fetch(this.baseUrl, {
+    const url = buildApiUrl(this.baseUrl);
+    return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async updateOwner(id: string, data: UpdateOwnerRequest): Promise<ApiResponse<Owner>> {
-    return fetch(`${this.baseUrl}/${id}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${id}`);
+    return fetch(url, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async deleteOwner(id: string): Promise<ApiResponse<void>> {
-    return fetch(`${this.baseUrl}/${id}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${id}`);
+    return fetch(url, {
       method: 'DELETE',
+      headers: getDefaultHeaders(),
     }).then(res => res.json());
   }
 
   async getOwnerStats(): Promise<ApiResponse<OwnerStats>> {
-    return fetch(`${this.baseUrl}/stats`).then(res => res.json());
+    const url = buildApiUrl(`${this.baseUrl}/stats`);
+    return fetch(url, { headers: getDefaultHeaders() }).then(res => res.json());
   }
 
   async addBankDetail(ownerId: string, data: AddBankDetailRequest): Promise<ApiResponse<BankDetail>> {
-    return fetch(`${this.baseUrl}/${ownerId}/bank-details`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/bank-details`);
+    return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async updateBankDetail(ownerId: string, bankDetailId: number, data: Partial<AddBankDetailRequest>): Promise<ApiResponse<BankDetail>> {
-    return fetch(`${this.baseUrl}/${ownerId}/bank-details/${bankDetailId}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/bank-details/${bankDetailId}`);
+    return fetch(url, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async deleteBankDetail(ownerId: string, bankDetailId: number): Promise<ApiResponse<void>> {
-    return fetch(`${this.baseUrl}/${ownerId}/bank-details/${bankDetailId}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/bank-details/${bankDetailId}`);
+    return fetch(url, {
       method: 'DELETE',
+      headers: getDefaultHeaders(),
     }).then(res => res.json());
   }
 
   async addTransaction(ownerId: string, data: AddTransactionRequest): Promise<ApiResponse<Transaction>> {
-    return fetch(`${this.baseUrl}/${ownerId}/transactions`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/transactions`);
+    return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async updateTransaction(ownerId: string, transactionId: number, data: Partial<AddTransactionRequest>): Promise<ApiResponse<Transaction>> {
-    return fetch(`${this.baseUrl}/${ownerId}/transactions/${transactionId}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/transactions/${transactionId}`);
+    return fetch(url, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(data),
     }).then(res => res.json());
   }
 
   async deleteTransaction(ownerId: string, transactionId: number): Promise<ApiResponse<void>> {
-    return fetch(`${this.baseUrl}/${ownerId}/transactions/${transactionId}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/transactions/${transactionId}`);
+    return fetch(url, {
       method: 'DELETE',
+      headers: getDefaultHeaders(),
     }).then(res => res.json());
   }
 
@@ -283,28 +286,32 @@ class OwnerService {
     formData.append('type', data.type);
     if (data.description) formData.append('description', data.description);
 
-    return fetch(`${this.baseUrl}/${ownerId}/documents`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/documents`);
+    return fetch(url, {
       method: 'POST',
+      headers: { 'Authorization': getAuthToken() },
       body: formData,
     }).then(res => res.json());
   }
 
   async deleteDocument(ownerId: string, documentId: number): Promise<ApiResponse<void>> {
-    return fetch(`${this.baseUrl}/${ownerId}/documents/${documentId}`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/documents/${documentId}`);
+    return fetch(url, {
       method: 'DELETE',
+      headers: getDefaultHeaders(),
     }).then(res => res.json());
   }
 
   async getOwnerActivityLog(ownerId: string): Promise<ApiResponse<ActivityLog[]>> {
-    return fetch(`${this.baseUrl}/${ownerId}/activity-log`).then(res => res.json());
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/activity-log`);
+    return fetch(url, { headers: getDefaultHeaders() }).then(res => res.json());
   }
 
   async addActivityLog(ownerId: string, action: string, description: string): Promise<ApiResponse<ActivityLog>> {
-    return fetch(`${this.baseUrl}/${ownerId}/activity-log`, {
+    const url = buildApiUrl(`${this.baseUrl}/${ownerId}/activity-log`);
+    return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify({ action, description }),
     }).then(res => res.json());
   }
