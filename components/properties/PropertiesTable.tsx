@@ -381,9 +381,13 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                 />
               </td>
               <td className="px-3 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
+                  <div 
+                    className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors group"
+                    onClick={() => window.location.href = `/properties/${property.id}`}
+                    title="Click to view property details"
+                  >
                     <div className="flex-shrink-0 h-8 w-8">
-                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center group-hover:from-orange-200 group-hover:to-orange-300 transition-colors">
                         {getPropertyType(property) === 'villa' ? (
                           <Home className="h-4 w-4 text-orange-600" />
                         ) : (
@@ -392,12 +396,17 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                       </div>
                   </div>
                     <div className="ml-3">
-                      <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                      <div className="text-sm font-medium text-gray-900 truncate max-w-[200px] group-hover:text-orange-700 transition-colors">
                       {getPropertyName(property)}
                       </div>
                       <div className="text-xs text-gray-500 truncate max-w-[200px]">
                         {property.address || 'No address'}
                       </div>
+                  </div>
+                  <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
               </td>
