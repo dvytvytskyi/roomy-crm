@@ -1860,25 +1860,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [owner, setOwner] = useState(() => {
-    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedOwner = localStorage.getItem('ownerInfo')
-    if (savedOwner) {
-      try {
-        return JSON.parse(savedOwner)
-      } catch (error) {
-        console.error('Error parsing saved owner info:', error)
-      }
-    }
-    
-    // Значення за замовчуванням
+    // Default empty owner structure
     return {
-      id: 'cmg6ax5z2000yal7boyvbq8rd', // Real user ID from API
-    name: 'John Doe',
-    flag: '🇬🇧',
-    country: 'United Kingdom',
-      email: 'testowner@roomy.com',
-    phone: '+44 123 456 789',
-    status: 'active'
+      id: '',
+      name: 'Unknown',
+      flag: '🏳️',
+      country: 'Unknown',
+      email: 'Unknown',
+      phone: 'Unknown',
+      status: 'Unknown'
     }
   })
 
@@ -3179,6 +3169,112 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
 
+  // Function to fetch owner data from API
+  const fetchOwnerData = async (ownerId: string) => {
+    if (!ownerId || ownerId === '') {
+      console.log('No owner ID provided, keeping default values')
+      return
+    }
+
+    try {
+      console.log('Fetching owner data for ID:', ownerId)
+      const response = await fetch(`http://localhost:3001/api/users/owners/${ownerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('Owner API response:', result)
+
+      if (result.success && result.data) {
+        const ownerData = result.data
+        
+        // Get country flag based on nationality
+        const getCountryFlag = (nationality: string): string => {
+          const flagMap: { [key: string]: string } = {
+            'Emirati': '🇦🇪', 'American': '🇺🇸', 'British': '🇬🇧', 'Canadian': '🇨🇦', 
+            'French': '🇫🇷', 'German': '🇩🇪', 'Italian': '🇮🇹', 'Spanish': '🇪🇸', 
+            'Chinese': '🇨🇳', 'Japanese': '🇯🇵', 'Korean': '🇰🇷', 'Indian': '🇮🇳', 
+            'Australian': '🇦🇺', 'Brazilian': '🇧🇷', 'Egyptian': '🇪🇬', 'Saudi Arabian': '🇸🇦',
+            'Turkish': '🇹🇷', 'Greek': '🇬🇷', 'Russian': '🇷🇺'
+          }
+          return flagMap[nationality] || '🏳️'
+        }
+
+        const fullName = `${ownerData.firstName || ''} ${ownerData.lastName || ''}`.trim() || 'Unknown'
+        
+        const updatedOwner = {
+          id: ownerData.id || '',
+          name: fullName,
+          flag: getCountryFlag(ownerData.nationality || 'Unknown'),
+          country: ownerData.nationality || 'Unknown',
+          email: ownerData.email || 'Unknown',
+          phone: ownerData.phone || 'Unknown',
+          status: ownerData.isActive ? 'active' : 'inactive'
+        }
+
+        console.log('Updated owner data:', updatedOwner)
+        setOwner(updatedOwner)
+        
+        // Save to localStorage
+        localStorage.setItem('ownerInfo', JSON.stringify(updatedOwner))
+        
+      } else {
+        console.error('Failed to fetch owner data:', result.message)
+      }
+    } catch (error) {
+      console.error('Error fetching owner data:', error)
+    }
+  }
+
+  // Function to fetch property data and extract owner ID
+  const fetchPropertyData = async (propertyId: string) => {
+    try {
+      console.log('Fetching property data for ID:', propertyId)
+      const response = await fetch(`http://localhost:3001/api/properties/${propertyId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('Property API response:', result)
+
+      if (result.success && result.data) {
+        const propertyData = result.data
+        
+        // Extract owner ID from property data
+        const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.agentId || ''
+        console.log('Found owner ID in property:', ownerId)
+        
+        // Fetch owner data if we have an owner ID
+        if (ownerId) {
+          await fetchOwnerData(ownerId)
+        } else {
+          console.log('No owner ID found in property data, using default unknown values')
+          // Keep default "Unknown" values that are already set in state
+        }
+      } else {
+        console.error('Failed to fetch property data:', result.message)
+      }
+    } catch (error) {
+      console.error('Error fetching property data:', error)
+    }
+  }
+
   // Очищуємо тестові дані при завантаженні
   useEffect(() => {
     // Очищуємо тестові дані
@@ -3202,6 +3298,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
     
     console.log('Test data cleared on component load')
+    
+    // Fetch property and owner data
+    if (params?.id) {
+      fetchPropertyData(params.id)
+    }
   }, [params?.id || 'default'])
 
   // Завантажуємо фінансові дані при завантаженні компонента
