@@ -7,6 +7,7 @@ import ReservationModal from '../../../components/ReservationModal'
 import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
+import { apiRequest, ownerDataManager, safeLocalStorage, debugLog } from '../../../lib/api/production-utils'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -282,11 +283,14 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
     const fetchOwners = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch('http://localhost:3001/api/users/owners', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const authToken = localStorage.getItem('accessToken') || 'test'
+        
+        const response = await fetch(`${apiUrl}/api/users/owners`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer test`
+            'Authorization': `Bearer ${authToken}`
           }
         })
 
@@ -1790,14 +1794,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [owner, setOwner] = useState(() => {
-    // Try to load saved owner from localStorage
-    const savedOwner = localStorage.getItem(`propertyOwner_${params?.id || 'default'}`)
+    // Try to load saved owner from localStorage using production utils
+    const savedOwner = ownerDataManager.load(params?.id || 'default')
     if (savedOwner) {
-      try {
-        return JSON.parse(savedOwner)
-      } catch (error) {
-        console.error('Error parsing saved owner:', error)
-      }
+      debugLog('Loaded saved owner data', savedOwner)
+      return savedOwner
     }
     
     // Default empty owner structure
@@ -2609,11 +2610,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleSaveOwner = async (newOwner: any) => {
     try {
       // Update property with selected owner
-      const response = await fetch(`http://localhost:3001/api/properties/${params?.id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const authToken = localStorage.getItem('accessToken') || 'test'
+      
+      const response = await fetch(`${apiUrl}/api/properties/${params?.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer test`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
           owner: { id: newOwner.id }
@@ -2630,7 +2634,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setOwner(newOwner)
       
       // Зберігаємо в localStorage з property-specific key
-      localStorage.setItem(`propertyOwner_${params?.id || 'default'}`, JSON.stringify(newOwner))
+      ownerDataManager.save(params?.id || 'default', newOwner)
       
       setEditModal({ ...editModal, isOpen: false })
       
@@ -3126,11 +3130,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
     try {
       console.log('Fetching owner data for ID:', ownerId)
-      const response = await fetch(`http://localhost:3001/api/users/owners/${ownerId}`, {
+      
+      // Use environment variable for API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      
+      // Get auth token from localStorage or session
+      const authToken = localStorage.getItem('accessToken') || 'test'
+      
+      const response = await fetch(`${apiUrl}/api/users/owners/${ownerId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer test`
+          'Authorization': `Bearer ${authToken}`
         }
       })
 
@@ -3171,14 +3182,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.log('Updated owner data:', updatedOwner)
         setOwner(updatedOwner)
         
-        // Save to localStorage with property-specific key
-        localStorage.setItem(`propertyOwner_${params?.id || 'default'}`, JSON.stringify(updatedOwner))
+        // Save to localStorage as fallback (for offline support)
+        ownerDataManager.save(params?.id || 'default', updatedOwner)
         
       } else {
         console.error('Failed to fetch owner data:', result.message)
       }
     } catch (error) {
       console.error('Error fetching owner data:', error)
+      // Fallback to localStorage if API fails
+      const fallbackOwner = ownerDataManager.load(params?.id || 'default')
+      if (fallbackOwner) {
+        setOwner(fallbackOwner)
+        debugLog('Using fallback owner data from localStorage')
+      }
     }
   }
 
@@ -3186,11 +3203,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const fetchSettings = async () => {
     try {
       console.log('Fetching settings for income distribution')
-      const response = await fetch('http://localhost:3001/api/settings/automation', {
+      
+      // Use environment variable for API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      
+      // Get auth token from localStorage or session
+      const authToken = localStorage.getItem('accessToken') || 'test'
+      
+      const response = await fetch(`${apiUrl}/api/settings/automation`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer test`
+          'Authorization': `Bearer ${authToken}`
         }
       })
 
@@ -3222,6 +3246,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
+      // Use default settings if API fails
+      const defaultIncomeDistribution = {
+        ownerIncome: 70,
+        roomyAgencyFee: 25,
+        referringAgent: 5,
+        totalProfit: 0
+      }
+      setIncomeDistribution(defaultIncomeDistribution)
     }
   }
 
@@ -3257,11 +3289,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const fetchPropertyData = async (propertyId: string) => {
     try {
       console.log('Fetching property data for ID:', propertyId)
-      const response = await fetch(`http://localhost:3001/api/properties/${propertyId}`, {
+      
+      // Use environment variable for API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      
+      // Get auth token from localStorage or session
+      const authToken = localStorage.getItem('accessToken') || 'test'
+      
+      const response = await fetch(`${apiUrl}/api/properties/${propertyId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer test`
+          'Authorization': `Bearer ${authToken}`
         }
       })
 
@@ -3280,14 +3319,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.log('Found owner ID in property:', ownerId)
         
         // Fetch owner data if we have an owner ID and no saved owner
-        const savedOwner = localStorage.getItem(`propertyOwner_${params?.id || 'default'}`)
+        const savedOwner = ownerDataManager.load(params?.id || 'default')
         if (ownerId && !savedOwner) {
           await fetchOwnerData(ownerId)
         } else if (!ownerId) {
-          console.log('No owner ID found in property data')
+          debugLog('No owner ID found in property data')
           // Keep current state (either saved owner or default "Unknown" values)
         } else {
-          console.log('Using saved owner data instead of fetching from API')
+          debugLog('Using saved owner data instead of fetching from API')
         }
       } else {
         console.error('Failed to fetch property data:', result.message)

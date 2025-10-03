@@ -34,7 +34,10 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-10-03T21:52:37.654Z",
-    "lastModifiedAt": "2025-10-03T21:52:37.654Z"
+    "lastModifiedAt": "2025-10-03T22:37:10.448Z",
+    "owner": {
+      "id": "owner_2"
+    }
   },
   {
     "id": "prop_6",
