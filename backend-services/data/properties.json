@@ -102,5 +102,28 @@
     "status": "Active",
     "createdAt": "2025-10-03T22:54:46.632Z",
     "lastModifiedAt": "2025-10-03T22:54:46.632Z"
+  },
+  {
+    "id": "prop_6",
+    "name": "Test Property After Fix",
+    "type": "APARTMENT",
+    "address": "Test Address",
+    "city": "Dubai",
+    "capacity": 4,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "area": 100,
+    "pricePerNight": 250,
+    "description": "Test property after URL fix",
+    "amenities": [
+      "WiFi",
+      "Pool"
+    ],
+    "primaryImage": "",
+    "agentId": null,
+    "agentName": null,
+    "status": "Active",
+    "createdAt": "2025-10-03T23:01:23.886Z",
+    "lastModifiedAt": "2025-10-03T23:01:23.887Z"
   }
 ]

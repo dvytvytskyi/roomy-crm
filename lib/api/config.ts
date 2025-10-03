@@ -7,6 +7,10 @@ export const API_CONFIG = {
   },
 };
 
+// Debug: Log API configuration
+console.log('🔧 API_CONFIG.BASE_URL:', API_CONFIG.BASE_URL);
+console.log('🔧 NEXT_PUBLIC_API_URL env:', process.env.NEXT_PUBLIC_API_URL);
+
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth
