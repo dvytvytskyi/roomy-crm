@@ -1,10 +1,11 @@
 // Simple API test function
 export async function testApiConnection() {
   try {
-    console.log('Testing API connection...')
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    console.log('Testing API connection to:', apiUrl)
     
     // Test health endpoint
-    const healthResponse = await fetch('http://5.223.55.121:3001/health')
+    const healthResponse = await fetch(`${apiUrl}/health`)
     console.log('Health check:', healthResponse.status, healthResponse.statusText)
     
     if (healthResponse.ok) {
@@ -13,7 +14,7 @@ export async function testApiConnection() {
     }
     
     // Test login endpoint
-    const loginResponse = await fetch('http://5.223.55.121:3001/api/auth/login', {
+    const loginResponse = await fetch(`${apiUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

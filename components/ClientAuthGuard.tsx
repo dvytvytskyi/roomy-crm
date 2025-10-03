@@ -18,8 +18,8 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
     setMounted(true)
   }, [])
 
-  // Don't apply auth guard to login page
-  const isLoginPage = pathname === '/login'
+  // Don't apply auth guard to login and register pages
+  const isAuthPage = pathname === '/login' || pathname === '/register'
 
   // Auth redirect effect
   useEffect(() => {
@@ -29,16 +29,16 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
       isInitialized,
       isLoading,
       isAuthenticated,
-      isLoginPage,
+      isAuthPage,
       pathname
     })
 
-    if (isInitialized && !isLoading && !isAuthenticated && !isLoginPage) {
+    if (isInitialized && !isLoading && !isAuthenticated && !isAuthPage) {
       console.log('🔄 ClientAuthGuard: Redirecting to login...')
       // Use window.location.href instead of router.push to avoid React DOM issues
       window.location.href = '/login'
     }
-  }, [isAuthenticated, isLoading, isInitialized, isLoginPage, pathname, mounted])
+  }, [isAuthenticated, isLoading, isInitialized, isAuthPage, pathname, mounted])
 
   // Don't render anything until mounted
   if (!mounted) {
@@ -52,8 +52,8 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
     )
   }
 
-  // Always render login page
-  if (isLoginPage) {
+  // Always render auth pages
+  if (isAuthPage) {
     return <>{children}</>
   }
 
@@ -72,7 +72,7 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
   // Always render children, but show warning if not authenticated
   return (
     <>
-      {!isAuthenticated && isInitialized && !isLoginPage && (
+      {!isAuthenticated && isInitialized && !isAuthPage && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
           <div className="flex">
             <div className="ml-3">

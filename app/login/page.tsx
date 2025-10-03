@@ -132,6 +132,14 @@ export default function LoginPage() {
                 API: {apiStatus === 'connected' ? 'Connected' : apiStatus === 'error' ? 'Error' : 'Checking...'}
               </span>
             </div>
+            <div className="mt-4">
+              <p className="text-sm text-slate-600">
+                Don't have an account?{' '}
+                <a href="/register" className="font-medium text-orange-600 hover:text-orange-500">
+                  Create one here
+                </a>
+              </p>
+            </div>
           </div>
         </form>
       </div>
