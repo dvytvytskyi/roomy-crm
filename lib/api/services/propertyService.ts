@@ -115,6 +115,12 @@ class PropertyService {
   async unassignFromAgent(propertyId: string): Promise<PropertyUpdateResponse> {
     return this.updateProperty(propertyId, { agentId: undefined, agentName: undefined })
   }
+
+  // Delete property
+  async deleteProperty(id: string): Promise<PropertyUpdateResponse> {
+    const response = await apiClient.delete(`/properties/${id}`)
+    return response.data
+  }
 }
 
 export const propertyService = new PropertyService()

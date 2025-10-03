@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { Edit, Trash2, Home, Building, ChevronUp, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Trash2, Home, Building, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface PropertiesTableProps {
   searchTerm: string
-  onEditProperty: (property: any) => void
-  selectedProperties: number[]
-  onSelectionChange: (selected: number[]) => void
+  onDeleteProperty: (property: any) => void
+  selectedProperties: (string | number)[]
+  onSelectionChange: (selected: (string | number)[]) => void
   properties?: any[]
   isLoading?: boolean
   filters?: {
@@ -405,10 +405,15 @@ const mockProperties = [
   }
 ]
 
-export default function PropertiesTable({ searchTerm, onEditProperty, selectedProperties, onSelectionChange, properties, isLoading, filters }: PropertiesTableProps) {
+export default function PropertiesTable({ searchTerm, onDeleteProperty, selectedProperties, onSelectionChange, properties, isLoading, filters }: PropertiesTableProps) {
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | number | null>(null)
+
+  // Reset hover state when properties change (e.g., after deletion)
+  useEffect(() => {
+    setHoveredRow(null)
+  }, [properties])
 
   // Debug logging for props
   console.log('🔧 PropertiesTable render - isLoading:', isLoading, 'properties:', properties?.length)
@@ -764,19 +769,11 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === property.id ? 'opacity-100' : 'opacity-70'}`}>
                   <button
-                    onClick={() => onEditProperty(property)}
-                    className="text-slate-400 hover:text-orange-600 transition-colors"
-                    title="Edit Property"
-                    data-testid={`edit-property-${property.id}`}
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
                     className="text-slate-400 hover:text-red-600 transition-colors"
                     title="Delete Property"
                     onClick={() => {
                       if (confirm('Are you sure you want to delete this property?')) {
-                        console.log('Deleting property:', property.id)
+                        onDeleteProperty(property)
                       }
                     }}
                   >

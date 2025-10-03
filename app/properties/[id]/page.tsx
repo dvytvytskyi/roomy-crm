@@ -6,6 +6,7 @@ import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
 import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
+import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -2450,6 +2451,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'pricing', label: 'Pricing' },
     { id: 'financial', label: 'Financial' },
     { id: 'expenses', label: 'Expenses' },
     { id: 'documents', label: 'Documents' },
@@ -3722,6 +3724,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'pricing' && (
+              <div className="space-y-6">
+                <PriceRecommendations 
+                  propertyId={params.id} 
+                  propertyName={propertyNickname}
+                />
               </div>
             )}
 

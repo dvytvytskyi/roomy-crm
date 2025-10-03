@@ -23,7 +23,7 @@ describe('Properties Page Tests', () => {
       // Check that statistics section is present
       expect(screen.getByText('Total Properties')).toBeInTheDocument()
       expect(screen.getByText('Active Properties')).toBeInTheDocument()
-      expect(screen.getByText('Total Bedrooms')).toBeInTheDocument()
+      expect(screen.getByText('Added This Month')).toBeInTheDocument()
       expect(screen.getByText('Avg Price/Night')).toBeInTheDocument()
     })
 

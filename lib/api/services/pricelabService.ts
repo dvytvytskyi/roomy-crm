@@ -1,0 +1,276 @@
+import { apiClient } from '../client'
+
+export interface PriceRecommendation {
+  id: string
+  propertyId: string
+  date: string
+  recommendedPrice: number
+  currentPrice: number
+  marketPrice: number
+  confidence: number
+  reason: string
+  factors: {
+    demand: number
+    seasonality: number
+    events: number
+    competition: number
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MarketData {
+  location: string
+  averagePrice: number
+  occupancyRate: number
+  demandScore: number
+  competitionLevel: number
+  seasonalTrends: {
+    month: number
+    averagePrice: number
+    occupancy: number
+  }[]
+  lastUpdated: string
+}
+
+export interface PricingStrategy {
+  id: string
+  name: string
+  description: string
+  rules: {
+    minPrice: number
+    maxPrice: number
+    demandMultiplier: number
+    seasonalityMultiplier: number
+  }
+  isActive: boolean
+}
+
+export interface OptimizedPrices {
+  propertyId: string
+  strategy: string
+  recommendations: PriceRecommendation[]
+  projectedRevenue: number
+  projectedOccupancy: number
+  generatedAt: string
+}
+
+export interface MarketInsights {
+  propertyId: string
+  marketPosition: 'above' | 'below' | 'at' | 'unknown'
+  priceCompetitiveness: number
+  demandTrend: 'increasing' | 'decreasing' | 'stable'
+  recommendations: string[]
+  lastAnalyzed: string
+}
+
+export interface PriceLabConfig {
+  enabled: boolean
+  apiKey: string
+  autoUpdate: boolean
+  syncFrequency: 'daily' | 'weekly' | 'monthly'
+  defaultStrategy: string
+}
+
+class PriceLabService {
+  private baseUrl = '/api/pricing/pricelab'
+
+  // Get price recommendations for a property
+  async getPriceRecommendations(
+    propertyId: string, 
+    startDate: string, 
+    endDate: string
+  ): Promise<{ success: boolean; data: PriceRecommendation[]; error?: string }> {
+    try {
+      console.log('💰 PriceLab: Fetching price recommendations for property:', propertyId)
+      const response = await apiClient.get(
+        `${this.baseUrl}/recommendations?propertyId=${propertyId}&startDate=${startDate}&endDate=${endDate}`
+      )
+      console.log('💰 PriceLab: Recommendations received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error fetching recommendations:', error)
+      return {
+        success: false,
+        data: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Get market data for a location
+  async getMarketData(location: string): Promise<{ success: boolean; data: MarketData; error?: string }> {
+    try {
+      console.log('📊 PriceLab: Fetching market data for location:', location)
+      const response = await apiClient.get(`${this.baseUrl}/market-data?location=${encodeURIComponent(location)}`)
+      console.log('📊 PriceLab: Market data received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error fetching market data:', error)
+      return {
+        success: false,
+        data: {} as MarketData,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Apply price recommendations
+  async applyPriceRecommendations(
+    propertyId: string, 
+    recommendations: string[]
+  ): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      console.log('✅ PriceLab: Applying price recommendations:', recommendations)
+      const response = await apiClient.post(`${this.baseUrl}/apply`, {
+        propertyId,
+        recommendationIds: recommendations
+      })
+      console.log('✅ PriceLab: Recommendations applied:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error applying recommendations:', error)
+      return {
+        success: false,
+        message: 'Failed to apply recommendations',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Sync property data with PriceLab
+  async syncPropertyData(propertyId: string): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      console.log('🔄 PriceLab: Syncing property data:', propertyId)
+      const response = await apiClient.post(`${this.baseUrl}/sync`, {
+        propertyId
+      })
+      console.log('🔄 PriceLab: Property synced:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error syncing property:', error)
+      return {
+        success: false,
+        message: 'Failed to sync property',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Optimize prices using a strategy
+  async optimizePrices(
+    propertyId: string, 
+    strategy: string
+  ): Promise<{ success: boolean; data: OptimizedPrices; error?: string }> {
+    try {
+      console.log('🎯 PriceLab: Optimizing prices with strategy:', strategy)
+      const response = await apiClient.post(`${this.baseUrl}/optimize`, {
+        propertyId,
+        strategy
+      })
+      console.log('🎯 PriceLab: Prices optimized:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error optimizing prices:', error)
+      return {
+        success: false,
+        data: {} as OptimizedPrices,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Get market insights for a property
+  async getMarketInsights(propertyId: string): Promise<{ success: boolean; data: MarketInsights; error?: string }> {
+    try {
+      console.log('🔍 PriceLab: Getting market insights for property:', propertyId)
+      const response = await apiClient.get(`${this.baseUrl}/insights?propertyId=${propertyId}`)
+      console.log('🔍 PriceLab: Market insights received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error getting market insights:', error)
+      return {
+        success: false,
+        data: {} as MarketInsights,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Get available pricing strategies
+  async getPricingStrategies(): Promise<{ success: boolean; data: PricingStrategy[]; error?: string }> {
+    try {
+      console.log('📋 PriceLab: Fetching pricing strategies')
+      const response = await apiClient.get(`${this.baseUrl}/strategies`)
+      console.log('📋 PriceLab: Strategies received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error fetching strategies:', error)
+      return {
+        success: false,
+        data: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Update PriceLab configuration
+  async updateConfig(config: PriceLabConfig): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      console.log('⚙️ PriceLab: Updating configuration:', config)
+      const response = await apiClient.put(`${this.baseUrl}/config`, config)
+      console.log('⚙️ PriceLab: Configuration updated:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error updating configuration:', error)
+      return {
+        success: false,
+        message: 'Failed to update configuration',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Get PriceLab configuration
+  async getConfig(): Promise<{ success: boolean; data: PriceLabConfig; error?: string }> {
+    try {
+      console.log('⚙️ PriceLab: Fetching configuration')
+      const response = await apiClient.get(`${this.baseUrl}/config`)
+      console.log('⚙️ PriceLab: Configuration received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error fetching configuration:', error)
+      return {
+        success: false,
+        data: {
+          enabled: false,
+          apiKey: '',
+          autoUpdate: false,
+          syncFrequency: 'daily',
+          defaultStrategy: ''
+        },
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  // Test PriceLab API connection
+  async testConnection(): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      console.log('🔌 PriceLab: Testing API connection')
+      const response = await apiClient.get(`${this.baseUrl}/test`)
+      console.log('🔌 PriceLab: Connection test result:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Connection test failed:', error)
+      return {
+        success: false,
+        message: 'Connection test failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+}
+
+export const priceLabService = new PriceLabService()
+export default priceLabService

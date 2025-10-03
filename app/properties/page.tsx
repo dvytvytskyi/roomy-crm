@@ -13,7 +13,7 @@ export default function PropertiesPage() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProperty, setSelectedProperty] = useState<any>(null)
-  const [selectedProperties, setSelectedProperties] = useState<number[]>([])
+  const [selectedProperties, setSelectedProperties] = useState<(string | number)[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [properties, setProperties] = useState<any[]>([])
@@ -21,7 +21,6 @@ export default function PropertiesPage() {
   
   const [filters, setFilters] = useState({
     propertyTypes: [] as string[],
-    areas: [] as string[],
     occupancyRates: [] as string[],
     maxGuests: [] as string[],
     bedrooms: [] as string[]
@@ -54,7 +53,7 @@ export default function PropertiesPage() {
       console.log('📋 API Response in loadProperties:', response)
       console.log('📋 Response success:', response.success)
       console.log('📋 Response data:', response.data)
-      console.log('📋 Response error:', response.error)
+      console.log('📋 Response error:', (response as any).error)
       
       if (response.success && response.data) {
         console.log('✅ Properties loaded successfully:', response.data)
@@ -62,11 +61,11 @@ export default function PropertiesPage() {
         setProperties(response.data)
         console.log('✅ Properties state updated')
       } else {
-        console.error('❌ Failed to load properties:', response.error)
+        console.error('❌ Failed to load properties:', (response as any).error)
         console.log('❌ Setting properties to empty array')
         setProperties([])
         // Show error toast with more user-friendly message
-        const errorMessage = response.error?.message || 'Unknown error'
+        const errorMessage = (response as any).error?.message || 'Unknown error'
         let userMessage = 'Failed to load properties'
         if (errorMessage.includes('timeout')) {
           userMessage = 'Server is taking too long to respond. Please try again.'
@@ -141,9 +140,26 @@ export default function PropertiesPage() {
     loadProperties()
   }, [loadProperties])
 
-  const handleEditProperty = (property: any) => {
-    setSelectedProperty(property)
-    setIsPropertyModalOpen(true)
+  const handleDeleteProperty = async (property: any) => {
+    try {
+      console.log('🗑️ Deleting property:', property.id)
+      
+      // Call delete API
+      await propertyService.deleteProperty(property.id)
+      
+      // Reload properties from API to get updated list
+      await loadProperties()
+      
+      // Show success message
+      setToastMessage('Property deleted successfully')
+      setShowToast(true)
+      
+      console.log('✅ Property deleted successfully')
+    } catch (error) {
+      console.error('❌ Error deleting property:', error)
+      setToastMessage('Failed to delete property')
+      setShowToast(true)
+    }
   }
 
   const handleBulkAction = (action: 'archive' | 'delete' | 'export') => {
@@ -240,17 +256,20 @@ export default function PropertiesPage() {
                   <Users className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-slate-600 text-xs mb-1">Total Bedrooms</p>
+                  <p className="text-slate-600 text-xs mb-1">Added This Month</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {properties.reduce((sum, p) => {
-                      const beds = p.beds || p.bedrooms || '0'
-                      if (typeof beds === 'string') {
-                        // Parse string like "1 double bed • 1 single bed" or just "1"
-                        const match = beds.match(/(\d+)/)
-                        return sum + (match ? parseInt(match[1]) : 0)
-                      }
-                      return sum + (typeof beds === 'number' ? beds : 0)
-                    }, 0)}
+                    {properties.filter(p => {
+                      const createdAt = p.createdAt || p.created_at || p.dateAdded || p.unit_intake_date
+                      if (!createdAt) return false
+                      
+                      const propertyDate = new Date(createdAt)
+                      const now = new Date()
+                      const currentMonth = now.getMonth()
+                      const currentYear = now.getFullYear()
+                      
+                      return propertyDate.getMonth() === currentMonth && 
+                             propertyDate.getFullYear() === currentYear
+                    }).length}
                   </p>
                 </div>
               </div>
@@ -343,12 +362,15 @@ export default function PropertiesPage() {
             <div className="bg-white rounded-xl border border-gray-200 h-full flex flex-col">
               <PropertiesTable 
                 searchTerm={searchTerm}
-                onEditProperty={handleEditProperty}
+                onDeleteProperty={handleDeleteProperty}
                 selectedProperties={selectedProperties}
                 onSelectionChange={setSelectedProperties}
                 properties={properties}
                 isLoading={isLoading}
-                filters={filters}
+                filters={{
+                  ...filters,
+                  areas: []
+                }}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Edit } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { settingsService, AutomationSettings } from '../../lib/api'
+import PriceLabSettings from './PriceLabSettings'
 
 export default function SettingsSimple() {
   const [activeTab, setActiveTab] = useState('automation')
@@ -92,6 +93,7 @@ export default function SettingsSimple() {
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'automation', name: 'Automation' },
+            { id: 'pricing', name: 'Pricing' },
             { id: 'financial', name: 'Financial Management' },
             { id: 'platforms', name: 'Platform Connections' },
             { id: 'invoices', name: 'Invoices' },
@@ -169,6 +171,11 @@ export default function SettingsSimple() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Pricing Settings */}
+      {activeTab === 'pricing' && (
+        <PriceLabSettings onSettingsChange={loadAutomationSettings} />
       )}
 
       {/* Financial Management */}

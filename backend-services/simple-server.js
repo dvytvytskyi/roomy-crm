@@ -16,6 +16,7 @@ const PORT = process.env.PORT || 3001;
 const DATA_DIR = path.join(__dirname, 'data');
 const OWNERS_FILE = path.join(DATA_DIR, 'owners.json');
 const GUESTS_FILE = path.join(DATA_DIR, 'guests.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -43,6 +44,18 @@ function loadGuestsData() {
     }
   } catch (error) {
     console.error('Error loading guests data:', error);
+  }
+  return null;
+}
+
+function loadSettingsData() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const data = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading settings data:', error);
   }
   return null;
 }
@@ -2138,6 +2151,32 @@ app.put('/api/properties/:id', mockAuth, (req, res) => {
   });
 });
 
+// DELETE /api/properties/:id - Delete property
+app.delete('/api/properties/:id', mockAuth, (req, res) => {
+  const { id } = req.params;
+  console.log(`🗑️ DELETE /api/properties/${id} - Deleting property`);
+
+  const propertyIndex = mockProperties.findIndex(p => p.id === id);
+  if (propertyIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Property not found'
+    });
+  }
+
+  // Remove property from array
+  const deletedProperty = mockProperties.splice(propertyIndex, 1)[0];
+  
+  // Save updated data
+  savePropertiesData(mockProperties);
+
+  res.json({
+    success: true,
+    data: deletedProperty,
+    message: 'Property deleted successfully'
+  });
+});
+
 app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
   console.log('🏠 GET /api/reservations/available-properties - Fetching available properties');
   
@@ -2145,6 +2184,270 @@ app.get('/api/reservations/available-properties', mockAuth, (req, res) => {
     success: true,
     data: mockProperties,
     message: 'Available properties retrieved successfully'
+  });
+});
+
+// PriceLab Integration Routes
+// GET /api/pricing/pricelab/recommendations - Get price recommendations
+app.get('/api/pricing/pricelab/recommendations', mockAuth, (req, res) => {
+  const { propertyId, startDate, endDate } = req.query;
+  console.log(`💰 GET /api/pricing/pricelab/recommendations - Property: ${propertyId}, Dates: ${startDate} to ${endDate}`);
+  
+  // Mock price recommendations data
+  const mockRecommendations = [
+    {
+      id: 'rec_1',
+      propertyId: propertyId,
+      date: startDate || '2025-01-15',
+      recommendedPrice: 450,
+      currentPrice: 400,
+      marketPrice: 480,
+      confidence: 85,
+      reason: 'High demand period with local events',
+      factors: {
+        demand: 85,
+        seasonality: 90,
+        events: 75,
+        competition: 80
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'rec_2',
+      propertyId: propertyId,
+      date: startDate || '2025-01-16',
+      recommendedPrice: 420,
+      currentPrice: 400,
+      marketPrice: 440,
+      confidence: 78,
+      reason: 'Moderate demand with good weather forecast',
+      factors: {
+        demand: 70,
+        seasonality: 85,
+        events: 60,
+        competition: 75
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ];
+
+  res.json({
+    success: true,
+    data: mockRecommendations,
+    message: 'Price recommendations retrieved successfully'
+  });
+});
+
+// GET /api/pricing/pricelab/market-data - Get market data
+app.get('/api/pricing/pricelab/market-data', mockAuth, (req, res) => {
+  const { location } = req.query;
+  console.log(`📊 GET /api/pricing/pricelab/market-data - Location: ${location}`);
+  
+  const mockMarketData = {
+    location: location || 'Dubai',
+    averagePrice: 385,
+    occupancyRate: 72,
+    demandScore: 78,
+    competitionLevel: 65,
+    seasonalTrends: [
+      { month: 1, averagePrice: 380, occupancy: 70 },
+      { month: 2, averagePrice: 420, occupancy: 75 },
+      { month: 3, averagePrice: 450, occupancy: 80 },
+      { month: 4, averagePrice: 400, occupancy: 68 },
+      { month: 5, averagePrice: 350, occupancy: 60 },
+      { month: 6, averagePrice: 320, occupancy: 55 }
+    ],
+    lastUpdated: new Date().toISOString()
+  };
+
+  res.json({
+    success: true,
+    data: mockMarketData,
+    message: 'Market data retrieved successfully'
+  });
+});
+
+// POST /api/pricing/pricelab/apply - Apply price recommendations
+app.post('/api/pricing/pricelab/apply', mockAuth, (req, res) => {
+  const { propertyId, recommendationIds } = req.body;
+  console.log(`✅ POST /api/pricing/pricelab/apply - Property: ${propertyId}, Recommendations: ${recommendationIds?.length || 0}`);
+  
+  res.json({
+    success: true,
+    message: `Successfully applied ${recommendationIds?.length || 0} price recommendations`,
+    data: {
+      propertyId,
+      appliedRecommendations: recommendationIds,
+      updatedAt: new Date().toISOString()
+    }
+  });
+});
+
+// POST /api/pricing/pricelab/sync - Sync property data
+app.post('/api/pricing/pricelab/sync', mockAuth, (req, res) => {
+  const { propertyId } = req.body;
+  console.log(`🔄 POST /api/pricing/pricelab/sync - Property: ${propertyId}`);
+  
+  res.json({
+    success: true,
+    message: 'Property data synced successfully with PriceLab',
+    data: {
+      propertyId,
+      syncedAt: new Date().toISOString()
+    }
+  });
+});
+
+// POST /api/pricing/pricelab/optimize - Optimize prices
+app.post('/api/pricing/pricelab/optimize', mockAuth, (req, res) => {
+  const { propertyId, strategy } = req.body;
+  console.log(`🎯 POST /api/pricing/pricelab/optimize - Property: ${propertyId}, Strategy: ${strategy}`);
+  
+  const mockOptimizedPrices = {
+    propertyId,
+    strategy,
+    recommendations: [
+      {
+        id: 'opt_1',
+        date: '2025-01-15',
+        recommendedPrice: 480,
+        currentPrice: 400,
+        confidence: 90
+      }
+    ],
+    projectedRevenue: 12500,
+    projectedOccupancy: 78,
+    generatedAt: new Date().toISOString()
+  };
+
+  res.json({
+    success: true,
+    data: mockOptimizedPrices,
+    message: 'Prices optimized successfully'
+  });
+});
+
+// GET /api/pricing/pricelab/insights - Get market insights
+app.get('/api/pricing/pricelab/insights', mockAuth, (req, res) => {
+  const { propertyId } = req.query;
+  console.log(`🔍 GET /api/pricing/pricelab/insights - Property: ${propertyId}`);
+  
+  const mockInsights = {
+    propertyId,
+    marketPosition: 'below',
+    priceCompetitiveness: 85,
+    demandTrend: 'increasing',
+    recommendations: [
+      'Consider increasing price by 10-15% during peak season',
+      'Monitor competitor pricing in your area',
+      'Optimize for weekend bookings'
+    ],
+    lastAnalyzed: new Date().toISOString()
+  };
+
+  res.json({
+    success: true,
+    data: mockInsights,
+    message: 'Market insights retrieved successfully'
+  });
+});
+
+// GET /api/pricing/pricelab/strategies - Get pricing strategies
+app.get('/api/pricing/pricelab/strategies', mockAuth, (req, res) => {
+  console.log('📋 GET /api/pricing/pricelab/strategies - Fetching pricing strategies');
+  
+  const mockStrategies = [
+    {
+      id: 'strategy_1',
+      name: 'Revenue Maximization',
+      description: 'Focus on maximizing total revenue with optimal pricing',
+      rules: {
+        minPrice: 200,
+        maxPrice: 800,
+        demandMultiplier: 1.2,
+        seasonalityMultiplier: 1.5
+      },
+      isActive: true
+    },
+    {
+      id: 'strategy_2',
+      name: 'Occupancy Optimization',
+      description: 'Focus on maintaining high occupancy rates',
+      rules: {
+        minPrice: 150,
+        maxPrice: 600,
+        demandMultiplier: 0.9,
+        seasonalityMultiplier: 1.1
+      },
+      isActive: false
+    }
+  ];
+
+  res.json({
+    success: true,
+    data: mockStrategies,
+    message: 'Pricing strategies retrieved successfully'
+  });
+});
+
+// PUT /api/pricing/pricelab/config - Update PriceLab configuration
+app.put('/api/pricing/pricelab/config', mockAuth, (req, res) => {
+  const config = req.body;
+  console.log('⚙️ PUT /api/pricing/pricelab/config - Updating PriceLab configuration');
+  
+  // In real implementation, save to database
+  res.json({
+    success: true,
+    message: 'PriceLab configuration updated successfully',
+    data: {
+      ...config,
+      updatedAt: new Date().toISOString()
+    }
+  });
+});
+
+// GET /api/pricing/pricelab/config - Get PriceLab configuration
+app.get('/api/pricing/pricelab/config', mockAuth, (req, res) => {
+  console.log('⚙️ GET /api/pricing/pricelab/config - Fetching PriceLab configuration');
+  
+  // Load from settings file
+  const settingsData = loadSettingsData();
+  const pricelabConfig = settingsData?.platform?.pricelab || {
+    enabled: false,
+    apiKey: '',
+    autoUpdate: false,
+    syncFrequency: 'daily',
+    defaultStrategy: ''
+  };
+
+  res.json({
+    success: true,
+    data: {
+      ...pricelabConfig,
+      syncFrequency: 'daily',
+      defaultStrategy: 'strategy_1'
+    },
+    message: 'PriceLab configuration retrieved successfully'
+  });
+});
+
+// GET /api/pricing/pricelab/test - Test API connection
+app.get('/api/pricing/pricelab/test', mockAuth, (req, res) => {
+  console.log('🔌 GET /api/pricing/pricelab/test - Testing PriceLab API connection');
+  
+  // Mock connection test
+  const isConnected = Math.random() > 0.3; // 70% success rate for demo
+  
+  res.json({
+    success: isConnected,
+    message: isConnected ? 'PriceLab API connection successful' : 'PriceLab API connection failed',
+    data: {
+      connected: isConnected,
+      testedAt: new Date().toISOString(),
+      responseTime: Math.floor(Math.random() * 500) + 100
+    }
   });
 });
 

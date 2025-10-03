@@ -1,39 +1,5 @@
 [
   {
-    "id": "prop_5",
-    "name": "Palm Villa 4BR",
-    "type": "VILLA",
-    "address": "Palm Jumeirah, Dubai, UAE",
-    "city": "Dubai",
-    "capacity": 8,
-    "bedrooms": 4,
-    "bathrooms": 4,
-    "pricePerNight": 800,
-    "primaryImage": "https://example.com/image5.jpg",
-    "agentId": 2,
-    "agentName": "Sarah Johnson",
-    "status": "Active",
-    "createdAt": "2023-06-01T00:00:00.000Z",
-    "lastModifiedAt": "2023-06-01T00:00:00.000Z"
-  },
-  {
-    "id": "prop_6",
-    "name": "Marina Penthouse",
-    "type": "PENTHOUSE",
-    "address": "Dubai Marina, UAE",
-    "city": "Dubai",
-    "capacity": 6,
-    "bedrooms": 3,
-    "bathrooms": 3,
-    "pricePerNight": 1000,
-    "primaryImage": "https://example.com/image6.jpg",
-    "agentId": 2,
-    "agentName": "Sarah Johnson",
-    "status": "Active",
-    "createdAt": "2023-07-15T00:00:00.000Z",
-    "lastModifiedAt": "2023-07-15T00:00:00.000Z"
-  },
-  {
     "id": "prop_3",
     "name": "Test Property",
     "type": "APARTMENT",
@@ -51,23 +17,6 @@
     "lastModifiedAt": "2025-10-03T21:07:16.404Z"
   },
   {
-    "id": "prop_4",
-    "name": "Studio in Al Karama 1 bedroom",
-    "type": "STUDIO",
-    "address": "dskvernfvijernv",
-    "city": "Dubai",
-    "capacity": 4,
-    "bedrooms": 1,
-    "bathrooms": 2,
-    "pricePerNight": 12434,
-    "primaryImage": "",
-    "agentId": null,
-    "agentName": null,
-    "status": "Active",
-    "createdAt": "2025-10-03T21:08:30.007Z",
-    "lastModifiedAt": "2025-10-03T21:08:30.007Z"
-  },
-  {
     "id": "prop_5",
     "name": "Apartment in Al Furjan 2 bedrooms",
     "type": "APARTMENT",
@@ -83,5 +32,22 @@
     "status": "Active",
     "createdAt": "2025-10-03T21:52:37.654Z",
     "lastModifiedAt": "2025-10-03T21:52:37.654Z"
+  },
+  {
+    "id": "prop_6",
+    "name": "Penthouse in Al Jaddaf 1 bedroom",
+    "type": "PENTHOUSE",
+    "address": "1003 Stratford Avenue",
+    "city": "Dubai",
+    "capacity": 4,
+    "bedrooms": 1,
+    "bathrooms": 2,
+    "pricePerNight": 100,
+    "primaryImage": "",
+    "agentId": null,
+    "agentName": null,
+    "status": "Active",
+    "createdAt": "2025-10-03T21:53:56.005Z",
+    "lastModifiedAt": "2025-10-03T21:53:56.005Z"
   }
 ]
