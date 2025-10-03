@@ -2114,6 +2114,53 @@ app.get('/api/properties/:id', mockAuth, (req, res) => {
   });
 });
 
+// POST /api/properties - Create new property
+app.post('/api/properties', mockAuth, (req, res) => {
+  console.log('🏠 POST /api/properties - Creating new property');
+  console.log('📝 Property data:', req.body);
+
+  const propertyData = req.body;
+
+  // Generate new property ID
+  const newId = `prop_${mockProperties.length + 1}`;
+
+  // Create new property object
+  const newProperty = {
+    id: newId,
+    name: propertyData.name || 'Unnamed Property',
+    type: propertyData.type || 'APARTMENT',
+    address: propertyData.address || '',
+    city: propertyData.city || 'Dubai',
+    capacity: propertyData.capacity || 4,
+    bedrooms: propertyData.bedrooms || 1,
+    bathrooms: propertyData.bathrooms || 2,
+    area: propertyData.area || 100,
+    pricePerNight: propertyData.pricePerNight || 100,
+    description: propertyData.description || '',
+    amenities: propertyData.amenities || [],
+    primaryImage: propertyData.primaryImage || '',
+    agentId: propertyData.agentId || null,
+    agentName: propertyData.agentName || null,
+    status: propertyData.status || 'Active',
+    createdAt: new Date().toISOString(),
+    lastModifiedAt: new Date().toISOString()
+  };
+
+  // Add to mockProperties array
+  mockProperties.push(newProperty);
+
+  // Save updated data
+  savePropertiesData(mockProperties);
+
+  console.log('✅ New property created:', newProperty);
+
+  res.status(201).json({
+    success: true,
+    data: newProperty,
+    message: 'Property created successfully'
+  });
+});
+
 // PUT /api/properties/:id - Update property (including agent assignment)
 app.put('/api/properties/:id', mockAuth, (req, res) => {
   const { id } = req.params;
