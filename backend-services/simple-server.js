@@ -2338,8 +2338,8 @@ app.get('/api/pricing/pricelab/recommendations', authMiddleware, (req, res) => {
     }
   ];
 
-  res.json({
-    success: true,
+    res.json({
+      success: true,
     data: mockRecommendations,
     message: 'Price recommendations retrieved successfully'
   });
@@ -2382,7 +2382,7 @@ app.post('/api/pricing/pricelab/apply', authMiddleware, (req, res) => {
   res.json({
     success: true,
     message: `Successfully applied ${recommendationIds?.length || 0} price recommendations`,
-    data: {
+      data: {
       propertyId,
       appliedRecommendations: recommendationIds,
       updatedAt: new Date().toISOString()
@@ -2538,6 +2538,30 @@ app.get('/api/pricing/pricelab/config', authMiddleware, (req, res) => {
   });
 });
 
+// GET /api/pricing/pricelab/current-price - Get current price for property
+app.get('/api/pricing/pricelab/current-price', authMiddleware, (req, res) => {
+  const { propertyId } = req.query;
+  console.log(`💰 GET /api/pricing/pricelab/current-price - Property: ${propertyId}`);
+  
+  // Mock current price data based on propertyId
+  const basePrice = 200;
+  const priceVariation = Math.floor(Math.random() * 100) - 50; // ±50 AED variation
+  const currentPrice = Math.max(basePrice + priceVariation, 100); // Minimum 100 AED
+  
+  res.json({
+    success: true,
+    data: {
+      propertyId,
+      currentPrice,
+      currency: 'AED',
+      lastUpdated: new Date().toISOString(),
+      source: 'PriceLab',
+      confidence: Math.floor(Math.random() * 20) + 80 // 80-100% confidence
+    },
+    message: 'Current price retrieved successfully'
+  });
+});
+
 // GET /api/pricing/pricelab/test - Test API connection
 app.get('/api/pricing/pricelab/test', authMiddleware, (req, res) => {
   console.log('🔌 GET /api/pricing/pricelab/test - Testing PriceLab API connection');
@@ -2602,11 +2626,11 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
   // Production user validation (replace with database check)
   const validUsers = [
     {
-      id: 'admin_1',
-      email: 'admin2@roomy.com',
+          id: 'admin_1',
+          email: 'admin2@roomy.com',
       password: 'admin123', // In production, this should be hashed
-      firstName: 'Admin',
-      lastName: 'User',
+          firstName: 'Admin',
+          lastName: 'User',
       role: 'ADMIN',
       isActive: true,
       isVerified: true

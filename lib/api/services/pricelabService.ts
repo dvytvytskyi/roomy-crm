@@ -185,6 +185,25 @@ class PriceLabService {
     }
   }
 
+  // Get current price for a property
+  async getCurrentPrice(pricelabId: string): Promise<{ success: boolean; data: { currentPrice: number }; error?: string }> {
+    try {
+      console.log('💰 PriceLab: Getting current price for property:', pricelabId)
+      const response = await apiClient.get(`${this.baseUrl}/current-price`, {
+        params: { propertyId: pricelabId }
+      })
+      console.log('💰 PriceLab: Current price received:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ PriceLab: Error getting current price:', error)
+      return {
+        success: false,
+        data: { currentPrice: 0 },
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
   // Get market insights for a property
   async getMarketInsights(propertyId: string): Promise<{ success: boolean; data: MarketInsights; error?: string }> {
     try {

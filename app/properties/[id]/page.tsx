@@ -8,6 +8,7 @@ import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import { apiRequest, ownerDataManager, safeLocalStorage, debugLog } from '../../../lib/api/production-utils'
+import { priceLabService } from '../../../lib/api/services/pricelabService'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -1571,19 +1572,81 @@ const realProperty = {
 
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [propertyNickname, setPropertyNickname] = useState(() => {
-    const saved = localStorage.getItem('propertyNickname')
-    return saved || 'Apartment Burj Khalifa 2'
-  })
-  const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
+  const [property, setProperty] = useState<any>(null)
+  const [priceLabPrice, setPriceLabPrice] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [propertyNickname, setPropertyNickname] = useState('')
+  const [propertyAddress, setPropertyAddress] = useState('')
   
   // Toast state
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+
+  // Load property data from API
+  const loadPropertyData = useCallback(async () => {
+    if (!params?.id) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/properties/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || 'test'}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          const propertyData = data.data
+          setProperty(propertyData)
+          setPropertyNickname(propertyData.nickname || propertyData.name || 'Unknown Property')
+          setPropertyAddress(propertyData.address || 'No address')
+          
+          // Load PriceLab data if pricelabId exists
+          if (propertyData.pricelabId) {
+            await loadPriceLabData(propertyData.pricelabId)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading property data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [params?.id])
+
+  // Load PriceLab data
+  const loadPriceLabData = async (pricelabId: string) => {
+    try {
+      const response = await priceLabService.getCurrentPrice(pricelabId)
+      if (response.success && response.data) {
+        setPriceLabPrice(response.data.currentPrice)
+      }
+    } catch (error) {
+      console.error('Error loading PriceLab data:', error)
+    }
+  }
   
   const handleShowToast = (message: string) => {
     setToastMessage(message)
     setShowToast(true)
+  }
+
+  // Load data on component mount
+  useEffect(() => {
+    loadPropertyData()
+  }, [loadPropertyData])
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading property details...</p>
+        </div>
+      </div>
+    )
   }
   
 
@@ -3399,12 +3462,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             >
               <ArrowLeft size={16} />
             </button>
-            <h1 className="text-xl font-medium text-slate-900">{realProperty.name}</h1>
+            <h1 className="text-xl font-medium text-slate-900">{propertyNickname || 'Loading...'}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-2 rounded-lg">
               <span className="text-lg">🏷️</span>
-              <span className="text-sm font-medium text-orange-700">AED {realProperty.pricePerNight}/night</span>
+              <span className="text-sm font-medium text-orange-700">
+                AED {priceLabPrice || property?.pricePerNight || 0}/night
+                {priceLabPrice && (
+                  <span className="text-xs text-green-600 ml-1">
+                    (PriceLab)
+                  </span>
+                )}
+              </span>
             </div>
             <button 
               onClick={handleAddBooking}
