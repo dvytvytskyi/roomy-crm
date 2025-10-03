@@ -1,4 +1,4 @@
-import { apiClient } from '../client'
+import { apiClient } from '../config'
 
 export interface PriceRecommendation {
   id: string
@@ -84,7 +84,10 @@ class PriceLabService {
     try {
       console.log('💰 PriceLab: Fetching price recommendations for property:', propertyId)
       const response = await apiClient.get(
-        `${this.baseUrl}/recommendations?propertyId=${propertyId}&startDate=${startDate}&endDate=${endDate}`
+        `${this.baseUrl}/recommendations`,
+        {
+          params: { propertyId, startDate, endDate }
+        }
       )
       console.log('💰 PriceLab: Recommendations received:', response.data)
       return response.data
@@ -102,7 +105,9 @@ class PriceLabService {
   async getMarketData(location: string): Promise<{ success: boolean; data: MarketData; error?: string }> {
     try {
       console.log('📊 PriceLab: Fetching market data for location:', location)
-      const response = await apiClient.get(`${this.baseUrl}/market-data?location=${encodeURIComponent(location)}`)
+      const response = await apiClient.get(`${this.baseUrl}/market-data`, {
+        params: { location }
+      })
       console.log('📊 PriceLab: Market data received:', response.data)
       return response.data
     } catch (error) {
@@ -184,7 +189,9 @@ class PriceLabService {
   async getMarketInsights(propertyId: string): Promise<{ success: boolean; data: MarketInsights; error?: string }> {
     try {
       console.log('🔍 PriceLab: Getting market insights for property:', propertyId)
-      const response = await apiClient.get(`${this.baseUrl}/insights?propertyId=${propertyId}`)
+      const response = await apiClient.get(`${this.baseUrl}/insights`, {
+        params: { propertyId }
+      })
       console.log('🔍 PriceLab: Market insights received:', response.data)
       return response.data
     } catch (error) {
