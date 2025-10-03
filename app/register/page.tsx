@@ -45,8 +45,16 @@ export default function RegisterPage() {
     }
 
     // Validate minimum password length
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate password complexity
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must contain at least one lowercase letter, one uppercase letter, and one number')
       setIsLoading(false)
       return
     }
@@ -188,7 +196,7 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                placeholder="Password (min 6 characters)"
+                  placeholder="Password (min 8 chars, 1 uppercase, 1 number)"
                 value={formData.password}
                 onChange={handleInputChange}
               />
