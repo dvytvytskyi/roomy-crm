@@ -107,13 +107,13 @@ export const agentService = {
 
   // Get agent statistics
   async getAgentStats(): Promise<AgentStatsResponse> {
-    const response = await apiClient.get('/agents/stats')
+    const response = await apiClient.get('/api/agents/stats')
     return response.data
   },
 
   // Create new agent
   async createAgent(agentData: Omit<Agent, 'id'>): Promise<{ success: boolean; data: Agent }> {
-    const response = await apiClient.post('/agents', agentData)
+    const response = await apiClient.post('/api/agents', agentData)
     return response.data
   },
 
@@ -136,7 +136,7 @@ export const agentService = {
   },
 
   async bulkDeleteAgents(agentIds: number[]): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.delete('/agents/bulk', { data: { agentIds } })
+    const response = await apiClient.delete('/api/agents/bulk', { data: { agentIds } })
     return response.data
   },
 

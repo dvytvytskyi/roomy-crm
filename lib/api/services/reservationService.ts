@@ -242,7 +242,7 @@ class ReservationService {
 
   // Get available properties for filtering
   async getAvailableProperties(): Promise<ApiResponse<{id: string, name: string}[]>> {
-    return apiClient.get<{id: string, name: string}[]>('/properties');
+    return apiClient.get<{id: string, name: string}[]>('/api/properties');
   }
 
   // Get reservation calendar

@@ -135,7 +135,7 @@ export interface AnalyticsFilters {
 class AnalyticsService {
   async getAnalyticsOverview(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: AnalyticsOverview }> {
     try {
-      const response = await apiClient.get('/analytics/overview', { params: filters })
+      const response = await apiClient.get('/api/analytics/overview', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching analytics overview:', error)
@@ -145,7 +145,7 @@ class AnalyticsService {
 
   async getFinancialAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: FinancialAnalytics }> {
     try {
-      const response = await apiClient.get('/analytics/financials', { params: filters })
+      const response = await apiClient.get('/api/analytics/financials', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching financial analytics:', error)
@@ -155,7 +155,7 @@ class AnalyticsService {
 
   async getUnitsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: UnitAnalytics }> {
     try {
-      const response = await apiClient.get('/analytics/units', { params: filters })
+      const response = await apiClient.get('/api/analytics/units', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching units analytics:', error)
@@ -165,7 +165,7 @@ class AnalyticsService {
 
   async getOwnersAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: OwnerAnalytics }> {
     try {
-      const response = await apiClient.get('/analytics/owners', { params: filters })
+      const response = await apiClient.get('/api/analytics/owners', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching owners analytics:', error)
@@ -175,7 +175,7 @@ class AnalyticsService {
 
   async getReservationsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: ReservationAnalytics }> {
     try {
-      const response = await apiClient.get('/analytics/reservations', { params: filters })
+      const response = await apiClient.get('/api/analytics/reservations', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching reservations analytics:', error)
@@ -185,7 +185,7 @@ class AnalyticsService {
 
   async getAgentsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: AgentAnalytics }> {
     try {
-      const response = await apiClient.get('/analytics/agents', { params: filters })
+      const response = await apiClient.get('/api/analytics/agents', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching agents analytics:', error)
@@ -195,7 +195,7 @@ class AnalyticsService {
 
   async getReports(): Promise<{ success: boolean; data: AnalyticsReport[] }> {
     try {
-      const response = await apiClient.get('/analytics/reports')
+      const response = await apiClient.get('/api/analytics/reports')
       return response.data
     } catch (error) {
       console.error('Error fetching reports:', error)
@@ -212,7 +212,7 @@ class AnalyticsService {
     exportFormat?: string
   }): Promise<{ success: boolean; data: any; message: string }> {
     try {
-      const response = await apiClient.post('/analytics/reports/generate', reportData)
+      const response = await apiClient.post('/api/analytics/reports/generate', reportData)
       return response.data
     } catch (error) {
       console.error('Error generating report:', error)
@@ -227,7 +227,7 @@ class AnalyticsService {
     filters?: any
   }): Promise<Blob | { success: boolean; data: any; message: string }> {
     try {
-      const response = await apiClient.post('/analytics/export', exportData, {
+      const response = await apiClient.post('/api/analytics/export', exportData, {
         responseType: exportData.format === 'csv' ? 'blob' : 'json'
       })
       return response.data

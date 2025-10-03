@@ -136,7 +136,7 @@ class CleaningService {
 
   // Get cleaning statistics
   async getCleaningStats(): Promise<CleaningStatsResponse> {
-    const response = await apiClient.get('/cleaning/stats')
+    const response = await apiClient.get('/api/cleaning/stats')
     return response.data
   }
 
@@ -148,7 +148,7 @@ class CleaningService {
 
   // Create cleaning task
   async createCleaningTask(taskData: CleaningCreateRequest): Promise<CleaningSingleResponse> {
-    const response = await apiClient.post('/cleaning', taskData)
+    const response = await apiClient.post('/api/cleaning', taskData)
     return response.data
   }
 

@@ -31,22 +31,22 @@ export interface IncomeCalculation {
 export class IncomeService {
   // Get income settings for a property
   async getIncomeSettings(propertyId: string): Promise<ApiResponse<IncomeSettings>> {
-    return apiClient.get<IncomeSettings>(`/properties/${propertyId}/income-settings`);
+    return apiClient.get<IncomeSettings>(`/api/properties/${propertyId}/income-settings`);
   }
 
   // Update income settings for a property
   async updateIncomeSettings(propertyId: string, settings: Partial<IncomeDistribution>): Promise<ApiResponse<IncomeSettings>> {
-    return apiClient.put<IncomeSettings>(`/properties/${propertyId}/income-settings`, settings);
+    return apiClient.put<IncomeSettings>(`/api/properties/${propertyId}/income-settings`, settings);
   }
 
   // Get default income settings
   async getDefaultIncomeSettings(): Promise<ApiResponse<IncomeSettings>> {
-    return apiClient.get<IncomeSettings>('/settings/income-distribution');
+    return apiClient.get<IncomeSettings>('/api/settings/income-distribution');
   }
 
   // Update default income settings
   async updateDefaultIncomeSettings(settings: Partial<IncomeDistribution>): Promise<ApiResponse<IncomeSettings>> {
-    return apiClient.put<IncomeSettings>('/settings/income-distribution', settings);
+    return apiClient.put<IncomeSettings>('/api/settings/income-distribution', settings);
   }
 
   // Calculate income distribution

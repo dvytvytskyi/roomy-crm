@@ -185,7 +185,7 @@ class MaintenanceService {
 
   // Get maintenance statistics
   async getMaintenanceStats(): Promise<MaintenanceStatsResponse> {
-    const response = await apiClient.get('/maintenance/stats')
+    const response = await apiClient.get('/api/maintenance/stats')
     return response.data
   }
 
@@ -197,7 +197,7 @@ class MaintenanceService {
 
   // Create new maintenance task
   async createMaintenanceTask(data: MaintenanceCreateRequest): Promise<MaintenanceSingleResponse> {
-    const response = await apiClient.post('/maintenance', data)
+    const response = await apiClient.post('/api/maintenance', data)
     return response.data
   }
 
