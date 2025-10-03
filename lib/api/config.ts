@@ -137,7 +137,7 @@ export interface FilterParams {
 import axios from 'axios';
 
 export const apiClient = axios.create({
-  baseURL: `${API_CONFIG.BASE_URL}/api`,
+  baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
   headers: API_CONFIG.HEADERS,
 });

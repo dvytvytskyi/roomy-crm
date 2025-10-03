@@ -78,5 +78,29 @@
     "status": "Active",
     "createdAt": "2025-10-03T22:53:02.091Z",
     "lastModifiedAt": "2025-10-03T22:53:02.091Z"
+  },
+  {
+    "id": "prop_5",
+    "name": "Frontend Test Property",
+    "type": "APARTMENT",
+    "address": "Frontend Test Address",
+    "city": "Dubai",
+    "capacity": 4,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "area": 100,
+    "pricePerNight": 300,
+    "description": "Test property from frontend",
+    "amenities": [
+      "WiFi",
+      "Pool",
+      "Gym"
+    ],
+    "primaryImage": "",
+    "agentId": null,
+    "agentName": null,
+    "status": "Active",
+    "createdAt": "2025-10-03T22:54:46.632Z",
+    "lastModifiedAt": "2025-10-03T22:54:46.632Z"
   }
 ]
