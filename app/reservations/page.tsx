@@ -162,28 +162,30 @@ export default function ReservationsPage() {
         {/* Header */}
         <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
           <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-semibold text-slate-900">Reservations</h1>
-                </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900" data-testid="reservations-title">Reservations</h1>
+            </div>
                 
                 <div className="flex items-center space-x-3">
                   {/* Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search reservations..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
-                    />
+                      <input
+                        type="text"
+                        placeholder="Search reservations..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
+                        data-testid="search-input"
+                      />
                   </div>
 
                   {/* New Reservation */}
                   <button
                     onClick={handleNewReservation}
                     className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
+                    data-testid="add-reservation-btn"
                   >
                     <Plus size={16} />
                     <span>New Reservation</span>
@@ -281,6 +283,7 @@ export default function ReservationsPage() {
                 reservations={reservations}
                 isLoading={isLoading}
                 onViewReservation={handleViewReservation}
+                data-testid="reservations-table"
                 onEditReservation={handleEditReservation}
                 selectedReservations={selectedReservations}
                 onSelectionChange={handleSelectionChange}

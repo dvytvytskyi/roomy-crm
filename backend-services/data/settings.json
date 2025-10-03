@@ -1,0 +1,196 @@
+{
+  "automation": {
+    "autoConfirmReservations": true,
+    "autoSendWelcomeEmail": true,
+    "autoSendCheckoutReminder": true,
+    "autoCreateCleaningTask": true,
+    "autoCreateMaintenanceTask": false,
+    "autoUpdatePricing": false,
+    "autoSyncWithExternalPlatforms": true
+  },
+  "platform": {
+    "airbnb": {
+      "enabled": true,
+      "apiKey": "airbnb_api_key_123",
+      "apiSecret": "airbnb_secret_456",
+      "autoSync": true
+    },
+    "booking": {
+      "enabled": false,
+      "apiKey": "",
+      "apiSecret": "",
+      "autoSync": false
+    },
+    "pricelab": {
+      "enabled": false,
+      "apiKey": "",
+      "autoUpdate": false
+    }
+  },
+  "invoice": {
+    "companyName": "Roomy Property Management",
+    "companyAddress": "123 Business Bay, Dubai, UAE",
+    "companyPhone": "+971 4 123 4567",
+    "companyEmail": "info@roomy.com",
+    "taxNumber": "100123456789003",
+    "logoUrl": "https://roomy.com/logo.png",
+    "defaultCurrency": "AED",
+    "paymentTerms": "30 days",
+    "footerText": "Thank you for choosing Roomy Property Management"
+  },
+  "autoSender": {
+    "email": {
+      "enabled": true,
+      "smtpHost": "smtp.gmail.com",
+      "smtpPort": 587,
+      "smtpUser": "noreply@roomy.com",
+      "smtpPassword": "encrypted_password",
+      "fromEmail": "noreply@roomy.com",
+      "fromName": "Roomy Property Management"
+    },
+    "sms": {
+      "enabled": false,
+      "provider": "twilio",
+      "apiKey": "",
+      "apiSecret": "",
+      "fromNumber": ""
+    }
+  },
+  "reminder": {
+    "checkInReminder": {
+      "enabled": true,
+      "hoursBefore": 24,
+      "message": "Welcome! Your check-in is tomorrow. We look forward to hosting you."
+    },
+    "checkOutReminder": {
+      "enabled": true,
+      "hoursBefore": 2,
+      "message": "Your checkout is in 2 hours. Please ensure all belongings are packed."
+    },
+    "paymentReminder": {
+      "enabled": true,
+      "daysAfter": 3,
+      "message": "Payment is overdue. Please settle your balance to avoid service interruption."
+    },
+    "maintenanceReminder": {
+      "enabled": true,
+      "daysBefore": 7,
+      "message": "Scheduled maintenance is approaching. Please prepare for potential service interruption."
+    }
+  },
+  "general": {
+    "companyName": "Roomy Property Management Updated",
+    "companyAddress": "123 Business Bay, Dubai, UAE",
+    "contactEmail": "info@roomy.com",
+    "contactPhone": "+971 4 123 4567",
+    "timezone": "Asia/Dubai",
+    "dateFormat": "DD/MM/YYYY",
+    "currency": "AED",
+    "language": "en",
+    "maxFileSize": 10485760,
+    "allowedFileTypes": [
+      "jpg",
+      "jpeg",
+      "png",
+      "pdf",
+      "doc",
+      "docx"
+    ],
+    "sessionTimeout": 3600,
+    "twoFactorAuth": false,
+    "userRegistration": true,
+    "passwordPolicy": {
+      "minLength": 8,
+      "requireUppercase": true,
+      "requireLowercase": true,
+      "requireNumbers": true,
+      "requireSpecialChars": false
+    },
+    "propertyTypes": [
+      "APARTMENT",
+      "HOUSE",
+      "VILLA",
+      "STUDIO",
+      "PENTHOUSE"
+    ],
+    "propertyStatuses": [
+      "ACTIVE",
+      "INACTIVE",
+      "MAINTENANCE",
+      "RENOVATION"
+    ],
+    "reservationStatuses": [
+      "PENDING",
+      "CONFIRMED",
+      "CANCELLED",
+      "COMPLETED",
+      "NO_SHOW",
+      "MODIFIED"
+    ],
+    "reservationSources": [
+      "DIRECT",
+      "AIRBNB",
+      "BOOKING_COM",
+      "VRBO",
+      "OTHER"
+    ],
+    "autoConfirmReservations": false,
+    "defaultIncomeDistribution": {
+      "owner": 70,
+      "agency": 25,
+      "agent": 5
+    },
+    "paymentMethods": [
+      "CASH",
+      "BANK_TRANSFER",
+      "CREDIT_CARD",
+      "PAYPAL"
+    ],
+    "taxRate": 5,
+    "maintenanceTypes": [
+      "REPAIR",
+      "INSPECTION",
+      "CLEANING",
+      "UPGRADE",
+      "PREVENTIVE",
+      "EMERGENCY",
+      "OTHER"
+    ],
+    "maintenancePriorities": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "URGENT"
+    ],
+    "maintenanceStatuses": [
+      "PENDING",
+      "SCHEDULED",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+      "ON_HOLD"
+    ],
+    "cleaningStatuses": [
+      "SCHEDULED",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+      "SKIPPED"
+    ],
+    "autoCreateCleaningAfterCheckout": true,
+    "defaultCleaningDuration": 120,
+    "notificationTypes": [
+      "RESERVATION",
+      "PAYMENT",
+      "MAINTENANCE",
+      "CLEANING",
+      "MESSAGE",
+      "SYSTEM",
+      "REMINDER"
+    ],
+    "autoNotifications": true,
+    "backupFrequency": "daily",
+    "auditLogging": true,
+    "dataEncryption": true
+  }
+}

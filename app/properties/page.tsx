@@ -371,6 +371,7 @@ export default function PropertiesPage() {
           type="success"
           duration={5000}
           onClose={() => setShowToast(false)}
+          data-testid="toast"
         />
       )}
       

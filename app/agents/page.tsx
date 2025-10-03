@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus } from 'lucide-react'
 import TopNavigation from '../../components/TopNavigation'
 import AgentsTable from '../../components/agents/AgentsTable'
 import AgentsFilters from '../../components/agents/AgentsFilters'
 import AddAgentModal from '../../components/agents/AddAgentModal'
+import { agentService, Agent } from '../../lib/api/services/agentService'
 
 export default function AgentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -17,7 +18,40 @@ export default function AgentsPage() {
   })
   const [selectedAgents, setSelectedAgents] = useState<number[]>([])
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
-  const [selectedAgent, setSelectedAgent] = useState<any>(null)
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load agents data from API
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        console.log('👥 Loading agents from API...')
+        
+        const response = await agentService.getAgents({
+          search: searchTerm,
+          ...filters
+        })
+        
+        if (response.success && response.data) {
+          console.log('👥 Agents loaded:', response.data)
+          setAgents(response.data.agents || response.data)
+        } else {
+          setError('Failed to load agents')
+        }
+      } catch (err) {
+        console.error('👥 Error loading agents:', err)
+        setError('Error loading agents')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadAgents()
+  }, [searchTerm, filters])
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
@@ -52,354 +86,12 @@ export default function AgentsPage() {
     }
   }
 
-  // Mock data for agents (expanded with more realistic data)
-  const agents = [
-    {
-      id: 1,
-      name: 'Ahmed Al-Mansouri',
-      email: 'ahmed.almansouri@email.com',
-      phone: '+971 50 123 4567',
-      nationality: 'UAE',
-      birthday: '1985-03-15',
-      unitsAttracted: 12,
-      totalPayouts: 45000,
-      lastPayoutDate: '2024-01-15',
-      status: 'Active' as const,
-      joinDate: '2023-03-15'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      phone: '+44 20 1234 5678',
-      nationality: 'UK',
-      birthday: '1988-07-22',
-      unitsAttracted: 8,
-      totalPayouts: 32000,
-      lastPayoutDate: '2024-01-10',
-      status: 'Active' as const,
-      joinDate: '2023-05-10'
-    },
-    {
-      id: 3,
-      name: 'Mohammed Hassan',
-      email: 'mohammed.hassan@email.com',
-      phone: '+20 2 1234 5678',
-      nationality: 'Egypt',
-      birthday: '1990-11-08',
-      unitsAttracted: 15,
-      totalPayouts: 68000,
-      lastPayoutDate: '2024-01-20',
-      status: 'Active' as const,
-      joinDate: '2023-02-28'
-    },
-    {
-      id: 4,
-      name: 'Emma Davis',
-      email: 'emma.davis@email.com',
-      phone: '+61 2 1234 5678',
-      nationality: 'Australia',
-      birthday: '1987-04-14',
-      unitsAttracted: 6,
-      totalPayouts: 18000,
-      lastPayoutDate: '2023-12-15',
-      status: 'Inactive' as const,
-      joinDate: '2023-08-15'
-    },
-    {
-      id: 5,
-      name: 'David Wilson',
-      email: 'david.wilson@email.com',
-      phone: '+1 555 123 4567',
-      nationality: 'USA',
-      birthday: '1983-09-30',
-      unitsAttracted: 10,
-      totalPayouts: 42000,
-      lastPayoutDate: '2024-01-18',
-      status: 'Active' as const,
-      joinDate: '2023-04-20'
-    },
-    {
-      id: 6,
-      name: 'Fatima Al-Zahra',
-      email: 'fatima.alzahra@email.com',
-      phone: '+971 50 678 9012',
-      nationality: 'UAE',
-      birthday: '1991-12-05',
-      unitsAttracted: 9,
-      totalPayouts: 35000,
-      lastPayoutDate: '2024-01-12',
-      status: 'Active' as const,
-      joinDate: '2023-06-18'
-    },
-    {
-      id: 7,
-      name: 'Rajesh Kumar',
-      email: 'rajesh.kumar@email.com',
-      phone: '+91 98765 43210',
-      nationality: 'India',
-      birthday: '1986-05-20',
-      unitsAttracted: 18,
-      totalPayouts: 85000,
-      lastPayoutDate: '2024-01-22',
-      status: 'Active' as const,
-      joinDate: '2023-01-10'
-    },
-    {
-      id: 8,
-      name: 'Maria Santos',
-      email: 'maria.santos@email.com',
-      phone: '+63 917 123 4567',
-      nationality: 'Philippines',
-      birthday: '1989-08-12',
-      unitsAttracted: 7,
-      totalPayouts: 28000,
-      lastPayoutDate: '2024-01-08',
-      status: 'Active' as const,
-      joinDate: '2023-07-05'
-    },
-    {
-      id: 9,
-      name: 'Hassan Ali',
-      email: 'hassan.ali@email.com',
-      phone: '+92 300 123 4567',
-      nationality: 'Pakistan',
-      birthday: '1984-12-03',
-      unitsAttracted: 14,
-      totalPayouts: 62000,
-      lastPayoutDate: '2024-01-19',
-      status: 'Active' as const,
-      joinDate: '2023-03-22'
-    },
-    {
-      id: 10,
-      name: 'Jennifer Lee',
-      email: 'jennifer.lee@email.com',
-      phone: '+1 555 987 6543',
-      nationality: 'USA',
-      birthday: '1992-02-28',
-      unitsAttracted: 11,
-      totalPayouts: 48000,
-      lastPayoutDate: '2024-01-16',
-      status: 'Active' as const,
-      joinDate: '2023-05-15'
-    },
-    {
-      id: 11,
-      name: 'Omar Al-Rashid',
-      email: 'omar.alrashid@email.com',
-      phone: '+971 50 234 5678',
-      nationality: 'UAE',
-      birthday: '1987-10-18',
-      unitsAttracted: 13,
-      totalPayouts: 55000,
-      lastPayoutDate: '2024-01-14',
-      status: 'Active' as const,
-      joinDate: '2023-04-08'
-    },
-    {
-      id: 12,
-      name: 'Lisa Thompson',
-      email: 'lisa.thompson@email.com',
-      phone: '+44 20 9876 5432',
-      nationality: 'UK',
-      birthday: '1985-06-25',
-      unitsAttracted: 5,
-      totalPayouts: 15000,
-      lastPayoutDate: '2023-11-30',
-      status: 'Inactive' as const,
-      joinDate: '2023-09-12'
-    },
-    {
-      id: 13,
-      name: 'Ahmed Farouk',
-      email: 'ahmed.farouk@email.com',
-      phone: '+20 2 9876 5432',
-      nationality: 'Egypt',
-      birthday: '1988-01-14',
-      unitsAttracted: 16,
-      totalPayouts: 72000,
-      lastPayoutDate: '2024-01-21',
-      status: 'Active' as const,
-      joinDate: '2023-02-15'
-    },
-    {
-      id: 14,
-      name: 'Priya Sharma',
-      email: 'priya.sharma@email.com',
-      phone: '+91 98765 12345',
-      nationality: 'India',
-      birthday: '1990-09-07',
-      unitsAttracted: 9,
-      totalPayouts: 38000,
-      lastPayoutDate: '2024-01-11',
-      status: 'Active' as const,
-      joinDate: '2023-06-30'
-    },
-    {
-      id: 15,
-      name: 'Michael Brown',
-      email: 'michael.brown@email.com',
-      phone: '+61 2 9876 5432',
-      nationality: 'Australia',
-      birthday: '1983-04-22',
-      unitsAttracted: 12,
-      totalPayouts: 52000,
-      lastPayoutDate: '2024-01-17',
-      status: 'Active' as const,
-      joinDate: '2023-03-05'
-    },
-    {
-      id: 16,
-      name: 'Aisha Mohammed',
-      email: 'aisha.mohammed@email.com',
-      phone: '+971 50 345 6789',
-      nationality: 'UAE',
-      birthday: '1991-07-30',
-      unitsAttracted: 8,
-      totalPayouts: 32000,
-      lastPayoutDate: '2024-01-09',
-      status: 'Active' as const,
-      joinDate: '2023-08-20'
-    },
-    {
-      id: 17,
-      name: 'James Wilson',
-      email: 'james.wilson@email.com',
-      phone: '+44 20 3456 7890',
-      nationality: 'UK',
-      birthday: '1986-11-15',
-      unitsAttracted: 14,
-      totalPayouts: 65000,
-      lastPayoutDate: '2024-01-20',
-      status: 'Active' as const,
-      joinDate: '2023-01-25'
-    },
-    {
-      id: 18,
-      name: 'Nour El-Din',
-      email: 'nour.eldin@email.com',
-      phone: '+20 2 3456 7890',
-      nationality: 'Egypt',
-      birthday: '1989-03-08',
-      unitsAttracted: 10,
-      totalPayouts: 42000,
-      lastPayoutDate: '2024-01-13',
-      status: 'Active' as const,
-      joinDate: '2023-05-28'
-    },
-    {
-      id: 19,
-      name: 'Sofia Rodriguez',
-      email: 'sofia.rodriguez@email.com',
-      phone: '+63 917 234 5678',
-      nationality: 'Philippines',
-      birthday: '1987-12-10',
-      unitsAttracted: 6,
-      totalPayouts: 22000,
-      lastPayoutDate: '2023-12-28',
-      status: 'Inactive' as const,
-      joinDate: '2023-10-15'
-    },
-    {
-      id: 20,
-      name: 'Khalid Al-Maktoum',
-      email: 'khalid.almaktoum@email.com',
-      phone: '+971 50 456 7890',
-      nationality: 'UAE',
-      birthday: '1984-08-05',
-      unitsAttracted: 20,
-      totalPayouts: 95000,
-      lastPayoutDate: '2024-01-23',
-      status: 'Active' as const,
-      joinDate: '2022-12-01'
-    },
-    {
-      id: 21,
-      name: 'Robert Taylor',
-      email: 'robert.taylor@email.com',
-      phone: '+1 555 234 5678',
-      nationality: 'USA',
-      birthday: '1985-05-18',
-      unitsAttracted: 11,
-      totalPayouts: 46000,
-      lastPayoutDate: '2024-01-15',
-      status: 'Active' as const,
-      joinDate: '2023-04-12'
-    },
-    {
-      id: 22,
-      name: 'Amira Hassan',
-      email: 'amira.hassan@email.com',
-      phone: '+20 2 2345 6789',
-      nationality: 'Egypt',
-      birthday: '1992-01-25',
-      unitsAttracted: 7,
-      totalPayouts: 28000,
-      lastPayoutDate: '2024-01-07',
-      status: 'Active' as const,
-      joinDate: '2023-07-18'
-    },
-    {
-      id: 23,
-      name: 'Thomas Anderson',
-      email: 'thomas.anderson@email.com',
-      phone: '+44 20 2345 6789',
-      nationality: 'UK',
-      birthday: '1988-09-12',
-      unitsAttracted: 13,
-      totalPayouts: 58000,
-      lastPayoutDate: '2024-01-18',
-      status: 'Active' as const,
-      joinDate: '2023-03-10'
-    },
-    {
-      id: 24,
-      name: 'Layla Al-Zahra',
-      email: 'layla.alzahra@email.com',
-      phone: '+971 50 567 8901',
-      nationality: 'UAE',
-      birthday: '1990-06-20',
-      unitsAttracted: 9,
-      totalPayouts: 36000,
-      lastPayoutDate: '2024-01-12',
-      status: 'Active' as const,
-      joinDate: '2023-06-05'
-    }
-  ]
-
-  // Filter agents based on search and filters
-  const filteredAgents = agents.filter(agent => {
-    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         agent.email.toLowerCase().includes(searchTerm.toLowerCase())
-
-    // Join date range filter
-    let matchesJoinDate = true
-    if (filters.joinDateFrom || filters.joinDateTo) {
-      const agentJoinDate = new Date(agent.joinDate)
-      if (filters.joinDateFrom) {
-        const fromDate = new Date(filters.joinDateFrom)
-        matchesJoinDate = matchesJoinDate && agentJoinDate >= fromDate
-      }
-      if (filters.joinDateTo) {
-        const toDate = new Date(filters.joinDateTo)
-        matchesJoinDate = matchesJoinDate && agentJoinDate <= toDate
-      }
-    }
-    
-    const matchesFilters = 
-      (!filters.status || agent.status === filters.status) &&
-      (!filters.nationality || agent.nationality === filters.nationality) &&
-      matchesJoinDate
-
-    return matchesSearch && matchesFilters
-  })
 
   // Calculate real statistics
   const totalAgents = agents.length
   const activeAgents = agents.filter(agent => agent.status === 'Active').length
-  const totalUnits = agents.reduce((sum, agent) => sum + agent.unitsAttracted, 0)
-  const totalPayouts = agents.reduce((sum, agent) => sum + agent.totalPayouts, 0)
+  const totalUnits = agents.reduce((sum, agent) => sum + (agent.unitsAttracted || 0), 0)
+  const totalPayouts = agents.reduce((sum, agent) => sum + (agent.totalPayouts || 0), 0)
   
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {
@@ -431,11 +123,13 @@ export default function AgentsPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
+                    data-testid="search-input"
                   />
                 </div>
                 <button
                   onClick={handleCreateAgent}
                   className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
+                  data-testid="add-agent-btn"
                 >
                   <Plus size={16} />
                   <span>Add Agent</span>
@@ -448,7 +142,7 @@ export default function AgentsPage() {
         {/* Stats Cards */}
         <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="total-agents-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,12 +151,12 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Agents</p>
-                  <p className="text-2xl font-semibold text-slate-900">{totalAgents}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{totalAgents || 'n/a'}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="active-agents-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,12 +165,12 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Active Agents</p>
-                  <p className="text-2xl font-semibold text-slate-900">{activeAgents}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{activeAgents || 'n/a'}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="total-units-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,12 +179,12 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Units</p>
-                  <p className="text-2xl font-semibold text-slate-900">{totalUnits}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{totalUnits || 'n/a'}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="total-payouts-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,7 +193,7 @@ export default function AgentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Total Payouts</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(totalPayouts)}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{totalPayouts ? formatCurrency(totalPayouts) : 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -566,12 +260,14 @@ export default function AgentsPage() {
 
           {/* Right Content - Table */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 h-full overflow-hidden" data-testid="agents-table-container">
               <AgentsTable
-                agents={filteredAgents}
+                agents={agents}
                 onEditAgent={handleEditAgent}
                 selectedAgents={selectedAgents}
                 onSelectionChange={setSelectedAgents}
+                loading={loading}
+                error={error}
               />
             </div>
           </div>

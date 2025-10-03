@@ -8,9 +8,10 @@ interface ToastProps {
   type?: 'success' | 'error' | 'info'
   duration?: number
   onClose: () => void
+  'data-testid'?: string
 }
 
-export default function Toast({ message, type = 'success', duration = 5000, onClose }: ToastProps) {
+export default function Toast({ message, type = 'success', duration = 5000, onClose, ...props }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function Toast({ message, type = 'success', duration = 5000, onCl
       className={`fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out ${
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
+      {...props}
     >
       <div className={`${getToastStyles()} border rounded-xl shadow-lg p-4 min-w-80 max-w-96`}>
         <div className="flex items-start space-x-3">

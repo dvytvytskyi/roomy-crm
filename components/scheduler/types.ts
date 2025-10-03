@@ -60,6 +60,7 @@ export interface Reservation {
   // Additional info
   amount?: number;
   paidAmount?: number;
+  guestCount?: number;
   checkInTime?: string;
   checkOutTime?: string;
   notes?: string;

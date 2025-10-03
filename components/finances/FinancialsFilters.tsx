@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { X, Calendar, Filter, DollarSign } from 'lucide-react'
 
+import { FinancialFilters } from '../../lib/api/services/financeService'
+
 interface FinancialsFiltersProps {
   onClose: () => void
   dateRange: {
@@ -10,19 +12,11 @@ interface FinancialsFiltersProps {
     to: string
   }
   onDateRangeChange: (range: { from: string; to: string }) => void
+  filters: FinancialFilters
+  onFiltersChange: (filters: FinancialFilters) => void
 }
 
-export default function FinancialsFilters({ onClose, dateRange, onDateRangeChange }: FinancialsFiltersProps) {
-  const [filters, setFilters] = useState({
-    paymentStatus: '',
-    paymentMethod: '',
-    transactionType: '',
-    paymentCategory: '',
-    platform: '',
-    amountRange: { min: '', max: '' },
-    property: '',
-    guest: ''
-  })
+export default function FinancialsFilters({ onClose, dateRange, onDateRangeChange, filters, onFiltersChange }: FinancialsFiltersProps) {
 
   const paymentStatuses = ['All', 'Completed', 'Pending', 'Failed']
   const paymentMethods = ['All', 'Credit Card', 'Bank Transfer', 'PayPal', 'Cash/Other']
@@ -54,38 +48,27 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
   ]
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }))
+    const newFilters = {
+      ...filters,
+      [key]: value === 'All' || value === 'All Categories' || value === 'All Properties' || value === '' ? undefined : [value]
+    }
+    onFiltersChange(newFilters)
   }
 
-  const handleAmountRangeChange = (key: 'min' | 'max', value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      amountRange: {
-        ...prev.amountRange,
-        [key]: value
-      }
-    }))
+  const handleAmountRangeChange = (key: 'amountMin' | 'amountMax', value: string) => {
+    const newFilters = {
+      ...filters,
+      [key]: value ? parseFloat(value) : undefined
+    }
+    onFiltersChange(newFilters)
   }
 
   const clearFilters = () => {
-    setFilters({
-    paymentStatus: '',
-    paymentMethod: '',
-    transactionType: '',
-    paymentCategory: '',
-    platform: '',
-    amountRange: { min: '', max: '' },
-    property: '',
-    guest: ''
-    })
+    onFiltersChange({})
     onDateRangeChange({ from: '', to: '' })
   }
 
   const applyFilters = () => {
-    console.log('Applying filters:', filters)
     onClose()
   }
 
@@ -132,7 +115,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Payment Status
           </label>
           <select
-            value={filters.paymentStatus}
+            value={filters.paymentStatus?.[0] || 'All'}
             onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -150,7 +133,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Payment Method
           </label>
           <select
-            value={filters.paymentMethod}
+            value={filters.paymentMethod?.[0] || 'All'}
             onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -168,7 +151,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Transaction Type
           </label>
           <select
-            value={filters.transactionType}
+            value={filters.transactionType?.[0] || 'All'}
             onChange={(e) => handleFilterChange('transactionType', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -186,7 +169,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Payment Category
           </label>
           <select
-            value={filters.paymentCategory}
+            value={filters.paymentCategory?.[0] || 'All Categories'}
             onChange={(e) => handleFilterChange('paymentCategory', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -204,7 +187,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Platform
           </label>
           <select
-            value={filters.platform}
+            value={filters.platform?.[0] || 'All'}
             onChange={(e) => handleFilterChange('platform', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -222,7 +205,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
             Property
           </label>
           <select
-            value={filters.property}
+            value={filters.property?.[0] || 'All Properties'}
             onChange={(e) => handleFilterChange('property', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
@@ -243,15 +226,15 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
           <div className="flex space-x-2">
             <input
               type="number"
-              value={filters.amountRange.min}
-              onChange={(e) => handleAmountRangeChange('min', e.target.value)}
+              value={filters.amountMin || ''}
+              onChange={(e) => handleAmountRangeChange('amountMin', e.target.value)}
               className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="Min"
             />
             <input
               type="number"
-              value={filters.amountRange.max}
-              onChange={(e) => handleAmountRangeChange('max', e.target.value)}
+              value={filters.amountMax || ''}
+              onChange={(e) => handleAmountRangeChange('amountMax', e.target.value)}
               className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="Max"
             />
@@ -265,7 +248,7 @@ export default function FinancialsFilters({ onClose, dateRange, onDateRangeChang
           </label>
           <input
             type="text"
-            value={filters.guest}
+            value={filters.guest || ''}
             onChange={(e) => handleFilterChange('guest', e.target.value)}
             className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             placeholder="Search by guest name"

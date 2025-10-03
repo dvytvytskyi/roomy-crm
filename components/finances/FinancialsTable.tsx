@@ -3,190 +3,23 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Edit, Trash2, Eye, ChevronUp, ChevronDown, CreditCard, CheckCircle, XCircle, Clock, AlertCircle, FileText } from 'lucide-react'
+import { FinancialTransaction } from '../../lib/api/services/financeService'
 
 interface FinancialsTableProps {
-  searchTerm: string
+  transactions: FinancialTransaction[]
+  loading: boolean
   selectedTransactions: number[]
   onSelectionChange: (selected: number[]) => void
-  dateRange: {
-    from: string
-    to: string
-  }
 }
 
-// Mock data for financial transactions
-const mockTransactions = [
-  {
-    id: 1,
-    transactionId: 'TXN-2024-001',
-    guestName: 'John Smith',
-    property: 'Apartment Burj Khalifa 2',
-    reservationId: 'RES-001',
-    paymentStatus: 'Completed',
-    paymentMethod: 'Credit Card',
-    amount: 2450,
-    currency: 'AED',
-    date: '2024-01-15',
-    type: 'Payment',
-    platform: 'Airbnb',
-    platformFee: 73.5,
-    adminUser: 'Sarah Johnson',
-    remarks: 'Full payment received on time',
-    paymentCount: 1,
-    paymentCategory: 'Reservation Payment'
-  },
-  {
-    id: 2,
-    transactionId: 'TXN-2024-002',
-    guestName: 'Maria Garcia',
-    property: 'Marina View Studio',
-    reservationId: 'RES-002',
-    paymentStatus: 'Pending',
-    paymentMethod: 'Bank Transfer',
-    amount: 1800,
-    currency: 'AED',
-    date: '2024-01-14',
-    type: 'Payment',
-    platform: 'Direct',
-    platformFee: 0,
-    adminUser: 'Mike Wilson',
-    remarks: 'Awaiting bank confirmation',
-    paymentCount: 1,
-    paymentCategory: 'Deposit'
-  },
-  {
-    id: 3,
-    transactionId: 'TXN-2024-003',
-    guestName: 'Ahmed Hassan',
-    property: 'Downtown Loft 2BR',
-    reservationId: 'RES-003',
-    paymentStatus: 'Completed',
-    paymentMethod: 'Credit Card',
-    amount: 3200,
-    currency: 'AED',
-    date: '2024-01-13',
-    type: 'Payment',
-    platform: 'Booking.com',
-    platformFee: 96,
-    adminUser: 'Lisa Brown',
-    remarks: 'Deposit payment - balance due on arrival',
-    paymentCount: 1,
-    paymentCategory: 'Deposit'
-  },
-  {
-    id: 4,
-    transactionId: 'TXN-2024-004',
-    guestName: 'Emma Davis',
-    property: 'JBR Beach Apartment',
-    reservationId: 'RES-004',
-    paymentStatus: 'Failed',
-    paymentMethod: 'Credit Card',
-    amount: 2100,
-    currency: 'AED',
-    date: '2024-01-12',
-    type: 'Payment',
-    platform: 'Airbnb',
-    platformFee: 63,
-    adminUser: 'David Lee',
-    remarks: 'Card declined - insufficient funds',
-    paymentCount: 1,
-    paymentCategory: 'Reservation Payment'
-  },
-  {
-    id: 5,
-    transactionId: 'TXN-2024-005',
-    guestName: 'Tom Anderson',
-    property: 'Business Bay Office',
-    reservationId: 'RES-005',
-    paymentStatus: 'Completed',
-    paymentMethod: 'PayPal',
-    amount: 1500,
-    currency: 'AED',
-    date: '2024-01-11',
-    type: 'Refund',
-    platform: 'Direct',
-    platformFee: 0,
-    adminUser: 'Anna Taylor',
-    remarks: 'Partial refund due to early checkout',
-    paymentCount: 1,
-    paymentCategory: 'Refund'
-  },
-  {
-    id: 6,
-    transactionId: 'TXN-2024-006',
-    guestName: 'Clean Pro Services',
-    property: 'Apartment Burj Khalifa 2',
-    reservationId: 'RES-001',
-    paymentStatus: 'Completed',
-    paymentMethod: 'Bank Transfer',
-    amount: -450,
-    currency: 'AED',
-    date: '2024-01-15',
-    type: 'Expense',
-    platform: 'Direct',
-    platformFee: 0,
-    adminUser: 'Sarah Johnson',
-    remarks: 'Post-checkout cleaning service',
-    paymentCount: 1,
-    paymentCategory: 'Cleaning Fee'
-  },
-  {
-    id: 7,
-    transactionId: 'TXN-2024-007',
-    guestName: 'Dubai Plumbing Co.',
-    property: 'Marina View Studio',
-    reservationId: 'N/A',
-    paymentStatus: 'Completed',
-    paymentMethod: 'Bank Transfer',
-    amount: -320,
-    currency: 'AED',
-    date: '2024-01-14',
-    type: 'Expense',
-    platform: 'Direct',
-    platformFee: 0,
-    adminUser: 'Mike Wilson',
-    remarks: 'Kitchen sink repair',
-    paymentCount: 1,
-    paymentCategory: 'Maintenance Fee'
-  },
-  {
-    id: 8,
-    transactionId: 'TXN-2024-008',
-    guestName: 'Sophie Martin',
-    property: 'DIFC Penthouse',
-    reservationId: 'RES-006',
-    paymentStatus: 'Completed',
-    paymentMethod: 'Credit Card',
-    amount: 5200,
-    currency: 'AED',
-    date: '2024-01-10',
-    type: 'Payment',
-    platform: 'Airbnb',
-    platformFee: 156,
-    adminUser: 'John Smith',
-    remarks: 'Full payment - premium property',
-    paymentCount: 1,
-    paymentCategory: 'Reservation Payment'
-  }
-]
-
-export default function FinancialsTable({ searchTerm, selectedTransactions, onSelectionChange, dateRange }: FinancialsTableProps) {
+export default function FinancialsTable({ transactions, loading, selectedTransactions, onSelectionChange }: FinancialsTableProps) {
   const router = useRouter()
   const [sortField, setSortField] = useState<string>('date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
-  const filteredTransactions = mockTransactions.filter(transaction => {
-    const matchesSearch = transaction.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.transactionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.reservationId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return matchesSearch
-  })
-
-  const sortedTransactions = filteredTransactions.sort((a, b) => {
+  // Sort data (filtering is now handled by API)
+  const sortedTransactions = [...transactions].sort((a, b) => {
     const aValue = a[sortField as keyof typeof a]
     const bValue = b[sortField as keyof typeof b]
     
@@ -287,6 +120,26 @@ export default function FinancialsTable({ searchTerm, selectedTransactions, onSe
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    )
+  }
+
+  if (sortedTransactions.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
+          <p className="mt-1 text-sm text-gray-500">Get started by adding a new payment.</p>
+        </div>
+      </div>
+    )
   }
 
   return (

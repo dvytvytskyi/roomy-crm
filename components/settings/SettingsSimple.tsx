@@ -1,19 +1,63 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit } from 'lucide-react'
-import { useAutomationSettings, useUpdateAutomationSettings } from '../../hooks/useSettings'
 import { useAuth } from '../../hooks/useAuth'
+import { settingsService, AutomationSettings } from '../../lib/api'
 
 export default function SettingsSimple() {
   const [activeTab, setActiveTab] = useState('automation')
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { data: automationSettings, loading: settingsLoading, error: settingsError } = useAutomationSettings()
-  const { mutate: updateSettings, loading: updateLoading } = useUpdateAutomationSettings()
+  
+  // Automation settings state
+  const [automationSettings, setAutomationSettings] = useState<AutomationSettings | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  const handleSettingChange = (key: string, value: boolean) => {
-    if (automationSettings) {
-      updateSettings({ [key]: value })
+  // Load automation settings on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAutomationSettings()
+    }
+  }, [isAuthenticated]) // Removed loadAutomationSettings from dependencies to prevent loops
+
+  const loadAutomationSettings = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await settingsService.getAutomationSettings()
+      if (response.success && response.data) {
+        setAutomationSettings(response.data)
+      } else {
+        setError('Failed to load automation settings')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSettingChange = async (key: string, value: boolean) => {
+    if (!automationSettings) return
+
+    try {
+      setSaving(true)
+      setError(null)
+      
+      const updatedSettings = { [key]: value }
+      const response = await settingsService.updateAutomationSettings(updatedSettings)
+      
+      if (response.success) {
+        setAutomationSettings(prev => prev ? { ...prev, [key]: value } : null)
+      } else {
+        setError('Failed to update setting')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update setting')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -73,18 +117,26 @@ export default function SettingsSimple() {
         <div className="space-y-6">
           <h2 className="text-lg font-medium text-gray-900">Automation Settings</h2>
           
-          {settingsLoading ? (
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+              <button 
+                onClick={loadAutomationSettings}
+                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
             </div>
-          ) : settingsError ? (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-red-600">Error loading settings: {settingsError}</p>
-            </div>
-          ) : (
+          ) : automationSettings ? (
             <div className="bg-white shadow rounded-lg p-6">
               <div className="space-y-4">
-                {automationSettings && Object.entries(automationSettings).map(([key, value]) => (
+                {Object.entries(automationSettings).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between">
                     <div>
                       <label className="text-sm font-medium text-gray-700">
@@ -96,10 +148,10 @@ export default function SettingsSimple() {
                     </div>
                     <button
                       onClick={() => handleSettingChange(key, !value)}
-                      disabled={updateLoading}
+                      disabled={saving}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         value ? 'bg-orange-600' : 'bg-gray-200'
-                      }`}
+                      } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -110,6 +162,10 @@ export default function SettingsSimple() {
                   </div>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-8 text-center">
+              <p className="text-gray-600">No automation settings available</p>
             </div>
           )}
         </div>

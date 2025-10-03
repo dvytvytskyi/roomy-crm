@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Eye, Edit, Trash2, Star, Crown, User, Mail, Phone, Calendar, MapPin, Building, Info, ChevronUp, ChevronDown } from 'lucide-react'
-import { User as UserType, userService } from '@/lib/api'
+import { Owner } from '@/lib/api/services/ownerService'
 import EditOwnerModal from './EditOwnerModal'
 
 // Function to get country flag emoji
@@ -33,7 +33,7 @@ const getCountryFlag = (nationality: string) => {
 }
 
 interface OwnersTableProps {
-  owners?: UserType[]
+  owners?: Owner[]
   pagination?: {
     total: number
     page: number
@@ -42,8 +42,8 @@ interface OwnersTableProps {
   }
   searchTerm: string
   filters: any
-  selectedOwners: number[]
-  onSelectionChange: (selectedIds: number[]) => void
+  selectedOwners: string[]
+  onSelectionChange: (selectedIds: string[]) => void
   onPageChange?: (page: number) => void
   onRefresh?: () => void
 }

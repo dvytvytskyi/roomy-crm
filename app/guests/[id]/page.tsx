@@ -96,106 +96,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     text: string
     author: string
     date: string
-  }>>([
-    {
-      id: '1',
-      text: 'Prefers high floors, late checkout, needs quiet room',
-      author: 'Manager',
-      date: '2024-07-20T14:20:00Z'
-    }
-  ])
+  }>>([])
 
-  // Mock reservation history
-  const mockReservations = [
-    {
-      id: 1,
-      checkIn: '2024-08-15',
-      checkOut: '2024-08-18',
-      unit_nickname: 'Burj Khalifa Studio',
-      reservation_code: 'RES-001',
-      status: 'completed',
-      totalAmount: 450,
-      nights: 3,
-      source: 'Airbnb'
-    },
-    {
-      id: 2,
-      checkIn: '2024-06-10',
-      checkOut: '2024-06-15',
-      unit_nickname: 'Marina View',
-      reservation_code: 'RES-002',
-      status: 'completed',
-      totalAmount: 750,
-      nights: 5,
-      source: 'Direct',
-      created_by: {
-        name: 'Alex Thompson',
-        email: 'alex.thompson@company.com'
-      }
-    },
-    {
-      id: 3,
-      checkIn: '2024-04-20',
-      checkOut: '2024-04-25',
-      unit_nickname: 'Downtown Loft',
-      reservation_code: 'RES-003',
-      status: 'completed',
-      totalAmount: 600,
-      nights: 5,
-      source: 'Booking.com'
-    },
-    {
-      id: 4,
-      checkIn: '2024-12-01',
-      checkOut: '2024-12-08',
-      unit_nickname: 'Skyline Penthouse',
-      reservation_code: 'RES-004',
-      status: 'confirmed',
-      totalAmount: 1200,
-      nights: 7,
-      source: 'Direct',
-      created_by: {
-        name: 'Maria Rodriguez',
-        email: 'maria.rodriguez@company.com'
-      }
-    }
-  ]
 
-  // Mock activity log
-  const mockActivityLog = [
-    {
-      id: 1,
-      action: 'Profile updated',
-      details: 'Updated phone number',
-      user: 'Manager',
-      timestamp: '2024-07-20T14:20:00Z',
-      type: 'update'
-    },
-    {
-      id: 2,
-      action: 'Document uploaded',
-      details: 'Added loyalty card document',
-      user: 'Admin',
-      timestamp: '2024-02-10T14:20:00Z',
-      type: 'document'
-    },
-    {
-      id: 3,
-      action: 'Reservation created',
-      details: 'New booking for December 2024',
-      user: 'System',
-      timestamp: '2024-01-15T10:30:00Z',
-      type: 'reservation'
-    },
-    {
-      id: 4,
-      action: 'Category added',
-      details: 'Marked as Star Guest',
-      user: 'Admin',
-      timestamp: '2024-01-15T10:30:00Z',
-      type: 'category'
-    }
-  ]
 
   const handleEditField = (field: string, currentValue: string, title: string, inputType: string, options?: { value: string; label: string }[]) => {
     setEditModal({
@@ -469,23 +372,29 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
+                data-testid="back-btn"
                 onClick={() => window.history.back()}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-medium text-slate-900">{guestData.name}</h1>
-                <p className="text-sm text-slate-600">{guestData.nationality} • {guestData.age || getAge(guestData.dateOfBirth)} years old</p>
+                <h1 className="text-xl font-medium text-slate-900">{guestData.name || 'n/a'}</h1>
+                <p className="text-sm text-slate-600">
+                  {guestData.nationality || 'n/a'} • {guestData.age || (guestData.dateOfBirth ? getAge(guestData.dateOfBirth) : 'n/a')} years old
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
-                {guestData.starGuest && <Star size={16} className="mr-2 text-yellow-500" />}
-                {guestData.primaryGuest && <Crown size={16} className="mr-2 text-orange-500" />}
-                <span>VIP Guest</span>
-              </span>
+              {(guestData.starGuest || guestData.primaryGuest) && (
+                <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800" data-testid="vip-guest-badge">
+                  {guestData.starGuest && <Star size={16} className="mr-2 text-yellow-500" data-testid="star-guest-indicator" />}
+                  {guestData.primaryGuest && <Crown size={16} className="mr-2 text-orange-500" data-testid="primary-guest-indicator" />}
+                  <span>VIP Guest</span>
+                </span>
+              )}
               <button 
+                data-testid="delete-guest-btn"
                 onClick={() => setIsDeleting(true)}
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center"
               >
@@ -506,7 +415,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Reservations</p>
-                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalReservations || 0}</p>
+                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalReservations || 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -517,7 +426,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Lifetime Value</p>
-                  <p className="text-2xl font-medium text-slate-900">AED {guestStats?.lifetimeValue?.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-medium text-slate-900">AED {guestStats?.lifetimeValue?.toLocaleString() || 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -528,7 +437,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Nights</p>
-                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalNights || 0}</p>
+                  <p className="text-2xl font-medium text-slate-900">{guestStats?.totalNights || 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -546,8 +455,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Email:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{guestData.email}</span>
+                      <span className="text-sm text-slate-900">{guestData.email || 'n/a'}</span>
                       <button 
+                        data-testid="edit-email-btn"
                         onClick={() => handleEditField('email', guestData.email, 'Email', 'email')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
@@ -558,8 +468,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Phone:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{guestData.phone}</span>
+                      <span className="text-sm text-slate-900">{guestData.phone || 'n/a'}</span>
                       <button 
+                        data-testid="edit-phone-btn"
                         onClick={() => handleEditField('phone', guestData.phone, 'Phone', 'tel')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
@@ -571,10 +482,10 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                     <span className="text-sm text-slate-600">Nationality:</span>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900 flex items-center space-x-1">
-                        <span>🇺🇸</span>
-                        <span>{guestData.nationality}</span>
+                        <span>{guestData.nationality || 'n/a'}</span>
                       </span>
                       <button
+                        data-testid="edit-nationality-btn"
                         onClick={() => handleEditField('nationality', guestData.nationality, 'Nationality', 'select')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
@@ -585,8 +496,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Birth Date:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{formatDate(guestData.dateOfBirth)}</span>
+                      <span className="text-sm text-slate-900">{guestData.dateOfBirth ? formatDate(guestData.dateOfBirth) : 'n/a'}</span>
                       <button
+                        data-testid="edit-birthdate-btn"
                         onClick={() => handleEditField('dateOfBirth', guestData.dateOfBirth, 'Birth Date', 'date')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
@@ -596,7 +508,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Age:</span>
-                    <span className="text-sm text-slate-900">{getAge(guestData.dateOfBirth)} years</span>
+                    <span className="text-sm text-slate-900">{guestData.dateOfBirth ? `${getAge(guestData.dateOfBirth)} years` : 'n/a'}</span>
                   </div>
                 </div>
               </div>
@@ -612,6 +524,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-medium text-slate-900">Description</h3>
                   <button
+                    data-testid="edit-comments-btn"
                     onClick={() => handleEditField('comments', guestData.comments || '', 'Description', 'textarea')}
                     className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                   >
@@ -619,18 +532,19 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   </button>
                 </div>
                 <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 min-h-[60px]">
-                  {guestData.comments || 'No description available'}
+                  {guestData.comments || 'n/a'}
                 </div>
               </div>
 
               {/* Reservation History */}
-              <div className="mb-6">
+              <div className="mb-6" data-testid="guest-reservations-section">
                 <h3 className="text-lg font-medium text-slate-900 mb-3">Reservation History</h3>
                 <div className="space-y-3">
                   {(guestReservations && guestReservations.length > 0) ? (
                     guestReservations.map((reservation) => (
                       <div 
-                        key={reservation.id} 
+                        key={reservation.id}
+                        data-testid="reservation-item"
                         className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                         onClick={() => window.location.href = `/reservations/${reservation.id}`}
                       >
@@ -647,7 +561,9 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-sm font-medium text-slate-900">AED {reservation.totalAmount}</span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
+                          <span 
+                            data-testid={`status-badge-${reservation.id}`}
+                            className={`px-2 py-1 text-xs rounded-full ${
                             reservation.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                             reservation.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
                             reservation.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -660,7 +576,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-slate-500">No reservations yet</p>
+                    <p className="text-sm text-slate-500">n/a</p>
                   )}
                 </div>
               </div>
@@ -670,6 +586,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-medium text-slate-900">Documents</h3>
                   <button
+                    data-testid="upload-document-btn"
                     onClick={() => setUploadDocumentModal(true)}
                     className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
                   >
@@ -690,6 +607,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                         </div>
                         <div className="flex items-center space-x-2">
                           <button 
+                            data-testid="download-document-btn"
                             onClick={() => document.url && window.open(document.url, '_blank')}
                             className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer"
                             title="Download"
@@ -697,6 +615,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                             <Download size={14} />
                           </button>
                           <button 
+                            data-testid="delete-document-btn"
                             onClick={() => handleDeleteDocument(document.id)}
                             className="p-1 text-slate-600 hover:bg-red-100 hover:text-red-600 rounded cursor-pointer"
                             title="Delete"
@@ -707,7 +626,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-slate-500">No documents uploaded yet</p>
+                    <p className="text-sm text-slate-500">n/a</p>
                   )}
                 </div>
               </div>
@@ -730,7 +649,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                     </div>
                     ))
                   ) : (
-                    <p className="text-sm text-slate-500">No activity yet</p>
+                    <p className="text-sm text-slate-500">n/a</p>
                   )}
                 </div>
               </div>
@@ -742,12 +661,13 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
 
       {/* Edit Modal */}
       {editModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid="edit-modal">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-slate-900">Edit {editModal.title}</h3>
                 <button
+                  data-testid="close-edit-btn"
                   onClick={handleCloseEdit}
                   className="p-1 hover:bg-gray-100 rounded transition-colors"
                 >
@@ -758,6 +678,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               <div className="mb-6">
                 {editModal.inputType === 'textarea' ? (
                   <textarea
+                    data-testid="edit-comments-textarea"
                     defaultValue={editModal.currentValue}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -765,6 +686,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   />
                 ) : editModal.inputType === 'select' ? (
                   <select
+                    data-testid="edit-nationality-select"
                     defaultValue={editModal.currentValue}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
@@ -791,6 +713,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   </select>
                 ) : (
                   <input
+                    data-testid={`edit-${editModal.inputType === 'email' ? 'email' : editModal.inputType === 'tel' ? 'phone' : 'birthdate'}-input`}
                     type={editModal.inputType}
                     defaultValue={editModal.currentValue}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -801,12 +724,14 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
 
               <div className="flex items-center justify-end space-x-3">
                 <button
+                  data-testid="cancel-edit-btn"
                   onClick={handleCloseEdit}
                   className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  data-testid="save-edit-btn"
                   onClick={() => {
                     const input = document.querySelector('input, textarea, select') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
                     if (input && input.value.trim()) {
@@ -825,7 +750,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
 
       {/* Upload Document Modal */}
       {uploadDocumentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" data-testid="upload-document-modal">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -842,6 +767,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                   Select file to upload
                 </label>
                 <input
+                  data-testid="document-file-input"
                   type="file"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                   onChange={(e) => {
@@ -869,7 +795,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
 
       {/* Delete Confirmation Modal */}
       {isDeleting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" data-testid="delete-guest-modal">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
@@ -887,12 +813,14 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               </p>
               <div className="flex justify-end space-x-3">
                 <button
+                  data-testid="cancel-delete-btn"
                   onClick={() => setIsDeleting(false)}
                   className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                 >
                   Cancel
                 </button>
                 <button
+                  data-testid="confirm-delete-btn"
                   onClick={handleDeleteGuest}
                   className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
                 >

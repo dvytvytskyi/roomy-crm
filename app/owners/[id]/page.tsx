@@ -11,8 +11,7 @@ import CashPaymentModal from '@/components/owners/CashPaymentModal'
 import BankPaymentModal from '@/components/owners/BankPaymentModal'
 import AddBankAccountModal from '@/components/owners/AddBankAccountModal'
 import UploadDocumentModal from '@/components/owners/UploadDocumentModal'
-import { userService } from '@/lib/api/services/userService'
-import { User as UserType } from '@/lib/api'
+import { ownerService, Owner } from '@/lib/api/services/ownerService'
 
 interface OwnerDetailsPageProps {
   params: {
@@ -135,7 +134,7 @@ const getCountryFlag = (nationality: string) => {
 
 export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
   // State for owner data
-  const [owner, setOwner] = useState<ExtendedOwner | null>(null)
+  const [owner, setOwner] = useState<Owner | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
@@ -284,73 +283,38 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     const loadOwner = async () => {
       try {
         setIsLoading(true)
-        const response = await userService.getOwnerById(params.id)
+        setError(null)
+        console.log('🏠 Loading owner details from API...')
+        
+        const response = await ownerService.getOwner(params.id)
         if (response.success && response.data) {
-          // Convert API data to ExtendedOwner format
-          const apiData = response.data as any
-          const extendedOwner: ExtendedOwner = {
-            ...response.data,
-            name: `${response.data.firstName} ${response.data.lastName}`,
-            nationality: apiData.nationality || 'Emirati',
-            dateOfBirth: apiData.dateOfBirth || '1975-03-15',
-            whatsapp: response.data.phone,
-            telegram: '@ahmedrashid',
-            reservationCount: 45,
-            properties: apiData.properties || [],
-            units: [
-              {
-                id: 1,
-                name: 'Burj Khalifa Studio',
-                nickname: 'BK Studio',
-                location: 'Downtown Dubai',
-                profitFormula: '70% Owner / 30% Company',
-                totalProfit: 12500,
-                photo: '/api/placeholder/150/100'
-              }
-            ],
-            comments: apiData.comments || 'VIP owner, prefers bank transfer payments',
-            status: response.data.isActive ? 'Active' : 'Inactive',
-            vipStatus: true,
-            paymentPreferences: 'Bank Transfer',
-            personalStayDays: 30,
-            totalUnits: apiData.totalUnits || 1,
-            totalProfit: 41050,
-            lifetimeValue: 287500,
-            documents: apiData.documents || [],
-            bankDetails: apiData.bankDetails || [],
-            transactions: apiData.transactions || [],
-            activityLog: apiData.activityLog || [],
-            createdBy: 'Admin',
-            createdAt: response.data.createdAt,
-            lastModifiedBy: 'Manager',
-            lastModifiedAt: response.data.updatedAt
-          }
-          setOwner(extendedOwner)
+          console.log('🏠 Owner details loaded:', response.data)
+          setOwner(response.data)
           
           // Load bank details if available
-          if ((response.data as any).bankDetails && Array.isArray((response.data as any).bankDetails)) {
-            setBankDetails((response.data as any).bankDetails)
+          if (response.data.bankDetails && Array.isArray(response.data.bankDetails)) {
+            setBankDetails(response.data.bankDetails)
           }
           
           // Load transactions if available
-          if ((response.data as any).transactions && Array.isArray((response.data as any).transactions)) {
-            setTransactions((response.data as any).transactions)
+          if (response.data.transactions && Array.isArray(response.data.transactions)) {
+            setTransactions(response.data.transactions)
           }
           
           // Load activity log if available
-          if ((response.data as any).activityLog && Array.isArray((response.data as any).activityLog)) {
-            setActivityLog((response.data as any).activityLog)
+          if (response.data.activityLog && Array.isArray(response.data.activityLog)) {
+            setActivityLog(response.data.activityLog)
           }
           
           // Load documents if available
-          if ((response.data as any).documents && Array.isArray((response.data as any).documents)) {
-            setDocuments((response.data as any).documents)
+          if (response.data.documents && Array.isArray(response.data.documents)) {
+            setDocuments(response.data.documents)
           }
         } else {
           setError('Owner not found')
         }
       } catch (err) {
-        console.error('Error loading owner:', err)
+        console.error('🏠 Error loading owner:', err)
         setError('Failed to load owner data')
       } finally {
         setIsLoading(false)
@@ -601,23 +565,11 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     if (!owner) return
 
     try {
-      // Convert ExtendedOwner back to API format for update
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
+      const updateData: any = {
         [editModal.field]: newValue
       }
       
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      const response = await ownerService.updateOwner(owner.id, updateData)
       if (response.success && response.data) {
         // Update the local state with the new value
         setOwner(prev => prev ? { ...prev, [editModal.field]: newValue } : null)
@@ -1287,8 +1239,8 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     }
   }
 
-  // Use real owner data or fallback to mock data
-  const currentOwner = owner || mockOwner
+  // Use real owner data
+  const currentOwner = owner
 
   if (isLoading) {
     return (
@@ -1298,6 +1250,20 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
             <p className="text-slate-600">Loading owner details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !currentOwner) {
+    return (
+      <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
+        <TopNavigation />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">Error loading owner</p>
+            <p className="text-slate-600 text-sm">{error}</p>
           </div>
         </div>
       </div>
@@ -1316,19 +1282,19 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
               <button
                 onClick={() => window.history.back()}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                data-testid="back-btn"
               >
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-medium text-slate-900">{currentOwner.name}</h1>
-                <p className="text-sm text-slate-600">{currentOwner.nationality} • {getAge(currentOwner.dateOfBirth)} years old</p>
+                <h1 className="text-xl font-medium text-slate-900">{currentOwner.firstName} {currentOwner.lastName}</h1>
+                <p className="text-sm text-slate-600">{currentOwner.nationality || 'n/a'} • {getAge(currentOwner.dateOfBirth || '1975-03-15')} years old</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(currentOwner.status)}`}>
-                {currentOwner.vipStatus && <Star size={16} className="mr-2 text-yellow-500" />}
-                {currentOwner.status === 'VIP' && <Crown size={16} className="mr-2 text-purple-500" />}
-                <span>{currentOwner.status}</span>
+              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(currentOwner.isActive ? 'Active' : 'Inactive')}`}>
+                {currentOwner.comments?.includes('VIP') && <Star size={16} className="mr-2 text-yellow-500" />}
+                <span>{currentOwner.isActive ? 'Active' : 'Inactive'}</span>
               </span>
               <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center">
                 <Trash2 size={16} className="mr-2" />
@@ -1348,7 +1314,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-slate-600 text-xs mb-1">Total Units</p>
-                  <p className="text-2xl font-medium text-slate-900">{currentOwner.properties?.length || 0}</p>
+                  <p className="text-2xl font-medium text-slate-900">{currentOwner.totalUnits || 0}</p>
                 </div>
               </div>
             </div>
@@ -1365,7 +1331,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     const totalProfit = (currentOwner.transactions || [])
                       .filter((t: any) => t.amount > 0)
                       .reduce((sum: number, t: any) => sum + t.amount, 0)
-                    return totalProfit.toLocaleString()
+                    return totalProfit.toLocaleString() || '0'
                   })()}</p>
                 </div>
               </div>
@@ -1380,7 +1346,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <p className="text-slate-600 text-xs mb-1">Nationality</p>
                   <p className="text-2xl font-medium text-slate-900 flex items-center space-x-2">
                     <span>{getCountryFlag(currentOwner.nationality || 'Emirati')}</span>
-                    <span>{currentOwner.nationality}</span>
+                    <span>{currentOwner.nationality || 'n/a'}</span>
                   </p>
                 </div>
               </div>
@@ -1399,7 +1365,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Email:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{currentOwner.email}</span>
+                      <span className="text-sm text-slate-900">{currentOwner.email || 'n/a'}</span>
                       <button 
                         onClick={() => handleEditField('email', currentOwner.email, 'Email', 'email')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -1411,7 +1377,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Phone:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{currentOwner.phone}</span>
+                      <span className="text-sm text-slate-900">{currentOwner.phone || 'n/a'}</span>
                       <button 
                         onClick={() => handleEditField('phone', currentOwner.phone, 'Phone', 'tel')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -1425,14 +1391,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900 flex items-center space-x-1">
                         <span>{getCountryFlag(currentOwner.nationality || 'Emirati')}</span>
-                        <span>{currentOwner.nationality}</span>
+                        <span>{currentOwner.nationality || 'n/a'}</span>
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Birth Date:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{formatDate(currentOwner.dateOfBirth)}</span>
+                      <span className="text-sm text-slate-900">{currentOwner.dateOfBirth ? formatDate(currentOwner.dateOfBirth) : 'n/a'}</span>
                       <button 
                         onClick={() => handleEditField('dateOfBirth', currentOwner.dateOfBirth, 'Birth Date', 'date')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -1443,7 +1409,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Age:</span>
-                    <span className="text-sm text-slate-900">{getAge(currentOwner.dateOfBirth)} years</span>
+                    <span className="text-sm text-slate-900">{currentOwner.dateOfBirth ? getAge(currentOwner.dateOfBirth) : 'n/a'} years</span>
                   </div>
                 </div>
             </div>
@@ -1464,21 +1430,21 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   </button>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-sm text-slate-600">{currentOwner.comments || 'No description available for this owner.'}</p>
+                  <p className="text-sm text-slate-600">{currentOwner.comments || 'n/a'}</p>
                 </div>
               </div>
 
-              {/* Units */}
+              {/* Properties */}
               <div className="mb-6">
-                <h2 className="text-lg font-medium text-slate-900 mb-4">Linked Units</h2>
+                <h2 className="text-lg font-medium text-slate-900 mb-4">Properties</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(currentOwner.units || []).map(unit => (
-                    <div key={unit.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  {(currentOwner.properties || []).map((property, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-medium text-slate-900">{unit.name}</h3>
-                          <p className="text-sm text-slate-600">{unit.nickname}</p>
-                          <p className="text-xs text-gray-500">{unit.location}</p>
+                          <h3 className="font-medium text-slate-900">{property}</h3>
+                          <p className="text-sm text-slate-600">Property</p>
+                          <p className="text-xs text-gray-500">n/a</p>
                         </div>
                         <button className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer">
                           <Edit size={14} />
@@ -1486,16 +1452,22 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Profit Formula:</span>
-                          <span className="text-slate-900">{unit.profitFormula}</span>
+                          <span className="text-slate-600">Status:</span>
+                          <span className="text-slate-900">n/a</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Total Profit:</span>
-                          <span className="font-medium text-green-600">${unit.totalProfit.toLocaleString()}</span>
+                          <span className="text-slate-600">Revenue:</span>
+                          <span className="font-medium text-green-600">n/a</span>
                         </div>
                       </div>
                     </div>
                   ))}
+                  {(!currentOwner.properties || currentOwner.properties.length === 0) && (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      <Building size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No properties linked yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1506,12 +1478,13 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <button 
                     onClick={handleAddBankAccount}
                     className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
+                    data-testid="add-bank-btn"
                   >
                     Add Bank Account
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {bankDetails.map((bankDetail) => (
+                  {bankDetails && bankDetails.length > 0 ? bankDetails.map((bankDetail) => (
                     <div key={bankDetail.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -1563,7 +1536,12 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <CreditCard size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No bank accounts added yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1587,7 +1565,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {transactions.map((transaction) => {
+                  {transactions && transactions.length > 0 ? transactions.map((transaction) => {
                     const bankDetail = transaction.bankDetailId ? bankDetails.find(bd => bd.id === transaction.bankDetailId) : null
                     const isPayment = transaction.type === 'payment' || transaction.type === 'cash_payment'
                     const isCashPayment = transaction.type === 'cash_payment'
@@ -1632,7 +1610,12 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                         </div>
                       </div>
                     )
-                  })}
+                  }) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <DollarSign size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No transactions recorded yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1643,6 +1626,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <button 
                     onClick={() => setIsUploadModalOpen(true)}
                     className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
+                    data-testid="upload-document-btn"
                   >
                     Upload Document
                   </button>

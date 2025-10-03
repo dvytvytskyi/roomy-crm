@@ -162,6 +162,15 @@
   color: #374151 !important;
   transition: all 0.2s ease !important;
   border-bottom: 1px solid #f3f4f6 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Emoji styling in combo items */
+.b-eventeditor .b-list .b-list-item .b-emoji {
+  font-size: 16px !important;
+  margin-right: 8px !important;
+  display: inline-block !important;
 }
 
 .b-eventeditor .b-list .b-list-item:hover {
@@ -228,6 +237,16 @@
   border: none !important;
   cursor: pointer !important;
   min-width: 80px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+/* Button emoji styling */
+.b-eventeditor .b-button .b-emoji {
+  font-size: 16px !important;
+  line-height: 1 !important;
 }
 
 /* Save button */
@@ -343,6 +362,15 @@
   .b-eventeditor {
     margin: 20px !important;
     max-width: calc(100vw - 40px) !important;
+    width: calc(100vw - 40px) !important;
+  }
+  
+  .b-eventeditor .b-panel-header {
+    padding: 12px 16px !important;
+  }
+  
+  .b-eventeditor .b-panel-header .b-panel-title {
+    font-size: 16px !important;
   }
   
   .b-eventeditor .b-panel-body {
@@ -356,6 +384,42 @@
   
   .b-eventeditor .b-field-row .b-field {
     margin-bottom: 16px !important;
+  }
+  
+  .b-eventeditor .b-fieldset {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .b-eventeditor .b-panel-footer {
+    padding: 12px 16px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .b-eventeditor .b-button {
+    width: 100% !important;
+    min-width: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .b-eventeditor {
+    margin: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+    width: calc(100vw - 20px) !important;
+  }
+  
+  .b-eventeditor .b-panel-header {
+    padding: 10px 12px !important;
+  }
+  
+  .b-eventeditor .b-panel-body {
+    padding: 12px !important;
+  }
+  
+  .b-eventeditor .b-fieldset {
+    padding: 12px !important;
   }
 }
 

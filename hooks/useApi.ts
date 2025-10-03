@@ -62,7 +62,7 @@ export function useApi<T>(
     if (immediate) {
       execute();
     }
-  }, [immediate, execute]);
+  }, [immediate]); // Removed execute from dependencies to prevent infinite loops
 
   return {
     ...state,

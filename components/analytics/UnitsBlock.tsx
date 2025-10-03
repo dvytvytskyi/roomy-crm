@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Home, TrendingUp, TrendingDown, DollarSign, Calendar, Wrench, Sparkles } from 'lucide-react'
+import { analyticsService, UnitAnalytics } from '../../lib/api/services/analyticsService'
 
 interface UnitsBlockProps {
   viewMode: 'chart' | 'table'
@@ -10,109 +11,85 @@ interface UnitsBlockProps {
 
 export default function UnitsBlock({ viewMode, selectedPeriod }: UnitsBlockProps) {
   const [activeTab, setActiveTab] = useState<'performance' | 'costs' | 'occupancy'>('performance')
+  const [loading, setLoading] = useState(true)
+  const [unitsData, setUnitsData] = useState<UnitAnalytics | null>(null)
 
-  // Mock data for units analytics
-  const unitsData = {
-    performance: [
-      {
-        unit: 'Apartment Burj Khalifa 2',
-        revenue: 24500,
-        expenses: 3200,
-        profit: 21300,
-        occupancyRate: 85.2,
-        revenuePerNight: 320,
-        totalNights: 76,
-        avgStayDuration: 4.1
-      },
-      {
-        unit: 'Marina View Studio',
-        revenue: 18900,
-        expenses: 2800,
-        profit: 16100,
-        occupancyRate: 78.5,
-        revenuePerNight: 280,
-        totalNights: 68,
-        avgStayDuration: 3.8
-      },
-      {
-        unit: 'Downtown Loft 2BR',
-        revenue: 22100,
-        expenses: 3100,
-        profit: 19000,
-        occupancyRate: 82.1,
-        revenuePerNight: 310,
-        totalNights: 71,
-        avgStayDuration: 4.3
-      },
-      {
-        unit: 'JBR Beach Apartment',
-        revenue: 19800,
-        expenses: 2900,
-        profit: 16900,
-        occupancyRate: 75.8,
-        revenuePerNight: 290,
-        totalNights: 68,
-        avgStayDuration: 3.9
-      },
-      {
-        unit: 'Business Bay Office',
-        revenue: 15600,
-        expenses: 2500,
-        profit: 13100,
-        occupancyRate: 72.3,
-        revenuePerNight: 260,
-        totalNights: 60,
-        avgStayDuration: 3.5
-      },
-      {
-        unit: 'DIFC Penthouse',
-        revenue: 24500,
-        expenses: 4200,
-        profit: 20300,
-        occupancyRate: 88.7,
-        revenuePerNight: 380,
-        totalNights: 64,
-        avgStayDuration: 4.6
+  useEffect(() => {
+    const loadUnitsData = async () => {
+      try {
+        setLoading(true)
+        const response = await analyticsService.getUnitsAnalytics({
+          period: selectedPeriod as any,
+          viewMode: viewMode
+        })
+        setUnitsData(response.data)
+      } catch (error) {
+        console.error('Error loading units analytics:', error)
+      } finally {
+        setLoading(false)
       }
-    ],
-    costs: {
-      maintenance: [
-        { unit: 'Apartment Burj Khalifa 2', amount: 1800, percentage: 20.0 },
-        { unit: 'Marina View Studio', amount: 1200, percentage: 15.0 },
-        { unit: 'Downtown Loft 2BR', amount: 1600, percentage: 18.0 },
-        { unit: 'JBR Beach Apartment', amount: 1400, percentage: 16.0 },
-        { unit: 'Business Bay Office', amount: 1000, percentage: 12.0 },
-        { unit: 'DIFC Penthouse', amount: 2500, percentage: 25.0 }
-      ],
-      cleaning: [
-        { unit: 'Apartment Burj Khalifa 2', amount: 1400, percentage: 19.0 },
-        { unit: 'Marina View Studio', amount: 1000, percentage: 15.0 },
-        { unit: 'Downtown Loft 2BR', amount: 1200, percentage: 17.0 },
-        { unit: 'JBR Beach Apartment', amount: 1100, percentage: 16.0 },
-        { unit: 'Business Bay Office', amount: 900, percentage: 13.0 },
-        { unit: 'DIFC Penthouse', amount: 1800, percentage: 20.0 }
-      ]
-    },
-    occupancy: {
-      trends: [
-        { month: 'Jan', occupancy: 65 },
-        { month: 'Feb', occupancy: 72 },
-        { month: 'Mar', occupancy: 78 },
-        { month: 'Apr', occupancy: 75 },
-        { month: 'May', occupancy: 82 },
-        { month: 'Jun', occupancy: 88 },
-        { month: 'Jul', occupancy: 85 },
-        { month: 'Aug', occupancy: 90 }
-      ],
-      byUnit: [
-        { unit: 'DIFC Penthouse', occupancy: 88.7, trend: 'up' },
-        { unit: 'Apartment Burj Khalifa 2', occupancy: 85.2, trend: 'up' },
-        { unit: 'Downtown Loft 2BR', occupancy: 82.1, trend: 'stable' },
-        { unit: 'Marina View Studio', occupancy: 78.5, trend: 'down' },
-        { unit: 'JBR Beach Apartment', occupancy: 75.8, trend: 'up' },
-        { unit: 'Business Bay Office', occupancy: 72.3, trend: 'down' }
-      ]
     }
+
+    loadUnitsData()
+  }, [viewMode, selectedPeriod])
+
+  if (loading || !unitsData) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Mock data for costs and occupancy (not in backend yet)
+  const mockCostsData = {
+    maintenance: [
+      { unit: 'Apartment Burj Khalifa 2', amount: 1800, percentage: 20.0 },
+      { unit: 'Marina View Studio', amount: 1200, percentage: 15.0 },
+      { unit: 'Downtown Loft 2BR', amount: 1600, percentage: 18.0 },
+      { unit: 'JBR Beach Apartment', amount: 1400, percentage: 16.0 },
+      { unit: 'Business Bay Office', amount: 1000, percentage: 12.0 },
+      { unit: 'DIFC Penthouse', amount: 2500, percentage: 25.0 }
+    ],
+    cleaning: [
+      { unit: 'Apartment Burj Khalifa 2', amount: 1400, percentage: 19.0 },
+      { unit: 'Marina View Studio', amount: 1000, percentage: 15.0 },
+      { unit: 'Downtown Loft 2BR', amount: 1200, percentage: 17.0 },
+      { unit: 'JBR Beach Apartment', amount: 1100, percentage: 16.0 },
+      { unit: 'Business Bay Office', amount: 900, percentage: 13.0 },
+      { unit: 'DIFC Penthouse', amount: 1800, percentage: 20.0 }
+    ]
+  }
+
+  const mockOccupancyData = {
+    trends: [
+      { month: 'Jan', occupancy: 65 },
+      { month: 'Feb', occupancy: 72 },
+      { month: 'Mar', occupancy: 78 },
+      { month: 'Apr', occupancy: 75 },
+      { month: 'May', occupancy: 82 },
+      { month: 'Jun', occupancy: 88 },
+      { month: 'Jul', occupancy: 85 },
+      { month: 'Aug', occupancy: 90 }
+    ],
+    byUnit: [
+      { unit: 'DIFC Penthouse', occupancy: 88.7, trend: 'up' },
+      { unit: 'Apartment Burj Khalifa 2', occupancy: 85.2, trend: 'up' },
+      { unit: 'Downtown Loft 2BR', occupancy: 82.1, trend: 'stable' },
+      { unit: 'Marina View Studio', occupancy: 78.5, trend: 'down' },
+      { unit: 'JBR Beach Apartment', occupancy: 75.8, trend: 'up' },
+      { unit: 'Business Bay Office', occupancy: 72.3, trend: 'down' }
+    ]
   }
 
   const formatCurrency = (amount: number) => {
@@ -243,7 +220,7 @@ export default function UnitsBlock({ viewMode, selectedPeriod }: UnitsBlockProps
               <div>
                 <h3 className="text-md font-medium text-slate-900 mb-4">Maintenance Costs by Unit</h3>
                 <div className="space-y-3">
-                  {unitsData.costs.maintenance.map((item, index) => (
+                  {mockCostsData.maintenance.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
@@ -267,7 +244,7 @@ export default function UnitsBlock({ viewMode, selectedPeriod }: UnitsBlockProps
               <div>
                 <h3 className="text-md font-medium text-slate-900 mb-4">Cleaning Costs by Unit</h3>
                 <div className="space-y-3">
-                  {unitsData.costs.cleaning.map((item, index) => (
+                  {mockCostsData.cleaning.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
@@ -301,7 +278,7 @@ export default function UnitsBlock({ viewMode, selectedPeriod }: UnitsBlockProps
                   <span className="text-sm font-medium text-slate-900">Average: 78.5%</span>
                 </div>
                 <div className="flex items-end space-x-2 h-32">
-                  {unitsData.occupancy.trends.map((trend, index) => (
+                  {mockOccupancyData.trends.map((trend, index) => (
                     <div key={index} className="flex-1 flex flex-col items-center">
                       <div 
                         className="w-full bg-orange-500 rounded-t"
@@ -318,7 +295,7 @@ export default function UnitsBlock({ viewMode, selectedPeriod }: UnitsBlockProps
             <div>
               <h3 className="text-md font-medium text-slate-900 mb-4">Occupancy by Unit</h3>
               <div className="space-y-3">
-                {unitsData.occupancy.byUnit.map((item, index) => (
+                {mockOccupancyData.byUnit.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">

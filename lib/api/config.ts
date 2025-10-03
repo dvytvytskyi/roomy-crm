@@ -42,9 +42,9 @@ export const API_ENDPOINTS = {
     AUTO_SENDERS: '/settings/auto-senders',
     REMINDERS: '/settings/reminders',
     GENERAL: '/settings/general',
-    TEST_EMAIL: '/settings/test/email',
-    TEST_SMS: '/settings/test/sms',
-    TEST_PLATFORM: (platform: string) => `/settings/test/platform/${platform}`,
+    TEST_EMAIL: '/settings/test-email',
+    TEST_SMS: '/settings/test-sms',
+    TEST_PLATFORM: (platform: string) => `/settings/test-platform/${platform}`,
   },
   
   // Properties
@@ -146,7 +146,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -165,6 +165,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }

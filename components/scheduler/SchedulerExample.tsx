@@ -54,6 +54,7 @@ const sampleEvents: Reservation[] = [
     guestStatus: 'upcoming',
     amount: 360,
     paidAmount: 360,
+    guestCount: 2,
     eventColor: RESERVATION_COLORS.confirmed,
     iconCls: 'b-fa b-fa-user'
   },
@@ -69,6 +70,7 @@ const sampleEvents: Reservation[] = [
     guestStatus: 'checked_in',
     amount: 300,
     paidAmount: 150,
+    guestCount: 4,
     eventColor: RESERVATION_COLORS.owner_confirmed,
     iconCls: 'b-fa b-fa-user'
   },
@@ -84,6 +86,7 @@ const sampleEvents: Reservation[] = [
     guestStatus: 'upcoming',
     amount: 600,
     paidAmount: 0,
+    guestCount: 3,
     eventColor: RESERVATION_COLORS.reserved,
     iconCls: 'b-fa b-fa-user'
   },
@@ -99,6 +102,7 @@ const sampleEvents: Reservation[] = [
     guestStatus: 'checked_out',
     amount: 600,
     paidAmount: 600,
+    guestCount: 2,
     eventColor: RESERVATION_COLORS.checked_out,
     iconCls: 'b-fa b-fa-user'
   },
@@ -114,6 +118,7 @@ const sampleEvents: Reservation[] = [
     guestStatus: 'no_show',
     amount: 840,
     paidAmount: 0,
+    guestCount: 1,
     eventColor: RESERVATION_COLORS.block,
     iconCls: 'b-fa b-fa-ban'
   },

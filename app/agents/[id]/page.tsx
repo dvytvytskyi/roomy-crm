@@ -307,22 +307,25 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
               <button
                 onClick={() => router.back()}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                data-testid="back-btn"
               >
                 <ArrowLeft size={16} />
               </button>
               <div>
-                <h1 className="text-xl font-medium text-slate-900">{agent.name}</h1>
+                <h1 className="text-xl font-medium text-slate-900">{agent.name || 'n/a'}</h1>
                 <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-sm text-slate-600">{agent.nationality}</span>
+                  <span className="text-sm text-slate-600">{agent.nationality || 'n/a'}</span>
                   <span className="text-sm text-slate-500">•</span>
-                  <span className="text-sm text-slate-600">{new Date().getFullYear() - new Date(agent.birthday).getFullYear()} years old</span>
+                  <span className="text-sm text-slate-600">
+                    {agent.birthday ? `${new Date().getFullYear() - new Date(agent.birthday).getFullYear()} years old` : 'n/a'}
+                  </span>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 <Star size={12} className="mr-1" />
-                {agent.status}
+                {agent.status || 'n/a'}
               </span>
               <button
                 onClick={() => setShowDeleteModal(true)}
@@ -345,7 +348,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 </div>
                 <div className="ml-3">
                   <p className="text-xs text-slate-600 mb-1">Units Attracted</p>
-                  <p className="text-2xl font-medium text-slate-900">{agent.unitsAttracted}</p>
+                  <p className="text-2xl font-medium text-slate-900">{agent.unitsAttracted || 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -356,7 +359,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 </div>
                 <div className="ml-3">
                   <p className="text-xs text-slate-600 mb-1">Total Payouts</p>
-                  <p className="text-2xl font-medium text-slate-900">{formatCurrency(agent.totalPayouts)}</p>
+                  <p className="text-2xl font-medium text-slate-900">{agent.totalPayouts ? formatCurrency(agent.totalPayouts) : 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -367,7 +370,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                 </div>
                 <div className="ml-3">
                   <p className="text-xs text-slate-600 mb-1">Last Payout</p>
-                  <p className="text-2xl font-medium text-slate-900">{formatDate(agent.lastPayoutDate)}</p>
+                  <p className="text-2xl font-medium text-slate-900">{agent.lastPayoutDate ? formatDate(agent.lastPayoutDate) : 'n/a'}</p>
                 </div>
               </div>
             </div>
@@ -388,7 +391,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Email:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{agent.email}</span>
+                      <span className="text-sm text-slate-900">{agent.email || 'n/a'}</span>
                       <button
                         onClick={() => handleEditField('email', agent.email)}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -400,7 +403,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Phone:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{agent.phone}</span>
+                      <span className="text-sm text-slate-900">{agent.phone || 'n/a'}</span>
                       <button
                         onClick={() => handleEditField('phone', agent.phone)}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -414,7 +417,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900 flex items-center space-x-1">
                         <span>{getCountryFlag(agent.nationality)}</span>
-                        <span>{agent.nationality}</span>
+                        <span>{agent.nationality || 'n/a'}</span>
                       </span>
                       <button
                         onClick={() => handleEditField('nationality', agent.nationality)}
@@ -427,7 +430,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Birth Date:</span>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-900">{formatDate(agent.birthday)}</span>
+                      <span className="text-sm text-slate-900">{agent.birthday ? formatDate(agent.birthday) : 'n/a'}</span>
                       <button
                         onClick={() => handleEditField('birthday', agent.birthday)}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
@@ -438,11 +441,11 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Age:</span>
-                    <span className="text-sm text-slate-900">{new Date().getFullYear() - new Date(agent.birthday).getFullYear()} years</span>
+                    <span className="text-sm text-slate-900">{agent.birthday ? `${new Date().getFullYear() - new Date(agent.birthday).getFullYear()} years` : 'n/a'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Join Date:</span>
-                    <span className="text-sm text-slate-900">{formatDate(agent.joinDate)}</span>
+                    <span className="text-sm text-slate-900">{agent.joinDate ? formatDate(agent.joinDate) : 'n/a'}</span>
                   </div>
                 </div>
               </div>
@@ -465,7 +468,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
                     </button>
                   </div>
                   <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 min-h-[60px]">
-                    {agent.comments}
+                    {agent.comments || 'n/a'}
                   </div>
                 </div>
 
@@ -675,7 +678,7 @@ export default function AgentDetailsPage({ params }: { params: { id: string } })
           <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
             <h3 className="text-lg font-medium text-slate-900 mb-4">Delete Agent</h3>
             <p className="text-slate-600 mb-6">
-              Are you sure you want to delete {agent.name}? This action cannot be undone.
+              Are you sure you want to delete {agent?.name || 'this agent'}? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button

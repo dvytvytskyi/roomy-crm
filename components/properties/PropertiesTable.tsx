@@ -630,7 +630,7 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   if (isLoading) {
     console.log('🔄 PropertiesTable: Showing loading spinner because isLoading is true')
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" data-testid="loading">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading properties...</p>
@@ -642,7 +642,7 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
   console.log('📋 PropertiesTable: Rendering table because isLoading is false')
 
   return (
-    <div className="h-full overflow-auto custom-scrollbar">
+    <div className="h-full overflow-auto custom-scrollbar" data-testid="properties-table">
       <table className="w-full">
         <thead className="bg-slate-50 border-b border-gray-200 sticky top-0 z-10">
           <tr>
@@ -738,6 +738,7 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
                     <button
                       onClick={() => window.location.href = `/properties/${property.id}`}
                       className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
+                      data-testid={`property-name-${property.id}`}
                     >
                       {getPropertyName(property)}
                     </button>
@@ -766,6 +767,7 @@ export default function PropertiesTable({ searchTerm, onEditProperty, selectedPr
                     onClick={() => onEditProperty(property)}
                     className="text-slate-400 hover:text-orange-600 transition-colors"
                     title="Edit Property"
+                    data-testid={`edit-property-${property.id}`}
                   >
                     <Edit size={16} />
                   </button>

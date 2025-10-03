@@ -1,44 +1,119 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import FinancialsOverview from '../../components/finances/FinancialsOverview'
 import FinancialsTable from '../../components/finances/FinancialsTable'
 import FinancialsFilters from '../../components/finances/FinancialsFilters'
 import AddPaymentModal from '../../components/finances/AddPaymentModal'
 import { Filter, Download, Plus, DollarSign, TrendingUp, TrendingDown, CreditCard, AlertCircle } from 'lucide-react'
+import { financeService, FinancialTransaction, FinancialStats, FinancialFilters as FinancialFiltersType } from '../../lib/api/services/financeService'
 
 export default function FinancialsPage() {
+  const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
+  const [stats, setStats] = useState<FinancialStats | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTransactions, setSelectedTransactions] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
+  const [filters, setFilters] = useState<FinancialFiltersType>({})
   const [dateRange, setDateRange] = useState({
     from: '',
     to: ''
   })
 
-  const handleBulkAction = (action: 'export' | 'markPaid' | 'generateInvoice') => {
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load transactions with filters
+        const transactionsResponse = await financeService.getFinancialTransactions({
+          ...filters,
+          search: searchTerm || undefined,
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined
+        })
+        
+        // Load stats
+        const statsResponse = await financeService.getFinancialStats({
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined
+        })
+        
+        setTransactions(transactionsResponse.data)
+        setStats(statsResponse.data)
+      } catch (error) {
+        console.error('Error loading financial data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [filters, searchTerm, dateRange])
+
+  const handleBulkAction = async (action: 'export' | 'markPaid' | 'generateInvoice') => {
     if (selectedTransactions.length === 0) return
     
-    switch (action) {
-      case 'export':
-        console.log('Exporting transactions:', selectedTransactions)
-        break
-      case 'markPaid':
-        console.log('Marking as paid:', selectedTransactions)
-        break
-      case 'generateInvoice':
-        console.log('Generating invoices:', selectedTransactions)
-        break
+    try {
+      switch (action) {
+        case 'export':
+          const blob = await financeService.exportTransactions(selectedTransactions)
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = 'financial_transactions.csv'
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+          break
+        case 'markPaid':
+          await financeService.markTransactionsAsPaid(selectedTransactions)
+          // Reload data
+          const transactionsResponse = await financeService.getFinancialTransactions({
+            ...filters,
+            search: searchTerm || undefined,
+            dateFrom: dateRange.from || undefined,
+            dateTo: dateRange.to || undefined
+          })
+          setTransactions(transactionsResponse.data)
+          setSelectedTransactions([])
+          break
+        case 'generateInvoice':
+          await financeService.generateInvoices(selectedTransactions)
+          alert('Invoices generated successfully!')
+          break
+      }
+    } catch (error) {
+      console.error('Error performing bulk action:', error)
+      alert('Error performing action. Please try again.')
     }
   }
 
-  const handlePaymentAdded = (payment: any) => {
-    console.log('New payment added:', payment)
-    // Here you would typically update the transactions list
-    // For now, we'll just log it
+  const handlePaymentAdded = async (payment: any) => {
+    try {
+      await financeService.createFinancialTransaction(payment)
+      // Reload data
+      const transactionsResponse = await financeService.getFinancialTransactions({
+        ...filters,
+        search: searchTerm || undefined,
+        dateFrom: dateRange.from || undefined,
+        dateTo: dateRange.to || undefined
+      })
+      setTransactions(transactionsResponse.data)
+    } catch (error) {
+      console.error('Error adding payment:', error)
+      alert('Error adding payment. Please try again.')
+    }
   }
+
+  const handleSelectionChange = useCallback((newSelection: number[]) => {
+    setSelectedTransactions(newSelection)
+  }, [])
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
@@ -70,9 +145,13 @@ export default function FinancialsPage() {
         <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-1 min-h-0 overflow-hidden">
           <div className="h-full overflow-y-auto">
             {/* Financial Overview Dashboard */}
-            <FinancialsOverview dateRange={dateRange} />
+            <FinancialsOverview 
+              dateRange={dateRange} 
+              stats={stats}
+              loading={loading}
+            />
 
-            {/* Search and Filters */}
+            {/* Search */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -90,14 +169,6 @@ export default function FinancialsPage() {
                       </svg>
                     </div>
                   </div>
-                  
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded-lg transition-colors font-medium cursor-pointer flex items-center"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filters
-                  </button>
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -138,50 +209,20 @@ export default function FinancialsPage() {
                   onClose={() => setShowFilters(false)}
                   dateRange={dateRange}
                   onDateRangeChange={setDateRange}
+                  filters={filters}
+                  onFiltersChange={setFilters}
                 />
               </div>
             )}
 
-            {/* Main Content */}
-            <div className="flex gap-4">
-              {/* Left Sidebar - Quick Filters */}
-              <div className="w-64 flex-shrink-0">
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <h3 className="text-sm font-medium text-slate-700 mb-3">Quick Filters</h3>
-                  <div className="space-y-2">
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      All Transactions
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      Pending Payments
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      Completed Payments
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      Failed Payments
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      Refunds
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                      Expenses
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Content - Table */}
-              <div className="flex-1 min-w-0">
-                <div className="bg-white rounded-xl border border-gray-200">
-                  <FinancialsTable 
-                    searchTerm={searchTerm}
-                    selectedTransactions={selectedTransactions}
-                    onSelectionChange={setSelectedTransactions}
-                    dateRange={dateRange}
-                  />
-                </div>
-              </div>
+            {/* Main Content - Table */}
+            <div className="bg-white rounded-xl border border-gray-200">
+              <FinancialsTable 
+                transactions={transactions}
+                loading={loading}
+                selectedTransactions={selectedTransactions}
+                onSelectionChange={handleSelectionChange}
+              />
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@ import TopNavigation from '../../components/TopNavigation'
 import OwnersTableSimple from '../../components/owners/OwnersTableSimple'
 import OwnersFilters from '../../components/owners/OwnersFilters'
 import AddOwnerModal from '../../components/owners/AddOwnerModal'
-import { useOwners, useUserStats } from '../../hooks/useUsers'
+import { ownerService, Owner } from '../../lib/api/services/ownerService'
 
 export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -20,10 +20,19 @@ export default function OwnersPage() {
     phoneNumber: '',
     comments: ''
   })
-  const [selectedOwners, setSelectedOwners] = useState<number[]>([])
+  const [selectedOwners, setSelectedOwners] = useState<string[]>([])
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
+  const [owners, setOwners] = useState<Owner[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState({
+    totalOwners: 0,
+    activeOwners: 0,
+    totalUnits: 0,
+    vipOwners: 0
+  })
 
   // Debounced search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -49,7 +58,7 @@ export default function OwnersPage() {
       phoneNumber: filters.phoneNumber || undefined,
       comments: filters.comments || undefined
     }
-    console.log('🔍 Owners filter params:', params)
+    // console.log('🔍 Owners filter params:', params) // Disabled to reduce console spam
     return params
   }, [
     debouncedSearchTerm, 
@@ -63,9 +72,59 @@ export default function OwnersPage() {
     filters.comments
   ])
 
-  // API hooks with debounced filters
-  const { data: ownersData, loading: ownersLoading, error: ownersError, refetch: refetchOwners } = useOwners(filterParams)
-  const { data: statsData, loading: statsLoading } = useUserStats()
+  // Load owners data from API
+  useEffect(() => {
+    const loadOwners = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        console.log('🏠 Loading owners from API...')
+        
+        const response = await ownerService.getOwners({
+          search: debouncedSearchTerm,
+          page,
+          limit,
+          nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
+          isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined,
+          dateOfBirthFrom: filters.dateOfBirth.from || undefined,
+          dateOfBirthTo: filters.dateOfBirth.to || undefined,
+          phoneNumber: filters.phoneNumber || undefined,
+          comments: filters.comments || undefined
+        })
+        
+        console.log('🏠 Full response received:', response)
+        
+        if (response.success && response.data) {
+          console.log('🏠 Owners loaded:', response.data)
+          console.log('🏠 Setting owners:', response.data.users || response.data.owners || response.data)
+          setOwners(response.data.users || response.data.owners || response.data)
+          
+          // Calculate stats
+          const ownersData = response.data.users || response.data.owners || response.data
+          const totalOwners = ownersData?.length || 0
+          const activeOwners = ownersData?.filter(o => o.isActive).length || 0
+          const totalUnits = ownersData?.reduce((sum, owner) => sum + (owner.totalUnits || 0), 0) || 0
+          const vipOwners = ownersData?.filter(o => o.comments?.includes('VIP')).length || 0
+          
+          setStats({
+            totalOwners,
+            activeOwners,
+            totalUnits,
+            vipOwners
+          })
+        } else {
+          setError('Failed to load owners')
+        }
+      } catch (err) {
+        console.error('🏠 Error loading owners:', err)
+        setError('Error loading owners')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadOwners()
+  }, [debouncedSearchTerm, page, limit, filters])
 
   const handleApplyFilters = (newFilters: any) => {
     setFilters(newFilters)
@@ -86,13 +145,22 @@ export default function OwnersPage() {
     // In real app, this would handle bulk operations
   }
 
-  const handleAddOwner = (owner: any) => {
-    console.log('Adding owner:', owner)
-    setShowAddOwnerModal(false)
-    // Refresh owners list after adding
-    refetchOwners()
-    // Also refresh stats
-    window.location.reload()
+  const handleAddOwner = async (owner: any) => {
+    try {
+      console.log('Adding owner:', owner)
+      const response = await ownerService.createOwner(owner)
+      
+      if (response.success) {
+        setShowAddOwnerModal(false)
+        // Refresh owners list after adding
+        window.location.reload()
+      } else {
+        setError('Failed to add owner')
+      }
+    } catch (err) {
+      console.error('Error adding owner:', err)
+      setError('Error adding owner')
+    }
   }
 
   return (
@@ -117,6 +185,7 @@ export default function OwnersPage() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
+                      data-testid="search-input"
                     />
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
                   </div>
@@ -125,6 +194,7 @@ export default function OwnersPage() {
                   <button
                     onClick={() => setShowAddOwnerModal(true)}
                     className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
+                    data-testid="add-owner-btn"
                   >
                     <Plus size={16} />
                     <span>Add Owner</span>
@@ -137,7 +207,7 @@ export default function OwnersPage() {
         {/* Stats Cards */}
         <div className="px-4 py-3 flex-shrink-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="total-owners-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <User className="w-5 h-5 text-orange-500" />
@@ -145,13 +215,13 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Owners</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : (statsData?.usersByRole.find(r => r.role === 'OWNER')?.count || 0)}
+                    {loading ? '...' : stats.totalOwners || 'n/a'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="active-owners-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <Building className="w-5 h-5 text-orange-500" />
@@ -159,13 +229,13 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Active Owners</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : (ownersData?.users.filter(u => u.isActive).length || 0)}
+                    {loading ? '...' : stats.activeOwners || 'n/a'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="total-units-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <MapPin className="w-5 h-5 text-orange-500" />
@@ -173,13 +243,13 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Units</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : (ownersData?.users.reduce((sum, owner) => sum + (owner.totalUnits || 0), 0) || 0)}
+                    {loading ? '...' : stats.totalUnits || 'n/a'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3" data-testid="vip-owners-card">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
                   <Calendar className="w-5 h-5 text-orange-500" />
@@ -187,7 +257,7 @@ export default function OwnersPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">VIP Owners</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {statsLoading ? '...' : (ownersData?.users.filter(o => filters.status.includes('VIP') || o.comments?.includes('VIP')).length || 0)}
+                    {loading ? '...' : stats.vipOwners || 'n/a'}
                   </p>
                 </div>
               </div>
@@ -257,21 +327,21 @@ export default function OwnersPage() {
             )}
 
             {/* Owners Table */}
-            <div className="bg-white rounded-xl border border-gray-200 flex-1 overflow-hidden">
-              {ownersLoading ? (
+            <div className="bg-white rounded-xl border border-gray-200 flex-1 overflow-hidden" data-testid="owners-table-container">
+              {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
                     <p className="text-slate-600">Loading owners...</p>
                   </div>
                 </div>
-              ) : ownersError ? (
+              ) : error ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <p className="text-red-600 mb-2">Error loading owners</p>
-                    <p className="text-slate-600 text-sm">{ownersError}</p>
+                    <p className="text-slate-600 text-sm">{error}</p>
                     <button 
-                      onClick={() => refetchOwners()}
+                      onClick={() => window.location.reload()}
                       className="mt-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
                     >
                       Retry
@@ -280,16 +350,14 @@ export default function OwnersPage() {
                 </div>
               ) : (
             <OwnersTableSimple
-              owners={ownersData?.users || []}
-              pagination={ownersData?.pagination}
+              owners={owners || []}
+              pagination={undefined}
               searchTerm={searchTerm}
               filters={filters}
               selectedOwners={selectedOwners}
               onSelectionChange={setSelectedOwners}
               onPageChange={setPage}
               onRefresh={() => {
-                refetchOwners()
-                // Also refetch stats to update the counts
                 window.location.reload()
               }}
             />

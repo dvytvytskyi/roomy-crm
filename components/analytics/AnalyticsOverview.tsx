@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, Users, Home, Calendar, BarChart3, PieChart } from 'lucide-react'
+import { analyticsService, AnalyticsOverview as AnalyticsOverviewType } from '../../lib/api/services/analyticsService'
 
 interface AnalyticsOverviewProps {
   selectedPeriod: string
@@ -13,19 +14,45 @@ interface AnalyticsOverviewProps {
 }
 
 export default function AnalyticsOverview({ selectedPeriod, dateRange, onDateRangeChange }: AnalyticsOverviewProps) {
-  // Mock data for key metrics
-  const keyMetrics = {
-    totalRevenue: 125400,
-    totalExpenses: 18700,
-    netProfit: 106700,
-    occupancyRate: 78.5,
-    totalUnits: 12,
-    activeReservations: 47,
-    averageStayDuration: 4.2,
-    revenueGrowth: 12.5,
-    expenseGrowth: -3.2,
-    profitGrowth: 15.8,
-    occupancyGrowth: 8.3
+  const [loading, setLoading] = useState(true)
+  const [keyMetrics, setKeyMetrics] = useState<AnalyticsOverviewType | null>(null)
+
+  useEffect(() => {
+    const loadAnalyticsData = async () => {
+      try {
+        setLoading(true)
+        const response = await analyticsService.getAnalyticsOverview({
+          period: selectedPeriod as any,
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined
+        })
+        setKeyMetrics(response.data)
+      } catch (error) {
+        console.error('Error loading analytics overview:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadAnalyticsData()
+  }, [selectedPeriod, dateRange.from, dateRange.to])
+
+  if (loading || !keyMetrics) {
+    return (
+      <div className="space-y-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   const formatCurrency = (amount: number) => {

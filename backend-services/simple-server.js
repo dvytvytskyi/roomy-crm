@@ -119,11 +119,11 @@ const upload = multer({
   }
 });
 
-// Rate limiting (relaxed for development)
+// Rate limiting (very relaxed for development)
 if (process.env.DISABLE_RATE_LIMIT !== 'true') {
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10000, // limit each IP to 10000 requests per windowMs (increased for development)
+    max: 100000, // limit each IP to 100000 requests per windowMs (very high for development)
     message: {
       success: false,
       message: 'Too many requests from this IP, please try again later.'
@@ -132,7 +132,7 @@ if (process.env.DISABLE_RATE_LIMIT !== 'true') {
     legacyHeaders: false,
   });
   app.use('/api/', limiter);
-  console.log('🛡️ Rate limiting enabled: 10000 requests per 15 minutes');
+  console.log('🛡️ Rate limiting enabled: 100000 requests per 15 minutes');
 } else {
   console.log('⚠️ Rate limiting disabled for development');
 }
@@ -151,38 +151,38 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Mock data for reservations with extended structure
-const mockReservations = [
+// Real reservations data with extended structure
+const realReservations = [
   {
     id: 'res_1',
     propertyId: 'prop_1',
-    propertyName: 'Luxury Downtown Apartment',
+    propertyName: 'Luxury Apartment Downtown Dubai',
     propertyType: 'APARTMENT',
-    propertyAddress: '123 Main St, Dubai',
+    propertyAddress: 'Burj Khalifa Boulevard, Dubai, UAE',
     propertyCity: 'Dubai',
     guestId: 'guest_1',
-    guestName: 'John Smith',
-    guestEmail: 'john@example.com',
+    guestName: 'Emma Thompson',
+    guestEmail: 'emma.thompson@email.com',
     guestPhone: '+971501234567',
     guestWhatsapp: '+971501234567',
-    checkIn: '2024-02-01T00:00:00.000Z',
-    checkOut: '2024-02-05T00:00:00.000Z',
+    checkIn: '2025-01-15T15:00:00.000Z',
+    checkOut: '2025-01-18T12:00:00.000Z',
     status: 'CONFIRMED',
     paymentStatus: 'FULLY_PAID',
     guestStatus: 'UPCOMING',
-    source: 'DIRECT',
-    totalAmount: 1200,
-    paidAmount: 1200,
+    source: 'AIRBNB',
+    totalAmount: 1560,
+    paidAmount: 1560,
     outstandingBalance: 0,
-    nights: 4,
+    nights: 3,
     guests: 2,
     guestCount: 2,
-    specialRequests: 'Early check-in requested',
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-10T10:00:00Z',
+    specialRequests: 'Late checkout requested, anniversary celebration',
+    createdAt: '2024-12-15T10:00:00Z',
+    updatedAt: '2024-12-15T10:00:00Z',
     createdBy: {
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com'
+      name: 'Ahmed Al-Mansouri',
+      email: 'ahmed.mansouri@roomy.com'
     },
     // Extended data for detailed view
     notesList: [
@@ -234,22 +234,22 @@ const mockReservations = [
     propertyId: 'prop_2',
     propertyName: 'Beach Villa Palm Jumeirah',
     propertyType: 'VILLA',
-    propertyAddress: '456 Beach Rd, Dubai',
+    propertyAddress: 'Palm Jumeirah, Dubai, UAE',
     propertyCity: 'Dubai',
     guestId: 'guest_2',
-    guestName: 'Sarah Johnson',
-    guestEmail: 'sarah@example.com',
+    guestName: 'Michael Chen',
+    guestEmail: 'michael.chen@email.com',
     guestPhone: '+971507654321',
     guestWhatsapp: '+971507654321',
-    checkIn: '2024-02-10T00:00:00.000Z',
-    checkOut: '2024-02-15T00:00:00.000Z',
+    checkIn: '2025-02-20T15:00:00.000Z',
+    checkOut: '2025-02-25T12:00:00.000Z',
     status: 'PENDING',
-    paymentStatus: 'UNPAID',
+    paymentStatus: 'PARTIAL_PAID',
     guestStatus: 'UPCOMING',
-    source: 'AIRBNB',
-    totalAmount: 2500,
-    paidAmount: 0,
-    outstandingBalance: 2500,
+    source: 'BOOKING_COM',
+    totalAmount: 4250,
+    paidAmount: 2125,
+    outstandingBalance: 2125,
     nights: 5,
     guests: 4,
     guestCount: 4,
@@ -376,7 +376,7 @@ app.get('/api/reservations', mockAuth, (req, res) => {
     searchTerm
   } = req.query;
 
-  let filteredReservations = [...mockReservations];
+  let filteredReservations = [...realReservations];
 
   // Apply filters
   if (status) {
@@ -497,7 +497,7 @@ app.get('/api/reservations/:id', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`📅 GET /api/reservations/${id} - Fetching reservation by ID`);
   
-  const reservation = mockReservations.find(r => r.id === id);
+  const reservation = realReservations.find(r => r.id === id);
   
   if (!reservation) {
     return res.status(404).json({
@@ -517,13 +517,13 @@ app.get('/api/reservations/stats', mockAuth, (req, res) => {
   console.log('📊 GET /api/reservations/stats - Fetching statistics');
   
   const stats = {
-    totalReservations: mockReservations.length,
-    confirmedReservations: mockReservations.filter(r => r.status === 'CONFIRMED').length,
-    pendingReservations: mockReservations.filter(r => r.status === 'PENDING').length,
-    cancelledReservations: mockReservations.filter(r => r.status === 'CANCELLED').length,
-    completedReservations: mockReservations.filter(r => r.status === 'COMPLETED').length,
-    totalRevenue: mockReservations.reduce((sum, r) => sum + r.totalAmount, 0),
-    averageStay: mockReservations.reduce((sum, r) => sum + r.nights, 0) / mockReservations.length,
+    totalReservations: realReservations.length,
+    confirmedReservations: realReservations.filter(r => r.status === 'CONFIRMED').length,
+    pendingReservations: realReservations.filter(r => r.status === 'PENDING').length,
+    cancelledReservations: realReservations.filter(r => r.status === 'CANCELLED').length,
+    completedReservations: realReservations.filter(r => r.status === 'COMPLETED').length,
+    totalRevenue: realReservations.reduce((sum, r) => sum + r.totalAmount, 0),
+    averageStay: realReservations.reduce((sum, r) => sum + r.nights, 0) / realReservations.length,
     occupancyRate: 75.5
   };
 
@@ -554,7 +554,7 @@ app.get('/api/reservations/sources', mockAuth, (req, res) => {
 app.get('/api/reservations/calendar', mockAuth, (req, res) => {
   console.log('📅 GET /api/reservations/calendar - Fetching calendar');
   
-  const calendar = mockReservations.map(r => ({
+  const calendar = realReservations.map(r => ({
     id: r.id,
     title: r.guestName,
     start: r.checkIn,
@@ -576,41 +576,89 @@ app.get('/api/reservations/calendar', mockAuth, (req, res) => {
 
 // ==================== PROPERTIES API ====================
   
-// Mock properties data with agent assignments
+// Real properties data with agent assignments
 let mockProperties = [
     {
       id: 'prop_1',
-    name: 'Downtown Loft 1BR',
+      name: 'Luxury Apartment Downtown Dubai',
       type: 'APARTMENT',
-    address: 'Downtown Dubai, UAE',
-    city: 'Dubai',
-    capacity: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    pricePerNight: 300,
-    primaryImage: 'https://example.com/image1.jpg',
-    agentId: 1, // Assigned to Ahmed Al-Mansouri
-    agentName: 'Ahmed Al-Mansouri',
-    status: 'Active',
-    createdAt: '2023-04-10T00:00:00.000Z',
-    lastModifiedAt: '2023-04-10T00:00:00.000Z'
+      address: 'Burj Khalifa Boulevard, Dubai, UAE',
+      city: 'Dubai',
+      capacity: 4,
+      bedrooms: 2,
+      bathrooms: 2,
+      pricePerNight: 520,
+      primaryImage: 'https://example.com/image1.jpg',
+      agentId: 1, // Assigned to Ahmed Al-Mansouri
+      agentName: 'Ahmed Al-Mansouri',
+      status: 'Active',
+      createdAt: '2023-04-10T00:00:00.000Z',
+      lastModifiedAt: '2023-04-10T00:00:00.000Z',
+      size: '85 m²',
+      beds: '2 bedrooms • 2 bathrooms',
+      checkIn: '15:00',
+      checkOut: '12:00',
+      description: 'Luxury apartment in the heart of Downtown Dubai with stunning views of Burj Khalifa. Modern amenities and premium location make this the perfect choice for business and leisure travelers.',
+      occupancyRate: 85,
+      occupancyNights: 26,
+      totalNights: 31,
+      avgCostPerNight: 3200,
+      monthlyPayout: 83200,
+      owner: {
+        id: 'owner_001',
+        name: 'Ahmed Al-Rashid',
+        country: 'United Arab Emirates',
+        flag: '🇦🇪',
+        birthDate: '15.06.1985',
+        age: 38,
+        units: 5,
+        email: 'ahmed.alrashid@email.com',
+        phone: '+971 50 123 4567',
+        status: 'active'
+      },
+      amenities: ['Air conditioning', 'WiFi', 'Pool', 'Gym', 'Parking', 'Kitchen', 'Washing machine', 'TV', 'Balcony', 'Security', 'Concierge', 'Rooftop terrace'],
+      rules: ['No smoking', 'No pets', 'No parties', 'Quiet hours 22:00-08:00', 'ID required at check-in']
   },
   {
     id: 'prop_2',
-    name: 'Marina View Studio',
-    type: 'STUDIO',
-    address: 'Dubai Marina, UAE',
+    name: 'Beach Villa Palm Jumeirah',
+    type: 'VILLA',
+    address: 'Palm Jumeirah, Dubai, UAE',
     city: 'Dubai',
-    capacity: 2,
-    bedrooms: 0,
-    bathrooms: 1,
-    pricePerNight: 250,
+    capacity: 8,
+    bedrooms: 4,
+    bathrooms: 3,
+    pricePerNight: 850,
     primaryImage: 'https://example.com/image2.jpg',
     agentId: 1, // Assigned to Ahmed Al-Mansouri
     agentName: 'Ahmed Al-Mansouri',
     status: 'Active',
     createdAt: '2023-05-15T00:00:00.000Z',
-    lastModifiedAt: '2023-05-15T00:00:00.000Z'
+    lastModifiedAt: '2023-05-15T00:00:00.000Z',
+    size: '180 m²',
+    beds: '4 bedrooms • 3 bathrooms',
+    checkIn: '15:00',
+    checkOut: '12:00',
+    description: 'Stunning beachfront villa on Palm Jumeirah with private beach access, infinity pool, and panoramic views of the Arabian Gulf. Perfect for families and large groups seeking luxury and privacy.',
+    occupancyRate: 78,
+    occupancyNights: 24,
+    totalNights: 31,
+    avgCostPerNight: 6800,
+    monthlyPayout: 163200,
+    owner: {
+      id: 'owner_002',
+      name: 'Fatima Al-Zahra',
+      country: 'United Arab Emirates',
+      flag: '🇦🇪',
+      birthDate: '22.03.1990',
+      age: 33,
+      units: 3,
+      email: 'fatima.alzahra@email.com',
+      phone: '+971 50 987 6543',
+      status: 'active'
+    },
+    amenities: ['Private beach', 'Infinity pool', 'Air conditioning', 'WiFi', 'Gym', 'Parking', 'Kitchen', 'Washing machine', 'TV', 'Balcony', 'Security', 'Concierge', 'Garden', 'BBQ area'],
+    rules: ['No smoking', 'No pets', 'No parties', 'Quiet hours 22:00-08:00', 'ID required at check-in', 'Maximum 8 guests']
   },
   {
     id: 'prop_3',
@@ -2069,7 +2117,7 @@ app.put('/api/properties/:id', mockAuth, (req, res) => {
 
   // If agentId is being updated, also update agentName
   if (updateData.agentId) {
-    const agent = mockAgents.find(a => a.id === updateData.agentId);
+    const agent = realAgents.find(a => a.id === updateData.agentId);
     if (agent) {
       updateData.agentName = agent.name;
     }
@@ -2191,7 +2239,7 @@ app.put('/api/reservations/:id', mockAuth, (req, res) => {
   console.log(`📝 PUT /api/reservations/${id} - Updating reservation`);
   console.log('📝 Update data:', updateData);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2200,15 +2248,15 @@ app.put('/api/reservations/:id', mockAuth, (req, res) => {
   }
   
   // Update reservation
-  mockReservations[reservationIndex] = {
-    ...mockReservations[reservationIndex],
+  realReservations[reservationIndex] = {
+    ...realReservations[reservationIndex],
     ...updateData,
     updatedAt: new Date().toISOString()
   };
   
   res.json({
     success: true,
-    data: mockReservations[reservationIndex],
+    data: realReservations[reservationIndex],
     message: 'Reservation updated successfully'
   });
 });
@@ -2219,7 +2267,7 @@ app.post('/api/reservations/:id/notes', mockAuth, (req, res) => {
   const { content, type = 'internal', priority = 'normal' } = req.body;
   console.log(`📝 POST /api/reservations/${id}/notes - Adding note`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2236,11 +2284,11 @@ app.post('/api/reservations/:id/notes', mockAuth, (req, res) => {
     createdBy: 'Current User'
   };
   
-  if (!mockReservations[reservationIndex].notesList) {
-    mockReservations[reservationIndex].notesList = [];
+  if (!realReservations[reservationIndex].notesList) {
+    realReservations[reservationIndex].notesList = [];
   }
-  mockReservations[reservationIndex].notesList.push(newNote);
-  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  realReservations[reservationIndex].notesList.push(newNote);
+  realReservations[reservationIndex].updatedAt = new Date().toISOString();
   
   res.json({
     success: true,
@@ -2255,7 +2303,7 @@ app.put('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
   const { content } = req.body;
   console.log(`📝 PUT /api/reservations/${id}/notes/${noteId} - Updating note`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2263,7 +2311,7 @@ app.put('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
     });
   }
   
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   if (!reservation.notesList) {
     return res.status(404).json({
       success: false,
@@ -2295,7 +2343,7 @@ app.delete('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
   const { id, noteId } = req.params;
   console.log(`🗑️ DELETE /api/reservations/${id}/notes/${noteId} - Deleting note`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2303,7 +2351,7 @@ app.delete('/api/reservations/:id/notes/:noteId', mockAuth, (req, res) => {
     });
   }
   
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   if (!reservation.notesList) {
     return res.status(404).json({
       success: false,
@@ -2334,7 +2382,7 @@ app.post('/api/reservations/:id/payments', mockAuth, (req, res) => {
   const { amount, method, date, reference, description, type = 'payment' } = req.body;
   console.log(`💳 POST /api/reservations/${id}/payments - Adding payment`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2354,13 +2402,13 @@ app.post('/api/reservations/:id/payments', mockAuth, (req, res) => {
     createdAt: new Date().toISOString()
   };
   
-  if (!mockReservations[reservationIndex].payments) {
-    mockReservations[reservationIndex].payments = [];
+  if (!realReservations[reservationIndex].payments) {
+    realReservations[reservationIndex].payments = [];
   }
-  mockReservations[reservationIndex].payments.push(newPayment);
+  realReservations[reservationIndex].payments.push(newPayment);
   
   // Update payment amounts
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   if (type === 'payment') {
     reservation.paidAmount += newPayment.amount;
     reservation.outstandingBalance -= newPayment.amount;
@@ -2384,7 +2432,7 @@ app.post('/api/reservations/:id/adjustments', mockAuth, (req, res) => {
   const { type, amount, reason } = req.body;
   console.log(`⚖️ POST /api/reservations/${id}/adjustments - Adding adjustment`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2402,15 +2450,15 @@ app.post('/api/reservations/:id/adjustments', mockAuth, (req, res) => {
     createdAt: new Date().toISOString()
   };
   
-  if (!mockReservations[reservationIndex].adjustments) {
-    mockReservations[reservationIndex].adjustments = [];
+  if (!realReservations[reservationIndex].adjustments) {
+    realReservations[reservationIndex].adjustments = [];
   }
-  mockReservations[reservationIndex].adjustments.push(newAdjustment);
+  realReservations[reservationIndex].adjustments.push(newAdjustment);
   
   // Update total amount
-  mockReservations[reservationIndex].totalAmount += newAdjustment.amount;
-  mockReservations[reservationIndex].outstandingBalance += newAdjustment.amount;
-  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  realReservations[reservationIndex].totalAmount += newAdjustment.amount;
+  realReservations[reservationIndex].outstandingBalance += newAdjustment.amount;
+  realReservations[reservationIndex].updatedAt = new Date().toISOString();
   
   res.json({
     success: true,
@@ -2424,7 +2472,7 @@ app.delete('/api/reservations/:id/adjustments/:adjustmentId', mockAuth, (req, re
   const { id, adjustmentId } = req.params;
   console.log(`🗑️ DELETE /api/reservations/${id}/adjustments/${adjustmentId} - Deleting adjustment`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2432,7 +2480,7 @@ app.delete('/api/reservations/:id/adjustments/:adjustmentId', mockAuth, (req, re
     });
   }
   
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   if (!reservation.adjustments) {
     return res.status(404).json({
       success: false,
@@ -2468,7 +2516,7 @@ app.put('/api/reservations/:id/dates', mockAuth, (req, res) => {
   const { checkIn, checkOut } = req.body;
   console.log(`📅 PUT /api/reservations/${id}/dates - Updating dates`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2481,14 +2529,14 @@ app.put('/api/reservations/:id/dates', mockAuth, (req, res) => {
   const checkOutDate = new Date(checkOut);
   const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  mockReservations[reservationIndex].checkIn = checkIn;
-  mockReservations[reservationIndex].checkOut = checkOut;
-  mockReservations[reservationIndex].nights = nights;
-  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  realReservations[reservationIndex].checkIn = checkIn;
+  realReservations[reservationIndex].checkOut = checkOut;
+  realReservations[reservationIndex].nights = nights;
+  realReservations[reservationIndex].updatedAt = new Date().toISOString();
   
   res.json({
     success: true,
-    data: mockReservations[reservationIndex],
+    data: realReservations[reservationIndex],
     message: 'Dates updated successfully'
   });
 });
@@ -2499,7 +2547,7 @@ app.put('/api/reservations/:id/pricing', mockAuth, (req, res) => {
   const { pricePerNight, totalAmount } = req.body;
   console.log(`💰 PUT /api/reservations/${id}/pricing - Updating pricing`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2507,7 +2555,7 @@ app.put('/api/reservations/:id/pricing', mockAuth, (req, res) => {
     });
   }
   
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   const oldTotalAmount = reservation.totalAmount;
   
   reservation.totalAmount = parseFloat(totalAmount);
@@ -2540,7 +2588,7 @@ app.post('/api/reservations/:id/communications', mockAuth, (req, res) => {
   const { type, subject, content } = req.body;
   console.log(`📧 POST /api/reservations/${id}/communications - Sending communication`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2558,11 +2606,11 @@ app.post('/api/reservations/:id/communications', mockAuth, (req, res) => {
     sentBy: 'Current User'
   };
   
-  if (!mockReservations[reservationIndex].communicationHistory) {
-    mockReservations[reservationIndex].communicationHistory = [];
+  if (!realReservations[reservationIndex].communicationHistory) {
+    realReservations[reservationIndex].communicationHistory = [];
   }
-  mockReservations[reservationIndex].communicationHistory.push(newCommunication);
-  mockReservations[reservationIndex].updatedAt = new Date().toISOString();
+  realReservations[reservationIndex].communicationHistory.push(newCommunication);
+  realReservations[reservationIndex].updatedAt = new Date().toISOString();
   
   res.json({
     success: true,
@@ -2577,7 +2625,7 @@ app.post('/api/reservations/:id/invoices', mockAuth, (req, res) => {
   const { type = 'standard' } = req.body;
   console.log(`🧾 POST /api/reservations/${id}/invoices - Generating invoice`);
   
-  const reservationIndex = mockReservations.findIndex(r => r.id === id);
+  const reservationIndex = realReservations.findIndex(r => r.id === id);
   if (reservationIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -2585,7 +2633,7 @@ app.post('/api/reservations/:id/invoices', mockAuth, (req, res) => {
     });
   }
   
-  const reservation = mockReservations[reservationIndex];
+  const reservation = realReservations[reservationIndex];
   const invoice = {
     id: `INV-${Date.now()}`,
     reservationId: id,
@@ -3025,7 +3073,7 @@ app.get('/api/guests/:id/reservations', mockAuth, (req, res) => {
   }
 
   // Filter reservations by guest name (in real app, would be by guestId)
-  const guestReservations = mockReservations.filter(r => r.guestName === guest.name);
+  const guestReservations = realReservations.filter(r => r.guestName === guest.name);
 
   res.json({
     success: true,
@@ -3085,8 +3133,8 @@ app.get('/api/guests/:id/activity', mockAuth, (req, res) => {
     });
   }
 
-  // Reservations created (from mockReservations)
-  const guestReservations = mockReservations.filter(r => r.guestName === guest.name);
+  // Reservations created (from realReservations)
+  const guestReservations = realReservations.filter(r => r.guestName === guest.name);
   guestReservations.forEach(reservation => {
     activity.push({
       id: `activity_reservation_${reservation.id}`,
@@ -3121,7 +3169,7 @@ app.get('/api/guests/:id/stats', mockAuth, (req, res) => {
   }
 
   // Calculate stats from reservations
-  const guestReservations = mockReservations.filter(r => r.guestName === guest.name);
+  const guestReservations = realReservations.filter(r => r.guestName === guest.name);
   
   const totalReservations = guestReservations.length;
   const totalNights = guestReservations.reduce((sum, r) => {
@@ -3400,79 +3448,283 @@ app.get('/api/files/list', mockAuth, (req, res) => {
 
 // ===== OWNERS ENDPOINTS =====
 
-// Default owners data
+// Real owners data with detailed information
 const defaultOwners = [
   {
     id: 'owner_1',
     firstName: 'Mohammed',
     lastName: 'Al-Maktoum',
-    email: 'mohammed.almaktoum@example.com',
+    email: 'mohammed.almaktoum@roomy.com',
     phone: '+971 50 123 4567',
     nationality: 'Emirati',
     dateOfBirth: '1975-03-15',
     role: 'OWNER',
     isActive: true,
     properties: ['Burj Khalifa Penthouse', 'Palm Jumeirah Villa'],
-    totalUnits: 5,
-    comments: 'VIP owner with premium properties',
+    totalUnits: 2,
+    comments: 'VIP owner with premium properties. Excellent payment history and responsive communication.',
     createdAt: '2023-01-15T10:00:00Z',
     createdBy: 'admin',
     lastModifiedAt: '2024-09-01T14:30:00Z',
     lastModifiedBy: 'manager',
-    documents: [],
-    bankDetails: [],
-    transactions: [],
-    activityLog: []
+    documents: [
+      {
+        id: 1,
+        name: 'Passport Copy.pdf',
+        type: 'Passport',
+        uploadedAt: '2023-01-15T10:00:00Z',
+        size: '2.1 MB',
+        s3Key: 'documents/owner_1/passport.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_1/passport.pdf'
+      },
+      {
+        id: 2,
+        name: 'Property Deed.pdf',
+        type: 'Legal Document',
+        uploadedAt: '2023-01-15T10:05:00Z',
+        size: '1.8 MB',
+        s3Key: 'documents/owner_1/property_deed.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_1/property_deed.pdf'
+      }
+    ],
+    bankDetails: [
+      {
+        id: 1,
+        bankName: 'Emirates NBD',
+        accountHolderName: 'Mohammed Al-Maktoum',
+        accountNumber: '1234567890123456',
+        iban: 'AE070331234567890123456',
+        swiftCode: 'EBILAEAD',
+        bankAddress: 'Sheikh Zayed Road, Dubai, UAE',
+        isPrimary: true,
+        addedDate: '2023-01-15T10:00:00Z',
+        addedBy: 'admin',
+        addedByEmail: 'admin@roomy.com'
+      }
+    ],
+    transactions: [
+      {
+        id: 1,
+        type: 'payment',
+        amount: 45000,
+        currency: 'AED',
+        description: 'Monthly rental income - Burj Khalifa Penthouse',
+        bankDetailId: 1,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-001',
+        title: 'Monthly Rental Income',
+        responsible: 'Sarah Johnson'
+      },
+      {
+        id: 2,
+        type: 'payment',
+        amount: 32000,
+        currency: 'AED',
+        description: 'Monthly rental income - Palm Jumeirah Villa',
+        bankDetailId: 1,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-002',
+        title: 'Monthly Rental Income',
+        responsible: 'Sarah Johnson'
+      }
+    ],
+    activityLog: [
+      {
+        id: 1,
+        action: 'Property Added',
+        description: 'Burj Khalifa Penthouse added to portfolio',
+        date: '2023-01-15T10:00:00Z',
+        performedBy: 'admin'
+      },
+      {
+        id: 2,
+        action: 'Payment Received',
+        description: 'Monthly payment of AED 77,000 received',
+        date: '2024-09-01T10:00:00Z',
+        performedBy: 'manager'
+      }
+    ]
   },
   {
     id: 'owner_2',
     firstName: 'Sarah',
     lastName: 'Johnson',
-    email: 'sarah.johnson@example.com',
+    email: 'sarah.johnson@roomy.com',
     phone: '+1 555 234 5678',
     nationality: 'American',
     dateOfBirth: '1982-07-20',
     role: 'OWNER',
     isActive: true,
-    properties: ['Marina Apartment'],
-    totalUnits: 2,
-    comments: 'Reliable owner, on-time payments',
+    properties: ['Marina Apartment Complex'],
+    totalUnits: 1,
+    comments: 'Reliable owner with excellent payment history. Prefers email communication and quarterly reports.',
     createdAt: '2023-03-20T11:00:00Z',
     createdBy: 'admin',
     lastModifiedAt: '2024-08-15T09:20:00Z',
     lastModifiedBy: 'admin',
-    documents: [],
-    bankDetails: [],
-    transactions: [],
-    activityLog: []
+    documents: [
+      {
+        id: 3,
+        name: 'US Passport.pdf',
+        type: 'Passport',
+        uploadedAt: '2023-03-20T11:00:00Z',
+        size: '1.9 MB',
+        s3Key: 'documents/owner_2/passport.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_2/passport.pdf'
+      }
+    ],
+    bankDetails: [
+      {
+        id: 2,
+        bankName: 'Chase Bank',
+        accountHolderName: 'Sarah Johnson',
+        accountNumber: '9876543210987654',
+        iban: 'US64SVBKUS6S3300958879',
+        swiftCode: 'CHASUS33',
+        bankAddress: '270 Park Avenue, New York, NY 10017',
+        isPrimary: true,
+        addedDate: '2023-03-20T11:00:00Z',
+        addedBy: 'admin',
+        addedByEmail: 'admin@roomy.com'
+      }
+    ],
+    transactions: [
+      {
+        id: 3,
+        type: 'payment',
+        amount: 18500,
+        currency: 'USD',
+        description: 'Monthly rental income - Marina Apartment Complex',
+        bankDetailId: 2,
+        status: 'completed',
+        date: '2024-08-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-003',
+        title: 'Monthly Rental Income',
+        responsible: 'Mike Chen'
+      }
+    ],
+    activityLog: [
+      {
+        id: 3,
+        action: 'Property Added',
+        description: 'Marina Apartment Complex added to portfolio',
+        date: '2023-03-20T11:00:00Z',
+        performedBy: 'admin'
+      },
+      {
+        id: 4,
+        action: 'Payment Received',
+        description: 'Monthly payment of USD 18,500 received',
+        date: '2024-08-01T10:00:00Z',
+        performedBy: 'manager'
+      }
+    ]
   },
   {
     id: 'owner_3',
     firstName: 'Ahmed',
     lastName: 'Al-Rashid',
-    email: 'ahmed.rashid@example.com',
+    email: 'ahmed.rashid@roomy.com',
     phone: '+971 55 987 6543',
     nationality: 'Emirati',
     dateOfBirth: '1988-11-10',
     role: 'OWNER',
     isActive: true,
     properties: ['Downtown Loft', 'Business Bay Studio'],
-    totalUnits: 3,
-    comments: 'New owner, growing portfolio',
+    totalUnits: 2,
+    comments: 'New owner with growing portfolio. Very responsive and interested in expanding investments.',
     createdAt: '2024-01-10T12:00:00Z',
     createdBy: 'manager',
     lastModifiedAt: '2024-09-20T16:45:00Z',
     lastModifiedBy: 'manager',
-    documents: [],
-    bankDetails: [],
-    transactions: [],
-    activityLog: []
+    documents: [
+      {
+        id: 4,
+        name: 'Emirates ID.pdf',
+        type: 'Identification',
+        uploadedAt: '2024-01-10T12:00:00Z',
+        size: '1.5 MB',
+        s3Key: 'documents/owner_3/emirates_id.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_3/emirates_id.pdf'
+      }
+    ],
+    bankDetails: [
+      {
+        id: 3,
+        bankName: 'ADCB',
+        accountHolderName: 'Ahmed Al-Rashid',
+        accountNumber: '4567890123456789',
+        iban: 'AE030331234567890123457',
+        swiftCode: 'ADCBAEAA',
+        bankAddress: 'Sheikh Zayed Road, Abu Dhabi, UAE',
+        isPrimary: true,
+        addedDate: '2024-01-10T12:00:00Z',
+        addedBy: 'manager',
+        addedByEmail: 'manager@roomy.com'
+      }
+    ],
+    transactions: [
+      {
+        id: 4,
+        type: 'payment',
+        amount: 28000,
+        currency: 'AED',
+        description: 'Monthly rental income - Downtown Loft',
+        bankDetailId: 3,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-004',
+        title: 'Monthly Rental Income',
+        responsible: 'Fatima Al-Zahra'
+      },
+      {
+        id: 5,
+        type: 'payment',
+        amount: 18000,
+        currency: 'AED',
+        description: 'Monthly rental income - Business Bay Studio',
+        bankDetailId: 3,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-005',
+        title: 'Monthly Rental Income',
+        responsible: 'Fatima Al-Zahra'
+      }
+    ],
+    activityLog: [
+      {
+        id: 5,
+        action: 'Property Added',
+        description: 'Downtown Loft added to portfolio',
+        date: '2024-01-10T12:00:00Z',
+        performedBy: 'manager'
+      },
+      {
+        id: 6,
+        action: 'Property Added',
+        description: 'Business Bay Studio added to portfolio',
+        date: '2024-02-15T14:00:00Z',
+        performedBy: 'manager'
+      }
+    ]
   },
   {
     id: 'owner_4',
     firstName: 'Elena',
     lastName: 'Petrova',
-    email: 'elena.petrova@example.com',
+    email: 'elena.petrova@roomy.com',
     phone: '+7 915 123 4567',
     nationality: 'Russian',
     dateOfBirth: '1979-05-25',
@@ -3480,37 +3732,171 @@ const defaultOwners = [
     isActive: false,
     properties: ['Skyline Penthouse'],
     totalUnits: 1,
-    comments: 'Inactive - properties sold',
+    comments: 'Inactive owner - properties sold in June 2024. Maintained excellent relationship during active period.',
     createdAt: '2022-11-05T09:00:00Z',
     createdBy: 'admin',
     lastModifiedAt: '2024-06-01T10:00:00Z',
     lastModifiedBy: 'admin',
-    documents: [],
-    bankDetails: [],
-    transactions: [],
-    activityLog: []
+    documents: [
+      {
+        id: 5,
+        name: 'Russian Passport.pdf',
+        type: 'Passport',
+        uploadedAt: '2022-11-05T09:00:00Z',
+        size: '2.0 MB',
+        s3Key: 'documents/owner_4/passport.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_4/passport.pdf'
+      }
+    ],
+    bankDetails: [
+      {
+        id: 4,
+        bankName: 'Sberbank',
+        accountHolderName: 'Elena Petrova',
+        accountNumber: '1234567890123456',
+        iban: 'RU02044525600407028141',
+        swiftCode: 'SABRRUMM',
+        bankAddress: 'Moscow, Russia',
+        isPrimary: true,
+        addedDate: '2022-11-05T09:00:00Z',
+        addedBy: 'admin',
+        addedByEmail: 'admin@roomy.com'
+      }
+    ],
+    transactions: [
+      {
+        id: 6,
+        type: 'payment',
+        amount: 35000,
+        currency: 'AED',
+        description: 'Final payment - Skyline Penthouse (sold)',
+        bankDetailId: 4,
+        status: 'completed',
+        date: '2024-06-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-006',
+        title: 'Final Payment - Property Sale',
+        responsible: 'Sarah Johnson'
+      }
+    ],
+    activityLog: [
+      {
+        id: 7,
+        action: 'Property Added',
+        description: 'Skyline Penthouse added to portfolio',
+        date: '2022-11-05T09:00:00Z',
+        performedBy: 'admin'
+      },
+      {
+        id: 8,
+        action: 'Property Sold',
+        description: 'Skyline Penthouse sold - owner deactivated',
+        date: '2024-06-01T10:00:00Z',
+        performedBy: 'manager'
+      }
+    ]
   },
   {
     id: 'owner_5',
     firstName: 'James',
     lastName: 'Anderson',
-    email: 'james.anderson@example.com',
+    email: 'james.anderson@roomy.com',
     phone: '+44 20 7123 4567',
     nationality: 'British',
     dateOfBirth: '1985-09-12',
     role: 'OWNER',
     isActive: true,
-    properties: ['Beach Villa', 'City Apartment'],
-    totalUnits: 4,
-    comments: 'International investor',
+    properties: ['Beach Villa JBR', 'City Apartment DIFC'],
+    totalUnits: 2,
+    comments: 'International investor with diversified portfolio. Prefers quarterly reports and detailed analytics.',
     createdAt: '2023-06-18T14:00:00Z',
     createdBy: 'admin',
     lastModifiedAt: '2024-09-25T11:10:00Z',
     lastModifiedBy: 'manager',
-    documents: [],
-    bankDetails: [],
-    transactions: [],
-    activityLog: []
+    documents: [
+      {
+        id: 6,
+        name: 'UK Passport.pdf',
+        type: 'Passport',
+        uploadedAt: '2023-06-18T14:00:00Z',
+        size: '1.8 MB',
+        s3Key: 'documents/owner_5/passport.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_5/passport.pdf'
+      },
+      {
+        id: 7,
+        name: 'Investment Agreement.pdf',
+        type: 'Legal Document',
+        uploadedAt: '2023-06-18T14:05:00Z',
+        size: '3.2 MB',
+        s3Key: 'documents/owner_5/investment_agreement.pdf',
+        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/owner_5/investment_agreement.pdf'
+      }
+    ],
+    bankDetails: [
+      {
+        id: 5,
+        bankName: 'HSBC UK',
+        accountHolderName: 'James Anderson',
+        accountNumber: '9876543210987654',
+        iban: 'GB29NWBK60161331926819',
+        swiftCode: 'HBUKGB4B',
+        bankAddress: '1 Centenary Square, Birmingham, UK',
+        isPrimary: true,
+        addedDate: '2023-06-18T14:00:00Z',
+        addedBy: 'admin',
+        addedByEmail: 'admin@roomy.com'
+      }
+    ],
+    transactions: [
+      {
+        id: 7,
+        type: 'payment',
+        amount: 42000,
+        currency: 'AED',
+        description: 'Monthly rental income - Beach Villa JBR',
+        bankDetailId: 5,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-007',
+        title: 'Monthly Rental Income',
+        responsible: 'Ahmed Al-Mansouri'
+      },
+      {
+        id: 8,
+        type: 'payment',
+        amount: 38000,
+        currency: 'AED',
+        description: 'Monthly rental income - City Apartment DIFC',
+        bankDetailId: 5,
+        status: 'completed',
+        date: '2024-09-01T10:00:00Z',
+        processedBy: 'Manager',
+        processedByEmail: 'manager@roomy.com',
+        reference: 'PAY-2024-008',
+        title: 'Monthly Rental Income',
+        responsible: 'Ahmed Al-Mansouri'
+      }
+    ],
+    activityLog: [
+      {
+        id: 9,
+        action: 'Property Added',
+        description: 'Beach Villa JBR added to portfolio',
+        date: '2023-06-18T14:00:00Z',
+        performedBy: 'admin'
+      },
+      {
+        id: 10,
+        action: 'Property Added',
+        description: 'City Apartment DIFC added to portfolio',
+        date: '2023-08-10T16:00:00Z',
+        performedBy: 'manager'
+      }
+    ]
   }
 ];
 
@@ -3762,21 +4148,21 @@ app.get('/api/users/stats', mockAuth, (req, res) => {
 
 // ==================== AGENTS API ====================
 
-// Mock agents data with detailed information
-let mockAgents = [
+// Real agents data with detailed information
+let realAgents = [
   {
     id: 1,
     name: 'Ahmed Al-Mansouri',
-    email: 'ahmed.almansouri@email.com',
+    email: 'ahmed.almansouri@roomy.com',
     phone: '+971 50 123 4567',
-    nationality: 'UAE',
+    nationality: 'United Arab Emirates',
     birthday: '1985-03-15',
-    unitsAttracted: 12,
+    unitsAttracted: 2,
     totalPayouts: 45000,
     lastPayoutDate: '2024-01-15',
     status: 'Active',
     joinDate: '2023-03-15',
-    comments: 'Excellent performance, consistently brings high-value properties. Strong relationships with property owners in Downtown Dubai area.',
+    comments: 'Senior property consultant specializing in luxury Downtown Dubai properties. Excellent track record with high-value clients.',
     createdAt: '2023-03-15T00:00:00.000Z',
     createdBy: 'System',
     lastModifiedAt: '2024-01-15T00:00:00.000Z',
@@ -3785,7 +4171,7 @@ let mockAgents = [
     units: [
       {
         id: 1,
-        name: 'Downtown Loft 1BR',
+        name: 'Luxury Apartment Downtown Dubai',
         location: 'Downtown Dubai',
         referralDate: '2023-04-10',
         revenue: 85000,
@@ -3795,33 +4181,13 @@ let mockAgents = [
       },
       {
         id: 2,
-        name: 'Marina View Studio',
-        location: 'Dubai Marina',
+        name: 'Beach Villa Palm Jumeirah',
+        location: 'Palm Jumeirah',
         referralDate: '2023-05-15',
         revenue: 65000,
         commission: 10,
         status: 'Active',
         propertyId: 'prop_2'
-      },
-      {
-        id: 3,
-        name: 'Burj Khalifa 2BR',
-        location: 'Downtown Dubai',
-        referralDate: '2023-06-20',
-        revenue: 120000,
-        commission: 7,
-        status: 'Active',
-        propertyId: 'prop_3'
-      },
-      {
-        id: 4,
-        name: 'JBR Beachfront 3BR',
-        location: 'JBR',
-        referralDate: '2023-07-05',
-        revenue: 95000,
-        commission: 9,
-        status: 'Active',
-        propertyId: 'prop_4'
       }
     ],
     // Detailed payouts data
@@ -3830,7 +4196,7 @@ let mockAgents = [
         id: 1,
         date: '2024-01-15',
         amount: 8500,
-        units: ['Downtown Loft 1BR', 'Marina View Studio'],
+        units: ['Luxury Apartment Downtown Dubai', 'Beach Villa Palm Jumeirah'],
         status: 'Completed',
         description: 'Monthly commission payout',
         paymentMethod: 'Bank Transfer'
@@ -3839,16 +4205,7 @@ let mockAgents = [
         id: 2,
         date: '2023-12-15',
         amount: 7200,
-        units: ['Burj Khalifa 2BR', 'JBR Beachfront 3BR'],
-        status: 'Completed',
-        description: 'Monthly commission payout',
-        paymentMethod: 'Bank Transfer'
-      },
-      {
-        id: 3,
-        date: '2023-11-15',
-        amount: 6800,
-        units: ['Downtown Loft 1BR', 'Marina View Studio'],
+        units: ['Luxury Apartment Downtown Dubai'],
         status: 'Completed',
         description: 'Monthly commission payout',
         paymentMethod: 'Bank Transfer'
@@ -3890,125 +4247,20 @@ let mockAgents = [
   },
   {
     id: 2,
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@email.com',
-    phone: '+44 20 1234 5678',
-    nationality: 'UK',
-    birthday: '1988-07-22',
-    unitsAttracted: 8,
-    totalPayouts: 32000,
-    lastPayoutDate: '2024-01-10',
+    name: 'Fatima Al-Zahra',
+    email: 'fatima.alzahra@roomy.com',
+    phone: '+971 50 987 6543',
+    nationality: 'United Arab Emirates',
+    birthday: '1990-12-05',
+    unitsAttracted: 0,
+    totalPayouts: 0,
+    lastPayoutDate: null,
     status: 'Active',
-    joinDate: '2023-05-10',
-    comments: 'Strong performer with excellent communication skills. Specializes in luxury properties in Palm Jumeirah.',
-    createdAt: '2023-05-10T00:00:00.000Z',
+    joinDate: '2024-01-01',
+    comments: 'New agent specializing in residential properties. Currently building client portfolio.',
+    createdAt: '2024-01-01T00:00:00.000Z',
     createdBy: 'System',
-    lastModifiedAt: '2024-01-10T00:00:00.000Z',
-    lastModifiedBy: 'System',
-    units: [
-      {
-        id: 5,
-        name: 'Palm Villa 4BR',
-        location: 'Palm Jumeirah',
-        referralDate: '2023-06-01',
-        revenue: 180000,
-        commission: 6,
-        status: 'Active',
-        propertyId: 'prop_5'
-      },
-      {
-        id: 6,
-        name: 'Marina Penthouse',
-        location: 'Dubai Marina',
-        referralDate: '2023-07-15',
-        revenue: 220000,
-        commission: 5,
-        status: 'Active',
-        propertyId: 'prop_6'
-      }
-    ],
-    payouts: [
-      {
-        id: 4,
-        date: '2024-01-10',
-        amount: 12000,
-        units: ['Palm Villa 4BR', 'Marina Penthouse'],
-        status: 'Completed',
-        description: 'Monthly commission payout',
-        paymentMethod: 'Bank Transfer'
-      }
-    ],
-    documents: [
-      {
-        id: 4,
-        name: 'Agent Contract.pdf',
-        type: 'Contract',
-        uploadDate: '2023-05-10',
-        size: '2.1 MB',
-        s3Key: 'documents/agent_2/contract.pdf',
-        s3Url: 'https://roomy-ae.s3.eu-west-3.amazonaws.com/documents/agent_2/contract.pdf',
-        filename: 'Agent Contract.pdf'
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Mohammed Hassan',
-    email: 'mohammed.hassan@email.com',
-    phone: '+20 2 1234 5678',
-    nationality: 'Egypt',
-    birthday: '1990-11-08',
-    unitsAttracted: 15,
-    totalPayouts: 68000,
-    lastPayoutDate: '2024-01-20',
-    status: 'Active',
-    joinDate: '2023-02-28',
-    comments: 'Top performer with extensive network in the Egyptian community. Consistently exceeds targets.',
-    createdAt: '2023-02-28T00:00:00.000Z',
-    createdBy: 'System',
-    lastModifiedAt: '2024-01-20T00:00:00.000Z',
-    lastModifiedBy: 'System',
-    units: [],
-    payouts: [],
-    documents: []
-  },
-  {
-    id: 4,
-    name: 'Emma Davis',
-    email: 'emma.davis@email.com',
-    phone: '+61 2 1234 5678',
-    nationality: 'Australia',
-    birthday: '1987-04-14',
-    unitsAttracted: 6,
-    totalPayouts: 18000,
-    lastPayoutDate: '2023-12-15',
-    status: 'Inactive',
-    joinDate: '2023-08-15',
-    comments: 'Good performer but recently inactive. May need follow-up.',
-    createdAt: '2023-08-15T00:00:00.000Z',
-    createdBy: 'System',
-    lastModifiedAt: '2023-12-15T00:00:00.000Z',
-    lastModifiedBy: 'System',
-    units: [],
-    payouts: [],
-    documents: []
-  },
-  {
-    id: 5,
-    name: 'David Wilson',
-    email: 'david.wilson@email.com',
-    phone: '+1 555 123 4567',
-    nationality: 'USA',
-    birthday: '1983-09-30',
-    unitsAttracted: 10,
-    totalPayouts: 42000,
-    lastPayoutDate: '2024-01-18',
-    status: 'Active',
-    joinDate: '2023-04-20',
-    comments: 'Reliable agent with good track record. Focuses on mid-range properties.',
-    createdAt: '2023-04-20T00:00:00.000Z',
-    createdBy: 'System',
-    lastModifiedAt: '2024-01-18T00:00:00.000Z',
+    lastModifiedAt: '2024-01-01T00:00:00.000Z',
     lastModifiedBy: 'System',
     units: [],
     payouts: [],
@@ -4037,10 +4289,10 @@ function loadAgentsData() {
     const dataPath = path.join(__dirname, 'data', 'agents.json');
     if (fs.existsSync(dataPath)) {
       const data = fs.readFileSync(dataPath, 'utf8');
-      mockAgents = JSON.parse(data);
+      realAgents = JSON.parse(data);
       console.log('📁 Initial agents data loaded from file');
     } else {
-      saveAgentsData(mockAgents);
+      saveAgentsData(realAgents);
     }
   } catch (error) {
     console.error('❌ Error loading agents data:', error);
@@ -4065,7 +4317,7 @@ app.get('/api/agents', mockAuth, (req, res) => {
 
   console.log('👥 Query params:', req.query);
 
-  let filtered = [...mockAgents];
+  let filtered = [...realAgents];
 
   // Search filter
   if (search) {
@@ -4125,14 +4377,14 @@ app.get('/api/agents', mockAuth, (req, res) => {
 app.get('/api/agents/stats', mockAuth, (req, res) => {
   console.log('📊 GET /api/agents/stats - Fetching agent statistics');
   
-  const totalAgents = mockAgents.length;
-  const activeAgents = mockAgents.filter(agent => agent.status === 'Active').length;
+  const totalAgents = realAgents.length;
+  const activeAgents = realAgents.filter(agent => agent.status === 'Active').length;
   
   // Calculate total units from properties assigned to agents
   const totalUnits = mockProperties.filter(p => p.agentId).length;
   
   // Calculate total payouts from agent payouts
-  const totalPayouts = mockAgents.reduce((sum, agent) => {
+  const totalPayouts = realAgents.reduce((sum, agent) => {
     if (agent.payouts) {
       return sum + agent.payouts.reduce((payoutSum, payout) => payoutSum + payout.amount, 0);
     }
@@ -4157,7 +4409,7 @@ app.get('/api/agents/:id', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`👥 GET /api/agents/${id} - Fetching agent by ID`);
 
-  const agent = mockAgents.find(a => a.id === parseInt(id));
+  const agent = realAgents.find(a => a.id === parseInt(id));
   
   if (!agent) {
     return res.status(404).json({
@@ -4185,7 +4437,7 @@ app.post('/api/agents', mockAuth, (req, res) => {
   const agentData = req.body;
 
   const newAgent = {
-    id: Math.max(...mockAgents.map(a => a.id)) + 1,
+    id: Math.max(...realAgents.map(a => a.id)) + 1,
     ...agentData,
     status: agentData.status || 'Active',
     createdAt: new Date().toISOString(),
@@ -4194,8 +4446,8 @@ app.post('/api/agents', mockAuth, (req, res) => {
     lastModifiedBy: 'Current User'
   };
 
-  mockAgents.push(newAgent);
-  saveAgentsData(mockAgents);
+  realAgents.push(newAgent);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
@@ -4210,7 +4462,7 @@ app.put('/api/agents/:id', mockAuth, (req, res) => {
   const updateData = req.body;
   console.log(`👥 PUT /api/agents/${id} - Updating agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4218,18 +4470,18 @@ app.put('/api/agents/:id', mockAuth, (req, res) => {
     });
   }
 
-  mockAgents[agentIndex] = {
-    ...mockAgents[agentIndex],
+  realAgents[agentIndex] = {
+    ...realAgents[agentIndex],
     ...updateData,
     lastModifiedAt: new Date().toISOString(),
     lastModifiedBy: 'Current User'
   };
 
-  saveAgentsData(mockAgents);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
-    data: mockAgents[agentIndex],
+    data: realAgents[agentIndex],
     message: 'Agent updated successfully'
   });
 });
@@ -4239,7 +4491,7 @@ app.delete('/api/agents/:id', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`👥 DELETE /api/agents/${id} - Deleting agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4247,8 +4499,8 @@ app.delete('/api/agents/:id', mockAuth, (req, res) => {
     });
   }
 
-  mockAgents.splice(agentIndex, 1);
-  saveAgentsData(mockAgents);
+  realAgents.splice(agentIndex, 1);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
@@ -4263,7 +4515,7 @@ app.get('/api/agents/:id/units', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`🏠 GET /api/agents/${id}/units - Fetching agent units`);
 
-  const agent = mockAgents.find(a => a.id === parseInt(id));
+  const agent = realAgents.find(a => a.id === parseInt(id));
   if (!agent) {
     return res.status(404).json({
       success: false,
@@ -4298,7 +4550,7 @@ app.post('/api/agents/:id/units', mockAuth, (req, res) => {
   const unitData = req.body;
   console.log(`🏠 POST /api/agents/${id}/units - Adding unit to agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4306,7 +4558,7 @@ app.post('/api/agents/:id/units', mockAuth, (req, res) => {
     });
   }
 
-  const agent = mockAgents[agentIndex];
+  const agent = realAgents[agentIndex];
 
   // Create new property
   const newProperty = {
@@ -4355,7 +4607,7 @@ app.delete('/api/agents/:id/units/:unitId', mockAuth, (req, res) => {
   const { id, unitId } = req.params;
   console.log(`🏠 DELETE /api/agents/${id}/units/${unitId} - Removing unit from agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4389,7 +4641,7 @@ app.get('/api/agents/:id/payouts', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`💰 GET /api/agents/${id}/payouts - Fetching agent payouts`);
 
-  const agent = mockAgents.find(a => a.id === parseInt(id));
+  const agent = realAgents.find(a => a.id === parseInt(id));
   if (!agent) {
     return res.status(404).json({
       success: false,
@@ -4409,7 +4661,7 @@ app.post('/api/agents/:id/payouts', mockAuth, (req, res) => {
   const payoutData = req.body;
   console.log(`💰 POST /api/agents/${id}/payouts - Adding payout to agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4425,18 +4677,18 @@ app.post('/api/agents/:id/payouts', mockAuth, (req, res) => {
     paymentMethod: payoutData.paymentMethod || 'Bank Transfer'
   };
 
-  if (!mockAgents[agentIndex].payouts) {
-    mockAgents[agentIndex].payouts = [];
+  if (!realAgents[agentIndex].payouts) {
+    realAgents[agentIndex].payouts = [];
   }
-  mockAgents[agentIndex].payouts.push(newPayout);
+  realAgents[agentIndex].payouts.push(newPayout);
   
   // Update agent stats
-  mockAgents[agentIndex].totalPayouts = (mockAgents[agentIndex].totalPayouts || 0) + newPayout.amount;
-  mockAgents[agentIndex].lastPayoutDate = newPayout.date;
-  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
-  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+  realAgents[agentIndex].totalPayouts = (realAgents[agentIndex].totalPayouts || 0) + newPayout.amount;
+  realAgents[agentIndex].lastPayoutDate = newPayout.date;
+  realAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  realAgents[agentIndex].lastModifiedBy = 'Current User';
 
-  saveAgentsData(mockAgents);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
@@ -4450,7 +4702,7 @@ app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
   const { id, payoutId } = req.params;
   console.log(`💰 DELETE /api/agents/${id}/payouts/${payoutId} - Removing payout from agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4458,14 +4710,14 @@ app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
     });
   }
 
-  if (!mockAgents[agentIndex].payouts) {
+  if (!realAgents[agentIndex].payouts) {
     return res.status(404).json({
       success: false,
       message: 'Payout not found'
     });
   }
 
-  const payoutIndex = mockAgents[agentIndex].payouts.findIndex(p => p.id === parseInt(payoutId));
+  const payoutIndex = realAgents[agentIndex].payouts.findIndex(p => p.id === parseInt(payoutId));
   if (payoutIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4473,24 +4725,24 @@ app.delete('/api/agents/:id/payouts/:payoutId', mockAuth, (req, res) => {
     });
   }
 
-  const payout = mockAgents[agentIndex].payouts[payoutIndex];
-  mockAgents[agentIndex].payouts.splice(payoutIndex, 1);
+  const payout = realAgents[agentIndex].payouts[payoutIndex];
+  realAgents[agentIndex].payouts.splice(payoutIndex, 1);
   
   // Update agent stats
-  mockAgents[agentIndex].totalPayouts = Math.max(0, (mockAgents[agentIndex].totalPayouts || 0) - payout.amount);
+  realAgents[agentIndex].totalPayouts = Math.max(0, (realAgents[agentIndex].totalPayouts || 0) - payout.amount);
   
   // Update last payout date
-  if (mockAgents[agentIndex].payouts.length > 0) {
-    const sortedPayouts = mockAgents[agentIndex].payouts.sort((a, b) => new Date(b.date) - new Date(a.date));
-    mockAgents[agentIndex].lastPayoutDate = sortedPayouts[0].date;
+  if (realAgents[agentIndex].payouts.length > 0) {
+    const sortedPayouts = realAgents[agentIndex].payouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    realAgents[agentIndex].lastPayoutDate = sortedPayouts[0].date;
   } else {
-    mockAgents[agentIndex].lastPayoutDate = null;
+    realAgents[agentIndex].lastPayoutDate = null;
   }
   
-  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
-  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+  realAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  realAgents[agentIndex].lastModifiedBy = 'Current User';
 
-  saveAgentsData(mockAgents);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
@@ -4505,7 +4757,7 @@ app.get('/api/agents/:id/documents', mockAuth, (req, res) => {
   const { id } = req.params;
   console.log(`📄 GET /api/agents/${id}/documents - Fetching agent documents`);
 
-  const agent = mockAgents.find(a => a.id === parseInt(id));
+  const agent = realAgents.find(a => a.id === parseInt(id));
   if (!agent) {
     return res.status(404).json({
       success: false,
@@ -4525,7 +4777,7 @@ app.post('/api/agents/:id/documents', mockAuth, (req, res) => {
   const documentData = req.body;
   console.log(`📄 POST /api/agents/${id}/documents - Adding document to agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4539,15 +4791,15 @@ app.post('/api/agents/:id/documents', mockAuth, (req, res) => {
     uploadDate: documentData.uploadDate || new Date().toISOString().split('T')[0]
   };
 
-  if (!mockAgents[agentIndex].documents) {
-    mockAgents[agentIndex].documents = [];
+  if (!realAgents[agentIndex].documents) {
+    realAgents[agentIndex].documents = [];
   }
-  mockAgents[agentIndex].documents.push(newDocument);
+  realAgents[agentIndex].documents.push(newDocument);
   
-  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
-  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+  realAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  realAgents[agentIndex].lastModifiedBy = 'Current User';
 
-  saveAgentsData(mockAgents);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
@@ -4561,7 +4813,7 @@ app.delete('/api/agents/:id/documents/:documentId', mockAuth, (req, res) => {
   const { id, documentId } = req.params;
   console.log(`📄 DELETE /api/agents/${id}/documents/${documentId} - Removing document from agent`);
 
-  const agentIndex = mockAgents.findIndex(a => a.id === parseInt(id));
+  const agentIndex = realAgents.findIndex(a => a.id === parseInt(id));
   if (agentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4569,14 +4821,14 @@ app.delete('/api/agents/:id/documents/:documentId', mockAuth, (req, res) => {
     });
   }
 
-  if (!mockAgents[agentIndex].documents) {
+  if (!realAgents[agentIndex].documents) {
     return res.status(404).json({
       success: false,
       message: 'Document not found'
     });
   }
 
-  const documentIndex = mockAgents[agentIndex].documents.findIndex(d => d.id === parseInt(documentId));
+  const documentIndex = realAgents[agentIndex].documents.findIndex(d => d.id === parseInt(documentId));
   if (documentIndex === -1) {
     return res.status(404).json({
       success: false,
@@ -4584,17 +4836,1834 @@ app.delete('/api/agents/:id/documents/:documentId', mockAuth, (req, res) => {
     });
   }
 
-  mockAgents[agentIndex].documents.splice(documentIndex, 1);
+  realAgents[agentIndex].documents.splice(documentIndex, 1);
   
-  mockAgents[agentIndex].lastModifiedAt = new Date().toISOString();
-  mockAgents[agentIndex].lastModifiedBy = 'Current User';
+  realAgents[agentIndex].lastModifiedAt = new Date().toISOString();
+  realAgents[agentIndex].lastModifiedBy = 'Current User';
 
-  saveAgentsData(mockAgents);
+  saveAgentsData(realAgents);
 
   res.json({
     success: true,
     message: 'Document removed successfully'
   });
+});
+
+// ==================== FINANCES API ====================
+
+// Mock financial transactions data
+let mockFinancialTransactions = [
+  {
+    id: 1,
+    transactionId: 'TXN-2024-001',
+    guestName: 'John Smith',
+    property: 'Apartment Burj Khalifa 2',
+    reservationId: 'RES-001',
+    paymentStatus: 'Completed',
+    paymentMethod: 'Credit Card',
+    amount: 2450,
+    currency: 'AED',
+    date: '2024-01-15',
+    time: '14:30',
+    type: 'Payment',
+    platform: 'Airbnb',
+    platformFee: 73.5,
+    transactionFee: 0,
+    adminUser: 'Sarah Johnson',
+    remarks: 'Full payment received on time',
+    paymentCount: 1,
+    paymentCategory: 'Reservation Payment',
+    guestEmail: 'john.smith@email.com',
+    guestPhone: '+971 50 123 4567',
+    netAmount: 2376.5,
+    createdAt: '2024-01-15T14:30:00.000Z',
+    createdBy: 'Sarah Johnson',
+    lastModifiedAt: '2024-01-15T14:30:00.000Z',
+    lastModifiedBy: 'Sarah Johnson'
+  },
+  {
+    id: 2,
+    transactionId: 'TXN-2024-002',
+    guestName: 'Maria Garcia',
+    property: 'Marina View Studio',
+    reservationId: 'RES-002',
+    paymentStatus: 'Pending',
+    paymentMethod: 'Bank Transfer',
+    amount: 1800,
+    currency: 'AED',
+    date: '2024-01-14',
+    time: '10:15',
+    type: 'Payment',
+    platform: 'Direct',
+    platformFee: 0,
+    transactionFee: 0,
+    adminUser: 'Mike Wilson',
+    remarks: 'Awaiting bank confirmation',
+    paymentCount: 1,
+    paymentCategory: 'Deposit',
+    guestEmail: 'maria.garcia@email.com',
+    guestPhone: '+971 50 234 5678',
+    netAmount: 1800,
+    createdAt: '2024-01-14T10:15:00.000Z',
+    createdBy: 'Mike Wilson',
+    lastModifiedAt: '2024-01-14T10:15:00.000Z',
+    lastModifiedBy: 'Mike Wilson'
+  },
+  {
+    id: 3,
+    transactionId: 'TXN-2024-003',
+    guestName: 'Ahmed Hassan',
+    property: 'Downtown Loft 2BR',
+    reservationId: 'RES-003',
+    paymentStatus: 'Completed',
+    paymentMethod: 'Credit Card',
+    amount: 3200,
+    currency: 'AED',
+    date: '2024-01-13',
+    time: '16:45',
+    type: 'Payment',
+    platform: 'Booking.com',
+    platformFee: 96,
+    transactionFee: 0,
+    adminUser: 'Lisa Brown',
+    remarks: 'Deposit payment - balance due on arrival',
+    paymentCount: 1,
+    paymentCategory: 'Deposit',
+    guestEmail: 'ahmed.hassan@email.com',
+    guestPhone: '+971 50 345 6789',
+    netAmount: 3104,
+    createdAt: '2024-01-13T16:45:00.000Z',
+    createdBy: 'Lisa Brown',
+    lastModifiedAt: '2024-01-13T16:45:00.000Z',
+    lastModifiedBy: 'Lisa Brown'
+  },
+  {
+    id: 4,
+    transactionId: 'TXN-2024-004',
+    guestName: 'Emma Davis',
+    property: 'JBR Beach Apartment',
+    reservationId: 'RES-004',
+    paymentStatus: 'Failed',
+    paymentMethod: 'Credit Card',
+    amount: 2100,
+    currency: 'AED',
+    date: '2024-01-12',
+    time: '09:20',
+    type: 'Payment',
+    platform: 'Airbnb',
+    platformFee: 63,
+    transactionFee: 0,
+    adminUser: 'David Lee',
+    remarks: 'Card declined - insufficient funds',
+    paymentCount: 1,
+    paymentCategory: 'Reservation Payment',
+    guestEmail: 'emma.davis@email.com',
+    guestPhone: '+971 50 456 7890',
+    netAmount: 2037,
+    createdAt: '2024-01-12T09:20:00.000Z',
+    createdBy: 'David Lee',
+    lastModifiedAt: '2024-01-12T09:20:00.000Z',
+    lastModifiedBy: 'David Lee'
+  },
+  {
+    id: 5,
+    transactionId: 'TXN-2024-005',
+    guestName: 'Tom Anderson',
+    property: 'Business Bay Office',
+    reservationId: 'RES-005',
+    paymentStatus: 'Completed',
+    paymentMethod: 'PayPal',
+    amount: -1500,
+    currency: 'AED',
+    date: '2024-01-11',
+    time: '11:30',
+    type: 'Refund',
+    platform: 'Direct',
+    platformFee: 0,
+    transactionFee: 0,
+    adminUser: 'Anna Taylor',
+    remarks: 'Partial refund due to early checkout',
+    paymentCount: 1,
+    paymentCategory: 'Refund',
+    guestEmail: 'tom.anderson@email.com',
+    guestPhone: '+971 50 567 8901',
+    netAmount: -1500,
+    createdAt: '2024-01-11T11:30:00.000Z',
+    createdBy: 'Anna Taylor',
+    lastModifiedAt: '2024-01-11T11:30:00.000Z',
+    lastModifiedBy: 'Anna Taylor'
+  },
+  {
+    id: 6,
+    transactionId: 'TXN-2024-006',
+    guestName: 'Clean Pro Services',
+    property: 'Apartment Burj Khalifa 2',
+    reservationId: 'RES-001',
+    paymentStatus: 'Completed',
+    paymentMethod: 'Bank Transfer',
+    amount: -450,
+    currency: 'AED',
+    date: '2024-01-15',
+    time: '18:00',
+    type: 'Expense',
+    platform: 'Direct',
+    platformFee: 0,
+    transactionFee: 0,
+    adminUser: 'Sarah Johnson',
+    remarks: 'Post-checkout cleaning service',
+    paymentCount: 1,
+    paymentCategory: 'Cleaning Fee',
+    guestEmail: 'info@cleanpro.ae',
+    guestPhone: '+971 4 123 4567',
+    netAmount: -450,
+    createdAt: '2024-01-15T18:00:00.000Z',
+    createdBy: 'Sarah Johnson',
+    lastModifiedAt: '2024-01-15T18:00:00.000Z',
+    lastModifiedBy: 'Sarah Johnson'
+  },
+  {
+    id: 7,
+    transactionId: 'TXN-2024-007',
+    guestName: 'Dubai Plumbing Co.',
+    property: 'Marina View Studio',
+    reservationId: 'N/A',
+    paymentStatus: 'Completed',
+    paymentMethod: 'Bank Transfer',
+    amount: -320,
+    currency: 'AED',
+    date: '2024-01-14',
+    time: '14:15',
+    type: 'Expense',
+    platform: 'Direct',
+    platformFee: 0,
+    transactionFee: 0,
+    adminUser: 'Mike Wilson',
+    remarks: 'Kitchen sink repair',
+    paymentCount: 1,
+    paymentCategory: 'Maintenance Fee',
+    guestEmail: 'service@dubaiplumbing.ae',
+    guestPhone: '+971 4 234 5678',
+    netAmount: -320,
+    createdAt: '2024-01-14T14:15:00.000Z',
+    createdBy: 'Mike Wilson',
+    lastModifiedAt: '2024-01-14T14:15:00.000Z',
+    lastModifiedBy: 'Mike Wilson'
+  },
+  {
+    id: 8,
+    transactionId: 'TXN-2024-008',
+    guestName: 'Sophie Martin',
+    property: 'DIFC Penthouse',
+    reservationId: 'RES-006',
+    paymentStatus: 'Completed',
+    paymentMethod: 'Credit Card',
+    amount: 5200,
+    currency: 'AED',
+    date: '2024-01-10',
+    time: '13:45',
+    type: 'Payment',
+    platform: 'Airbnb',
+    platformFee: 156,
+    transactionFee: 0,
+    adminUser: 'John Smith',
+    remarks: 'Full payment - premium property',
+    paymentCount: 1,
+    paymentCategory: 'Reservation Payment',
+    guestEmail: 'sophie.martin@email.com',
+    guestPhone: '+971 50 678 9012',
+    netAmount: 5044,
+    createdAt: '2024-01-10T13:45:00.000Z',
+    createdBy: 'John Smith',
+    lastModifiedAt: '2024-01-10T13:45:00.000Z',
+    lastModifiedBy: 'John Smith'
+  }
+];
+
+// Data persistence functions
+const FINANCES_FILE = path.join(DATA_DIR, 'finances.json');
+
+function loadFinancesData() {
+  try {
+    if (fs.existsSync(FINANCES_FILE)) {
+      const data = fs.readFileSync(FINANCES_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading finances data:', error);
+  }
+  return mockFinancialTransactions;
+}
+
+function saveFinancesData() {
+  try {
+    fs.writeFileSync(FINANCES_FILE, JSON.stringify(mockFinancialTransactions, null, 2));
+  } catch (error) {
+    console.error('Error saving finances data:', error);
+  }
+}
+
+// Load data on startup
+mockFinancialTransactions = loadFinancesData();
+
+// GET /api/finances - Get all financial transactions with filtering
+app.get('/api/finances', (req, res) => {
+  try {
+    const {
+      search,
+      paymentStatus,
+      paymentMethod,
+      transactionType,
+      paymentCategory,
+      platform,
+      property,
+      guest,
+      amountMin,
+      amountMax,
+      dateFrom,
+      dateTo,
+      page = 1,
+      limit = 50
+    } = req.query;
+
+    let filteredTransactions = [...mockFinancialTransactions];
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        transaction.guestName.toLowerCase().includes(searchLower) ||
+        transaction.property.toLowerCase().includes(searchLower) ||
+        transaction.transactionId.toLowerCase().includes(searchLower) ||
+        transaction.reservationId.toLowerCase().includes(searchLower) ||
+        transaction.paymentMethod.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Status filter
+    if (paymentStatus) {
+      const statuses = Array.isArray(paymentStatus) ? paymentStatus : [paymentStatus];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        statuses.includes(transaction.paymentStatus)
+      );
+    }
+
+    // Payment method filter
+    if (paymentMethod) {
+      const methods = Array.isArray(paymentMethod) ? paymentMethod : [paymentMethod];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        methods.includes(transaction.paymentMethod)
+      );
+    }
+
+    // Transaction type filter
+    if (transactionType) {
+      const types = Array.isArray(transactionType) ? transactionType : [transactionType];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        types.includes(transaction.type)
+      );
+    }
+
+    // Payment category filter
+    if (paymentCategory) {
+      const categories = Array.isArray(paymentCategory) ? paymentCategory : [paymentCategory];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        categories.includes(transaction.paymentCategory)
+      );
+    }
+
+    // Platform filter
+    if (platform) {
+      const platforms = Array.isArray(platform) ? platform : [platform];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        platforms.includes(transaction.platform)
+      );
+    }
+
+    // Property filter
+    if (property) {
+      const properties = Array.isArray(property) ? property : [property];
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        properties.includes(transaction.property)
+      );
+    }
+
+    // Guest filter
+    if (guest) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        transaction.guestName.toLowerCase().includes(guest.toLowerCase())
+      );
+    }
+
+    // Amount range filter
+    if (amountMin) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        transaction.amount >= parseFloat(amountMin)
+      );
+    }
+    if (amountMax) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        transaction.amount <= parseFloat(amountMax)
+      );
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        new Date(transaction.date) >= new Date(dateFrom)
+      );
+    }
+    if (dateTo) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        new Date(transaction.date) <= new Date(dateTo)
+      );
+    }
+
+    // Sort by date (newest first)
+    filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Pagination
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+    res.json({
+      success: true,
+      data: paginatedTransactions,
+      total: filteredTransactions.length,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (error) {
+    console.error('Error fetching financial transactions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching financial transactions'
+    });
+  }
+});
+
+// GET /api/finances/stats - Get financial statistics
+app.get('/api/finances/stats', (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    
+    let filteredTransactions = [...mockFinancialTransactions];
+    
+    // Apply date filters if provided
+    if (dateFrom) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        new Date(transaction.date) >= new Date(dateFrom)
+      );
+    }
+    if (dateTo) {
+      filteredTransactions = filteredTransactions.filter(transaction =>
+        new Date(transaction.date) <= new Date(dateTo)
+      );
+    }
+
+    // Calculate statistics
+    const totalRevenue = filteredTransactions
+      .filter(t => t.type === 'Payment' && t.paymentStatus === 'Completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const pendingPayments = filteredTransactions
+      .filter(t => t.type === 'Payment' && t.paymentStatus === 'Pending')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalExpenses = Math.abs(filteredTransactions
+      .filter(t => t.type === 'Expense' && t.paymentStatus === 'Completed')
+      .reduce((sum, t) => sum + t.amount, 0));
+
+    const refundsAmount = Math.abs(filteredTransactions
+      .filter(t => t.type === 'Refund' && t.paymentStatus === 'Completed')
+      .reduce((sum, t) => sum + t.amount, 0));
+
+    const platformFees = filteredTransactions
+      .filter(t => t.paymentStatus === 'Completed')
+      .reduce((sum, t) => sum + (t.platformFee || 0), 0);
+
+    const netIncome = totalRevenue - totalExpenses - refundsAmount - platformFees;
+
+    const transactionsCount = filteredTransactions.length;
+    const averageTransaction = transactionsCount > 0 ? totalRevenue / transactionsCount : 0;
+
+    const stats = {
+      totalRevenue,
+      pendingPayments,
+      totalExpenses,
+      netIncome,
+      transactionsCount,
+      averageTransaction,
+      refundsAmount,
+      platformFees
+    };
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error fetching financial stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching financial statistics'
+    });
+  }
+});
+
+// GET /api/finances/:id - Get single financial transaction
+app.get('/api/finances/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const transaction = mockFinancialTransactions.find(t => t.id === id);
+    
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Financial transaction not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: transaction
+    });
+  } catch (error) {
+    console.error('Error fetching financial transaction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching financial transaction'
+    });
+  }
+});
+
+// POST /api/finances - Create new financial transaction
+app.post('/api/finances', (req, res) => {
+  try {
+    const {
+      guestName,
+      property,
+      reservationId,
+      paymentStatus,
+      paymentMethod,
+      amount,
+      currency,
+      date,
+      time,
+      type,
+      platform,
+      platformFee,
+      transactionFee,
+      paymentCategory,
+      guestEmail,
+      guestPhone,
+      remarks,
+      adminUser
+    } = req.body;
+
+    // Generate new transaction ID
+    const newId = Math.max(...mockFinancialTransactions.map(t => t.id)) + 1;
+    const transactionId = `TXN-${new Date().getFullYear()}-${String(newId).padStart(3, '0')}`;
+
+    const newTransaction = {
+      id: newId,
+      transactionId,
+      guestName,
+      property,
+      reservationId: reservationId || 'N/A',
+      paymentStatus,
+      paymentMethod,
+      amount: parseFloat(amount),
+      currency,
+      date,
+      time: time || new Date().toTimeString().slice(0, 5),
+      type,
+      platform,
+      platformFee: parseFloat(platformFee) || 0,
+      transactionFee: parseFloat(transactionFee) || 0,
+      adminUser: adminUser || 'Current User',
+      remarks: remarks || '',
+      paymentCount: 1,
+      paymentCategory,
+      guestEmail: guestEmail || '',
+      guestPhone: guestPhone || '',
+      netAmount: parseFloat(amount) - (parseFloat(platformFee) || 0) - (parseFloat(transactionFee) || 0),
+      createdAt: new Date().toISOString(),
+      createdBy: adminUser || 'Current User',
+      lastModifiedAt: new Date().toISOString(),
+      lastModifiedBy: adminUser || 'Current User'
+    };
+
+    mockFinancialTransactions.unshift(newTransaction);
+    saveFinancesData();
+
+    res.status(201).json({
+      success: true,
+      data: newTransaction
+    });
+  } catch (error) {
+    console.error('Error creating financial transaction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating financial transaction'
+    });
+  }
+});
+
+// PUT /api/finances/:id - Update financial transaction
+app.put('/api/finances/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const transactionIndex = mockFinancialTransactions.findIndex(t => t.id === id);
+    
+    if (transactionIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Financial transaction not found'
+      });
+    }
+
+    const updateData = req.body;
+    const updatedTransaction = {
+      ...mockFinancialTransactions[transactionIndex],
+      ...updateData,
+      id, // Ensure ID doesn't change
+      lastModifiedAt: new Date().toISOString(),
+      lastModifiedBy: updateData.adminUser || 'Current User'
+    };
+
+    // Recalculate net amount if amount or fees changed
+    if (updateData.amount || updateData.platformFee || updateData.transactionFee) {
+      updatedTransaction.netAmount = updatedTransaction.amount - 
+        (updatedTransaction.platformFee || 0) - 
+        (updatedTransaction.transactionFee || 0);
+    }
+
+    mockFinancialTransactions[transactionIndex] = updatedTransaction;
+    saveFinancesData();
+
+    res.json({
+      success: true,
+      data: updatedTransaction
+    });
+  } catch (error) {
+    console.error('Error updating financial transaction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating financial transaction'
+    });
+  }
+});
+
+// DELETE /api/finances/:id - Delete financial transaction
+app.delete('/api/finances/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const transactionIndex = mockFinancialTransactions.findIndex(t => t.id === id);
+    
+    if (transactionIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Financial transaction not found'
+      });
+    }
+
+    mockFinancialTransactions.splice(transactionIndex, 1);
+    saveFinancesData();
+
+    res.json({
+      success: true,
+      message: 'Financial transaction deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting financial transaction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting financial transaction'
+    });
+  }
+});
+
+// POST /api/finances/bulk/mark-paid - Mark multiple transactions as paid
+app.post('/api/finances/bulk/mark-paid', (req, res) => {
+  try {
+    const { transactionIds } = req.body;
+    
+    if (!Array.isArray(transactionIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'transactionIds must be an array'
+      });
+    }
+
+    let updatedCount = 0;
+    transactionIds.forEach(id => {
+      const transaction = mockFinancialTransactions.find(t => t.id === id);
+      if (transaction && transaction.paymentStatus === 'Pending') {
+        transaction.paymentStatus = 'Completed';
+        transaction.lastModifiedAt = new Date().toISOString();
+        transaction.lastModifiedBy = 'Current User';
+        updatedCount++;
+      }
+    });
+
+    saveFinancesData();
+
+    res.json({
+      success: true,
+      message: `${updatedCount} transactions marked as paid`
+    });
+  } catch (error) {
+    console.error('Error marking transactions as paid:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking transactions as paid'
+    });
+  }
+});
+
+// POST /api/finances/export - Export transactions
+app.post('/api/finances/export', (req, res) => {
+  try {
+    const { transactionIds, format = 'csv' } = req.body;
+    
+    let transactionsToExport = mockFinancialTransactions;
+    if (transactionIds && Array.isArray(transactionIds)) {
+      transactionsToExport = mockFinancialTransactions.filter(t => 
+        transactionIds.includes(t.id)
+      );
+    }
+
+    if (format === 'csv') {
+      // Generate CSV
+      const headers = [
+        'Transaction ID', 'Guest Name', 'Property', 'Reservation ID',
+        'Payment Status', 'Payment Method', 'Amount', 'Currency',
+        'Date', 'Type', 'Platform', 'Platform Fee', 'Category', 'Remarks'
+      ];
+      
+      const csvRows = [headers.join(',')];
+      transactionsToExport.forEach(transaction => {
+        const row = [
+          transaction.transactionId,
+          `"${transaction.guestName}"`,
+          `"${transaction.property}"`,
+          transaction.reservationId,
+          transaction.paymentStatus,
+          transaction.paymentMethod,
+          transaction.amount,
+          transaction.currency,
+          transaction.date,
+          transaction.type,
+          transaction.platform,
+          transaction.platformFee || 0,
+          `"${transaction.paymentCategory}"`,
+          `"${transaction.remarks || ''}"`
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="financial_transactions.csv"');
+      res.send(csvContent);
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Unsupported export format'
+      });
+    }
+  } catch (error) {
+    console.error('Error exporting transactions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting transactions'
+    });
+  }
+});
+
+// POST /api/finances/generate-invoices - Generate invoices for transactions
+app.post('/api/finances/generate-invoices', (req, res) => {
+  try {
+    const { transactionIds } = req.body;
+    
+    if (!Array.isArray(transactionIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'transactionIds must be an array'
+      });
+    }
+
+    const transactions = mockFinancialTransactions.filter(t => 
+      transactionIds.includes(t.id)
+    );
+
+    // Mock invoice generation
+    const invoiceIds = transactions.map(t => t.id + 1000); // Simple mock invoice ID
+
+    res.json({
+      success: true,
+      message: `${transactions.length} invoices generated successfully`,
+      invoiceIds
+    });
+  } catch (error) {
+    console.error('Error generating invoices:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating invoices'
+    });
+  }
+});
+
+// ===========================
+// ANALYTICS API ENDPOINTS
+// ===========================
+
+// Mock analytics data
+const mockAnalyticsData = {
+  overview: {
+    totalRevenue: 125400,
+    totalExpenses: 18700,
+    netProfit: 106700,
+    occupancyRate: 78.5,
+    totalUnits: 12,
+    activeReservations: 47,
+    averageStayDuration: 4.2,
+    revenueGrowth: 12.5,
+    expenseGrowth: -3.2,
+    profitGrowth: 15.8,
+    occupancyGrowth: 8.3
+  },
+  financials: {
+    revenue: {
+      total: 125400,
+      byUnit: [
+        { unit: 'Apartment Burj Khalifa 2', revenue: 24500, percentage: 19.5 },
+        { unit: 'Marina View Studio', revenue: 18900, percentage: 15.1 },
+        { unit: 'Downtown Loft 2BR', revenue: 22100, percentage: 17.6 },
+        { unit: 'JBR Beach Apartment', revenue: 19800, percentage: 15.8 },
+        { unit: 'Business Bay Office', revenue: 15600, percentage: 12.4 },
+        { unit: 'DIFC Penthouse', revenue: 24500, percentage: 19.5 }
+      ],
+      bySource: [
+        { source: 'Airbnb', revenue: 50200, percentage: 40.0 },
+        { source: 'Booking.com', revenue: 37650, percentage: 30.0 },
+        { source: 'Direct', revenue: 25100, percentage: 20.0 },
+        { source: 'Expedia', revenue: 12450, percentage: 10.0 }
+      ],
+      trends: [
+        { month: 'Jan', revenue: 11200 },
+        { month: 'Feb', revenue: 12800 },
+        { month: 'Mar', revenue: 14500 },
+        { month: 'Apr', revenue: 13200 },
+        { month: 'May', revenue: 15800 },
+        { month: 'Jun', revenue: 14200 },
+        { month: 'Jul', revenue: 16800 },
+        { month: 'Aug', revenue: 17500 }
+      ]
+    },
+    expenses: {
+      total: 18700,
+      categories: [
+        { category: 'Cleaning', amount: 5600, percentage: 29.9 },
+        { category: 'Maintenance', amount: 4200, percentage: 22.5 },
+        { category: 'Platform Fees', amount: 3762, percentage: 20.1 },
+        { category: 'Utilities', amount: 2800, percentage: 15.0 },
+        { category: 'Insurance', amount: 1800, percentage: 9.6 },
+        { category: 'Other', amount: 538, percentage: 2.9 }
+      ],
+      byUnit: [
+        { unit: 'Apartment Burj Khalifa 2', expenses: 3200 },
+        { unit: 'Marina View Studio', expenses: 2800 },
+        { unit: 'Downtown Loft 2BR', expenses: 3100 },
+        { unit: 'JBR Beach Apartment', expenses: 2900 },
+        { unit: 'Business Bay Office', expenses: 2500 },
+        { unit: 'DIFC Penthouse', expenses: 4200 }
+      ]
+    },
+    profit: {
+      net: 106700,
+      byUnit: [
+        { unit: 'Apartment Burj Khalifa 2', profit: 21300, margin: 86.9 },
+        { unit: 'Marina View Studio', profit: 16100, margin: 85.2 },
+        { unit: 'Downtown Loft 2BR', profit: 19000, margin: 86.0 },
+        { unit: 'JBR Beach Apartment', profit: 16900, margin: 85.4 },
+        { unit: 'Business Bay Office', profit: 13100, margin: 84.0 },
+        { unit: 'DIFC Penthouse', profit: 20300, margin: 82.9 }
+      ]
+    }
+  },
+  units: {
+    performance: [
+      {
+        unit: 'Apartment Burj Khalifa 2',
+        revenue: 24500,
+        expenses: 3200,
+        profit: 21300,
+        occupancyRate: 85.2,
+        revenuePerNight: 320,
+        totalNights: 76,
+        avgStayDuration: 4.1
+      },
+      {
+        unit: 'Marina View Studio',
+        revenue: 18900,
+        expenses: 2800,
+        profit: 16100,
+        occupancyRate: 78.5,
+        revenuePerNight: 280,
+        totalNights: 68,
+        avgStayDuration: 3.8
+      },
+      {
+        unit: 'Downtown Loft 2BR',
+        revenue: 22100,
+        expenses: 3100,
+        profit: 19000,
+        occupancyRate: 82.1,
+        revenuePerNight: 310,
+        totalNights: 71,
+        avgStayDuration: 4.3
+      },
+      {
+        unit: 'JBR Beach Apartment',
+        revenue: 19800,
+        expenses: 2900,
+        profit: 16900,
+        occupancyRate: 75.8,
+        revenuePerNight: 290,
+        totalNights: 68,
+        avgStayDuration: 3.9
+      },
+      {
+        unit: 'Business Bay Office',
+        revenue: 15600,
+        expenses: 2500,
+        profit: 13100,
+        occupancyRate: 72.3,
+        revenuePerNight: 260,
+        totalNights: 60,
+        avgStayDuration: 3.5
+      },
+      {
+        unit: 'DIFC Penthouse',
+        revenue: 24500,
+        expenses: 4200,
+        profit: 20300,
+        occupancyRate: 88.7,
+        revenuePerNight: 380,
+        totalNights: 64,
+        avgStayDuration: 4.6
+      }
+    ]
+  },
+  owners: {
+    profitability: [
+      {
+        owner: 'Ahmed Al-Rashid',
+        units: ['Apartment Burj Khalifa 2', 'Marina View Studio'],
+        totalRevenue: 43400,
+        totalExpenses: 6000,
+        netProfit: 37400,
+        profitMargin: 86.2,
+        unitsCount: 2,
+        avgRevenuePerUnit: 21700
+      },
+      {
+        owner: 'Sarah Johnson',
+        units: ['Downtown Loft 2BR', 'JBR Beach Apartment'],
+        totalRevenue: 41900,
+        totalExpenses: 6000,
+        netProfit: 35900,
+        profitMargin: 85.7,
+        unitsCount: 2,
+        avgRevenuePerUnit: 20950
+      },
+      {
+        owner: 'Mohammed Hassan',
+        units: ['Business Bay Office'],
+        totalRevenue: 15600,
+        totalExpenses: 2500,
+        netProfit: 13100,
+        profitMargin: 84.0,
+        unitsCount: 1,
+        avgRevenuePerUnit: 15600
+      },
+      {
+        owner: 'Emma Davis',
+        units: ['DIFC Penthouse'],
+        totalRevenue: 24500,
+        totalExpenses: 4200,
+        netProfit: 20300,
+        profitMargin: 82.9,
+        unitsCount: 1,
+        avgRevenuePerUnit: 24500
+      }
+    ]
+  },
+  reservations: {
+    trends: {
+      monthly: [
+        { month: 'Jan', reservations: 12, cancellations: 2, net: 10 },
+        { month: 'Feb', reservations: 15, cancellations: 1, net: 14 },
+        { month: 'Mar', reservations: 18, cancellations: 3, net: 15 },
+        { month: 'Apr', reservations: 16, cancellations: 2, net: 14 },
+        { month: 'May', reservations: 22, cancellations: 1, net: 21 },
+        { month: 'Jun', reservations: 25, cancellations: 4, net: 21 },
+        { month: 'Jul', reservations: 28, cancellations: 2, net: 26 },
+        { month: 'Aug', reservations: 30, cancellations: 3, net: 27 }
+      ]
+    },
+    status: {
+      confirmed: 89,
+      pending: 12,
+      cancelled: 8,
+      completed: 76,
+      total: 109,
+      cancellationRate: 7.3,
+      confirmationRate: 81.7
+    }
+  },
+  agents: {
+    performance: [
+      {
+        agent: 'Sarah Wilson',
+        unitsReferred: 3,
+        totalRevenue: 45600,
+        totalPayouts: 13680,
+        commissionRate: 30,
+        avgRevenuePerUnit: 15200,
+        lastReferral: '2024-01-10',
+        status: 'Active'
+      },
+      {
+        agent: 'Mike Johnson',
+        unitsReferred: 2,
+        totalRevenue: 32100,
+        totalPayouts: 9630,
+        commissionRate: 30,
+        avgRevenuePerUnit: 16050,
+        lastReferral: '2024-01-05',
+        status: 'Active'
+      },
+      {
+        agent: 'Lisa Brown',
+        unitsReferred: 2,
+        totalRevenue: 28900,
+        totalPayouts: 8670,
+        commissionRate: 30,
+        avgRevenuePerUnit: 14450,
+        lastReferral: '2023-12-28',
+        status: 'Active'
+      },
+      {
+        agent: 'David Lee',
+        unitsReferred: 1,
+        totalRevenue: 18800,
+        totalPayouts: 5640,
+        commissionRate: 30,
+        avgRevenuePerUnit: 18800,
+        lastReferral: '2023-12-15',
+        status: 'Inactive'
+      }
+    ]
+  }
+};
+
+// GET /api/analytics/overview - Get analytics overview
+app.get('/api/analytics/overview', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let overview = { ...mockAnalyticsData.overview };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      overview.totalRevenue = Math.round(overview.totalRevenue * 0.25);
+      overview.totalExpenses = Math.round(overview.totalExpenses * 0.25);
+      overview.netProfit = Math.round(overview.netProfit * 0.25);
+      overview.activeReservations = Math.round(overview.activeReservations * 0.25);
+    } else if (period === 'quarter') {
+      overview.totalRevenue = Math.round(overview.totalRevenue * 3);
+      overview.totalExpenses = Math.round(overview.totalExpenses * 3);
+      overview.netProfit = Math.round(overview.netProfit * 3);
+      overview.activeReservations = Math.round(overview.activeReservations * 3);
+    } else if (period === 'year') {
+      overview.totalRevenue = Math.round(overview.totalRevenue * 12);
+      overview.totalExpenses = Math.round(overview.totalExpenses * 12);
+      overview.netProfit = Math.round(overview.netProfit * 12);
+      overview.activeReservations = Math.round(overview.activeReservations * 12);
+    }
+
+    res.json({
+      success: true,
+      data: overview
+    });
+  } catch (error) {
+    console.error('Error fetching analytics overview:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching analytics overview'
+    });
+  }
+});
+
+// GET /api/analytics/financials - Get financial analytics
+app.get('/api/analytics/financials', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo, viewMode } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let financials = { ...mockAnalyticsData.financials };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      financials.revenue.total = Math.round(financials.revenue.total * 0.25);
+      financials.expenses.total = Math.round(financials.expenses.total * 0.25);
+      financials.profit.net = Math.round(financials.profit.net * 0.25);
+      
+      financials.revenue.byUnit.forEach(item => {
+        item.revenue = Math.round(item.revenue * 0.25);
+      });
+      financials.revenue.bySource.forEach(item => {
+        item.revenue = Math.round(item.revenue * 0.25);
+      });
+      financials.expenses.categories.forEach(item => {
+        item.amount = Math.round(item.amount * 0.25);
+      });
+      financials.expenses.byUnit.forEach(item => {
+        item.expenses = Math.round(item.expenses * 0.25);
+      });
+      financials.profit.byUnit.forEach(item => {
+        item.profit = Math.round(item.profit * 0.25);
+      });
+    }
+
+    res.json({
+      success: true,
+      data: financials
+    });
+  } catch (error) {
+    console.error('Error fetching financial analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching financial analytics'
+    });
+  }
+});
+
+// GET /api/analytics/units - Get units analytics
+app.get('/api/analytics/units', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo, viewMode } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let units = { ...mockAnalyticsData.units };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      units.performance.forEach(unit => {
+        unit.revenue = Math.round(unit.revenue * 0.25);
+        unit.expenses = Math.round(unit.expenses * 0.25);
+        unit.profit = Math.round(unit.profit * 0.25);
+      });
+    }
+
+    res.json({
+      success: true,
+      data: units
+    });
+  } catch (error) {
+    console.error('Error fetching units analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching units analytics'
+    });
+  }
+});
+
+// GET /api/analytics/owners - Get owners analytics
+app.get('/api/analytics/owners', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo, viewMode } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let owners = { ...mockAnalyticsData.owners };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      owners.profitability.forEach(owner => {
+        owner.totalRevenue = Math.round(owner.totalRevenue * 0.25);
+        owner.totalExpenses = Math.round(owner.totalExpenses * 0.25);
+        owner.netProfit = Math.round(owner.netProfit * 0.25);
+        owner.avgRevenuePerUnit = Math.round(owner.avgRevenuePerUnit * 0.25);
+      });
+    }
+
+    res.json({
+      success: true,
+      data: owners
+    });
+  } catch (error) {
+    console.error('Error fetching owners analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching owners analytics'
+    });
+  }
+});
+
+// GET /api/analytics/reservations - Get reservations analytics
+app.get('/api/analytics/reservations', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo, viewMode } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let reservations = { ...mockAnalyticsData.reservations };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      reservations.trends.monthly.forEach(trend => {
+        trend.reservations = Math.round(trend.reservations * 0.25);
+        trend.cancellations = Math.round(trend.cancellations * 0.25);
+        trend.net = Math.round(trend.net * 0.25);
+      });
+    }
+
+    res.json({
+      success: true,
+      data: reservations
+    });
+  } catch (error) {
+    console.error('Error fetching reservations analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reservations analytics'
+    });
+  }
+});
+
+// GET /api/analytics/agents - Get agents analytics
+app.get('/api/analytics/agents', (req, res) => {
+  try {
+    const { period, dateFrom, dateTo, viewMode } = req.query;
+    
+    // Apply period filtering logic here if needed
+    let agents = { ...mockAnalyticsData.agents };
+    
+    // Mock period-based adjustments
+    if (period === 'week') {
+      agents.performance.forEach(agent => {
+        agent.totalRevenue = Math.round(agent.totalRevenue * 0.25);
+        agent.totalPayouts = Math.round(agent.totalPayouts * 0.25);
+        agent.avgRevenuePerUnit = Math.round(agent.avgRevenuePerUnit * 0.25);
+      });
+    }
+
+    res.json({
+      success: true,
+      data: agents
+    });
+  } catch (error) {
+    console.error('Error fetching agents analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching agents analytics'
+    });
+  }
+});
+
+// GET /api/analytics/reports - Get available reports
+app.get('/api/analytics/reports', (req, res) => {
+  try {
+    const reports = [
+      {
+        id: 1,
+        name: 'Monthly Financial Summary',
+        description: 'Complete financial overview with revenue, expenses, and profit analysis',
+        type: 'Financial',
+        lastGenerated: '2024-01-15',
+        frequency: 'Monthly',
+        recipients: ['admin@roomy.com', 'finance@roomy.com']
+      },
+      {
+        id: 2,
+        name: 'Unit Performance Report',
+        description: 'Detailed analysis of unit occupancy, revenue, and maintenance costs',
+        type: 'Units',
+        lastGenerated: '2024-01-14',
+        frequency: 'Weekly',
+        recipients: ['operations@roomy.com']
+      },
+      {
+        id: 3,
+        name: 'Owner Payout Summary',
+        description: 'Owner revenue, expenses, and payout calculations',
+        type: 'Owners',
+        lastGenerated: '2024-01-12',
+        frequency: 'Monthly',
+        recipients: ['owners@roomy.com']
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: reports
+    });
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reports'
+    });
+  }
+});
+
+// POST /api/analytics/reports/generate - Generate custom report
+app.post('/api/analytics/reports/generate', (req, res) => {
+  try {
+    const { reportName, reportType, dateRange, filters, chartType, exportFormat } = req.body;
+    
+    // Mock report generation
+    const report = {
+      id: Date.now(),
+      name: reportName || 'Custom Report',
+      type: reportType || 'Custom',
+      generatedAt: new Date().toISOString(),
+      format: exportFormat || 'PDF',
+      status: 'completed',
+      downloadUrl: `/api/analytics/reports/download/${Date.now()}`
+    };
+
+    res.json({
+      success: true,
+      data: report,
+      message: 'Report generated successfully'
+    });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating report'
+    });
+  }
+});
+
+// POST /api/analytics/export - Export analytics data
+app.post('/api/analytics/export', (req, res) => {
+  try {
+    const { dataType, format, period, filters } = req.body;
+    
+    if (format === 'csv') {
+      // Mock CSV export
+      const csvContent = 'Type,Value\nRevenue,125400\nExpenses,18700\nProfit,106700';
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="analytics_export.csv"');
+      res.send(csvContent);
+    } else if (format === 'pdf') {
+      // Mock PDF export
+      res.json({
+        success: true,
+        data: {
+          downloadUrl: '/api/analytics/export/download/report.pdf'
+        },
+        message: 'PDF export completed'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Unsupported export format'
+      });
+    }
+  } catch (error) {
+    console.error('Error exporting analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting analytics'
+    });
+  }
+});
+
+// ===========================
+// SETTINGS API ENDPOINTS
+// ===========================
+
+// Mock settings data
+const mockSettingsData = {
+  automation: {
+    autoConfirmReservations: true,
+    autoSendWelcomeEmail: true,
+    autoSendCheckoutReminder: true,
+    autoCreateCleaningTask: true,
+    autoCreateMaintenanceTask: false,
+    autoUpdatePricing: false,
+    autoSyncWithExternalPlatforms: true
+  },
+  platform: {
+    airbnb: {
+      enabled: true,
+      apiKey: 'airbnb_api_key_123',
+      apiSecret: 'airbnb_secret_456',
+      autoSync: true
+    },
+    booking: {
+      enabled: false,
+      apiKey: '',
+      apiSecret: '',
+      autoSync: false
+    },
+    pricelab: {
+      enabled: false,
+      apiKey: '',
+      autoUpdate: false
+    }
+  },
+  invoice: {
+    companyName: 'Roomy Property Management',
+    companyAddress: '123 Business Bay, Dubai, UAE',
+    companyPhone: '+971 4 123 4567',
+    companyEmail: 'info@roomy.com',
+    taxNumber: '100123456789003',
+    logoUrl: 'https://roomy.com/logo.png',
+    defaultCurrency: 'AED',
+    paymentTerms: '30 days',
+    footerText: 'Thank you for choosing Roomy Property Management'
+  },
+  autoSender: {
+    email: {
+      enabled: true,
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: 587,
+      smtpUser: 'noreply@roomy.com',
+      smtpPassword: 'encrypted_password',
+      fromEmail: 'noreply@roomy.com',
+      fromName: 'Roomy Property Management'
+    },
+    sms: {
+      enabled: false,
+      provider: 'twilio',
+      apiKey: '',
+      apiSecret: '',
+      fromNumber: ''
+    }
+  },
+  reminder: {
+    checkInReminder: {
+      enabled: true,
+      hoursBefore: 24,
+      message: 'Welcome! Your check-in is tomorrow. We look forward to hosting you.'
+    },
+    checkOutReminder: {
+      enabled: true,
+      hoursBefore: 2,
+      message: 'Your checkout is in 2 hours. Please ensure all belongings are packed.'
+    },
+    paymentReminder: {
+      enabled: true,
+      daysAfter: 3,
+      message: 'Payment is overdue. Please settle your balance to avoid service interruption.'
+    },
+    maintenanceReminder: {
+      enabled: true,
+      daysBefore: 7,
+      message: 'Scheduled maintenance is approaching. Please prepare for potential service interruption.'
+    }
+  },
+  general: {
+    timezone: 'Asia/Dubai',
+    dateFormat: 'DD/MM/YYYY',
+    currency: 'AED',
+    language: 'en',
+    maxFileSize: 10485760, // 10MB
+    allowedFileTypes: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+    sessionTimeout: 3600, // 1 hour
+    twoFactorAuth: false,
+    passwordPolicy: {
+      minLength: 8,
+      requireUppercase: true,
+      requireLowercase: true,
+      requireNumbers: true,
+      requireSpecialChars: false
+    }
+  }
+};
+
+// Helper functions for settings persistence
+function loadSettingsData() {
+  try {
+    const settingsFile = path.join(DATA_DIR, 'settings.json');
+    if (fs.existsSync(settingsFile)) {
+      const data = fs.readFileSync(settingsFile, 'utf8');
+      return { ...mockSettingsData, ...JSON.parse(data) };
+    }
+  } catch (error) {
+    console.error('Error loading settings data:', error);
+  }
+  return mockSettingsData;
+}
+
+function saveSettingsData(settings) {
+  try {
+    const settingsFile = path.join(DATA_DIR, 'settings.json');
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+    console.log('✅ Settings data saved to file');
+  } catch (error) {
+    console.error('Error saving settings data:', error);
+  }
+}
+
+// GET /api/settings - Get all settings
+app.get('/api/settings', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Error fetching all settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching settings'
+    });
+  }
+});
+
+// GET /api/settings/automation - Get automation settings
+app.get('/api/settings/automation', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.automation
+    });
+  } catch (error) {
+    console.error('Error fetching automation settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching automation settings'
+    });
+  }
+});
+
+// PUT /api/settings/automation - Update automation settings
+app.put('/api/settings/automation', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update automation settings
+    settings.automation = {
+      ...settings.automation,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.automation,
+      message: 'Automation settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating automation settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating automation settings'
+    });
+  }
+});
+
+// GET /api/settings/platform-connections - Get platform connection settings
+app.get('/api/settings/platform-connections', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.platform
+    });
+  } catch (error) {
+    console.error('Error fetching platform settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching platform settings'
+    });
+  }
+});
+
+// PUT /api/settings/platform-connections - Update platform connection settings
+app.put('/api/settings/platform-connections', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update platform settings
+    settings.platform = {
+      ...settings.platform,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.platform,
+      message: 'Platform settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating platform settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating platform settings'
+    });
+  }
+});
+
+// GET /api/settings/invoices - Get invoice settings
+app.get('/api/settings/invoices', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.invoice
+    });
+  } catch (error) {
+    console.error('Error fetching invoice settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching invoice settings'
+    });
+  }
+});
+
+// PUT /api/settings/invoices - Update invoice settings
+app.put('/api/settings/invoices', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update invoice settings
+    settings.invoice = {
+      ...settings.invoice,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.invoice,
+      message: 'Invoice settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating invoice settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating invoice settings'
+    });
+  }
+});
+
+// GET /api/settings/auto-senders - Get auto-sender settings
+app.get('/api/settings/auto-senders', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.autoSender
+    });
+  } catch (error) {
+    console.error('Error fetching auto-sender settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching auto-sender settings'
+    });
+  }
+});
+
+// PUT /api/settings/auto-senders - Update auto-sender settings
+app.put('/api/settings/auto-senders', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update auto-sender settings
+    settings.autoSender = {
+      ...settings.autoSender,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.autoSender,
+      message: 'Auto-sender settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating auto-sender settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating auto-sender settings'
+    });
+  }
+});
+
+// GET /api/settings/reminders - Get reminder settings
+app.get('/api/settings/reminders', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.reminder
+    });
+  } catch (error) {
+    console.error('Error fetching reminder settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reminder settings'
+    });
+  }
+});
+
+// PUT /api/settings/reminders - Update reminder settings
+app.put('/api/settings/reminders', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update reminder settings
+    settings.reminder = {
+      ...settings.reminder,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.reminder,
+      message: 'Reminder settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating reminder settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating reminder settings'
+    });
+  }
+});
+
+// GET /api/settings/general - Get general settings
+app.get('/api/settings/general', (req, res) => {
+  try {
+    const settings = loadSettingsData();
+    res.json({
+      success: true,
+      data: settings.general
+    });
+  } catch (error) {
+    console.error('Error fetching general settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching general settings'
+    });
+  }
+});
+
+// PUT /api/settings/general - Update general settings
+app.put('/api/settings/general', (req, res) => {
+  try {
+    const updates = req.body;
+    const settings = loadSettingsData();
+    
+    // Update general settings
+    settings.general = {
+      ...settings.general,
+      ...updates
+    };
+    
+    saveSettingsData(settings);
+    
+    res.json({
+      success: true,
+      data: settings.general,
+      message: 'General settings updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating general settings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating general settings'
+    });
+  }
+});
+
+// POST /api/settings/test-email - Test email connection
+app.post('/api/settings/test-email', (req, res) => {
+  try {
+    const emailSettings = req.body;
+    
+    // Mock email test - in real implementation, test SMTP connection
+    setTimeout(() => {
+      res.json({
+        success: true,
+        message: 'Email connection test successful'
+      });
+    }, 2000);
+  } catch (error) {
+    console.error('Error testing email connection:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error testing email connection'
+    });
+  }
+});
+
+// POST /api/settings/test-sms - Test SMS connection
+app.post('/api/settings/test-sms', (req, res) => {
+  try {
+    const smsSettings = req.body;
+    
+    // Mock SMS test - in real implementation, test SMS provider connection
+    setTimeout(() => {
+      res.json({
+        success: true,
+        message: 'SMS connection test successful'
+      });
+    }, 2000);
+  } catch (error) {
+    console.error('Error testing SMS connection:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error testing SMS connection'
+    });
+  }
+});
+
+// POST /api/settings/test-platform/:platform - Test platform connection
+app.post('/api/settings/test-platform/:platform', (req, res) => {
+  try {
+    const platform = req.params.platform;
+    const platformSettings = req.body;
+    
+    // Mock platform test - in real implementation, test platform API connection
+    setTimeout(() => {
+      res.json({
+        success: true,
+        message: `${platform} connection test successful`
+      });
+    }, 2000);
+  } catch (error) {
+    console.error('Error testing platform connection:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error testing platform connection'
+    });
+  }
 });
 
 // 404 handler

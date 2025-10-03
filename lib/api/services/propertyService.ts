@@ -18,7 +18,26 @@ export interface Property {
   lastModifiedAt: string
 }
 
-export interface PropertyUpdateRequest {
+export interface CreatePropertyRequest {
+  name: string
+  type: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'PENTHOUSE'
+  address: string
+  city: string
+  country?: string
+  capacity: number
+  bedrooms: number
+  bathrooms: number
+  area?: number
+  pricePerNight: number
+  description?: string
+  amenities?: string[]
+  primaryImage?: string
+  agentId?: number
+  agentName?: string
+  status?: 'Active' | 'Inactive'
+}
+
+export interface UpdatePropertyRequest {
   name?: string
   type?: 'APARTMENT' | 'VILLA' | 'STUDIO' | 'PENTHOUSE'
   address?: string
@@ -31,6 +50,18 @@ export interface PropertyUpdateRequest {
   agentId?: number
   agentName?: string
   status?: 'Active' | 'Inactive'
+}
+
+export interface PropertyFilters {
+  search?: string
+  type?: string
+  city?: string
+  minPrice?: number
+  maxPrice?: number
+  minCapacity?: number
+  status?: string
+  page?: number
+  limit?: number
 }
 
 export interface PropertiesResponse {
@@ -63,8 +94,14 @@ class PropertyService {
     return response.data
   }
 
+  // Create new property
+  async createProperty(data: CreatePropertyRequest): Promise<PropertyResponse> {
+    const response = await apiClient.post('/properties', data)
+    return response.data
+  }
+
   // Update property
-  async updateProperty(id: string, data: PropertyUpdateRequest): Promise<PropertyUpdateResponse> {
+  async updateProperty(id: string, data: UpdatePropertyRequest): Promise<PropertyUpdateResponse> {
     const response = await apiClient.put(`/properties/${id}`, data)
     return response.data
   }

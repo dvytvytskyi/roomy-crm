@@ -27,7 +27,7 @@ export default function ApiStatus() {
     }
 
     checkApiStatus()
-    const interval = setInterval(checkApiStatus, 30000) // Check every 30 seconds
+    const interval = setInterval(checkApiStatus, 60000) // Check every 60 seconds (reduced frequency)
 
     return () => clearInterval(interval)
   }, [])

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, PieChart, BarChart3, Download, Eye } from 'lucide-react'
+import { analyticsService, FinancialAnalytics } from '../../lib/api/services/analyticsService'
 
 interface FinancialsBlockProps {
   viewMode: 'chart' | 'table'
@@ -10,67 +11,46 @@ interface FinancialsBlockProps {
 
 export default function FinancialsBlock({ viewMode, selectedPeriod }: FinancialsBlockProps) {
   const [activeTab, setActiveTab] = useState<'revenue' | 'expenses' | 'profit'>('revenue')
+  const [loading, setLoading] = useState(true)
+  const [financialData, setFinancialData] = useState<FinancialAnalytics | null>(null)
 
-  // Mock data for financial analytics
-  const financialData = {
-    revenue: {
-      total: 125400,
-      byUnit: [
-        { unit: 'Apartment Burj Khalifa 2', revenue: 24500, percentage: 19.5 },
-        { unit: 'Marina View Studio', revenue: 18900, percentage: 15.1 },
-        { unit: 'Downtown Loft 2BR', revenue: 22100, percentage: 17.6 },
-        { unit: 'JBR Beach Apartment', revenue: 19800, percentage: 15.8 },
-        { unit: 'Business Bay Office', revenue: 15600, percentage: 12.4 },
-        { unit: 'DIFC Penthouse', revenue: 24500, percentage: 19.5 }
-      ],
-      bySource: [
-        { source: 'Airbnb', revenue: 50200, percentage: 40.0 },
-        { source: 'Booking.com', revenue: 37650, percentage: 30.0 },
-        { source: 'Direct', revenue: 25100, percentage: 20.0 },
-        { source: 'Expedia', revenue: 12450, percentage: 10.0 }
-      ],
-      trends: [
-        { month: 'Jan', revenue: 11200 },
-        { month: 'Feb', revenue: 12800 },
-        { month: 'Mar', revenue: 14500 },
-        { month: 'Apr', revenue: 13200 },
-        { month: 'May', revenue: 15800 },
-        { month: 'Jun', revenue: 14200 },
-        { month: 'Jul', revenue: 16800 },
-        { month: 'Aug', revenue: 17500 }
-      ]
-    },
-    expenses: {
-      total: 18700,
-      categories: [
-        { category: 'Cleaning', amount: 5600, percentage: 29.9 },
-        { category: 'Maintenance', amount: 4200, percentage: 22.5 },
-        { category: 'Platform Fees', amount: 3762, percentage: 20.1 },
-        { category: 'Utilities', amount: 2800, percentage: 15.0 },
-        { category: 'Insurance', amount: 1800, percentage: 9.6 },
-        { category: 'Other', amount: 538, percentage: 2.9 }
-      ],
-      byUnit: [
-        { unit: 'Apartment Burj Khalifa 2', expenses: 3200 },
-        { unit: 'Marina View Studio', expenses: 2800 },
-        { unit: 'Downtown Loft 2BR', expenses: 3100 },
-        { unit: 'JBR Beach Apartment', expenses: 2900 },
-        { unit: 'Business Bay Office', expenses: 2500 },
-        { unit: 'DIFC Penthouse', expenses: 4200 }
-      ]
-    },
-    profit: {
-      net: 106700,
-      byUnit: [
-        { unit: 'Apartment Burj Khalifa 2', profit: 21300, margin: 86.9 },
-        { unit: 'Marina View Studio', profit: 16100, margin: 85.2 },
-        { unit: 'Downtown Loft 2BR', profit: 19000, margin: 86.0 },
-        { unit: 'JBR Beach Apartment', profit: 16900, margin: 85.4 },
-        { unit: 'Business Bay Office', profit: 13100, margin: 84.0 },
-        { unit: 'DIFC Penthouse', profit: 20300, margin: 82.9 }
-      ]
+  useEffect(() => {
+    const loadFinancialData = async () => {
+      try {
+        setLoading(true)
+        const response = await analyticsService.getFinancialAnalytics({
+          period: selectedPeriod as any,
+          viewMode: viewMode
+        })
+        setFinancialData(response.data)
+      } catch (error) {
+        console.error('Error loading financial analytics:', error)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    loadFinancialData()
+  }, [viewMode, selectedPeriod])
+
+  if (loading || !financialData) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AE', {

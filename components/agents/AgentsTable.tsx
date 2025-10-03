@@ -121,7 +121,7 @@ export default function AgentsTable({ agents, onEditAgent, selectedAgents, onSel
   }
 
   return (
-    <div className="h-full overflow-auto custom-scrollbar">
+    <div className="h-full overflow-auto custom-scrollbar" data-testid="agents-table">
       <table className="w-full">
         <thead className="bg-slate-50 border-b border-gray-200 sticky top-0 z-10">
           <tr>

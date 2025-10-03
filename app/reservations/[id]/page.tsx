@@ -750,12 +750,18 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    // Handle undefined/null status
+    if (!status) {
+      return <AlertCircle size={16} className="text-slate-600" />
+    }
+    
+    switch (status.toLowerCase()) {
       case 'confirmed':
         return <CheckCircle size={16} className="text-green-600" />
       case 'pending':
         return <Clock size={16} className="text-yellow-600" />
       case 'canceled':
+      case 'cancelled':
         return <XCircle size={16} className="text-red-600" />
       case 'completed':
         return <CheckCircle size={16} className="text-blue-600" />
@@ -765,6 +771,11 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
   }
 
   const getStatusBadge = (status: string) => {
+    // Handle undefined/null status
+    if (!status) {
+      status = 'PENDING'
+    }
+    
     const statusConfig = {
       CONFIRMED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmed' },
       PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
@@ -782,7 +793,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
         {getStatusIcon(status)}
         <span>{config.label}</span>
       </span>
-        {status.toUpperCase() === 'PENDING' && (
+        {status && status.toUpperCase() === 'PENDING' && (
           <button
             onClick={() => handleQuickAction('confirm')}
             className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
@@ -809,7 +820,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNavigation />
+      <TopNavigation data-testid="top-navigation" />
       
       {/* Header - positioned below the fixed navigation */}
       <div className="bg-white border-b border-gray-200 px-2 sm:px-3 lg:px-4 py-1.5" style={{ marginTop: '64px' }}>
@@ -818,6 +829,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
             <button 
               onClick={() => window.history.back()}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              data-testid="back-btn"
             >
               <ArrowLeft size={20} className="text-slate-600" />
             </button>

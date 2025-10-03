@@ -63,7 +63,7 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log('🌐 API Request:', { baseURL: this.baseURL, endpoint, finalURL: url });
+    // console.log('🌐 API Request:', { baseURL: this.baseURL, endpoint, finalURL: url }); // Disabled to reduce console spam
     const token = this.tokenManager.getAccessToken();
 
     const defaultHeaders = {
@@ -171,7 +171,7 @@ class ApiClient {
 
   // HTTP Methods
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    console.log('📡 GET Request:', { baseURL: this.baseURL, endpoint, params });
+    // console.log('📡 GET Request:', { baseURL: this.baseURL, endpoint, params }); // Disabled to reduce console spam
     
     // Build query string if params exist
     let queryString = '';

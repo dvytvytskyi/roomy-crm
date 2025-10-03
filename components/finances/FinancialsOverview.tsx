@@ -3,14 +3,18 @@
 import { useState } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, CreditCard, AlertCircle, Calendar, Filter } from 'lucide-react'
 
+import { FinancialStats } from '../../lib/api/services/financeService'
+
 interface FinancialsOverviewProps {
   dateRange: {
     from: string
     to: string
   }
+  stats: FinancialStats | null
+  loading: boolean
 }
 
-export default function FinancialsOverview({ dateRange }: FinancialsOverviewProps) {
+export default function FinancialsOverview({ dateRange, stats, loading }: FinancialsOverviewProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
 
   const periods = [
@@ -22,16 +26,16 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
     { value: 'custom', label: 'Custom Range' }
   ]
 
-  // Mock financial data
-  const financialData = {
-    totalRevenue: 125400,
-    pendingPayments: 8500,
-    totalExpenses: 18700,
-    netIncome: 106700,
-    transactionsCount: 47,
-    averageTransaction: 2668,
-    refundsAmount: 1200,
-    platformFees: 3762
+  // Use real data from props
+  const financialData = stats || {
+    totalRevenue: 0,
+    pendingPayments: 0,
+    totalExpenses: 0,
+    netIncome: 0,
+    transactionsCount: 0,
+    averageTransaction: 0,
+    refundsAmount: 0,
+    platformFees: 0
   }
 
   const formatCurrency = (amount: number) => {
@@ -96,7 +100,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Total Revenue</p>
-              <p className="text-2xl font-medium text-slate-900">{formatCurrency(financialData.totalRevenue)}</p>
+              <p className="text-2xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.totalRevenue)}
+              </p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
                 <span className="text-sm text-green-600">+12.5%</span>
@@ -114,7 +120,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Pending Payments</p>
-              <p className="text-2xl font-medium text-slate-900">{formatCurrency(financialData.pendingPayments)}</p>
+              <p className="text-2xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.pendingPayments)}
+              </p>
               <div className="flex items-center mt-1">
                 <AlertCircle className="w-4 h-4 text-orange-500 mr-1" />
                 <span className="text-sm text-orange-600">8 transactions</span>
@@ -131,7 +139,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Total Expenses</p>
-              <p className="text-2xl font-medium text-slate-900">{formatCurrency(financialData.totalExpenses)}</p>
+              <p className="text-2xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.totalExpenses)}
+              </p>
               <div className="flex items-center mt-1">
                 <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
                 <span className="text-sm text-red-600">-3.2%</span>
@@ -149,7 +159,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Net Income</p>
-              <p className="text-2xl font-medium text-slate-900">{formatCurrency(financialData.netIncome)}</p>
+              <p className="text-2xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.netIncome)}
+              </p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
                 <span className="text-sm text-green-600">+15.8%</span>
@@ -170,8 +182,12 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Total Transactions</p>
-              <p className="text-xl font-medium text-slate-900">{financialData.transactionsCount}</p>
-              <p className="text-sm text-slate-500">Avg: {formatCurrency(financialData.averageTransaction)}</p>
+              <p className="text-xl font-medium text-slate-900">
+                {loading ? '...' : financialData.transactionsCount}
+              </p>
+              <p className="text-sm text-slate-500">
+                Avg: {loading ? '...' : formatCurrency(financialData.averageTransaction)}
+              </p>
             </div>
             <div className="p-2 bg-slate-50 rounded-lg">
               <CreditCard className="w-5 h-5 text-slate-500" />
@@ -184,7 +200,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Platform Fees</p>
-              <p className="text-xl font-medium text-slate-900">{formatCurrency(financialData.platformFees)}</p>
+              <p className="text-xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.platformFees)}
+              </p>
               <p className="text-sm text-slate-500">3.0% of revenue</p>
             </div>
             <div className="p-2 bg-purple-50 rounded-lg">
@@ -198,7 +216,9 @@ export default function FinancialsOverview({ dateRange }: FinancialsOverviewProp
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm mb-1">Refunds</p>
-              <p className="text-xl font-medium text-slate-900">{formatCurrency(financialData.refundsAmount)}</p>
+              <p className="text-xl font-medium text-slate-900">
+                {loading ? '...' : formatCurrency(financialData.refundsAmount)}
+              </p>
               <p className="text-sm text-slate-500">2 transactions</p>
             </div>
             <div className="p-2 bg-red-50 rounded-lg">

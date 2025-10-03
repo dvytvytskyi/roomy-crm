@@ -23,12 +23,12 @@ export default function TopNavigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+    <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50" data-testid="top-navigation">
       <div className="flex items-center justify-between px-6 py-2">
         <div className="flex items-center space-x-1">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+            const isActive = pathname === item.href || (item.href !== '/' && pathname && pathname.startsWith(item.href))
             return (
               <a
                 key={item.label}

@@ -15,6 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Bryntum Scheduler CSS */}
+        <link rel="stylesheet" href="/build/scheduler.stockholm.css" />
+        {/* Bryntum Scheduler UMD */}
+        <script src="/build/scheduler.umd.js" />
+      </head>
       <body className="antialiased">
         <ClientAuthGuard>
           {children}

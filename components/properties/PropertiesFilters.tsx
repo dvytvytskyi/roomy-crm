@@ -77,7 +77,7 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
   if (!isOpen) return null
 
   const FilterContent = () => (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="properties-filters">
       {/* Property Type */}
       <div>
         <button
@@ -99,6 +99,7 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
               checked={localFilters.propertyTypes.includes('apartment')}
               onChange={() => handleFilterChange('propertyTypes', 'apartment')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+              data-testid="filter-apartment"
             />
             <span className="ml-2 text-sm text-slate-700">Apartment</span>
             </label>

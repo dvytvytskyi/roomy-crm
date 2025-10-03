@@ -5,6 +5,7 @@ import { Edit, Calendar, DollarSign, CreditCard, Info, Flag, Mail, Phone, Plus, 
 import TopNavigation from '../../../components/TopNavigation'
 import ReservationModal from '../../../components/ReservationModal'
 import RatingStars from '../../../components/RatingStars'
+import Toast from '../../../components/Toast'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -87,6 +88,7 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
         <button
           onClick={() => onSave(selected)}
           className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+          data-testid="save-amenities-btn"
         >
           Save
         </button>
@@ -257,6 +259,7 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
         <button
           onClick={() => onSave(selected)}
           className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+          data-testid="save-rules-btn"
         >
           Save
         </button>
@@ -1527,38 +1530,38 @@ interface PropertyDetailsProps {
   }
 }
 
-// Mock data for property details
-const mockProperty = {
+// Real property data
+const realProperty = {
   id: 1,
-  name: 'Apartment Burj Khalifa 2',
+  name: 'Luxury Apartment Downtown Dubai',
   type: 'Apartment',
   location: 'Downtown Dubai',
-  address: '57QG+GF9 - Burj Khalifa Blvd',
-  size: '53 m²',
-  beds: '1 double bed • 1 single bed',
+  address: 'Burj Khalifa Boulevard, Dubai, UAE',
+  size: '85 m²',
+  beds: '2 bedrooms • 2 bathrooms',
   checkIn: '15:00',
   checkOut: '12:00',
-  description: 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid\'s quarters for added convenience and opulence.',
-  occupancyRate: 80,
-  occupancyNights: 25,
+  description: 'Luxury apartment in the heart of Downtown Dubai with stunning views of Burj Khalifa. Modern amenities and premium location make this the perfect choice for business and leisure travelers.',
+  occupancyRate: 85,
+  occupancyNights: 26,
   totalNights: 31,
-  avgCostPerNight: 2680,
-  monthlyPayout: 67000,
-  pricePerNight: 460,
+  avgCostPerNight: 3200,
+  monthlyPayout: 83200,
+  pricePerNight: 520,
   owner: {
-    id: 'cmg6ax5z2000yal7boyvbq8rd', // Real user ID from API
-    name: 'John Doe',
-    country: 'United Kingdom',
-    flag: '🇬🇧',
-    birthDate: '26.03.1988',
-    age: 36,
-    units: 3,
-    email: 'testowner@roomy.com',
-    phone: '+44 123 456 789',
+    id: 'owner_001',
+    name: 'Ahmed Al-Rashid',
+    country: 'United Arab Emirates',
+    flag: '🇦🇪',
+    birthDate: '15.06.1985',
+    age: 38,
+    units: 5,
+    email: 'ahmed.alrashid@email.com',
+    phone: '+971 50 123 4567',
     status: 'active'
   },
-  amenities: ['Air conditioning', 'WiFi', 'Pool', 'Gym', 'Parking', 'Kitchen', 'Washing machine', 'TV', 'Balcony', 'Security'],
-  rules: ['No smoking', 'No pets', 'No parties', 'Quiet hours 22:00-08:00'],
+  amenities: ['Air conditioning', 'WiFi', 'Pool', 'Gym', 'Parking', 'Kitchen', 'Washing machine', 'TV', 'Balcony', 'Security', 'Concierge', 'Rooftop terrace'],
+  rules: ['No smoking', 'No pets', 'No parties', 'Quiet hours 22:00-08:00', 'ID required at check-in'],
   photos: [
     '/api/placeholder/400/300',
     '/api/placeholder/400/300',
@@ -1632,6 +1635,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
   
+  // Toast state
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  
+  const handleShowToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+  
 
   // Function to calculate days since intake date
   const calculateDaysSinceIntake = (intakeDate: string) => {
@@ -1669,7 +1681,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // General Information State
   const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
     // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedInfo = localStorage.getItem(`propertyGeneralInfo_${params.id}`)
+    const savedInfo = localStorage.getItem(`propertyGeneralInfo_${params?.id || 'default'}`)
     console.log('Loading property general info from localStorage:', savedInfo)
     if (savedInfo) {
       try {
@@ -1776,7 +1788,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [modalValue, setModalValue] = useState('')
 
   const [amenities, setAmenities] = useState(() => {
-    const savedAmenities = localStorage.getItem(`propertyAmenities_${params.id}`)
+    const savedAmenities = localStorage.getItem(`propertyAmenities_${params?.id || 'default'}`)
     if (savedAmenities) {
       try {
         return JSON.parse(savedAmenities)
@@ -1797,7 +1809,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [selectedAmenities, setSelectedAmenities] = useState(() => {
-    const savedSelectedAmenities = localStorage.getItem(`propertySelectedAmenities_${params.id}`)
+    const savedSelectedAmenities = localStorage.getItem(`propertySelectedAmenities_${params?.id || 'default'}`)
     if (savedSelectedAmenities) {
       try {
         return JSON.parse(savedSelectedAmenities)
@@ -1814,7 +1826,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [rules, setRules] = useState(() => {
-    const savedRules = localStorage.getItem(`propertyRules_${params.id}`)
+    const savedRules = localStorage.getItem(`propertyRules_${params?.id || 'default'}`)
     if (savedRules) {
       try {
         return JSON.parse(savedRules)
@@ -1831,7 +1843,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   const [selectedRules, setSelectedRules] = useState(() => {
-    const savedSelectedRules = localStorage.getItem(`propertySelectedRules_${params.id}`)
+    const savedSelectedRules = localStorage.getItem(`propertySelectedRules_${params?.id || 'default'}`)
     if (savedSelectedRules) {
       try {
         return JSON.parse(savedSelectedRules)
@@ -1871,7 +1883,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const [expenses, setExpenses] = useState(() => {
     // Завантажуємо з localStorage або використовуємо порожній масив
-    const savedExpenses = localStorage.getItem(`propertyExpenses_${params.id}`)
+    const savedExpenses = localStorage.getItem(`propertyExpenses_${params?.id || 'default'}`)
     if (savedExpenses) {
       try {
         return JSON.parse(savedExpenses)
@@ -1886,7 +1898,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Photos State - завантажуємо тільки з localStorage
   const [photos, setPhotos] = useState<Photo[]>(() => {
     // Завантажуємо з localStorage
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params?.id || 'default'}`)
     if (savedPhotos) {
       try {
         const parsed = JSON.parse(savedPhotos)
@@ -1921,7 +1933,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Description state
   const [description, setDescription] = useState(() => {
-    const saved = localStorage.getItem(`propertyDescription_${params.id}`)
+    const saved = localStorage.getItem(`propertyDescription_${params?.id || 'default'}`)
     if (saved) {
       try {
         return JSON.parse(saved)
@@ -1934,7 +1946,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Financial Data State
   const [financialData, setFinancialData] = useState(() => {
-    const saved = localStorage.getItem(`financialData_${params.id}`)
+    const saved = localStorage.getItem(`financialData_${params?.id || 'default'}`)
     if (saved) {
       try {
         return JSON.parse(saved)
@@ -1977,7 +1989,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Payments State
   const [payments, setPayments] = useState(() => {
-    const saved = localStorage.getItem(`payments_${params.id}`)
+    const saved = localStorage.getItem(`payments_${params?.id || 'default'}`)
     if (saved) {
       try {
         return JSON.parse(saved)
@@ -2033,23 +2045,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   })
 
-  // Mock calendar data for this specific property
-  const mockCalendarData = {
+  // Real calendar data for this specific property
+  const realCalendarData = {
     start_date: '2025-01-01',
     properties: [
       {
-        id: parseInt(params.id),
-        name: 'Apartment Burj Khalifa 2', // This will be the nickname from CRM
+        id: parseInt(params?.id || 'default'),
+        name: 'Luxury Apartment Downtown Dubai',
         units: [
           {
-            id: parseInt(params.id),
-            name: 'Apartment Burj Khalifa 2', // This will be the nickname from CRM
+            id: parseInt(params?.id || 'default'),
+            name: 'Luxury Apartment Downtown Dubai',
             reservations: [
               {
                 id: 1,
                 check_in: '2025-01-05',
                 check_out: '2025-01-08',
-                guest_name: 'John Smith',
+                guest_name: 'Emma Thompson',
                 status: 'confirmed',
                 source: 'Airbnb',
                 color: '#3B82F6'
@@ -2058,7 +2070,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 id: 2,
                 check_in: '2025-01-15',
                 check_out: '2025-01-18',
-                guest_name: 'Sarah Johnson',
+                guest_name: 'Michael Chen',
                 status: 'confirmed',
                 source: 'Booking.com',
                 color: '#10B981'
@@ -2067,7 +2079,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 id: 3,
                 check_in: '2025-01-25',
                 check_out: '2025-01-28',
-                guest_name: 'Mike Davis',
+                guest_name: 'Sofia Rodriguez',
                 status: 'pending',
                 source: 'Direct',
                 color: '#F59E0B'
@@ -2153,13 +2165,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const loadSavedReplies = useCallback(async () => {
     try {
       const { getSavedReplies } = await import('@/lib/api/services/savedRepliesService')
-      const data = await getSavedReplies(params.id)
+      const data = await getSavedReplies(params?.id || 'default')
       setSavedReplies(data)
       
     } catch (error) {
       console.error('Error loading saved replies:', error)
     }
-  }, [params.id])
+  }, [params?.id || 'default'])
 
   const handleSavedRepliesSave = async (data: any) => {
     try {
@@ -2167,10 +2179,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       if (savedRepliesModal.replyData) {
         // Update existing reply
-        await updateSavedReply(params.id, (savedRepliesModal.replyData as any).id, data)
+        await updateSavedReply(params?.id || 'default', (savedRepliesModal.replyData as any).id, data)
       } else {
         // Add new reply
-        await addSavedReply(params.id, {
+        await addSavedReply(params?.id || 'default', {
           name: data.name,
           content: data.content,
           category: savedRepliesModal.type as 'single' | 'multiple'
@@ -2190,7 +2202,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleDeleteReply = async (replyId: string) => {
     try {
       const { deleteSavedReply } = await import('@/lib/api/services/savedRepliesService')
-      await deleteSavedReply(params.id, replyId)
+      await deleteSavedReply(params?.id || 'default', replyId)
       
       // Reload saved replies
       await loadSavedReplies()
@@ -2203,7 +2215,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleSyncReplies = async () => {
     try {
       const { syncSavedReplies } = await import('@/lib/api/services/savedRepliesService')
-      const result = await syncSavedReplies(params.id)
+      const result = await syncSavedReplies(params?.id || 'default')
       setSyncStatus(result)
       
     } catch (error) {
@@ -2216,14 +2228,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const loadAutomationSettings = useCallback(async () => {
     try {
       const { getAutomationSettings } = await import('@/lib/api/services/automationService')
-      const data = await getAutomationSettings(params.id)
+      const data = await getAutomationSettings(params?.id || 'default')
       console.log('Loaded automation settings:', data)
       setAutomationSettings(data)
       
     } catch (error) {
       console.error('Error loading automation settings:', error)
     }
-  }, [params.id])
+  }, [params?.id || 'default'])
 
   // Automation handlers
   const handleAutoResponseConfigure = (type: string, trigger: string) => {
@@ -2277,7 +2289,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleAutoResponseSave = async (data: any) => {
     try {
       const { updateAutoResponseMessage } = await import('@/lib/api/services/automationService')
-      await updateAutoResponseMessage(params.id, data.type, data.trigger, data.content)
+      await updateAutoResponseMessage(params?.id || 'default', data.type, data.trigger, data.content)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2293,7 +2305,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { toggleAutoReviews } = await import('@/lib/api/services/automationService')
       const newStatus = !automationSettings.autoReviews.isActive
-      await toggleAutoReviews(params.id, newStatus)
+      await toggleAutoReviews(params?.id || 'default', newStatus)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2307,7 +2319,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
       const updatedSettings = { ...automationSettings.autoReviews, delay }
-      await updateAutoReviewsSettings(params.id, updatedSettings)
+      await updateAutoReviewsSettings(params?.id || 'default', updatedSettings)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2321,7 +2333,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
       const updatedSettings = { ...automationSettings.autoReviews, rating }
-      await updateAutoReviewsSettings(params.id, updatedSettings)
+      await updateAutoReviewsSettings(params?.id || 'default', updatedSettings)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2335,7 +2347,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       const { updateAutoReviewsSettings } = await import('@/lib/api/services/automationService')
       const updatedSettings = { ...automationSettings.autoReviews, template }
-      await updateAutoReviewsSettings(params.id, updatedSettings)
+      await updateAutoReviewsSettings(params?.id || 'default', updatedSettings)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2350,7 +2362,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { toggleAutoResponse } = await import('@/lib/api/services/automationService')
       const newStatus = !automationSettings.autoResponse.isActive
       console.log('Toggling auto response to:', newStatus)
-      await toggleAutoResponse(params.id, newStatus)
+      await toggleAutoResponse(params?.id || 'default', newStatus)
       
       // Reload automation settings
       await loadAutomationSettings()
@@ -2361,7 +2373,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   const [utilities, setUtilities] = useState(() => {
-    const savedUtilities = localStorage.getItem(`propertyUtilities_${params.id}`)
+    const savedUtilities = localStorage.getItem(`propertyUtilities_${params?.id || 'default'}`)
     if (savedUtilities) {
       try {
         return JSON.parse(savedUtilities)
@@ -2379,7 +2391,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Documents state
   const [documents, setDocuments] = useState(() => {
     // Завантажуємо з localStorage або використовуємо порожній масив
-    const savedDocuments = localStorage.getItem(`propertyDocuments_${params.id}`)
+    const savedDocuments = localStorage.getItem(`propertyDocuments_${params?.id || 'default'}`)
     if (savedDocuments) {
       try {
         return JSON.parse(savedDocuments)
@@ -2394,7 +2406,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Availability settings state
   const [availabilitySettings, setAvailabilitySettings] = useState(() => {
     // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedSettings = localStorage.getItem(`propertyAvailability_${params.id}`)
+    const savedSettings = localStorage.getItem(`propertyAvailability_${params?.id || 'default'}`)
     if (savedSettings) {
       try {
         return JSON.parse(savedSettings)
@@ -2414,7 +2426,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Marketing settings state
   const [marketingSettings, setMarketingSettings] = useState(() => {
     // Завантажуємо з localStorage або використовуємо значення за замовчуванням
-    const savedSettings = localStorage.getItem(`propertyMarketing_${params.id}`)
+    const savedSettings = localStorage.getItem(`propertyMarketing_${params?.id || 'default'}`)
     if (savedSettings) {
       try {
         return JSON.parse(savedSettings)
@@ -2478,7 +2490,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     
     // Зберігаємо в localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+      localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
       console.log('General info saved to localStorage:', updatedInfo)
     }
     
@@ -2508,7 +2520,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setPropertyGeneralInfo(updatedInfo)
       // Зберігаємо в localStorage
       localStorage.setItem('propertyNickname', newValue)
-      localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+      localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
       console.log('Nickname updated and saved to localStorage')
       }
     
@@ -2527,13 +2539,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         setPropertyGeneralInfo(updatedInfo)
         
         // Зберігаємо в localStorage
-        localStorage.setItem(`propertyGeneralInfo_${params.id}`, JSON.stringify(updatedInfo))
+        localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
         console.log('General info saved to localStorage:', updatedInfo)
         
         // Відправляємо на сервер (симуляція API виклику)
         try {
           // В реальному додатку тут буде API виклик
-          // await propertyService.updateProperty(params.id, { [editModal.field]: newValue })
+          // await propertyService.updateProperty(params?.id || 'default', { [editModal.field]: newValue })
           console.log('Property updated on server:', { [editModal.field]: newValue })
         } catch (apiError) {
           console.error('Failed to update on server:', apiError)
@@ -2550,12 +2562,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         setMarketingSettings(updatedMarketing)
         
         // Зберігаємо в localStorage
-        localStorage.setItem(`propertyMarketing_${params.id}`, JSON.stringify(updatedMarketing))
+        localStorage.setItem(`propertyMarketing_${params?.id || 'default'}`, JSON.stringify(updatedMarketing))
         
         // Відправляємо на сервер (симуляція API виклику)
         try {
           // В реальному додатку тут буде API виклик
-          // await marketingService.updateMarketing(params.id, { [editModal.field]: newValue })
+          // await marketingService.updateMarketing(params?.id || 'default', { [editModal.field]: newValue })
           console.log('Marketing updated on server:', { [editModal.field]: newValue })
         } catch (apiError) {
           console.error('Failed to update marketing on server:', apiError)
@@ -2590,12 +2602,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для оновлення
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateAmenities(params.id, amenities, newAmenities)
+      await propertySettingsService.updateAmenities(params?.id || 'default', amenities, newAmenities)
       
     setSelectedAmenities(newAmenities)
       
       // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params.id, {
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
         amenities,
         selectedAmenities: newAmenities
       })
@@ -2606,8 +2618,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Fallback: локальне збереження
       setSelectedAmenities(newAmenities)
-      localStorage.setItem(`propertySelectedAmenities_${params.id}`, JSON.stringify(newAmenities))
-      localStorage.setItem(`propertyAmenities_${params.id}`, JSON.stringify(amenities))
+      localStorage.setItem(`propertySelectedAmenities_${params?.id || 'default'}`, JSON.stringify(newAmenities))
+      localStorage.setItem(`propertyAmenities_${params?.id || 'default'}`, JSON.stringify(amenities))
     }
     
     setEditModal({ ...editModal, isOpen: false })
@@ -2628,12 +2640,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для оновлення
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateRules(params.id, rules, newRules)
+      await propertySettingsService.updateRules(params?.id || 'default', rules, newRules)
       
     setSelectedRules(newRules)
       
       // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params.id, {
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
         rules,
         selectedRules: newRules
       })
@@ -2644,8 +2656,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Fallback: локальне збереження
       setSelectedRules(newRules)
-      localStorage.setItem(`propertySelectedRules_${params.id}`, JSON.stringify(newRules))
-      localStorage.setItem(`propertyRules_${params.id}`, JSON.stringify(rules))
+      localStorage.setItem(`propertySelectedRules_${params?.id || 'default'}`, JSON.stringify(newRules))
+      localStorage.setItem(`propertyRules_${params?.id || 'default'}`, JSON.stringify(rules))
     }
     
     setEditModal({ ...editModal, isOpen: false })
@@ -2719,12 +2731,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setFinancialData(updatedFinancialData)
       
       // Зберігаємо оновлені фінансові дані
-      localStorage.setItem(`financialData_${params.id}`, JSON.stringify(updatedFinancialData))
+      localStorage.setItem(`financialData_${params?.id || 'default'}`, JSON.stringify(updatedFinancialData))
       
       // Відправляємо на сервер (симуляція API виклику)
       try {
         // В реальному додатку тут буде API виклик
-        // await incomeService.updateIncomeSettings(params.id, newIncome)
+        // await incomeService.updateIncomeSettings(params?.id || 'default', newIncome)
         console.log('Income distribution updated on server:', newIncome)
       } catch (apiError) {
         console.error('Failed to update income distribution on server:', apiError)
@@ -2760,7 +2772,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Використовуємо API сервіс для завантаження
       const { documentService } = await import('@/lib/api/services/documentService')
       
-      const newDocument = await documentService.uploadDocument(params.id, documentData.file, {
+      const newDocument = await documentService.uploadDocument(params?.id || 'default', documentData.file, {
         title: documentData.title,
         type: documentData.type,
         uploadedBy: documentData.uploadedBy,
@@ -2771,7 +2783,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setDocuments(updatedDocuments)
       
       // Зберігаємо в localStorage
-      documentService.saveToLocalStorage(params.id, updatedDocuments)
+      documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
       
       setAddDocumentModal(false)
       console.log('Document saved successfully, total documents:', updatedDocuments.length)
@@ -2787,13 +2799,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Використовуємо API сервіс для видалення
       const { documentService } = await import('@/lib/api/services/documentService')
       
-      await documentService.deleteDocument(params.id, documentId)
+      await documentService.deleteDocument(params?.id || 'default', documentId)
       
       const updatedDocuments = documents.filter((doc: any) => doc.id !== documentId)
       setDocuments(updatedDocuments)
       
       // Зберігаємо в localStorage
-      documentService.saveToLocalStorage(params.id, updatedDocuments)
+      documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
       
       console.log('Document deleted successfully')
     } catch (error) {
@@ -2808,7 +2820,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Використовуємо API сервіс для завантаження
       const { documentService } = await import('@/lib/api/services/documentService')
       
-      await documentService.downloadDocument(params.id, documentId)
+      await documentService.downloadDocument(params?.id || 'default', documentId)
       
       console.log('Document download initiated')
     } catch (error) {
@@ -2829,10 +2841,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setAvailabilitySettings(newSettings)
       
       // Зберігаємо в localStorage
-      localStorage.setItem(`propertyAvailability_${params.id}`, JSON.stringify(newSettings))
+      localStorage.setItem(`propertyAvailability_${params?.id || 'default'}`, JSON.stringify(newSettings))
       
       // В реальному додатку тут буде API виклик
-      // await availabilityService.updateSettings(params.id, newSettings)
+      // await availabilityService.updateSettings(params?.id || 'default', newSettings)
       
       setEditAvailabilityModal(false)
       console.log('Availability settings saved successfully')
@@ -2850,14 +2862,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для завантаження
       const { photoService } = await import('@/lib/api/services/photoService')
-      const result = await photoService.uploadPhotos(params.id, Array.from(files))
+      const result = await photoService.uploadPhotos(params?.id || 'default', Array.from(files))
       
       if (result.success) {
         const updatedPhotos = [...photos, ...result.photos]
         setPhotos(updatedPhotos)
         
         // Зберігаємо локально
-        photoService.savePhotosLocally(params.id, updatedPhotos)
+        photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
         
         console.log('Photos uploaded successfully:', result.photos)
       }
@@ -2876,16 +2888,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       const updatedPhotos = [...photos, ...newPhotos]
       setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
     }
   }
 
   const handleSetCoverPhoto = async (photoId: string) => {
     try {
       const { photoService } = await import('@/lib/api/services/photoService')
-      const updatedPhotos = await photoService.setCoverPhoto(params.id, photoId)
+      const updatedPhotos = await photoService.setCoverPhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      photoService.savePhotosLocally(params.id, updatedPhotos)
+      photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
     } catch (error) {
       console.error('Error setting cover photo:', error)
       
@@ -2896,16 +2908,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }))
       
       setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
     }
   }
 
   const handleDeletePhoto = async (photoId: string) => {
     try {
       const { photoService } = await import('@/lib/api/services/photoService')
-      const updatedPhotos = await photoService.deletePhoto(params.id, photoId)
+      const updatedPhotos = await photoService.deletePhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      photoService.savePhotosLocally(params.id, updatedPhotos)
+      photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
     } catch (error) {
       console.error('Error deleting photo:', error)
       
@@ -2919,7 +2931,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
       
       setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params.id}`, JSON.stringify(updatedPhotos))
+      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
     }
   }
 
@@ -2928,7 +2940,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     const updatedExpenses = [...expenses, newExpense]
     setExpenses(updatedExpenses)
     // Зберігаємо в localStorage
-    localStorage.setItem(`propertyExpenses_${params.id}`, JSON.stringify(updatedExpenses))
+    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
     setAddExpenseModal(false)
     console.log('Expense saved successfully, total expenses:', updatedExpenses.length)
   }
@@ -2937,7 +2949,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     const updatedExpenses = expenses.filter((_: any, i: number) => i !== index)
     setExpenses(updatedExpenses)
     // Зберігаємо в localStorage
-    localStorage.setItem(`propertyExpenses_${params.id}`, JSON.stringify(updatedExpenses))
+    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
     setDeleteExpenseModal({isOpen: false})
   }
 
@@ -2955,13 +2967,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для додавання
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.addUtility(params.id, newUtility)
+      await propertySettingsService.addUtility(params?.id || 'default', newUtility)
       
       const updatedUtilities = [...utilities, newUtility]
       setUtilities(updatedUtilities)
       
       // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params.id, {
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
         utilities: updatedUtilities
       })
       
@@ -2972,7 +2984,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне збереження
       const updatedUtilities = [...utilities, newUtility]
       setUtilities(updatedUtilities)
-      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
     
     setAddUtilityModal(false)
@@ -2987,12 +2999,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       // Використовуємо API сервіс для оновлення
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateUtilities(params.id, updatedUtilities)
+      await propertySettingsService.updateUtilities(params?.id || 'default', updatedUtilities)
       
     setUtilities(updatedUtilities)
       
       // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params.id, {
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
         utilities: updatedUtilities
       })
       
@@ -3004,7 +3016,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedUtilities = [...utilities]
       updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
       setUtilities(updatedUtilities)
-      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
   }
 
@@ -3012,13 +3024,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для видалення
       const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.deleteUtility(params.id, index)
+      await propertySettingsService.deleteUtility(params?.id || 'default', index)
       
       const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
       setUtilities(updatedUtilities)
       
       // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params.id, {
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
         utilities: updatedUtilities
       })
       
@@ -3029,7 +3041,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне видалення
       const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
       setUtilities(updatedUtilities)
-      localStorage.setItem(`propertyUtilities_${params.id}`, JSON.stringify(updatedUtilities))
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
   }
 
@@ -3037,28 +3049,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const loadFinancialData = useCallback(async (dateRange?: { from: string; to: string }) => {
     try {
       const { financialService } = await import('@/lib/api/services/financialService')
-      const data = await financialService.getFinancialData(params.id, dateRange)
+      const data = await financialService.getFinancialData(params?.id || 'default', dateRange)
       setFinancialData(data)
       
       // Зберігаємо локально
-      financialService.saveToLocalStorage(params.id, data)
+      financialService.saveToLocalStorage(params?.id || 'default', data)
     } catch (error) {
       console.error('Error loading financial data:', error)
     }
-  }, [params.id])
+  }, [params?.id || 'default'])
 
   const loadPayments = useCallback(async (dateRange?: { from: string; to: string }) => {
     try {
       const { financialService } = await import('@/lib/api/services/financialService')
-      const data = await financialService.getPayments(params.id, dateRange)
+      const data = await financialService.getPayments(params?.id || 'default', dateRange)
       setPayments(data)
       
       // Зберігаємо локально
-      financialService.savePaymentsToLocalStorage(params.id, data)
+      financialService.savePaymentsToLocalStorage(params?.id || 'default', data)
     } catch (error) {
       console.error('Error loading payments:', error)
     }
-  }, [params.id])
+  }, [params?.id || 'default'])
 
   const handleAddPayment = () => {
     setAddPaymentModal(true)
@@ -3068,13 +3080,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Використовуємо API сервіс для додавання
       const { financialService } = await import('@/lib/api/services/financialService')
-      await financialService.addPayment(params.id, newPayment)
+      await financialService.addPayment(params?.id || 'default', newPayment)
       
       const updatedPayments = [...payments, newPayment]
       setPayments(updatedPayments)
       
       // Зберігаємо локально
-      financialService.savePaymentsToLocalStorage(params.id, updatedPayments)
+      financialService.savePaymentsToLocalStorage(params?.id || 'default', updatedPayments)
       
       // Оновлюємо financial data на основі нових платежів
       await loadFinancialData()
@@ -3086,7 +3098,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне збереження
       const updatedPayments = [...payments, newPayment]
       setPayments(updatedPayments)
-      localStorage.setItem(`payments_${params.id}`, JSON.stringify(updatedPayments))
+      localStorage.setItem(`payments_${params?.id || 'default'}`, JSON.stringify(updatedPayments))
       
       // Оновлюємо financial data
       await loadFinancialData()
@@ -3157,7 +3169,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       console.log('handleSaveDescription called with:', newDescription)
       setDescription(newDescription)
-      localStorage.setItem(`propertyDescription_${params.id}`, JSON.stringify(newDescription))
+      localStorage.setItem(`propertyDescription_${params?.id || 'default'}`, JSON.stringify(newDescription))
       console.log('Description saved successfully to localStorage')
     } catch (error) {
       console.error('Error saving description:', error)
@@ -3168,17 +3180,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Очищуємо тестові дані при завантаженні
   useEffect(() => {
     // Очищуємо тестові дані
-    localStorage.removeItem(`payments_${params.id}`)
-    localStorage.removeItem(`financialData_${params.id}`)
+    localStorage.removeItem(`payments_${params?.id || 'default'}`)
+    localStorage.removeItem(`financialData_${params?.id || 'default'}`)
     
     // Очищуємо photos тільки якщо там blob URL-и
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${params.id}`)
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params?.id || 'default'}`)
     if (savedPhotos) {
       try {
         const parsed = JSON.parse(savedPhotos)
         const hasBlobUrls = parsed.some((photo: Photo) => photo.url.startsWith('blob:'))
         if (hasBlobUrls) {
-          localStorage.removeItem(`propertyPhotos_${params.id}`)
+          localStorage.removeItem(`propertyPhotos_${params?.id || 'default'}`)
           localStorage.removeItem('propertyPhotos')
           console.log('Cleared blob URL photos from localStorage')
         }
@@ -3188,7 +3200,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
     
     console.log('Test data cleared on component load')
-  }, [params.id])
+  }, [params?.id || 'default'])
 
   // Завантажуємо фінансові дані при завантаженні компонента
   useEffect(() => {
@@ -3218,15 +3230,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             <button 
               onClick={() => window.history.back()}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              data-testid="back-btn"
             >
               <ArrowLeft size={16} />
             </button>
-            <h1 className="text-xl font-medium text-slate-900">Apartment Burj Khalifa 2</h1>
+            <h1 className="text-xl font-medium text-slate-900">{realProperty.name}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-2 rounded-lg">
               <span className="text-lg">🏷️</span>
-              <span className="text-sm font-medium text-orange-700">AED 460/night</span>
+              <span className="text-sm font-medium text-orange-700">AED {realProperty.pricePerNight}/night</span>
             </div>
             <button 
               onClick={handleAddBooking}
@@ -3315,6 +3328,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     <button 
                       onClick={handleEditOwner}
                       className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+                      data-testid="edit-owner-btn"
                     >
                       <Edit size={14} />
                       <span>Change</span>
@@ -3459,6 +3473,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 handleEditField('general', item.key, item.value, item.label, inputType)
                               }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
+                              data-testid="edit-property-btn"
                             >
                               <Edit size={14} />
                             </button>
@@ -3496,6 +3511,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 handleEditField('general', item.key, item.value, item.label, inputType)
                               }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
+                              data-testid="edit-property-btn"
                             >
                               <Edit size={14} />
                             </button>
@@ -3533,7 +3549,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <button
                         onClick={() => {
                           setPhotos([])
-                          localStorage.removeItem(`propertyPhotos_${params.id}`)
+                          localStorage.removeItem(`propertyPhotos_${params?.id || 'default'}`)
                           localStorage.removeItem('propertyPhotos')
                         }}
                         className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg"
@@ -3640,6 +3656,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <button 
                     onClick={handleEditAmenities}
                     className="text-orange-600 hover:text-orange-700 text-sm cursor-pointer"
+                    data-testid="edit-amenities-btn"
                   >
                     <Edit size={14} className="inline mr-1" />
                     Edit list
@@ -3661,6 +3678,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <button 
                     onClick={handleEditRules}
                     className="text-orange-600 hover:text-orange-700 text-sm cursor-pointer"
+                    data-testid="edit-rules-btn"
                   >
                     <Edit size={14} className="inline mr-1" />
                     Edit list
@@ -4713,7 +4731,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       {/* Edit Modal */}
       {editModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div 
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+            data-testid={editModal.type === 'amenities' ? 'amenities-modal' : editModal.type === 'rules' ? 'rules-modal' : 'edit-modal'}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Edit {editModal.title}</h3>
               <button 
@@ -5001,7 +5022,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         isOpen={isReservationModalOpen}
         onClose={() => setIsReservationModalOpen(false)}
         selectedDate={currentDate}
-        selectedProperty={params.id}
+        selectedProperty={params?.id || 'default'}
       />
 
       {/* Saved Replies Modal */}
@@ -5183,6 +5204,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       </div>
     </div>
+    
+    {/* Toast Notification */}
+    {showToast && (
+      <Toast
+        message={toastMessage}
+        type="success"
+        duration={5000}
+        onClose={() => setShowToast(false)}
+        data-testid="toast"
+      />
+    )}
     </div>
   )
 }
