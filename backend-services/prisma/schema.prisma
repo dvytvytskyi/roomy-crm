@@ -34,6 +34,7 @@ model User {
 
   // Relations
   ownedProperties     Property[]     @relation("PropertyOwner")
+  propertyOwnerships  PropertyOwner[] // Multiple property ownership support
   managedProperties   Property[]     @relation("PropertyAgent")
   assignedTasks       Task[]         @relation("TaskAssignee")
   assignedReservations Reservation[] @relation("ReservationAgent")
@@ -104,9 +105,9 @@ model Property {
   // Property details
   capacity      Int
   bedrooms      Int
-  bathrooms     Float
-  area          Float?
-  pricePerNight Float        @map("price_per_night")
+  bathrooms     Decimal      @db.Decimal(3, 1) // e.g., 2.5 bathrooms
+  area          Decimal?     @db.Decimal(10, 2) // e.g., 120.50 sqm
+  pricePerNight Decimal      @map("price_per_night") @db.Decimal(10, 2)
   description   String?
   
   // External integrations
@@ -117,7 +118,6 @@ model Property {
   // Metadata
   primaryImage  String?       @map("primary_image")
   tags          String[]
-  amenities     String[]
   houseRules    String[]      @map("house_rules")
   
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -127,6 +127,8 @@ model Property {
   location      Location       @relation(fields: [locationId], references: [id])
   owner         User?          @relation("PropertyOwner", fields: [ownerId], references: [id])
   agent         User?          @relation("PropertyAgent", fields: [agentId], references: [id])
+  owners        PropertyOwner[] // Multiple owners support
+  amenities     PropertyAmenity[]
   reservations  Reservation[]
   tasks         Task[]
   photos        PropertyPhoto[]
@@ -174,9 +176,9 @@ model Reservation {
   paymentStatus   PaymentStatus     @default(PENDING) @map("payment_status")
   
   // Financial details
-  totalAmount     Float             @map("total_amount")
-  paidAmount      Float             @default(0) @map("paid_amount")
-  outstandingBalance Float          @default(0) @map("outstanding_balance")
+  totalAmount     Decimal           @map("total_amount") @db.Decimal(10, 2)
+  paidAmount      Decimal           @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  outstandingBalance Decimal        @default(0) @map("outstanding_balance") @db.Decimal(10, 2)
   
   // Guest information
   guestName       String            @map("guest_name")
@@ -247,8 +249,8 @@ model Task {
   dueDate       DateTime?  @map("due_date")
   
   // Financial
-  cost          Float?
-  estimatedCost Float?     @map("estimated_cost")
+  cost          Decimal?   @db.Decimal(10, 2)
+  estimatedCost Decimal?   @map("estimated_cost") @db.Decimal(10, 2)
   
   // Metadata
   tags          String[]
@@ -313,7 +315,7 @@ model Transaction {
   // Transaction details
   type             TransactionType
   category         String
-  amount           Float
+  amount           Decimal           @db.Decimal(10, 2)
   currency         String            @default("AED")
   description      String?
   
@@ -323,9 +325,9 @@ model Transaction {
   gatewayReference String?           @map("gateway_reference")
   
   // Fees and calculations
-  platformFee      Float?            @map("platform_fee")
-  transactionFee   Float?            @map("transaction_fee")
-  netAmount        Float             @map("net_amount")
+  platformFee      Decimal?          @map("platform_fee") @db.Decimal(10, 2)
+  transactionFee   Decimal?          @map("transaction_fee") @db.Decimal(10, 2)
+  netAmount        Decimal           @map("net_amount") @db.Decimal(10, 2)
   
   // Status and processing
   status           TransactionStatus @default(PENDING)
@@ -376,9 +378,79 @@ enum TransactionStatus {
   REFUNDED
 }
 
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  STATUS_CHANGE
+  FILE_UPLOAD
+  FILE_DOWNLOAD
+  EXPORT
+  IMPORT
+  BULK_UPDATE
+  BULK_DELETE
+}
+
 // ============================================================================
 // SUPPORTING ENTITIES
 // ============================================================================
+
+// Amenities reference table for standardized property features
+model Amenity {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  icon      String?  // Icon name or URL for UI display
+  category  String?  // Category grouping (e.g., "Kitchen", "Bathroom", "Entertainment")
+  description String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  properties PropertyAmenity[]
+
+  // Indexes
+  @@index([category])
+  @@index([isActive])
+  @@map("amenities")
+}
+
+// Many-to-many relationship between Properties and Amenities
+model PropertyAmenity {
+  propertyId String @map("property_id")
+  amenityId  String @map("amenity_id")
+  
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  @@id([propertyId, amenityId])
+  @@index([propertyId])
+  @@index([amenityId])
+  @@map("property_amenities")
+}
+
+// Multiple owners support for properties
+model PropertyOwner {
+  propertyId  String  @map("property_id")
+  ownerId     String  @map("owner_id")
+  ownershipPercentage Decimal? @map("ownership_percentage") @db.Decimal(5, 2) // e.g., 50.00%
+  isPrimary   Boolean @default(false) @map("is_primary")
+  addedAt     DateTime @default(now()) @map("added_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, ownerId])
+  @@index([propertyId])
+  @@index([ownerId])
+  @@map("property_owners")
+}
 
 // Property Photos
 model PropertyPhoto {
@@ -406,7 +478,7 @@ model PricingRule {
   propertyId  String        @map("property_id")
   name        String
   type        PricingRuleType
-  value       Float
+  value       Decimal @db.Decimal(10, 2)
   startDate   DateTime?     @map("start_date")
   endDate     DateTime?     @map("end_date")
   conditions  Json?         // Flexible conditions for complex rules
@@ -450,8 +522,10 @@ model AuditLog {
   id            String   @id @default(cuid())
   entityType    String   @map("entity_type")
   entityId      String   @map("entity_id")
-  action        String
-  changes       Json?
+  action        AuditAction
+  oldValues     Json?    @map("old_values") // Previous state
+  newValues     Json?    @map("new_values") // New state
+  changes       Json?    // Computed diff (optional)
   userId        String?  @map("user_id")
   propertyId    String?  @map("property_id")
   reservationId String?  @map("reservation_id")
@@ -476,6 +550,7 @@ model AuditLog {
   // Indexes
   @@index([entityType])
   @@index([entityId])
+  @@index([action])
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
