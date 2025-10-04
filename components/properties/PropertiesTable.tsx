@@ -90,6 +90,11 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   }
 
   const getOwnerName = (property: any) => {
+    // If owner is null or undefined, return 'No Owner'
+    if (!property.owner) {
+      return 'No Owner'
+    }
+    
     const ownerId = getOwnerId(property)
     
     if (ownerId && ownersData.has(ownerId)) {
@@ -109,6 +114,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
       }
     }
     
+    // If we have an ownerId but data is not loaded yet, show loading
     return ownerId ? 'Loading...' : 'No Owner'
   }
 

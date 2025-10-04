@@ -1622,6 +1622,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       console.log('💰 Loading current price for property:', pricelabId)
       const response = await priceLabService.getCurrentPrice(pricelabId)
+      console.log('💰 PriceLab response:', response)
       
       if (response.success && response.data) {
         const price = response.data.currentPrice
@@ -1635,11 +1636,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         
         console.log('💰 Current price loaded and cached:', price, 'AED')
       } else {
-        setPriceError(response.error || 'Failed to load price')
-        console.error('💰 Price loading failed:', response.error)
+        const errorMsg = response.error || 'Failed to load price'
+        setPriceError(errorMsg)
+        console.error('💰 Price loading failed:', errorMsg)
       }
     } catch (error) {
-      setPriceError('Failed to connect to PriceLab API')
+      const errorMsg = 'Failed to connect to PriceLab API'
+      setPriceError(errorMsg)
       console.error('💰 Price loading error:', error)
     } finally {
       setPriceLoading(false)
@@ -3594,7 +3597,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </button>
                   </div>
                   
-                  {owner.id && owner.name ? (
+                  {owner.id && owner.id.trim() !== '' && owner.name && owner.name.trim() !== '' ? (
                     <div className="flex items-start space-x-4">
                       <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
