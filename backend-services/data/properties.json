@@ -19,11 +19,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-12-27T06:07:33.322Z",
-    "lastModifiedAt": "2025-10-04T00:28:05.295Z",
+    "lastModifiedAt": "2025-10-04T00:43:08.930Z",
     "tags": [],
-    "owner": {
-      "id": "owner_1"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_2",
