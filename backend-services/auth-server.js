@@ -58,12 +58,27 @@ async function saveUsers(users) {
   }
 }
 
-// Initialize default admin user if users file doesn't exist
+// Initialize default admin users if users file doesn't exist
 async function initializeUsers() {
   try {
     await fs.access(USERS_FILE);
+    // File exists, check if we need to add admin2@roomy.com
+    const users = await loadUsers();
+    const hasAdmin2 = users.find(u => u.email === 'admin2@roomy.com');
+    if (!hasAdmin2) {
+      users.push({
+        id: '2',
+        email: 'admin2@roomy.com',
+        password: 'admin123',
+        name: 'Admin User 2',
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      });
+      await saveUsers(users);
+      console.log('✅ Added admin2@roomy.com / admin123');
+    }
   } catch (error) {
-    // File doesn't exist, create default admin user
+    // File doesn't exist, create default admin users
     const defaultUsers = [
       {
         id: '1',
@@ -72,10 +87,18 @@ async function initializeUsers() {
         name: 'Admin User',
         role: 'admin',
         createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        email: 'admin2@roomy.com',
+        password: 'admin123',
+        name: 'Admin User 2',
+        role: 'admin',
+        createdAt: new Date().toISOString()
       }
     ];
     await saveUsers(defaultUsers);
-    console.log('✅ Created default admin user: admin@roomy.com / admin123');
+    console.log('✅ Created default admin users: admin@roomy.com / admin123 and admin2@roomy.com / admin123');
   }
 }
 
@@ -523,7 +546,7 @@ async function startServer() {
     
     app.listen(PORT, () => {
       console.log(`🚀 Auth server running on port ${PORT}`);
-      console.log(`📧 Default admin: admin@roomy.com / admin123`);
+      console.log(`📧 Available admins: admin@roomy.com / admin123 and admin2@roomy.com / admin123`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
