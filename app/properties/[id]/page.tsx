@@ -9,6 +9,7 @@ import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import PropertyOverview from '../../../components/properties/PropertyOverview'
 import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
+import { priceLabService } from '../../../lib/api/services/pricelabService'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
