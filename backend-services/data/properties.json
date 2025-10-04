@@ -44,11 +44,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-09-02T15:30:33.528Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:19.110Z",
     "tags": [],
-    "owner": {
-      "id": "owner_9"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_3",
@@ -69,11 +72,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-21T14:27:17.788Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:19.356Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_4",
@@ -94,11 +100,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-26T09:16:39.087Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:19.603Z",
     "tags": [],
-    "owner": {
-      "id": "owner_8"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_6",
@@ -119,11 +128,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-05T07:10:38.468Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:19.854Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_7",
@@ -144,11 +156,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-03T12:59:27.140Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:20.107Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_8",
@@ -169,11 +184,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-27T05:40:09.354Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:20.382Z",
     "tags": [],
-    "owner": {
-      "id": "owner_2"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_9",
@@ -194,11 +212,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-05T04:39:54.891Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:20.656Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_10",
@@ -219,11 +240,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-03-05T13:21:22.361Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.485Z",
     "tags": [],
-    "owner": {
-      "id": "owner_5"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_11",
@@ -244,11 +268,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-29T04:19:03.317Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.499Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_12",
@@ -269,11 +296,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-19T08:40:33.978Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.513Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_13",
@@ -294,11 +324,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-19T15:42:34.332Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.525Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_14",
@@ -319,11 +352,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-03-09T21:13:20.655Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.538Z",
     "tags": [],
-    "owner": {
-      "id": "owner_3"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_15",
@@ -344,11 +380,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-09-09T22:03:27.892Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.554Z",
     "tags": [],
-    "owner": {
-      "id": "owner_8"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_16",
@@ -369,11 +408,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-14T20:39:56.410Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.568Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_17",
@@ -394,11 +436,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-08-12T09:36:12.733Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.581Z",
     "tags": [],
-    "owner": {
-      "id": "owner_1"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_18",
@@ -419,11 +464,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-13T01:42:54.326Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.595Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_19",
@@ -444,11 +492,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-19T17:29:29.546Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:50.608Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_20",
@@ -469,11 +520,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-15T22:49:02.763Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:22.324Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_21",
@@ -494,11 +548,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-09-28T13:42:08.904Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:22.608Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_22",
@@ -519,11 +576,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-26T10:47:43.595Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:22.887Z",
     "tags": [],
-    "owner": {
-      "id": "owner_1"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_23",
@@ -544,11 +604,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-07T06:59:43.002Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:23.141Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_24",
@@ -569,11 +632,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-25T02:30:42.809Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:23.413Z",
     "tags": [],
-    "owner": {
-      "id": "owner_2"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_25",
@@ -594,11 +660,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-02T19:48:30.694Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:23.711Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_26",
@@ -619,11 +688,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-23T20:02:23.758Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:23.975Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_27",
@@ -644,11 +716,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-08-28T23:04:17.420Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:24.260Z",
     "tags": [],
-    "owner": {
-      "id": "owner_9"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_28",
@@ -669,11 +744,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-23T00:04:01.827Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:24.549Z",
     "tags": [],
-    "owner": {
-      "id": "owner_5"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_29",
@@ -694,11 +772,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-12-06T07:00:06.752Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:24.810Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_30",
@@ -719,11 +800,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-10-18T23:11:50.597Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:25.081Z",
     "tags": [],
-    "owner": {
-      "id": "owner_9"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_32",
@@ -744,11 +828,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-07T07:11:29.419Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:25.363Z",
     "tags": [],
-    "owner": {
-      "id": "owner_2"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_33",
@@ -769,11 +856,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-10-25T06:19:34.957Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:25.630Z",
     "tags": [],
-    "owner": {
-      "id": "owner_8"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_34",
@@ -794,11 +884,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-09T01:15:06.971Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:25.906Z",
     "tags": [],
-    "owner": {
-      "id": "owner_5"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_35",
@@ -819,11 +912,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-20T20:28:40.261Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:26.190Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_36",
@@ -844,11 +940,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-24T23:06:58.102Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:26.473Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_37",
@@ -869,11 +968,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-10-06T03:23:33.760Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:26.755Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_38",
@@ -894,11 +996,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-26T23:55:54.759Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:27.031Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_39",
@@ -919,11 +1024,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-02T07:38:17.667Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:27.305Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_40",
@@ -944,11 +1052,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-28T07:35:00.738Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:27.595Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_41",
@@ -969,11 +1080,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-04T05:59:26.686Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:27.876Z",
     "tags": [],
-    "owner": {
-      "id": "owner_10"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_42",
@@ -994,11 +1108,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-28T01:52:47.545Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:28.158Z",
     "tags": [],
-    "owner": {
-      "id": "owner_3"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_43",
@@ -1019,11 +1136,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-25T13:10:23.583Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:28.428Z",
     "tags": [],
-    "owner": {
-      "id": "owner_1"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_44",
@@ -1044,11 +1164,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-06T02:28:39.640Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:28.701Z",
     "tags": [],
-    "owner": {
-      "id": "owner_4"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_45",
@@ -1069,11 +1192,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-13T18:00:16.523Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:28.978Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_46",
@@ -1094,16 +1220,19 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-08-27T13:42:35.955Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:29.248Z",
     "tags": [
       "2BR",
       "Dubai Marina",
       "Cleaning - JM",
       "Owner - Vladimir"
     ],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_47",
@@ -1124,11 +1253,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-14T07:39:22.534Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:29.521Z",
     "tags": [],
-    "owner": {
-      "id": "owner_2"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_48",
@@ -1149,11 +1281,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-02T09:11:18.317Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:29.808Z",
     "tags": [],
-    "owner": {
-      "id": "owner_6"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_49",
@@ -1174,11 +1309,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-28T19:14:10.327Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:30.084Z",
     "tags": [],
-    "owner": {
-      "id": "owner_1"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_50",
@@ -1199,11 +1337,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-24T19:32:40.421Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:30.362Z",
     "tags": [],
-    "owner": {
-      "id": "owner_7"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_51",
@@ -1224,11 +1365,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-17T06:47:55.041Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:30.644Z",
     "tags": [],
-    "owner": {
-      "id": "owner_9"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   },
   {
     "id": "prop_52",
@@ -1249,10 +1393,13 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-02T13:10:29.657Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
+    "lastModifiedAt": "2025-10-04T00:36:30.919Z",
     "tags": [],
-    "owner": {
-      "id": "owner_5"
-    }
+    "owner": null,
+    "ownerId": null,
+    "selectedOwnerId": null,
+    "owner_name": null,
+    "owner_email": null,
+    "owner_phone": null
   }
 ]
