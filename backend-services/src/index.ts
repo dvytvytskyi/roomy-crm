@@ -8,8 +8,8 @@ import rateLimit from "express-rate-limit";
 
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { loggerService } from "./services/loggerService";
-import userRoutes from "./routes/userRoutes";
-import authRoutes from "./routes/authRoutes";
+import userRoutes from "../../backend-modifications/userRoutes";
+import authRoutes from "../../backend-modifications/authRoutes";
 import propertyRoutes from "./routes/propertyRoutes";
 import { reservationRoutes } from "./routes/reservationRoutes";
 import { transactionRoutes } from "./routes/transactionRoutes";
