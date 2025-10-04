@@ -44,14 +44,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-09-02T15:30:33.528Z",
-    "lastModifiedAt": "2025-10-04T00:36:19.110Z",
+    "lastModifiedAt": "2025-10-04T00:40:36.848Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538360115",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Malek El Aoufir",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_3",
@@ -72,14 +72,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-21T14:27:17.788Z",
-    "lastModifiedAt": "2025-10-04T00:36:19.356Z",
+    "lastModifiedAt": "2025-10-04T00:40:32.498Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538351242",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Alina Soloviova",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_4",
@@ -100,14 +100,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-26T09:16:39.087Z",
-    "lastModifiedAt": "2025-10-04T00:36:19.603Z",
+    "lastModifiedAt": "2025-10-04T00:40:39.323Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538363782",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Pavel Riabov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_6",
@@ -128,14 +128,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-05T07:10:38.468Z",
-    "lastModifiedAt": "2025-10-04T00:36:19.854Z",
+    "lastModifiedAt": "2025-10-04T00:40:39.946Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_7",
@@ -156,14 +156,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-03T12:59:27.140Z",
-    "lastModifiedAt": "2025-10-04T00:36:20.107Z",
+    "lastModifiedAt": "2025-10-04T00:40:40.772Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_8",
@@ -184,14 +184,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-27T05:40:09.354Z",
-    "lastModifiedAt": "2025-10-04T00:36:20.382Z",
+    "lastModifiedAt": "2025-10-04T00:40:40.151Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_9",
@@ -212,14 +212,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-05T04:39:54.891Z",
-    "lastModifiedAt": "2025-10-04T00:36:20.656Z",
+    "lastModifiedAt": "2025-10-04T00:40:40.357Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_10",
@@ -240,14 +240,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-03-05T13:21:22.361Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.485Z",
+    "lastModifiedAt": "2025-10-04T00:40:40.565Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_11",
@@ -268,14 +268,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-29T04:19:03.317Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.499Z",
+    "lastModifiedAt": "2025-10-04T00:40:40.976Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365922",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Timur Ismailov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_12",
@@ -296,14 +296,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-19T08:40:33.978Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.513Z",
+    "lastModifiedAt": "2025-10-04T00:40:42.827Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538369401",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Игорь Дмитриев",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_13",
@@ -324,14 +324,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-19T15:42:34.332Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.525Z",
+    "lastModifiedAt": "2025-10-04T00:40:41.182Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538366226",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Valerii Smetanin",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_14",
@@ -352,14 +352,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-03-09T21:13:20.655Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.538Z",
+    "lastModifiedAt": "2025-10-04T00:40:41.386Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538366226",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Valerii Smetanin",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_15",
@@ -436,14 +436,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-08-12T09:36:12.733Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.581Z",
+    "lastModifiedAt": "2025-10-04T00:40:36.434Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538358283",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Jale Prive",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_18",
@@ -464,14 +464,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-13T01:42:54.326Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.595Z",
+    "lastModifiedAt": "2025-10-04T00:40:42.417Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538369092",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Галина Осипенко",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_19",
@@ -492,14 +492,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-19T17:29:29.546Z",
-    "lastModifiedAt": "2025-10-04T00:36:50.608Z",
+    "lastModifiedAt": "2025-10-04T00:40:43.031Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538370019",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Кристина Федорова",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_20",
@@ -548,14 +548,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-09-28T13:42:08.904Z",
-    "lastModifiedAt": "2025-10-04T00:36:22.608Z",
+    "lastModifiedAt": "2025-10-04T00:40:39.739Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365615",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Tetiana Rebrova",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_22",
@@ -576,14 +576,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-26T10:47:43.595Z",
-    "lastModifiedAt": "2025-10-04T00:36:22.887Z",
+    "lastModifiedAt": "2025-10-04T00:40:42.622Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538369092",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Галина Осипенко",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_23",
@@ -604,14 +604,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-07T06:59:43.002Z",
-    "lastModifiedAt": "2025-10-04T00:36:23.141Z",
+    "lastModifiedAt": "2025-10-04T00:40:33.744Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538353695",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Anna Simakova",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_24",
@@ -632,14 +632,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-25T02:30:42.809Z",
-    "lastModifiedAt": "2025-10-04T00:36:23.413Z",
+    "lastModifiedAt": "2025-10-04T00:40:38.499Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538363171",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Oleg Protopopov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_25",
@@ -688,14 +688,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-23T20:02:23.758Z",
-    "lastModifiedAt": "2025-10-04T00:36:23.975Z",
+    "lastModifiedAt": "2025-10-04T00:40:35.401Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538356755",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Evgeniy Karpov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_27",
@@ -744,14 +744,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-05-23T00:04:01.827Z",
-    "lastModifiedAt": "2025-10-04T00:36:24.549Z",
+    "lastModifiedAt": "2025-10-04T00:40:34.366Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538354919",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Dani Khalil",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_29",
@@ -772,14 +772,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-12-06T07:00:06.752Z",
-    "lastModifiedAt": "2025-10-04T00:36:24.810Z",
+    "lastModifiedAt": "2025-10-04T00:40:38.086Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538362561",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Nikolai Falin",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_30",
@@ -800,14 +800,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-10-18T23:11:50.597Z",
-    "lastModifiedAt": "2025-10-04T00:36:25.081Z",
+    "lastModifiedAt": "2025-10-04T00:40:37.882Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538362561",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Nikolai Falin",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_32",
@@ -856,14 +856,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-10-25T06:19:34.957Z",
-    "lastModifiedAt": "2025-10-04T00:36:25.630Z",
+    "lastModifiedAt": "2025-10-04T00:40:37.261Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538361336",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Mikhail Atrakhimovic",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_34",
@@ -884,14 +884,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-09T01:15:06.971Z",
-    "lastModifiedAt": "2025-10-04T00:36:25.906Z",
+    "lastModifiedAt": "2025-10-04T00:40:34.572Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538355223",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Dmitriy Byvalyy",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_35",
@@ -1052,14 +1052,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-28T07:35:00.738Z",
-    "lastModifiedAt": "2025-10-04T00:36:27.595Z",
+    "lastModifiedAt": "2025-10-04T00:40:33.117Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538352163",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Anastasia Address 1108",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_41",
@@ -1080,14 +1080,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-04T05:59:26.686Z",
-    "lastModifiedAt": "2025-10-04T00:36:27.876Z",
+    "lastModifiedAt": "2025-10-04T00:40:39.532Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538365615",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Tetiana Rebrova",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_42",
@@ -1108,14 +1108,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-28T01:52:47.545Z",
-    "lastModifiedAt": "2025-10-04T00:36:28.158Z",
+    "lastModifiedAt": "2025-10-04T00:40:36.021Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538357365",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Farida Tagirovna",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_43",
@@ -1136,14 +1136,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-25T13:10:23.583Z",
-    "lastModifiedAt": "2025-10-04T00:36:28.428Z",
+    "lastModifiedAt": "2025-10-04T00:40:38.704Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538363477",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Olga Dmitrieva",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_44",
@@ -1192,14 +1192,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-07-13T18:00:16.523Z",
-    "lastModifiedAt": "2025-10-04T00:36:28.978Z",
+    "lastModifiedAt": "2025-10-04T00:40:42.210Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538367452",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Vladimir Sigov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_46",
@@ -1220,7 +1220,7 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-08-27T13:42:35.955Z",
-    "lastModifiedAt": "2025-10-04T00:36:29.248Z",
+    "lastModifiedAt": "2025-10-04T00:40:42.003Z",
     "tags": [
       "2BR",
       "Dubai Marina",
@@ -1228,11 +1228,11 @@
       "Owner - Vladimir"
     ],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538367452",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Vladimir Sigov",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_47",
@@ -1253,14 +1253,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-14T07:39:22.534Z",
-    "lastModifiedAt": "2025-10-04T00:36:29.521Z",
+    "lastModifiedAt": "2025-10-04T00:40:41.797Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538367147",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Viktoria Samoilova",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_48",
@@ -1281,14 +1281,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2024-11-02T09:11:18.317Z",
-    "lastModifiedAt": "2025-10-04T00:36:29.808Z",
+    "lastModifiedAt": "2025-10-04T00:40:36.640Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538358895",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Jessica Yusef",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_49",
@@ -1309,14 +1309,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-02-28T19:14:10.327Z",
-    "lastModifiedAt": "2025-10-04T00:36:30.084Z",
+    "lastModifiedAt": "2025-10-04T00:40:36.227Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538357671",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Gaurav Jain",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_50",
@@ -1337,14 +1337,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-24T19:32:40.421Z",
-    "lastModifiedAt": "2025-10-04T00:36:30.362Z",
+    "lastModifiedAt": "2025-10-04T00:40:34.780Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538355835",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Ekaterina Bazanchuk",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_51",
@@ -1365,14 +1365,14 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-01-17T06:47:55.041Z",
-    "lastModifiedAt": "2025-10-04T00:36:30.644Z",
+    "lastModifiedAt": "2025-10-04T00:40:38.293Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538362867",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Oleg Tsitsii",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   },
   {
     "id": "prop_52",
@@ -1393,13 +1393,13 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-04-02T13:10:29.657Z",
-    "lastModifiedAt": "2025-10-04T00:36:30.919Z",
+    "lastModifiedAt": "2025-10-04T00:40:37.468Z",
     "tags": [],
     "owner": null,
-    "ownerId": null,
+    "ownerId": "owner_1759538361642",
     "selectedOwnerId": null,
-    "owner_name": null,
-    "owner_email": null,
-    "owner_phone": null
+    "owner_name": "Nancy Wang",
+    "owner_email": "unknown@example.com",
+    "owner_phone": "Unknown"
   }
 ]
