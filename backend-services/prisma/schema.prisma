@@ -1,0 +1,502 @@
+// Production Database Schema for Roomy CRM
+// This schema follows production best practices with proper relationships and constraints
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE ENTITIES
+// ============================================================================
+
+// Unified User System - All actors in the system
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  phone         String?
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  passwordHash  String   @map("password_hash")
+  role          UserRole @default(GUEST)
+  status        UserStatus @default(ACTIVE)
+  avatar        String?
+  country       String?
+  flag          String?
+  isVerified    Boolean  @default(false) @map("is_verified")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ownedProperties     Property[]     @relation("PropertyOwner")
+  managedProperties   Property[]     @relation("PropertyAgent")
+  assignedTasks       Task[]         @relation("TaskAssignee")
+  assignedReservations Reservation[] @relation("ReservationAgent")
+  guestReservations   Reservation[]  @relation("ReservationGuest")
+  transactions        Transaction[]
+  auditLogs           AuditLog[]
+
+  // Indexes
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+  OWNER
+  GUEST
+  CLEANER
+  MAINTENANCE_STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  VIP
+}
+
+// Location reference table for consistent data
+model Location {
+  id          String @id @default(cuid())
+  name        String @unique
+  city        String
+  country     String
+  region      String?
+  coordinates Json? // { lat: number, lng: number }
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  properties Property[]
+
+  // Indexes
+  @@index([name])
+  @@index([city])
+  @@index([country])
+  @@map("locations")
+}
+
+// Core Property entity
+model Property {
+  id            String        @id @default(cuid())
+  name          String
+  nickname      String?       @unique
+  title         String?
+  status        PropertyStatus @default(ACTIVE)
+  type          PropertyType
+  address       String
+  locationId    String        @map("location_id")
+  ownerId       String?       @map("owner_id")
+  agentId       String?       @map("agent_id")
+  
+  // Property details
+  capacity      Int
+  bedrooms      Int
+  bathrooms     Float
+  area          Float?
+  pricePerNight Float        @map("price_per_night")
+  description   String?
+  
+  // External integrations
+  pricelabId    String?       @map("pricelab_id")
+  airbnbId      String?       @map("airbnb_id")
+  bookingId     String?       @map("booking_id")
+  
+  // Metadata
+  primaryImage  String?       @map("primary_image")
+  tags          String[]
+  amenities     String[]
+  houseRules    String[]      @map("house_rules")
+  
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  location      Location       @relation(fields: [locationId], references: [id])
+  owner         User?          @relation("PropertyOwner", fields: [ownerId], references: [id])
+  agent         User?          @relation("PropertyAgent", fields: [agentId], references: [id])
+  reservations  Reservation[]
+  tasks         Task[]
+  photos        PropertyPhoto[]
+  pricingRules  PricingRule[]
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+
+  // Indexes
+  @@index([ownerId])
+  @@index([agentId])
+  @@index([locationId])
+  @@index([status])
+  @@index([type])
+  @@map("properties")
+}
+
+enum PropertyStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  SUSPENDED
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  STUDIO
+  PENTHOUSE
+  HOUSE
+  CONDO
+}
+
+// Core Reservation entity - Heart of the system
+model Reservation {
+  id              String            @id @default(cuid())
+  propertyId      String            @map("property_id")
+  guestId         String            @map("guest_id")
+  agentId         String?           @map("agent_id")
+  
+  // Booking details
+  checkInDate     DateTime          @map("check_in_date")
+  checkOutDate    DateTime          @map("check_out_date")
+  guests          Int
+  status          ReservationStatus @default(PENDING)
+  paymentStatus   PaymentStatus     @default(PENDING) @map("payment_status")
+  
+  // Financial details
+  totalAmount     Float             @map("total_amount")
+  paidAmount      Float             @default(0) @map("paid_amount")
+  outstandingBalance Float          @default(0) @map("outstanding_balance")
+  
+  // Guest information
+  guestName       String            @map("guest_name")
+  guestEmail      String            @map("guest_email")
+  guestPhone      String?           @map("guest_phone")
+  
+  // Booking source and metadata
+  source          String            @default("Direct")
+  sourceId        String?           @map("source_id") // External booking ID
+  specialRequests String?           @map("special_requests")
+  notes           String?
+  
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  property        Property          @relation(fields: [propertyId], references: [id])
+  guest           User              @relation("ReservationGuest", fields: [guestId], references: [id])
+  agent           User?             @relation("ReservationAgent", fields: [agentId], references: [id])
+  tasks           Task[]
+  transactions    Transaction[]
+  auditLogs       AuditLog[]
+
+  // Indexes
+  @@index([propertyId])
+  @@index([guestId])
+  @@index([agentId])
+  @@index([status])
+  @@index([checkInDate])
+  @@index([checkOutDate])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
+  REFUNDED
+}
+
+// Unified Task Management System
+model Task {
+  id            String     @id @default(cuid())
+  propertyId    String     @map("property_id")
+  reservationId String?    @map("reservation_id")
+  assigneeId    String?    @map("assignee_id")
+  
+  // Task details
+  type          TaskType
+  title         String
+  description   String?
+  status        TaskStatus @default(PENDING)
+  priority      TaskPriority @default(MEDIUM)
+  
+  // Scheduling
+  scheduledDate DateTime?  @map("scheduled_date")
+  completedDate DateTime?  @map("completed_date")
+  dueDate       DateTime?  @map("due_date")
+  
+  // Financial
+  cost          Float?
+  estimatedCost Float?     @map("estimated_cost")
+  
+  // Metadata
+  tags          String[]
+  notes         String?
+  attachments   String[]   // File URLs
+  
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  property      Property   @relation(fields: [propertyId], references: [id])
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  assignee      User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+
+  // Indexes
+  @@index([propertyId])
+  @@index([reservationId])
+  @@index([assigneeId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("tasks")
+}
+
+enum TaskType {
+  CLEANING
+  MAINTENANCE
+  INSPECTION
+  DELIVERY
+  GUEST_MEETING
+  CHECK_IN
+  CHECK_OUT
+  PHOTOGRAPHY
+  MARKETING
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Immutable Financial Transaction System
+model Transaction {
+  id               String            @id @default(cuid())
+  userId           String            @map("user_id")
+  propertyId       String?           @map("property_id")
+  reservationId    String?           @map("reservation_id")
+  taskId           String?           @map("task_id")
+  
+  // Transaction details
+  type             TransactionType
+  category         String
+  amount           Float
+  currency         String            @default("AED")
+  description      String?
+  
+  // Payment processing
+  paymentMethod    String?           @map("payment_method")
+  paymentGatewayId String?           @map("payment_gateway_id")
+  gatewayReference String?           @map("gateway_reference")
+  
+  // Fees and calculations
+  platformFee      Float?            @map("platform_fee")
+  transactionFee   Float?            @map("transaction_fee")
+  netAmount        Float             @map("net_amount")
+  
+  // Status and processing
+  status           TransactionStatus @default(PENDING)
+  processedAt      DateTime?         @map("processed_at")
+  
+  // Metadata
+  metadata         Json?             // Flexible additional data
+  notes            String?
+  
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id])
+  property         Property?         @relation(fields: [propertyId], references: [id])
+  reservation      Reservation?      @relation(fields: [reservationId], references: [id])
+  task             Task?             @relation(fields: [taskId], references: [id])
+  auditLogs        AuditLog[]
+
+  // Indexes
+  @@index([userId])
+  @@index([propertyId])
+  @@index([reservationId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  GUEST_PAYMENT
+  OWNER_PAYOUT
+  REFUND
+  TASK_COST
+  AGENCY_FEE
+  PLATFORM_FEE
+  MAINTENANCE_COST
+  CLEANING_COST
+  MARKETING_COST
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+// ============================================================================
+// SUPPORTING ENTITIES
+// ============================================================================
+
+// Property Photos
+model PropertyPhoto {
+  id          String   @id @default(cuid())
+  propertyId  String   @map("property_id")
+  url         String
+  s3Key       String?  @map("s3_key")
+  filename    String
+  mimeType    String   @map("mime_type")
+  size        Int
+  isCover     Boolean  @default(false) @map("is_cover")
+  alt         String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_photos")
+}
+
+// Pricing Rules and Automation
+model PricingRule {
+  id          String        @id @default(cuid())
+  propertyId  String        @map("property_id")
+  name        String
+  type        PricingRuleType
+  value       Float
+  startDate   DateTime?     @map("start_date")
+  endDate     DateTime?     @map("end_date")
+  conditions  Json?         // Flexible conditions for complex rules
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("pricing_rules")
+}
+
+enum PricingRuleType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  MINIMUM_PRICE
+  MAXIMUM_PRICE
+  SEASONAL
+  WEEKEND
+  HOLIDAY
+}
+
+// System Settings
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  category    String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  isEncrypted Boolean  @default(false) @map("is_encrypted")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+// Audit Logging
+model AuditLog {
+  id            String   @id @default(cuid())
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  action        String
+  changes       Json?
+  userId        String?  @map("user_id")
+  propertyId    String?  @map("property_id")
+  reservationId String?  @map("reservation_id")
+  taskId        String?  @map("task_id")
+  transactionId String?  @map("transaction_id")
+  
+  // Request metadata
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  endpoint      String?
+  method        String?
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user          User?    @relation(fields: [userId], references: [id])
+  property      Property? @relation(fields: [propertyId], references: [id])
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  task          Task?    @relation(fields: [taskId], references: [id])
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  // Indexes
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// File Management
+model FileUpload {
+  id            String     @id @default(cuid())
+  filename      String
+  originalName  String     @map("original_name")
+  mimeType      String     @map("mime_type")
+  size          Int
+  s3Key         String     @map("s3_key")
+  url           String
+  bucket        String
+  uploadedBy    String     @map("uploaded_by")
+  entityType    String?    @map("entity_type")
+  entityId      String?    @map("entity_id")
+  isPublic      Boolean    @default(false) @map("is_public")
+  expiresAt     DateTime?  @map("expires_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@map("file_uploads")
+}

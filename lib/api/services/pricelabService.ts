@@ -1,4 +1,4 @@
-import { apiClient } from '../config'
+import { apiClient } from '../client'
 
 export interface PriceRecommendation {
   id: string

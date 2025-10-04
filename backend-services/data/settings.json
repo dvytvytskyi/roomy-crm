@@ -11,8 +11,8 @@
   "platform": {
     "airbnb": {
       "enabled": true,
-      "apiKey": "airbnb_api_key_123",
-      "apiSecret": "airbnb_secret_456",
+      "apiKey": "",
+      "apiSecret": "",
       "autoSync": true
     },
     "booking": {
@@ -44,7 +44,7 @@
       "smtpHost": "smtp.gmail.com",
       "smtpPort": 587,
       "smtpUser": "noreply@roomy.com",
-      "smtpPassword": "encrypted_password",
+      "smtpPassword": "",
       "fromEmail": "noreply@roomy.com",
       "fromName": "Roomy Property Management"
     },

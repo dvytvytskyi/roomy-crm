@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const bcrypt = require('bcryptjs');
 const s3Service = require('./s3-service');
 
 const app = express();
@@ -2628,7 +2629,7 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
     {
           id: 'admin_1',
           email: 'admin2@roomy.com',
-      password: 'admin123', // In production, this should be hashed
+      password: '$2a$12$8sGEe7uy0HJ.rooRqKuLx.jAA0H1k4ZNPUqJoP/.DEKceXnM84i.K', // Hashed 'admin123'
           firstName: 'Admin',
           lastName: 'User',
       role: 'ADMIN',
@@ -2637,9 +2638,19 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
     }
   ];
   
-  const user = validUsers.find(u => u.email === email && u.password === password);
+  const user = validUsers.find(u => u.email === email);
   
-  if (user && user.isActive) {
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+  
+  // Compare password using bcrypt
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  
+  if (isPasswordValid && user && user.isActive) {
     // Generate secure tokens (in production, use proper JWT)
     const tokenPayload = {
       userId: user.id,

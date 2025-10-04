@@ -1,4 +1,4 @@
-import { API_CONFIG, ApiResponse } from './config';
+import { API_CONFIG, ApiResponse, getApiUrl } from './config';
 
 // Token management
 class TokenManager {
@@ -74,7 +74,7 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
+    const url = `${getApiUrl()}${endpoint}`;
     // console.log('🌐 API Request:', { baseURL: this.baseURL, endpoint, finalURL: url }); // Disabled to reduce console spam
     const token = this.tokenManager.getAccessToken();
 

@@ -1,10 +1,21 @@
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  PRODUCTION_URL: process.env.NEXT_PUBLIC_PRODUCTION_API_URL || 'http://localhost:3001',
   TIMEOUT: 30000, // 30 seconds
   HEADERS: {
     'Content-Type': 'application/json',
   },
+};
+
+// Check if we're in production mode
+export const isProductionMode = () => {
+  return process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_PRODUCTION_MODE === 'true';
+};
+
+// Get the appropriate API URL
+export const getApiUrl = () => {
+  return isProductionMode() ? API_CONFIG.PRODUCTION_URL : API_CONFIG.BASE_URL;
 };
 
 // API Endpoints

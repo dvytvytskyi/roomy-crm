@@ -1,4 +1,4 @@
-import { apiClient } from '../config'
+import { apiClient } from '../client'
 
 export interface Property {
   id: string
@@ -85,25 +85,25 @@ class PropertyService {
   // Get all properties
   async getProperties(): Promise<PropertiesResponse> {
     const response = await apiClient.get('/api/properties')
-    return response.data
+    return response
   }
 
   // Get property by ID
   async getProperty(id: string): Promise<PropertyResponse> {
     const response = await apiClient.get(`/api/properties/${id}`)
-    return response.data
+    return response
   }
 
   // Create new property
   async createProperty(data: CreatePropertyRequest): Promise<PropertyResponse> {
     const response = await apiClient.post('/api/properties', data)
-    return response.data
+    return response
   }
 
   // Update property
   async updateProperty(id: string, data: UpdatePropertyRequest): Promise<PropertyUpdateResponse> {
     const response = await apiClient.put(`/api/properties/${id}`, data)
-    return response.data
+    return response
   }
 
   // Assign property to agent
@@ -119,7 +119,7 @@ class PropertyService {
   // Delete property
   async deleteProperty(id: string): Promise<PropertyUpdateResponse> {
     const response = await apiClient.delete(`/api/properties/${id}`)
-    return response.data
+    return response
   }
 }
 

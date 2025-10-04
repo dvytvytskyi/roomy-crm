@@ -1,4 +1,5 @@
-import { API_CONFIG, API_ENDPOINTS, apiClient } from '../config'
+import { API_ENDPOINTS } from '../config'
+import { apiClient } from '../client'
 
 export interface Photo {
   id: string

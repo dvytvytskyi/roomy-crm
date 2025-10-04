@@ -7,9 +7,7 @@ import ReservationModal from '../../../components/ReservationModal'
 import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
-import { apiRequest, ownerDataManager, safeLocalStorage, debugLog } from '../../../lib/api/production-utils'
-import { priceLabService } from '../../../lib/api/services/pricelabService'
-import aiStudioCode from '../../../ai_studio_code.json'
+import PropertyOverview from '../../../components/properties/PropertyOverview'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -3711,7 +3709,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     console.log('💰 Loading price on component mount')
     console.log('💰 Component states:', { priceLoading, currentPrice, priceError })
     loadCurrentPrice()
-  }, [])
+  }, [loadCurrentPrice])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -3888,6 +3886,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
           <div className="p-4">
             {activeTab === 'overview' && (
+              <PropertyOverview propertyId={params.id} />
+            )}
+
+            {/* Legacy Overview Content - To be removed */}
+            {false && activeTab === 'overview' && (
               <div className="space-y-6">
 
                 {/* Owner Section */}
