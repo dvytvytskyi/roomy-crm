@@ -226,10 +226,10 @@ class ApiClient {
   async login(email: string, password: string): Promise<ApiResponse> {
     const response = await this.post('/api/auth/login', { email, password });
     if (response.success && response.data) {
-      this.tokenManager.setTokens(
-        response.data.accessToken,
-        response.data.refreshToken
-      );
+      // Our backend returns 'token' instead of 'accessToken'
+      const token = response.data.token || response.data.accessToken;
+      const refreshToken = response.data.refreshToken || '';
+      this.tokenManager.setTokens(token, refreshToken);
     }
     return response;
   }
@@ -237,10 +237,10 @@ class ApiClient {
   async register(userData: any): Promise<ApiResponse> {
     const response = await this.post('/api/auth/register', userData);
     if (response.success && response.data) {
-      this.tokenManager.setTokens(
-        response.data.accessToken,
-        response.data.refreshToken
-      );
+      // Our backend returns 'token' instead of 'accessToken'
+      const token = response.data.token || response.data.accessToken;
+      const refreshToken = response.data.refreshToken || '';
+      this.tokenManager.setTokens(token, refreshToken);
     }
     return response;
   }

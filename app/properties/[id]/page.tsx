@@ -1848,6 +1848,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }, [propertyGeneralInfo.nickname, propertyNickname])
 
+  // Load photos from S3 API
+  useEffect(() => {
+    const loadPhotos = async () => {
+      try {
+        setPhotosLoading(true)
+        const { photoService } = await import('@/lib/api/services/photoService')
+        const photosData = await photoService.getPhotos(params?.id || 'default')
+        setPhotos(photosData)
+      } catch (error) {
+        console.error('Error loading photos:', error)
+        setPhotos([])
+      } finally {
+        setPhotosLoading(false)
+      }
+    }
+
+    if (params?.id) {
+      loadPhotos()
+    }
+  }, [params?.id])
 
   // Helper functions for date calculations
   const calculateDaysUntilExpiry = (expiryDate: string): string => {
@@ -2054,28 +2074,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
-  // Photos State - завантажуємо з localStorage (тимчасово поки не готовий S3 бекенд)
-  const [photos, setPhotos] = useState<Photo[]>(() => {
-    // Завантажуємо з localStorage
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${params?.id || 'default'}`)
-    if (savedPhotos) {
-      try {
-        const parsed = JSON.parse(savedPhotos)
-        // Перевіряємо, чи це base64 фото (новий формат) або blob URL-и (старий формат)
-        const hasBase64Photos = parsed.some((photo: Photo) => photo.url.startsWith('data:image/'))
-        if (hasBase64Photos) {
-          return parsed
-        }
-        // Якщо це старі blob URL-и, очищаємо їх
-        console.log('Found old blob URLs, clearing photos')
-        localStorage.removeItem(`propertyPhotos_${params?.id || 'default'}`)
-      } catch (error) {
-        console.error('Error parsing saved photos:', error)
-      }
-    }
-    return []
-  })
-  const [photosLoading, setPhotosLoading] = useState(false)
+  // Photos State - завантажуємо з S3 API
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [photosLoading, setPhotosLoading] = useState(true)
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
@@ -3156,36 +3157,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     } catch (error) {
       console.error('Error uploading photos:', error)
       
-      // Fallback: локальне збереження з base64
-      const newPhotos: Photo[] = []
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const reader = new FileReader()
-        
-        reader.onload = () => {
-          const base64 = reader.result as string
-          const photo: Photo = {
-            id: `photo_${Date.now()}_${i}`,
-            url: base64,
-            name: file.name,
-            size: file.size,
-            isCover: photos.length === 0 && i === 0,
-            uploadedAt: new Date().toISOString()
-          }
-          
-          newPhotos.push(photo)
-          
-          // Якщо це останній файл, зберігаємо всі фото
-          if (i === files.length - 1) {
-            const updatedPhotos = [...photos, ...newPhotos]
-            setPhotos(updatedPhotos)
-            localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
-          }
-        }
-        
-        reader.readAsDataURL(file)
-      }
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to upload photos to S3')
+      alert('Failed to upload photos. Please try again.')
     }
   }
 
@@ -3194,17 +3168,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { photoService } = await import('@/lib/api/services/photoService')
       const updatedPhotos = await photoService.setCoverPhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
     } catch (error) {
       console.error('Error setting cover photo:', error)
       
-      // Fallback: локальне збереження
-      const updatedPhotos = photos.map(photo => ({
-        ...photo,
-        isCover: photo.id === photoId
-      }))
-      setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to set cover photo in S3')
+      alert('Failed to set cover photo. Please try again.')
     }
   }
 
@@ -3213,14 +3182,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { photoService } = await import('@/lib/api/services/photoService')
       const updatedPhotos = await photoService.deletePhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
     } catch (error) {
       console.error('Error deleting photo:', error)
       
-      // Fallback: локальне видалення
-      const updatedPhotos = photos.filter(photo => photo.id !== photoId)
-      setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to delete photo from S3')
+      alert('Failed to delete photo. Please try again.')
     }
   }
 

@@ -52,8 +52,9 @@ export function useAuth() {
         setIsAuthenticated(true);
         
         // Store token in cookie for middleware
-        if (typeof document !== 'undefined' && response.data.accessToken) {
-          document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+        const token = response.data.token || response.data.accessToken;
+        if (typeof document !== 'undefined' && token) {
+          document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
         }
         
         console.log('🎯 useAuth: Auth state updated, user:', response.data.user)
@@ -77,8 +78,9 @@ export function useAuth() {
         setIsAuthenticated(true);
         
         // Store token in cookie for middleware
-        if (typeof document !== 'undefined' && response.data.accessToken) {
-          document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+        const token = response.data.token || response.data.accessToken;
+        if (typeof document !== 'undefined' && token) {
+          document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
         }
         
         return { success: true, data: response.data };
