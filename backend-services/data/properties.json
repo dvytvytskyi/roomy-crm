@@ -101,36 +101,6 @@
     }
   },
   {
-    "id": "prop_5",
-    "nickname": "B I Bayz I 2916 | S",
-    "name": "B I Bayz I 2916 | S",
-    "title": "Business Bay Stylish Studio I Perfect for 2",
-    "type": "APARTMENT",
-    "type_of_unit": "SINGLE",
-    "address": "Marasi Drive, 10108 Dubai, United Arab Emirates",
-    "city": "Dubai",
-    "country": "United Arab Emirates",
-    "capacity": 2,
-    "bedrooms": 0,
-    "bathrooms": 1,
-    "pricePerNight": 228,
-    "primaryImage": "",
-    "agentId": null,
-    "agentName": null,
-    "status": "Active",
-    "createdAt": "2025-02-11T20:45:28.977Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.971Z",
-    "tags": [
-      "Studio",
-      "Owner - Pavel",
-      "Business Bay",
-      "Cleaning - JM"
-    ],
-    "owner": {
-      "id": "owner_7"
-    }
-  },
-  {
     "id": "prop_6",
     "nickname": "B I Maison I 1103 -S",
     "name": "B I Maison I 1103 -S",
@@ -753,31 +723,6 @@
     "tags": [],
     "owner": {
       "id": "owner_9"
-    }
-  },
-  {
-    "id": "prop_31",
-    "nickname": "C I Palace I 2206",
-    "name": "C I Palace I 2206",
-    "title": "Creek Palace I Opened View I Great Amenities",
-    "type": "APARTMENT",
-    "type_of_unit": "SINGLE",
-    "address": "Creek Palace, Dubai, Dubai, United Arab Emirates",
-    "city": "Dubai",
-    "country": "United Arab Emirates",
-    "capacity": 2,
-    "bedrooms": 0,
-    "bathrooms": 1,
-    "pricePerNight": 130,
-    "primaryImage": "",
-    "agentId": null,
-    "agentName": null,
-    "status": "Active",
-    "createdAt": "2025-08-04T07:40:14.249Z",
-    "lastModifiedAt": "2025-10-03T23:36:49.972Z",
-    "tags": [],
-    "owner": {
-      "id": "owner_6"
     }
   },
   {

@@ -3389,7 +3389,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         const propertyData = result.data
         
         // Extract owner ID from property data
-        const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.agentId || ''
+        const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.selectedOwnerId || propertyData.agentId || ''
         console.log('Found owner ID in property:', ownerId)
         
         // Fetch owner data if we have an owner ID and no saved owner
