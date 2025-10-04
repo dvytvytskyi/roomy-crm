@@ -135,22 +135,33 @@ interface IncomeEditModalProps {
   onCancel: () => void
 }
 
+interface BedType {
+  type: 'Double Bed' | 'Single Bed' | 'Queen Bed' | 'King Bed' | 'Sofa Bed'
+  count: number
+}
+
 interface PropertyGeneralInfo {
+  name: string // Описова назва об'єкта (до 150 символів)
+  nickname: string // Унікальний внутрішній ідентифікатор
+  status: 'Active' | 'Inactive' | 'Under Maintenance' | 'Pending Approval' | 'Draft'
+  type: 'Apartment' | 'Villa' | 'Townhouse' | 'Studio' | 'Penthouse' | 'Loft' | 'Hotel Apartment'
+  location: string // Район/локація
+  address: string // Повна адреса з координатами
+  size: {
+    value: number
+    unit: 'm²' | 'sqft'
+  }
+  beds: BedType[] // Динамічний список ліжок
+  parkingSlots: number // Кількість паркувальних місць
+  agencyFee: number // Комісія агентства (0-100%)
+  dtcmLicenseExpiry: string // Дата закінчення ліцензії DTCM
+  referringAgent: {
   name: string
-  nickname: string
-  status: string
-  type: string
-  location: string
-  address: string
-  size: string
-  beds: string
-  parkingSlots: string
-  agencyFee: string
-  dtcmLicenseExpiry: string
-  referringAgent: string
-  checkIn: string
-  checkOut: string
-  unitIntakeDate: string
+    commission: number // Комісія агента (%)
+  }
+  checkIn: string // Час заїзду
+  checkOut: string // Час виїзду
+  unitIntakeDate: string // Дата прийому об'єкта
 }
 
 interface AddExpenseModalProps {
@@ -363,21 +374,21 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
           status: ''
         }
       } else {
-        // Find the selected owner from available owners
-        const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
-        if (!selectedOwner) {
-          throw new Error('Selected owner not found')
-        }
+      // Find the selected owner from available owners
+      const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
+      if (!selectedOwner) {
+        throw new Error('Selected owner not found')
+      }
 
-        // Transform the owner data to the expected format
+      // Transform the owner data to the expected format
         transformedOwner = {
-          id: selectedOwner.id,
-          name: `${selectedOwner.firstName} ${selectedOwner.lastName}`.trim(),
-          flag: getCountryFlag(selectedOwner.nationality || 'Unknown'),
-          country: selectedOwner.nationality || 'Unknown',
-          email: selectedOwner.email || 'Unknown',
-          phone: selectedOwner.phone || 'Unknown',
-          status: selectedOwner.isActive ? 'active' : 'inactive'
+        id: selectedOwner.id,
+        name: `${selectedOwner.firstName} ${selectedOwner.lastName}`.trim(),
+        flag: getCountryFlag(selectedOwner.nationality || 'Unknown'),
+        country: selectedOwner.nationality || 'Unknown',
+        email: selectedOwner.email || 'Unknown',
+        phone: selectedOwner.phone || 'Unknown',
+        status: selectedOwner.isActive ? 'active' : 'inactive'
         }
       }
 
@@ -1598,6 +1609,354 @@ const realProperty = {
   ]
 }
 
+// General Information Edit Modal
+interface GeneralInfoEditModalProps {
+  propertyInfo: PropertyGeneralInfo
+  onSave: (info: PropertyGeneralInfo) => void
+  onCancel: () => void
+}
+
+function GeneralInfoEditModal({ propertyInfo, onSave, onCancel }: GeneralInfoEditModalProps) {
+  const [formData, setFormData] = useState(propertyInfo)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<any>({})
+
+  // Options for dropdowns
+  const statusOptions = ['Active', 'Inactive', 'Under Maintenance', 'Pending Approval', 'Draft']
+  const typeOptions = ['Apartment', 'Villa', 'Townhouse', 'Studio', 'Penthouse', 'Loft', 'Hotel Apartment']
+  const locationOptions = ['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR']
+  const bedTypeOptions = ['Double Bed', 'Single Bed', 'Queen Bed', 'King Bed', 'Sofa Bed']
+  const sizeUnitOptions = ['m²', 'sqft']
+  const timeOptions = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00']
+
+  const handleSave = async () => {
+    setIsSubmitting(true)
+    setErrors({})
+    
+    try {
+      // Validation
+      if (!formData.name.trim()) {
+        setErrors({ name: 'Name is required' })
+        setIsSubmitting(false)
+        return
+      }
+      if (formData.name.length > 150) {
+        setErrors({ name: 'Name must be 150 characters or less' })
+        setIsSubmitting(false)
+        return
+      }
+      if (!formData.nickname.trim()) {
+        setErrors({ nickname: 'Nickname is required' })
+        setIsSubmitting(false)
+        return
+      }
+      if (formData.agencyFee < 0 || formData.agencyFee > 100) {
+        setErrors({ agencyFee: 'Agency fee must be between 0 and 100' })
+        setIsSubmitting(false)
+        return
+      }
+
+      // Save to localStorage
+      localStorage.setItem(`propertyGeneralInfo_default`, JSON.stringify(formData))
+      
+      setTimeout(() => {
+        onSave(formData)
+      }, 500)
+      } catch (error) {
+      console.error('Error saving general info:', error)
+      setErrors({ general: 'Failed to save information' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const addBedType = () => {
+    setFormData({
+      ...formData,
+      beds: [...formData.beds, { type: 'Double Bed', count: 1 }]
+    })
+  }
+
+  const removeBedType = (index: number) => {
+    setFormData({
+      ...formData,
+      beds: formData.beds.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateBedType = (index: number, field: 'type' | 'count', value: any) => {
+    const newBeds = [...formData.beds]
+    newBeds[index] = { ...newBeds[index], [field]: value }
+    setFormData({ ...formData, beds: newBeds })
+  }
+
+  return (
+    <div className="max-h-96 overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Descriptive property name"
+            maxLength={150}
+          />
+          {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
+        </div>
+
+        {/* Nickname */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Nickname *</label>
+          <input
+            type="text"
+            value={formData.nickname}
+            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Unique internal identifier"
+          />
+          {errors.nickname && <p className="text-red-600 text-xs mt-1">{errors.nickname}</p>}
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            {statusOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+          <select
+            value={formData.type}
+            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            {typeOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+          <select
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            {locationOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          <input
+            type="text"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            placeholder="Full address with coordinates"
+          />
+        </div>
+
+        {/* Size */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Size</label>
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              value={formData.size.value}
+              onChange={(e) => setFormData({ ...formData, size: { ...formData.size, value: Number(e.target.value) } })}
+              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              min="0"
+            />
+            <select
+              value={formData.size.unit}
+              onChange={(e) => setFormData({ ...formData, size: { ...formData.size, unit: e.target.value as any } })}
+              className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              {sizeUnitOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Parking Slots */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Parking Slots</label>
+          <input
+            type="number"
+            value={formData.parkingSlots}
+            onChange={(e) => setFormData({ ...formData, parkingSlots: Number(e.target.value) })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            min="0"
+          />
+        </div>
+
+        {/* Agency Fee */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Agency Fee (%)</label>
+          <input
+            type="number"
+            value={formData.agencyFee}
+            onChange={(e) => setFormData({ ...formData, agencyFee: Number(e.target.value) })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            min="0"
+            max="100"
+          />
+          {errors.agencyFee && <p className="text-red-600 text-xs mt-1">{errors.agencyFee}</p>}
+        </div>
+
+        {/* DTCM License Expiry */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">DTCM License Expiry</label>
+          <input
+            type="date"
+            value={formData.dtcmLicenseExpiry}
+            onChange={(e) => setFormData({ ...formData, dtcmLicenseExpiry: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Referring Agent */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Referring Agent</label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={formData.referringAgent.name}
+              onChange={(e) => setFormData({ ...formData, referringAgent: { ...formData.referringAgent, name: e.target.value } })}
+              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              placeholder="Agent name"
+            />
+            <input
+              type="number"
+              value={formData.referringAgent.commission}
+              onChange={(e) => setFormData({ ...formData, referringAgent: { ...formData.referringAgent, commission: Number(e.target.value) } })}
+              className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              min="0"
+              max="100"
+              placeholder="%"
+            />
+          </div>
+        </div>
+
+        {/* Check-in */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Time</label>
+          <select
+            value={formData.checkIn}
+            onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            {timeOptions.map(time => (
+              <option key={time} value={time}>{time}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Check-out */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Time</label>
+          <select
+            value={formData.checkOut}
+            onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            {timeOptions.map(time => (
+              <option key={time} value={time}>{time}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Unit Intake Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Unit Intake Date</label>
+          <input
+            type="date"
+            value={formData.unitIntakeDate}
+            onChange={(e) => setFormData({ ...formData, unitIntakeDate: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      {/* Beds - Dynamic List */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Beds</label>
+        <div className="space-y-2">
+          {formData.beds.map((bed, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <select
+                value={bed.type}
+                onChange={(e) => updateBedType(index, 'type', e.target.value)}
+                className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                {bedTypeOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={bed.count}
+                onChange={(e) => updateBedType(index, 'count', Number(e.target.value))}
+                className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                min="1"
+              />
+              <button
+                onClick={() => removeBedType(index)}
+                className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addBedType}
+            className="px-3 py-2 text-sm text-orange-600 hover:text-orange-800 transition-colors border border-orange-300 rounded-lg"
+          >
+            + Add Bed Type
+          </button>
+        </div>
+      </div>
+
+      {errors.general && <p className="text-red-600 text-sm mb-4">{errors.general}</p>}
+      
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors disabled:opacity-50"
+        >
+          {isSubmitting ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [propertyNickname, setPropertyNickname] = useState(() => {
@@ -1658,7 +2017,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         const directResponse = await fetch('https://api.pricelabs.co/v1/listing_prices', {
           method: 'POST',
           mode: 'cors',
-          headers: {
+        headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-API-Key': 'tVygp3mB7UbvdGjlRnrVT2m3wU4rBryzvDfQ3Mce'
@@ -1764,6 +2123,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Settings State
   const [settings, setSettings] = useState<any>(null)
 
+  // General Information Edit Modal State
+  const [isGeneralInfoEditOpen, setIsGeneralInfoEditOpen] = useState(false)
+
+  // General Information handlers
+  const handleEditGeneralInfo = () => {
+    setIsGeneralInfoEditOpen(true)
+  }
+
+  const handleSaveGeneralInfo = (updatedInfo: PropertyGeneralInfo) => {
+    setPropertyGeneralInfo(updatedInfo)
+    setIsGeneralInfoEditOpen(false)
+  }
+
+  const handleCancelGeneralInfo = () => {
+    setIsGeneralInfoEditOpen(false)
+  }
+
   // General Information State
   const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
     // Завантажуємо з localStorage або використовуємо значення за замовчуванням
@@ -1787,15 +2163,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       type: 'Apartment',
       location: 'Downtown Dubai',
       address: '57QG+GF9 - Burj Khalifa Blvd',
-      size: '53 m²',
-      beds: '1 double bed • 1 single bed',
-      parkingSlots: '2',
-      agencyFee: '18%',
-      dtcmLicenseExpiry: '15.12.2024 (45 days left)',
-      referringAgent: 'Ahmed Al Mansouri (12%)',
+      size: {
+        value: 53,
+        unit: 'm²'
+      },
+      beds: [
+        { type: 'Double Bed', count: 1 }
+      ],
+      parkingSlots: 2,
+      agencyFee: 18,
+      dtcmLicenseExpiry: '2024-12-15',
+      referringAgent: {
+        name: 'Ahmed Al Mansouri',
+        commission: 12
+      },
       checkIn: '15:00',
       checkOut: '12:00',
-      unitIntakeDate: '15.03.2024 (558 days ago)'
+      unitIntakeDate: '2024-03-15'
     }
   })
 
@@ -3715,13 +4099,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </div>
                   
                   {owner.id && owner.id.trim() !== '' && owner.name && owner.name.trim() !== '' ? (
-                    <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
@@ -3819,7 +4203,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 <span className="text-sm font-medium text-gray-600">{item.label}:</span>
                               </div>
                               <div className="flex items-center space-x-3">
-                                <span className="text-sm text-gray-900">{item.value}</span>
+                                <span className="text-sm text-gray-900">{String(item.value)}</span>
                             </div>
                           </div>
                           ))}
@@ -3871,7 +4255,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
                 {/* General Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6">General information</h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900">General information</h2>
+                    <button
+                      onClick={handleEditGeneralInfo}
+                      className="px-3 py-1 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
@@ -3881,17 +4273,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         { label: 'Type', value: propertyGeneralInfo.type, key: 'type' },
                         { label: 'Location', value: propertyGeneralInfo.location, key: 'location' },
                         { label: 'Address', value: propertyGeneralInfo.address, key: 'address' },
-                        { label: 'Size', value: propertyGeneralInfo.size, key: 'size' },
-                        { label: 'Beds', value: propertyGeneralInfo.beds, key: 'beds' }
+                        { label: 'Size', value: `${propertyGeneralInfo.size.value} ${propertyGeneralInfo.size.unit}`, key: 'size' },
+                        { label: 'Beds', value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), key: 'beds' },
+                        { label: 'Parking Slots', value: propertyGeneralInfo.parkingSlots.toString(), key: 'parkingSlots' },
+                        { label: 'Agency Fee', value: `${propertyGeneralInfo.agencyFee}%`, key: 'agencyFee' },
+                        { label: 'DTCM License Expiry', value: propertyGeneralInfo.dtcmLicenseExpiry, key: 'dtcmLicenseExpiry' },
+                        { label: 'Referring Agent', value: `${propertyGeneralInfo.referringAgent.name} (${propertyGeneralInfo.referringAgent.commission}%)`, key: 'referringAgent' },
+                        { label: 'Check-in', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
+                        { label: 'Check-out', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
+                        { label: 'Unit Intake Date', value: propertyGeneralInfo.unitIntakeDate, key: 'unitIntakeDate' }
                       ].map((item, index) => {
-                        console.log(`Rendering field ${item.key}:`, item.value)
                         return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
                           </div>
                           <div className="flex items-center space-x-3">
-                            <span className="text-sm text-gray-900">{item.value}</span>
+                            <span className="text-sm text-gray-900">{String(item.value)}</span>
                             <button 
                               onClick={() => {
                                 let inputType = 'text'
@@ -3900,7 +4298,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 } else if (item.key === 'parkingSlots') {
                                   inputType = 'number'
                                 }
-                                handleEditField('general', item.key, item.value, item.label, inputType)
+                                handleEditField('general', item.key, String(item.value), item.label, inputType)
                               }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
                               data-testid="edit-property-btn"
@@ -3929,7 +4327,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
                           </div>
                           <div className="flex items-center space-x-3">
-                            <span className="text-sm text-gray-900">{item.value}</span>
+                            <span className="text-sm text-gray-900">{String(item.value)}</span>
                             <button 
                               onClick={() => {
                                 let inputType = 'text'
@@ -3938,7 +4336,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 } else if (item.key === 'parkingSlots') {
                                   inputType = 'number'
                                 }
-                                handleEditField('general', item.key, item.value, item.label, inputType)
+                                handleEditField('general', item.key, String(item.value), item.label, inputType)
                               }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
                               data-testid="edit-property-btn"
@@ -5643,6 +6041,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       </div>
     </div>
+    
+    {/* General Information Edit Modal */}
+    {isGeneralInfoEditOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Edit General Information</h3>
+            <button 
+              onClick={handleCancelGeneralInfo}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <GeneralInfoEditModal 
+            propertyInfo={propertyGeneralInfo}
+            onSave={handleSaveGeneralInfo}
+            onCancel={handleCancelGeneralInfo}
+          />
+        </div>
+      </div>
+    )}
     
     {/* Toast Notification */}
     {showToast && (
