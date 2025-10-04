@@ -185,15 +185,57 @@ class PriceLabService {
     }
   }
 
-  // Get current price for a property
+  // Get current price for a property using real PriceLab API
   async getCurrentPrice(pricelabId: string): Promise<{ success: boolean; data: { currentPrice: number }; error?: string }> {
     try {
       console.log('💰 PriceLab: Getting current price for property:', pricelabId)
-      const response = await apiClient.get(`${this.baseUrl}/current-price`, {
-        params: { propertyId: pricelabId }
+      
+      // Use real PriceLab API
+      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      const requestBody = {
+        listings: [
+          {
+            id: pricelabId,
+            pms: "guesty",
+            dateFrom: today,
+            dateTo: today
+          }
+        ]
+      }
+
+      const response = await fetch('https://api.pricelabs.co/v1/listing_prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'tVygp3mB7UbvdGjlRnrVT2m3wU4rBryzvDfQ3Mce'
+        },
+        body: JSON.stringify(requestBody)
       })
-      console.log('💰 PriceLab: Current price received:', response.data)
-      return response.data
+
+      if (!response.ok) {
+        throw new Error(`PriceLab API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('💰 PriceLab: Raw API response:', data)
+
+      // Extract price from response
+      if (data && data.length > 0 && data[0].data && data[0].data.length > 0) {
+        const priceData = data[0].data[0]
+        if (priceData.price) {
+          console.log('💰 PriceLab: Price found:', priceData.price, 'AED')
+          return {
+            success: true,
+            data: { currentPrice: priceData.price }
+          }
+        }
+      }
+
+      return {
+        success: false,
+        data: { currentPrice: 0 },
+        error: 'No price data found in response'
+      }
     } catch (error) {
       console.error('❌ PriceLab: Error getting current price:', error)
       return {

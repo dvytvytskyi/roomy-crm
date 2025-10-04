@@ -1600,9 +1600,22 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setShowToast(true)
   }
 
-  // Load current price from PriceLab API
+  // Load current price from PriceLab API with caching
   const loadCurrentPrice = async () => {
     const pricelabId = '67a392b7b8fa25002a065c6c' // Production property ID
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+    const cacheKey = `price_${pricelabId}_${today}`
+    
+    // Check cache first
+    const cachedPrice = localStorage.getItem(cacheKey)
+    if (cachedPrice) {
+      const { price, timestamp } = JSON.parse(cachedPrice)
+      // Use cached price if it's from today
+      setCurrentPrice(price)
+      console.log('💰 Using cached price:', price, 'AED')
+      return
+    }
+    
     setPriceLoading(true)
     setPriceError(null)
     
@@ -1611,8 +1624,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const response = await priceLabService.getCurrentPrice(pricelabId)
       
       if (response.success && response.data) {
-        setCurrentPrice(response.data.currentPrice)
-        console.log('💰 Current price loaded:', response.data.currentPrice)
+        const price = response.data.currentPrice
+        setCurrentPrice(price)
+        
+        // Cache the price for today
+        localStorage.setItem(cacheKey, JSON.stringify({
+          price,
+          timestamp: new Date().toISOString()
+        }))
+        
+        console.log('💰 Current price loaded and cached:', price, 'AED')
       } else {
         setPriceError(response.error || 'Failed to load price')
         console.error('💰 Price loading failed:', response.error)
