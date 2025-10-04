@@ -1,4 +1,5 @@
 import { apiClient } from '../client'
+import { API_ENDPOINTS } from '../config'
 
 export interface Property {
   id: string
@@ -84,25 +85,25 @@ export interface PropertyUpdateResponse {
 class PropertyService {
   // Get all properties
   async getProperties(): Promise<PropertiesResponse> {
-    const response = await apiClient.get('/api/properties')
+    const response = await apiClient.get(API_ENDPOINTS.PROPERTIES.BASE)
     return response
   }
 
   // Get property by ID
   async getProperty(id: string): Promise<PropertyResponse> {
-    const response = await apiClient.get(`/api/properties/${id}`)
+    const response = await apiClient.get(API_ENDPOINTS.PROPERTIES.BY_ID(id))
     return response
   }
 
   // Create new property
   async createProperty(data: CreatePropertyRequest): Promise<PropertyResponse> {
-    const response = await apiClient.post('/api/properties', data)
+    const response = await apiClient.post(API_ENDPOINTS.PROPERTIES.BASE, data)
     return response
   }
 
   // Update property
   async updateProperty(id: string, data: UpdatePropertyRequest): Promise<PropertyUpdateResponse> {
-    const response = await apiClient.put(`/api/properties/${id}`, data)
+    const response = await apiClient.put(API_ENDPOINTS.PROPERTIES.BY_ID(id), data)
     return response
   }
 
@@ -118,7 +119,7 @@ class PropertyService {
 
   // Delete property
   async deleteProperty(id: string): Promise<PropertyUpdateResponse> {
-    const response = await apiClient.delete(`/api/properties/${id}`)
+    const response = await apiClient.delete(API_ENDPOINTS.PROPERTIES.BY_ID(id))
     return response
   }
 }

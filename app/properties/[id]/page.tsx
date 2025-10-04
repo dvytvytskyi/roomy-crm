@@ -8,6 +8,7 @@ import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import PropertyOverview from '../../../components/properties/PropertyOverview'
+import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -1619,11 +1620,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     
-    // Try to get nickname from ai_studio_code.json
-    const aiStudioNickname = aiStudioCode.find(item => item.nickname)?.nickname
-    if (aiStudioNickname) {
-      return aiStudioNickname
-    }
+    // Try to get nickname from property data if available
+    // Note: aiStudioCode was removed as it's not defined
     
     // Fallback to general localStorage or default
     if (typeof window !== 'undefined') {
@@ -1802,11 +1800,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       if (savedNickname) {
         defaultNickname = savedNickname
       } else {
-        // Fallback to ai_studio_code.json
-        const aiStudioNickname = aiStudioCode.find(item => item.nickname)?.nickname
-        if (aiStudioNickname) {
-          defaultNickname = aiStudioNickname
-        }
+        // Fallback: use default nickname
+        // Note: aiStudioCode was removed as it's not defined
+        defaultNickname = 'Apartment Burj Khalifa 2'
       }
     }
     

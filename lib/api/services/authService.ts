@@ -53,12 +53,12 @@ export class AuthService {
 
   // Get current user profile
   async getProfile(): Promise<ApiResponse<User>> {
-    return apiClient.get<User>('/api/auth/profile');
+    return apiClient.get<User>(API_ENDPOINTS.AUTH.PROFILE);
   }
 
   // Refresh token
   async refreshToken(): Promise<ApiResponse<{ accessToken: string; refreshToken: string }>> {
-    return apiClient.post('/api/auth/refresh-token');
+    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH);
   }
 
   // Check if user is authenticated

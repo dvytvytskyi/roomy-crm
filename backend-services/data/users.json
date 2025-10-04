@@ -2,7 +2,7 @@
   {
     "id": "1",
     "email": "admin@roomy.com",
-    "password": "admin123",
+    "password": "$2a$12$Udxh/4UQ22Mvfyub4dKTau66oGIrr7ZYb7Q.PhCbLJ2vRjsX2nUJ2",
     "name": "Admin User",
     "role": "admin",
     "createdAt": "2025-10-04T10:22:28.455Z"
@@ -10,7 +10,7 @@
   {
     "id": "2",
     "email": "admin2@roomy.com",
-    "password": "admin123",
+    "password": "$2a$12$7w5k0nMaPJ7YwCCletgp1.xX6HdnynxJRd.qE2W2BPAPGcKMHwhAq",
     "name": "Admin User 2",
     "role": "admin",
     "createdAt": "2025-10-04T10:24:00.000Z"
