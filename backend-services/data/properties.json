@@ -75,9 +75,11 @@
     "agentName": null,
     "status": "Active",
     "createdAt": "2025-06-21T14:27:17.788Z",
-    "lastModifiedAt": "2025-10-04T00:40:32.498Z",
+    "lastModifiedAt": "2025-10-04T00:48:23.495Z",
     "tags": [],
-    "owner": null,
+    "owner": {
+      "id": ""
+    },
     "ownerId": "owner_1759538351242",
     "selectedOwnerId": null,
     "owner_name": "Alina Soloviova",

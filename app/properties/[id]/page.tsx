@@ -349,21 +349,36 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
     setSuccessMessage('')
 
     try {
-      // Find the selected owner from available owners
-      const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
-      if (!selectedOwner) {
-        throw new Error('Selected owner not found')
-      }
+      let transformedOwner
+      
+      if (selectedOwnerId === 'unknown') {
+        // Handle Unknown owner case
+        transformedOwner = {
+          id: '',
+          name: '',
+          flag: '',
+          country: '',
+          email: '',
+          phone: '',
+          status: ''
+        }
+      } else {
+        // Find the selected owner from available owners
+        const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
+        if (!selectedOwner) {
+          throw new Error('Selected owner not found')
+        }
 
-      // Transform the owner data to the expected format
-      const transformedOwner = {
-        id: selectedOwner.id,
-        name: `${selectedOwner.firstName} ${selectedOwner.lastName}`.trim(),
-        flag: getCountryFlag(selectedOwner.nationality || 'Unknown'),
-        country: selectedOwner.nationality || 'Unknown',
-        email: selectedOwner.email || 'Unknown',
-        phone: selectedOwner.phone || 'Unknown',
-        status: selectedOwner.isActive ? 'active' : 'inactive'
+        // Transform the owner data to the expected format
+        transformedOwner = {
+          id: selectedOwner.id,
+          name: `${selectedOwner.firstName} ${selectedOwner.lastName}`.trim(),
+          flag: getCountryFlag(selectedOwner.nationality || 'Unknown'),
+          country: selectedOwner.nationality || 'Unknown',
+          email: selectedOwner.email || 'Unknown',
+          phone: selectedOwner.phone || 'Unknown',
+          status: selectedOwner.isActive ? 'active' : 'inactive'
+        }
       }
 
       // Show success message
@@ -417,6 +432,7 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
               }`}
             >
               <option value="">Select an owner</option>
+              <option value="unknown">Unknown</option>
               {availableOwners.map((ownerOption) => (
                 <option key={ownerOption.id} value={ownerOption.id}>
                   {ownerOption.firstName} {ownerOption.lastName} - {ownerOption.email}
@@ -425,8 +441,19 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
             </select>
             {errors.owner && <p className="mt-1 text-sm text-red-600">{errors.owner}</p>}
             
+            {/* Show Unknown owner message */}
+            {selectedOwnerId === 'unknown' && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center text-gray-600">
+                  <span className="text-lg">🏳️</span>
+                  <p className="mt-2 font-medium">Unknown Owner</p>
+                  <p className="text-sm">No owner information available</p>
+                </div>
+              </div>
+            )}
+            
             {/* Show selected owner details */}
-            {selectedOwnerId && (
+            {selectedOwnerId && selectedOwnerId !== 'unknown' && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 {(() => {
                   const selectedOwner = availableOwners.find(o => o.id === selectedOwnerId)
