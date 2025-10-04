@@ -33,8 +33,7 @@ model User {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
-  ownedProperties     Property[]     @relation("PropertyOwner")
-  propertyOwnerships  PropertyOwner[] // Multiple property ownership support
+  propertyOwnerships  PropertyOwner[] // Property ownership support
   managedProperties   Property[]     @relation("PropertyAgent")
   assignedTasks       Task[]         @relation("TaskAssignee")
   assignedReservations Reservation[] @relation("ReservationAgent")
@@ -99,7 +98,6 @@ model Property {
   type          PropertyType
   address       String
   locationId    String        @map("location_id")
-  ownerId       String?       @map("owner_id")
   agentId       String?       @map("agent_id")
   
   // Property details
@@ -125,7 +123,6 @@ model Property {
 
   // Relations
   location      Location       @relation(fields: [locationId], references: [id])
-  owner         User?          @relation("PropertyOwner", fields: [ownerId], references: [id])
   agent         User?          @relation("PropertyAgent", fields: [agentId], references: [id])
   owners        PropertyOwner[] // Multiple owners support
   amenities     PropertyAmenity[]
@@ -137,7 +134,6 @@ model Property {
   auditLogs     AuditLog[]
 
   // Indexes
-  @@index([ownerId])
   @@index([agentId])
   @@index([locationId])
   @@index([status])
@@ -525,7 +521,6 @@ model AuditLog {
   action        AuditAction
   oldValues     Json?    @map("old_values") // Previous state
   newValues     Json?    @map("new_values") // New state
-  changes       Json?    // Computed diff (optional)
   userId        String?  @map("user_id")
   propertyId    String?  @map("property_id")
   reservationId String?  @map("reservation_id")
