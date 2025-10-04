@@ -7,7 +7,7 @@ import PropertyModal from '../../components/properties/PropertyModal'
 import PropertiesFilters from '../../components/properties/PropertiesFilters'
 import Toast from '../../components/Toast'
 import { Plus, Search, Download, Archive, Trash2, Filter, Home, Building, Users, DollarSign } from 'lucide-react'
-import { propertyService } from '../../lib/api'
+import { propertyServiceAdapted } from '../../lib/api/adapters/apiAdapter'
 
 export default function PropertiesPage() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
@@ -49,16 +49,44 @@ export default function PropertiesPage() {
     try {
       setIsLoading(true)
       console.log('🔄 Loading properties from API...')
-      const response = await propertyService.getProperties()
+      
+      // Build query parameters for V2 API
+      const queryParams: any = {
+        page: 1,
+        limit: 100,
+      }
+      
+      if (searchTerm) {
+        queryParams.search = searchTerm
+      }
+      
+      // Add filters if any
+      if (filters.propertyTypes.length > 0) {
+        queryParams.type = filters.propertyTypes.join(',')
+      }
+      
+      console.log('🔄 Query params:', queryParams)
+      
+      const response = await propertyServiceAdapted.getAll(queryParams)
       console.log('📋 API Response in loadProperties:', response)
       console.log('📋 Response success:', response.success)
       console.log('📋 Response data:', response.data)
       console.log('📋 Response error:', (response as any).error)
       
       if (response.success && response.data) {
-        console.log('✅ Properties loaded successfully:', response.data)
-        console.log('✅ Properties count:', response.data.length)
-        setProperties(response.data)
+        // Handle both V1 and V2 response formats
+        let propertiesData = []
+        if (Array.isArray(response.data)) {
+          // V1 format: direct array
+          propertiesData = response.data
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // V2 format: paginated response
+          propertiesData = response.data.data
+        }
+        
+        console.log('✅ Properties loaded successfully:', propertiesData)
+        console.log('✅ Properties count:', propertiesData.length)
+        setProperties(propertiesData)
         console.log('✅ Properties state updated')
       } else {
         console.error('❌ Failed to load properties:', (response as any).error)
@@ -95,7 +123,7 @@ export default function PropertiesPage() {
       console.log('🏁 Setting isLoading to false')
       setIsLoading(false)
     }
-  }, []) // Remove properties and isLoading from dependencies to prevent infinite loop
+  }, [searchTerm, filters]) // Add searchTerm and filters to dependencies
 
   const handlePropertyCreated = useCallback(() => {
     console.log('🎉 Property created, automatically refreshing list...')
@@ -117,7 +145,7 @@ export default function PropertiesPage() {
       console.log('🗑️ Deleting property:', property.id)
       
       // Call delete API
-      await propertyService.deleteProperty(property.id)
+      await propertyServiceAdapted.delete(property.id)
       
       // Reload properties from API to get updated list
       await loadProperties()

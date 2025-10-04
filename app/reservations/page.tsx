@@ -8,7 +8,8 @@ import ReservationsFilters from '@/components/reservations/ReservationsFilters'
 import ReservationDetailsModal from '@/components/reservations/ReservationDetailsModal'
 import ReservationEditModal from '@/components/reservations/ReservationEditModal'
 import NewReservationModal from '@/components/reservations/NewReservationModal'
-import { reservationService, Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
+import { reservationServiceAdapted } from '@/lib/api/adapters/apiAdapter'
+import { Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
 export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -53,12 +54,52 @@ export default function ReservationsPage() {
     })
     try {
       setIsLoading(true)
-      const response = await reservationService.getReservations(currentFilters || filters)
+      
+      // Build query parameters for V2 API
+      const queryParams: any = {
+        page: 1,
+        limit: 100,
+      }
+      
+      const currentFilter = currentFilters || filters
+      
+      if (currentFilter.dateRange?.from) {
+        queryParams.dateFrom = currentFilter.dateRange.from
+      }
+      if (currentFilter.dateRange?.to) {
+        queryParams.dateTo = currentFilter.dateRange.to
+      }
+      if (currentFilter.status && currentFilter.status.length > 0) {
+        queryParams.status = currentFilter.status.join(',')
+      }
+      if (currentFilter.source && currentFilter.source.length > 0) {
+        queryParams.source = currentFilter.source.join(',')
+      }
+      if (currentFilter.searchTerm) {
+        queryParams.search = currentFilter.searchTerm
+      }
+      if (currentFilter.guestName) {
+        queryParams.guestName = currentFilter.guestName
+      }
+      
+      console.log('📅 Query params:', queryParams)
+      
+      const response = await reservationServiceAdapted.getAll(queryParams)
       
       if (response.success && response.data) {
-        console.log('✅ Reservations loaded:', response.data.length, 'reservations')
-        console.log('✅ First reservation:', response.data[0])
-        setReservations(response.data)
+        // Handle both V1 and V2 response formats
+        let reservationsData = []
+        if (Array.isArray(response.data)) {
+          // V1 format: direct array
+          reservationsData = response.data
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // V2 format: paginated response
+          reservationsData = response.data.data
+        }
+        
+        console.log('✅ Reservations loaded:', reservationsData.length, 'reservations')
+        console.log('✅ First reservation:', reservationsData[0])
+        setReservations(reservationsData)
       } else {
         console.error('❌ Failed to load reservations:', response.error)
         setReservations([])

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import ApiStatus from '../components/ApiStatus'
 import ClientAuthGuard from '../components/ClientAuthGuard'
+import ToastProvider from '../lib/components/ToastProvider'
 
 export const metadata: Metadata = {
   title: 'Roomy CRM - Property Management',
@@ -22,6 +23,7 @@ export default function RootLayout({
         <script src="/build/scheduler.umd.js" />
       </head>
       <body className="antialiased">
+      <ToastProvider />
       <ClientAuthGuard>
         {children}
       </ClientAuthGuard>

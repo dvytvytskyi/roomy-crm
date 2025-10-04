@@ -6,7 +6,7 @@ import TopNavigation from '../../components/TopNavigation'
 import OwnersTableSimple from '../../components/owners/OwnersTableSimple'
 import OwnersFilters from '../../components/owners/OwnersFilters'
 import AddOwnerModal from '../../components/owners/AddOwnerModal'
-import { ownerService, Owner } from '../../lib/api/services/ownerService'
+import { userServiceAdapted } from '../../lib/api'
 
 export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -24,7 +24,7 @@ export default function OwnersPage() {
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
-  const [owners, setOwners] = useState<Owner[]>([])
+  const [owners, setOwners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState({
@@ -80,7 +80,7 @@ export default function OwnersPage() {
         setError(null)
         console.log('🏠 Loading owners from API...')
         
-        const response = await ownerService.getOwners({
+        const response = await userServiceAdapted.getOwners({
           search: debouncedSearchTerm,
           page,
           limit,

@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { X, User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, Upload, Plus, Minus, ChevronDown } from 'lucide-react'
-import { userService } from '@/lib/api/services/userService'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
+import { showToast } from '@/lib/utils/toast'
 import { getCountryFlag } from '@/lib/utils/countryFlags'
+import { useFormValidation } from '@/lib/hooks/useFormValidation'
+import { createOwnerSchema, type CreateOwnerData } from '@/lib/schemas/validation'
+import { useRefreshData } from '@/lib/hooks/useRefreshData'
 
 interface AddOwnerModalProps {
   onClose: () => void
@@ -11,27 +15,40 @@ interface AddOwnerModalProps {
 }
 
 export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    nationality: '',
-    dateOfBirth: '',
-    email: '',
-    phone: '',
-    whatsapp: '',
-    telegram: '',
-    units: [] as string[],
-    comments: '',
-    status: 'Active',
-    paymentPreferences: 'Bank Transfer',
-    personalStayDays: 30
-  })
+  const { refreshData } = useRefreshData();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    reset
+  } = useFormValidation(createOwnerSchema, {
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      nationality: '',
+      dateOfBirth: '',
+      email: '',
+      phone: '',
+      whatsapp: '',
+      telegram: '',
+      comments: '',
+      status: 'ACTIVE',
+      paymentPreferences: 'Bank Transfer',
+      personalStayDays: 30,
+      role: 'OWNER'
+    }
+  });
 
   const [newUnit, setNewUnit] = useState('')
   const [newComment, setNewComment] = useState('')
   const [commentsHistory, setCommentsHistory] = useState<Array<{id: string, text: string, author: string, timestamp: string}>>([])
-  const [errors, setErrors] = useState<any>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNationalityDropdownOpen, setIsNationalityDropdownOpen] = useState(false)
+  
+  // Watch form values for dynamic updates
+  const watchedValues = watch();
 
   const nationalities = [
     'Emirati', 'British', 'Canadian', 'French', 'German', 'Italian', 'Spanish',
@@ -135,53 +152,40 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-
-    setIsSubmitting(true)
+  const onSubmit = async (data: CreateOwnerData) => {
+    const loadingToast = showToast.loading('Creating owner...')
 
     try {
       // Prepare data for API
       const ownerData = {
-        firstName: formData.name.split(' ')[0] || formData.name,
-        lastName: formData.name.split(' ').slice(1).join(' ') || '',
-        email: formData.email,
-        phone: formData.phone,
-        role: 'OWNER' as const,
-        nationality: formData.nationality,
-        dateOfBirth: formData.dateOfBirth,
-        whatsapp: formData.whatsapp,
-        telegram: formData.telegram,
-        comments: formData.comments,
-        status: formData.status,
-        paymentPreferences: formData.paymentPreferences,
-        personalStayDays: formData.personalStayDays
+        ...data,
+        password: 'TempPassword123!', // TODO: Generate secure password
+        country: data.nationality,
       }
 
       // Call API to create owner
-      const response = await userService.createUser(ownerData)
+      const response = await userServiceAdapter.createUser(ownerData)
       
       if (response.success && response.data) {
+        showToast.dismiss(loadingToast)
+        showToast.success('Owner created successfully!')
+        
         // Transform API response to match expected format
         const transformedOwner = {
           ...response.data,
           name: `${response.data.firstName} ${response.data.lastName}`,
-          nationality: formData.nationality,
-          dateOfBirth: formData.dateOfBirth,
-          whatsapp: formData.whatsapp,
-          telegram: formData.telegram,
-          comments: formData.comments,
-          status: formData.status,
-          paymentPreferences: formData.paymentPreferences,
-          personalStayDays: formData.personalStayDays,
-          units: formData.units.map(unit => ({ name: unit, id: Math.random() })),
+          nationality: data.nationality,
+          dateOfBirth: data.dateOfBirth,
+          whatsapp: data.whatsapp,
+          telegram: data.telegram,
+          comments: data.comments,
+          status: data.status,
+          paymentPreferences: data.paymentPreferences,
+          personalStayDays: data.personalStayDays,
+          units: [], // TODO: Handle units properly
           reservationCount: 0,
-          totalUnits: formData.units.length,
-          vipStatus: formData.status === 'VIP',
+          totalUnits: 0,
+          vipStatus: data.status === 'ACTIVE',
           createdBy: 'Current User',
           createdByEmail: 'current@user.com',
           lastModifiedBy: 'Current User',
@@ -190,16 +194,15 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
         }
 
         onSave(transformedOwner)
+        refreshData(); // Trigger data refresh
+        onClose() // Close modal after successful creation
       } else {
-        throw new Error(response.error?.message || 'Failed to create owner')
+        throw new Error(response.error || 'Failed to create owner')
       }
     } catch (error: any) {
       console.error('Error saving owner:', error)
-      setErrors({ 
-        general: error.message || 'Failed to create owner. Please try again.' 
-      })
-    } finally {
-      setIsSubmitting(false)
+      showToast.dismiss(loadingToast)
+      showToast.error(error.message || 'Failed to create owner. Please try again.')
     }
   }
 
@@ -244,7 +247,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* General Error Display */}
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -253,21 +256,37 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
           )}
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User size={16} className="inline mr-2" />
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Enter owner's full name"
-              />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User size={16} className="inline mr-2" />
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  {...register('firstName')}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.firstName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter first name"
+                />
+                {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  {...register('lastName')}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.lastName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter last name"
+                />
+                {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>}
+              </div>
             </div>
 
             <div>
@@ -343,14 +362,13 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                {...register('email')}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="owner@example.com"
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
             </div>
 
             <div>

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { X, Calendar, DollarSign, User, MapPin, Save, Plus, ChevronDown } from 'lucide-react'
 import GuestSelectorModal from './GuestSelectorModal'
+import { reservationServiceAdapter, propertyServiceAdapter } from '@/lib/api/adapters/apiAdapter'
+import { showToast } from '@/lib/utils/toast'
 
 interface NewReservationModalProps {
   onClose: () => void
@@ -97,20 +99,60 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
     return 0
   }
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      const newReservation = {
-        id: Date.now(), // Temporary ID
-        ...formData,
-        total_amount: parseFloat(formData.total_amount),
-        nights: calculateNights(),
-        status: 'confirmed',
-        reservation_id: `RES-${Date.now().toString().slice(-6)}`,
-        paid_amount: 0,
-        outstanding_balance: parseFloat(formData.total_amount),
-        created_at: new Date().toISOString()
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    const loadingToast = showToast.loading('Creating reservation...')
+
+    try {
+      // First, we need to find the property by name to get its ID
+      // For now, we'll use a mock property ID, but in a real app, you'd search for the property
+      const propertyId = 'mock-property-id' // TODO: Implement property search by name
+
+      // Prepare reservation data for V2 API
+      const reservationData = {
+        propertyId: propertyId,
+        guestId: selectedGuest?.id,
+        checkIn: formData.check_in,
+        checkOut: formData.check_out,
+        guests: 1, // Default to 1 guest
+        totalAmount: parseFloat(formData.total_amount),
+        paidAmount: 0,
+        source: formData.source.toUpperCase() as any,
+        guestName: formData.guest_name,
+        guestEmail: formData.guest_email,
+        guestPhone: formData.guest_phone,
+        specialRequests: formData.notes,
+        notes: formData.notes
       }
-      onSave(newReservation)
+
+      // Call V2 API to create reservation
+      const response = await reservationServiceAdapter.create(reservationData)
+      
+      if (response.success && response.data) {
+        showToast.dismiss(loadingToast)
+        showToast.success('Reservation created successfully!')
+        
+        // Transform API response to match expected format
+        const transformedReservation = {
+          ...response.data,
+          nights: calculateNights(),
+          reservation_id: response.data.reservationId,
+          outstanding_balance: response.data.outstandingBalance || response.data.totalAmount,
+          created_at: response.data.createdAt
+        }
+
+        onSave(transformedReservation)
+        onClose()
+      } else {
+        throw new Error(response.error || 'Failed to create reservation')
+      }
+    } catch (error: any) {
+      console.error('Error creating reservation:', error)
+      showToast.dismiss(loadingToast)
+      showToast.error(error.message || 'Failed to create reservation. Please try again.')
     }
   }
 

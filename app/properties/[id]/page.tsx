@@ -10,6 +10,7 @@ import PriceRecommendations from '../../../components/pricing/PriceRecommendatio
 import PropertyOverview from '../../../components/properties/PropertyOverview'
 import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
 import { priceLabService } from '../../../lib/api/services/pricelabService'
+import { propertyServiceAdapted } from '../../../lib/api/adapters/apiAdapter'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -3597,25 +3598,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       console.log('Fetching property data for ID:', propertyId)
       
-      // Use environment variable for API URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-      
-      // Get auth token from localStorage or session
-      const authToken = localStorage.getItem('accessToken') || 'test'
-      
-      const response = await fetch(`${apiUrl}/api/properties/${propertyId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
+      // Use the new API adapter
+      const result = await propertyServiceAdapted.getById(propertyId)
       console.log('Property API response:', result)
 
       if (result.success && result.data) {

@@ -1,0 +1,60 @@
+// Temporary schema for User table migration
+// This schema contains only User table and related enums for the first migration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USER SYSTEM (First Migration)
+// ============================================================================
+
+// User Role Enum
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+  OWNER
+  GUEST
+  CLEANER
+  MAINTENANCE_STAFF
+}
+
+// User Status Enum
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  VIP
+}
+
+// Unified User System - All actors in the system
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  phone         String?
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  passwordHash  String   @map("password_hash")
+  role          UserRole @default(GUEST)
+  status        UserStatus @default(ACTIVE)
+  avatar        String?
+  country       String?
+  flag          String?
+  isVerified    Boolean  @default(false) @map("is_verified")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Indexes
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}

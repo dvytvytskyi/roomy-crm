@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { X, User, Mail, Phone, Flag, Home, Percent, MessageSquare } from 'lucide-react'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
+import { showToast } from '@/lib/utils/toast'
 
 interface AddAgentModalProps {
   isOpen: boolean
@@ -61,14 +63,65 @@ export default function AddAgentModal({ isOpen, onClose, agent }: AddAgentModalP
     }))
   }
 
-  const handleSave = () => {
-    console.log('Agent data:', formData)
-    onClose()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const loadingToast = showToast.loading('Creating agent...')
+
+    try {
+      // Prepare data for API
+      const agentData = {
+        firstName: formData.name.split(' ')[0] || formData.name,
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        email: formData.email,
+        phone: formData.phone,
+        role: 'AGENT' as const,
+        password: 'TempPassword123!', // TODO: Generate secure password
+        status: formData.status === 'Active' ? 'ACTIVE' : 'INACTIVE',
+        country: formData.nationality,
+        // Additional fields for agent
+        nationality: formData.nationality,
+        birthday: formData.birthday,
+        unitsAttracted: formData.unitsAttracted,
+        notes: formData.notes
+      }
+
+      // Call API to create agent
+      const response = await userServiceAdapter.createUser(agentData)
+      
+      if (response.success && response.data) {
+        showToast.dismiss(loadingToast)
+        showToast.success('Agent created successfully!')
+        
+        // Transform API response to match expected format
+        const transformedAgent = {
+          ...response.data,
+          name: `${response.data.firstName} ${response.data.lastName}`,
+          nationality: formData.nationality,
+          birthday: formData.birthday,
+          unitsAttracted: formData.unitsAttracted,
+          status: formData.status,
+          notes: formData.notes,
+          createdBy: 'Current User',
+          createdAt: new Date().toISOString(),
+          lastModifiedBy: 'Current User',
+          lastModifiedAt: new Date().toISOString()
+        }
+
+        handleSave(transformedAgent)
+      } else {
+        throw new Error(response.error || 'Failed to create agent')
+      }
+    } catch (error: any) {
+      console.error('Error saving agent:', error)
+      showToast.dismiss(loadingToast)
+      showToast.error(error.message || 'Failed to create agent. Please try again.')
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleSave()
+  const handleSave = (agentData: any) => {
+    console.log('Agent saved:', agentData)
+    onClose()
   }
 
   if (!isOpen) return null

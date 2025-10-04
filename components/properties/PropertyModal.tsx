@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { X, Save, Home, MapPin, User, DollarSign, ChevronDown } from 'lucide-react'
-import { propertyService } from '../../lib/api'
-import { ownerService, Owner } from '../../lib/api/services/ownerService'
+import { propertyServiceAdapter, userServiceAdapter } from '../../lib/api/adapters/apiAdapter'
+import { showToast } from '../../lib/utils/toast'
 import { 
   PROPERTY_TYPES, 
   DUBAI_AREAS, 
@@ -35,10 +35,10 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   })
 
   // Owner selection states
-  const [owners, setOwners] = useState<Owner[]>([])
+  const [owners, setOwners] = useState<any[]>([])
   const [ownersLoading, setOwnersLoading] = useState(false)
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false)
-  const [selectedOwner, setSelectedOwner] = useState<Owner | null>(null)
+  const [selectedOwner, setSelectedOwner] = useState<any | null>(null)
 
   // Use centralized configuration
   const propertyTypes = PROPERTY_TYPES
@@ -52,15 +52,15 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   const loadOwners = async () => {
     setOwnersLoading(true)
     try {
-      const response = await ownerService.getOwners({ limit: 100 })
-      if (response.success && response.data && response.data.owners) {
-        setOwners(response.data.owners)
+      const response = await userServiceAdapter.getUsersByRole('OWNER', { limit: 100 })
+      if (response.success && response.data && response.data.data) {
+        setOwners(response.data.data)
       } else {
         setOwners([])
       }
     } catch (error) {
       console.error('Error loading owners:', error)
-      onShowToast?.('Failed to load owners list')
+      showToast.error('Failed to load owners list')
       setOwners([])
     } finally {
       setOwnersLoading(false)
@@ -68,7 +68,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   }
 
   // Handle owner selection
-  const handleOwnerSelect = (owner: Owner) => {
+  const handleOwnerSelect = (owner: any) => {
     setSelectedOwner(owner)
     setFormData(prev => ({ ...prev, selectedOwnerId: owner.id }))
     setIsOwnerDropdownOpen(false)
@@ -152,15 +152,17 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
     
     // Validation: price must be greater than 0
     if (!formData.price_per_night || formData.price_per_night <= 0) {
-      alert('Please enter a valid price per night (must be greater than 0).')
+      showToast.error('Please enter a valid price per night (must be greater than 0).')
       return
     }
     
     // Validation: address is required
     if (!formData.address.trim()) {
-      alert('Please enter a valid address.')
+      showToast.error('Please enter a valid address.')
       return
     }
+    
+    const loadingToast = showToast.loading(property ? 'Updating property...' : 'Creating property...')
     
     try {
       // Create final property data with generated name
@@ -168,7 +170,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         name: propertyName, // Auto-generated name
         nickname: formData.nickname || propertyName,
         type: formData.type.toUpperCase(), // Convert to uppercase for backend
-        location: formData.location,
+        typeOfUnit: 'SINGLE' as const,
         address: formData.address,
         city: DEFAULT_PROPERTY_VALUES.city,
         country: DEFAULT_PROPERTY_VALUES.country,
@@ -179,62 +181,42 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         pricePerNight: formData.price_per_night,
         description: `Property in ${formData.location}`,
         amenities: [],
-        ownerId: formData.selectedOwnerId || null,
-        owner_name: selectedOwner ? `${selectedOwner.firstName} ${selectedOwner.lastName}` : null,
-        owner_email: selectedOwner?.email || null,
-        owner_phone: selectedOwner?.phone || null,
-        status: formData.status
-        // Remove houseRules field entirely - backend will use default
+        houseRules: [],
+        tags: [],
+        ownerIds: formData.selectedOwnerId ? [formData.selectedOwnerId] : [],
+        isActive: formData.status === 'active',
+        isPublished: false
       }
       
       console.log('Property data:', finalPropertyData)
       
-      // Send to backend
-      const response = await propertyService.createProperty(finalPropertyData)
+      // Send to backend using V2 API
+      const response = property 
+        ? await propertyServiceAdapter.update(property.id, finalPropertyData)
+        : await propertyServiceAdapter.create(finalPropertyData)
       
       if (response.success) {
-        // Show success message
+        showToast.dismiss(loadingToast)
         const successMessage = property 
           ? `Property "${formData.nickname || propertyName}" updated successfully!`
           : `Property "${formData.nickname || propertyName}" created successfully!`
         
-        // Show toast notification
-        if (onShowToast) {
-          onShowToast(successMessage)
-        }
+        showToast.success(successMessage)
         
         // Refresh the properties list
         if (onPropertyCreated) {
           onPropertyCreated()
         }
         
-        // Reset form for next use
-        setFormData({
-          nickname: '',
-          type: 'apartment',
-          location: '',
-          address: '',
-          bedrooms: 1,
-          owner_name: '',
-          owner_email: '',
-          owner_phone: '',
-          price_per_night: 100,
-          status: 'active'
-        })
-        
         // Close modal
         onClose()
       } else {
-        // Show error message
-        if (onShowToast) {
-          onShowToast(`Error: ${response.error?.message || 'Failed to create property'}`)
-        }
+        throw new Error(response.error || 'Failed to save property')
       }
-    } catch (error) {
-      console.error('Error creating property:', error)
-      if (onShowToast) {
-        onShowToast(`Error: ${error instanceof Error ? error.message : 'Failed to create property'}`)
-      }
+    } catch (error: any) {
+      console.error('Error saving property:', error)
+      showToast.dismiss(loadingToast)
+      showToast.error(error.message || 'An unexpected error occurred. Please try again.')
     }
   }
 

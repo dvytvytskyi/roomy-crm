@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { authService, LoginRequest, RegisterRequest, User } from '@/lib/api';
+import { authServiceAdapted, LoginRequest, RegisterRequest, User } from '@/lib/api';
 import { useApiMutation } from './useApi';
 
 export function useAuth() {
@@ -11,14 +11,14 @@ export function useAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        if (authService.isAuthenticated()) {
-          const response = await authService.getProfile();
+      if (authServiceAdapted.isAuthenticated()) {
+        const response = await authServiceAdapted.getProfile();
           if (response.success && response.data) {
             setUser(response.data);
             setIsAuthenticated(true);
           } else {
             // Token is invalid, clear auth state
-            await authService.logout();
+            await authServiceAdapted.logout();
             setUser(null);
             setIsAuthenticated(false);
           }
@@ -43,7 +43,7 @@ export function useAuth() {
   const login = useCallback(async (credentials: LoginRequest) => {
     try {
       console.log('🔐 useAuth: Starting login...')
-      const response = await authService.login(credentials);
+      const response = await authServiceAdapted.login(credentials);
       console.log('📋 useAuth: API response:', response)
       
       if (response.success && response.data) {
@@ -72,7 +72,7 @@ export function useAuth() {
 
   const register = useCallback(async (userData: RegisterRequest) => {
     try {
-      const response = await authService.register(userData);
+      const response = await authServiceAdapted.register(userData);
       if (response.success && response.data) {
         setUser(response.data.user);
         setIsAuthenticated(true);
@@ -95,7 +95,7 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await authService.logout();
+      await authServiceAdapted.logout();
       setUser(null);
       setIsAuthenticated(false);
       
@@ -121,12 +121,12 @@ export function useAuth() {
 
 export function useLogin() {
   return useApiMutation<any, LoginRequest>(
-    (credentials) => authService.login(credentials)
+    (credentials) => authServiceAdapted.login(credentials)
   );
 }
 
 export function useRegister() {
   return useApiMutation<any, RegisterRequest>(
-    (userData) => authService.register(userData)
+    (userData) => authServiceAdapted.register(userData)
   );
 }

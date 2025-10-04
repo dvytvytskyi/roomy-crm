@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                                        String         @id @default(cuid())
+  email                                     String         @unique
+  password                                  String
+  firstName                                 String         @map("first_name")
+  lastName                                  String         @map("last_name")
+  phone                                     String?
+  avatar                                    String?
+  role                                      UserRole       @default(GUEST)
+  is_active                                 Boolean        @default(true)
+  isVerified                                Boolean        @default(false) @map("is_verified")
+  last_login                                DateTime?
+  createdAt                                 DateTime       @default(now()) @map("created_at")
+  updatedAt                                 DateTime       @updatedAt @map("updated_at")
+  audit_logs                                audit_logs[]
+  properties_properties_agent_idTousers     properties[]   @relation("properties_agent_idTousers")
+  properties_properties_owner_idTousers     properties[]   @relation("properties_owner_idTousers")
+  reservations_reservations_agent_idTousers reservations[] @relation("reservations_agent_idTousers")
+  reservations_reservations_guest_idTousers reservations[] @relation("reservations_guest_idTousers")
+  transactions                              transactions[]
+
+  @@map("users")
+}
+
+model audit_logs {
+  id             String        @id
+  entity_type    String
+  entity_id      String
+  action         String
+  changes        Json?
+  user_id        String?
+  property_id    String?
+  reservation_id String?
+  ip_address     String?
+  user_agent     String?
+  created_at     DateTime      @default(now())
+  properties     properties?   @relation(fields: [property_id], references: [id])
+  reservations   reservations? @relation(fields: [reservation_id], references: [id])
+  users          User?         @relation(fields: [user_id], references: [id])
+}
+
+model file_uploads {
+  id            String    @id
+  filename      String
+  original_name String
+  mime_type     String
+  size          Int
+  s3_key        String
+  url           String
+  bucket        String
+  uploaded_by   String?
+  entity_type   String?
+  entity_id     String?
+  is_public     Boolean   @default(false)
+  expires_at    DateTime?
+  created_at    DateTime  @default(now())
+}
+
+model pricing_rules {
+  id          String          @id
+  property_id String
+  name        String
+  type        PricingRuleType
+  value       Float
+  start_date  DateTime?
+  end_date    DateTime?
+  is_active   Boolean         @default(true)
+  conditions  Json?
+  created_at  DateTime        @default(now())
+  updated_at  DateTime
+  properties  properties      @relation(fields: [property_id], references: [id], onDelete: Cascade)
+}
+
+model properties {
+  id                               String            @id
+  name                             String
+  nickname                         String?
+  title                            String?
+  type                             PropertyType
+  type_of_unit                     PropertyUnitType
+  address                          String
+  city                             String
+  country                          String
+  latitude                         Float?
+  longitude                        Float?
+  capacity                         Int
+  bedrooms                         Int
+  bathrooms                        Float
+  area                             Float?
+  price_per_night                  Float
+  description                      String?
+  amenities                        String[]
+  house_rules                      String[]
+  tags                             String[]
+  is_active                        Boolean           @default(true)
+  is_published                     Boolean           @default(false)
+  primary_image                    String?
+  pricelab_id                      String?
+  created_at                       DateTime          @default(now())
+  updated_at                       DateTime
+  owner_id                         String?
+  agent_id                         String?
+  audit_logs                       audit_logs[]
+  pricing_rules                    pricing_rules[]
+  users_properties_agent_idTousers User?             @relation("properties_agent_idTousers", fields: [agent_id], references: [id])
+  users_properties_owner_idTousers User?             @relation("properties_owner_idTousers", fields: [owner_id], references: [id])
+  property_photos                  property_photos[]
+  reservations                     reservations[]
+  transactions                     transactions[]
+}
+
+model property_photos {
+  id          String     @id
+  property_id String
+  url         String
+  s3_key      String?
+  is_cover    Boolean    @default(false)
+  alt         String?
+  order       Int        @default(0)
+  created_at  DateTime   @default(now())
+  properties  properties @relation(fields: [property_id], references: [id], onDelete: Cascade)
+}
+
+model reservations {
+  id                                 String            @id
+  reservation_id                     String            @unique
+  property_id                        String
+  guest_id                           String?
+  agent_id                           String?
+  check_in                           DateTime
+  check_out                          DateTime
+  guests                             Int
+  total_amount                       Float
+  paid_amount                        Float             @default(0)
+  outstanding_balance                Float             @default(0)
+  status                             ReservationStatus @default(PENDING)
+  source                             String            @default("Direct")
+  guest_name                         String?
+  guest_email                        String?
+  guest_phone                        String?
+  special_requests                   String?
+  notes                              String?
+  created_at                         DateTime          @default(now())
+  updated_at                         DateTime
+  audit_logs                         audit_logs[]
+  users_reservations_agent_idTousers User?             @relation("reservations_agent_idTousers", fields: [agent_id], references: [id])
+  users_reservations_guest_idTousers User?             @relation("reservations_guest_idTousers", fields: [guest_id], references: [id])
+  properties                         properties        @relation(fields: [property_id], references: [id])
+  transactions                       transactions[]
+}
+
+model system_settings {
+  id          String   @id
+  key         String   @unique
+  value       Json
+  description String?
+  category    String?
+  is_public   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime
+}
+
+model transactions {
+  id                String            @id
+  transaction_id    String            @unique
+  property_id       String?
+  reservation_id    String?
+  user_id           String?
+  type              TransactionType
+  category          String
+  amount            Float
+  currency          String            @default("AED")
+  description       String?
+  platform          String?
+  platform_fee      Float?
+  transaction_fee   Float?
+  net_amount        Float
+  status            TransactionStatus @default(PENDING)
+  payment_method    String?
+  payment_reference String?
+  processed_at      DateTime?
+  created_at        DateTime          @default(now())
+  updated_at        DateTime
+  properties        properties?       @relation(fields: [property_id], references: [id])
+  reservations      reservations?     @relation(fields: [reservation_id], references: [id])
+  users             User?             @relation(fields: [user_id], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+  OWNER
+  GUEST
+  CLEANER
+  MAINTENANCE
+}
+
+enum PricingRuleType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  MINIMUM_PRICE
+  MAXIMUM_PRICE
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  STUDIO
+  PENTHOUSE
+}
+
+enum PropertyUnitType {
+  SINGLE
+  SHARED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  FEE
+  EXPENSE
+  REVENUE
+}

@@ -1,0 +1,221 @@
+[
+  {
+    "id": "res_1",
+    "propertyId": "prop_1",
+    "propertyName": "Luxury Apartment Downtown Dubai",
+    "propertyType": "APARTMENT",
+    "propertyAddress": "57QG+GF9 - Burj Khalifa Blvd",
+    "propertyCity": "Dubai",
+    "guestId": "guest_1",
+    "guestName": "John Smith",
+    "guestEmail": "john@example.com",
+    "guestPhone": "+971501234567",
+    "guestWhatsapp": "+971501234567",
+    "checkIn": "2024-01-15T00:00:00.000Z",
+    "checkOut": "2024-01-18T00:00:00.000Z",
+    "status": "CONFIRMED",
+    "paymentStatus": "FULLY_PAID",
+    "guestStatus": "CHECKED_OUT",
+    "source": "AIRBNB",
+    "totalAmount": 1200,
+    "paidAmount": 1200,
+    "outstandingBalance": 0,
+    "nights": 3,
+    "guests": 2,
+    "guestCount": 2,
+    "specialRequests": "Early check-in requested",
+    "createdAt": "2024-01-10T10:00:00.000Z",
+    "updatedAt": "2024-01-18T12:00:00.000Z",
+    "notesList": [
+      {
+        "id": 1,
+        "content": "Guest requested early check-in",
+        "type": "special_request",
+        "priority": "medium",
+        "createdAt": "2024-01-10T10:00:00.000Z",
+        "createdBy": "System"
+      }
+    ],
+    "payments": [
+      {
+        "id": 1,
+        "amount": 1200,
+        "method": "credit_card",
+        "date": "2024-01-10",
+        "reference": "PAY_001",
+        "description": "Full payment",
+        "type": "payment",
+        "status": "completed",
+        "createdAt": "2024-01-10T10:00:00.000Z"
+      }
+    ],
+    "pricingHistory": [
+      {
+        "id": 1,
+        "pricePerNight": 400,
+        "totalAmount": 1200,
+        "reason": "Initial booking",
+        "date": "2024-01-10",
+        "changedBy": "System"
+      }
+    ],
+    "communicationHistory": [
+      {
+        "id": 1,
+        "type": "email",
+        "subject": "Booking Confirmation",
+        "content": "Thank you for your booking",
+        "date": "2024-01-10T10:00:00.000Z",
+        "status": "sent",
+        "sentBy": "System"
+      }
+    ],
+    "adjustments": [],
+    "transactions": []
+  },
+  {
+    "id": "res_2",
+    "propertyId": "prop_1",
+    "propertyName": "Luxury Apartment Downtown Dubai",
+    "propertyType": "APARTMENT",
+    "propertyAddress": "57QG+GF9 - Burj Khalifa Blvd",
+    "propertyCity": "Dubai",
+    "guestId": "guest_2",
+    "guestName": "Sarah Johnson",
+    "guestEmail": "sarah@example.com",
+    "guestPhone": "+971507654321",
+    "guestWhatsapp": "+971507654321",
+    "checkIn": "2024-01-20T00:00:00.000Z",
+    "checkOut": "2024-01-25T00:00:00.000Z",
+    "status": "PENDING",
+    "paymentStatus": "UNPAID",
+    "guestStatus": "UPCOMING",
+    "source": "BOOKING_COM",
+    "totalAmount": 2500,
+    "paidAmount": 0,
+    "outstandingBalance": 2500,
+    "nights": 5,
+    "guests": 4,
+    "guestCount": 4,
+    "specialRequests": "Late checkout requested",
+    "createdAt": "2024-01-12T14:30:00.000Z",
+    "updatedAt": "2024-01-12T14:30:00.000Z",
+    "notesList": [
+      {
+        "id": 2,
+        "content": "Guest requested late checkout",
+        "type": "special_request",
+        "priority": "low",
+        "createdAt": "2024-01-12T14:30:00.000Z",
+        "createdBy": "System"
+      }
+    ],
+    "payments": [],
+    "pricingHistory": [
+      {
+        "id": 2,
+        "pricePerNight": 500,
+        "totalAmount": 2500,
+        "reason": "Initial booking",
+        "date": "2024-01-12",
+        "changedBy": "System"
+      }
+    ],
+    "communicationHistory": [
+      {
+        "id": 2,
+        "type": "email",
+        "subject": "Booking Request",
+        "content": "Your booking request has been received",
+        "date": "2024-01-12T14:30:00.000Z",
+        "status": "sent",
+        "sentBy": "System"
+      }
+    ],
+    "adjustments": [],
+    "transactions": []
+  },
+  {
+    "id": "res_3",
+    "propertyId": "prop_1",
+    "propertyName": "Luxury Apartment Downtown Dubai",
+    "propertyType": "APARTMENT",
+    "propertyAddress": "57QG+GF9 - Burj Khalifa Blvd",
+    "propertyCity": "Dubai",
+    "guestId": "guest_3",
+    "guestName": "Ahmed Al-Rashid",
+    "guestEmail": "ahmed@example.com",
+    "guestPhone": "+971509876543",
+    "guestWhatsapp": "+971509876543",
+    "checkIn": "2024-01-25T00:00:00.000Z",
+    "checkOut": "2024-01-27T00:00:00.000Z",
+    "status": "COMPLETED",
+    "paymentStatus": "FULLY_PAID",
+    "guestStatus": "CHECKED_OUT",
+    "source": "DIRECT",
+    "totalAmount": 800,
+    "paidAmount": 800,
+    "outstandingBalance": 0,
+    "nights": 2,
+    "guests": 1,
+    "guestCount": 1,
+    "specialRequests": "Business trip",
+    "createdAt": "2024-01-08T09:15:00.000Z",
+    "updatedAt": "2024-01-27T12:00:00.000Z",
+    "notesList": [
+      {
+        "id": 3,
+        "content": "Business trip - professional guest",
+        "type": "internal",
+        "priority": "normal",
+        "createdAt": "2024-01-08T09:15:00.000Z",
+        "createdBy": "Admin"
+      }
+    ],
+    "payments": [
+      {
+        "id": 3,
+        "amount": 800,
+        "method": "bank_transfer",
+        "date": "2024-01-08",
+        "reference": "PAY_003",
+        "description": "Full payment",
+        "type": "payment",
+        "status": "completed",
+        "createdAt": "2024-01-08T09:15:00.000Z"
+      }
+    ],
+    "pricingHistory": [
+      {
+        "id": 3,
+        "pricePerNight": 400,
+        "totalAmount": 800,
+        "reason": "Initial booking",
+        "date": "2024-01-08",
+        "changedBy": "System"
+      }
+    ],
+    "communicationHistory": [
+      {
+        "id": 3,
+        "type": "email",
+        "subject": "Booking Confirmation",
+        "content": "Thank you for your booking",
+        "date": "2024-01-08T09:15:00.000Z",
+        "status": "sent",
+        "sentBy": "System"
+      },
+      {
+        "id": 4,
+        "type": "email",
+        "subject": "Check-out Instructions",
+        "content": "Thank you for staying with us",
+        "date": "2024-01-27T12:00:00.000Z",
+        "status": "sent",
+        "sentBy": "System"
+      }
+    ],
+    "adjustments": [],
+    "transactions": []
+  }
+]
