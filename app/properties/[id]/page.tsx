@@ -1618,6 +1618,16 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [priceLoading, setPriceLoading] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
   
+  // Property data from API
+  const [propertyData, setPropertyData] = useState<any>(null)
+  
+  // Update nickname when property data is loaded
+  useEffect(() => {
+    if (propertyData?.nickname) {
+      setPropertyNickname(propertyData.nickname)
+    }
+  }, [propertyData?.nickname])
+  
   // Toast state
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
@@ -1629,7 +1639,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Load current price from PriceLab API with caching
   const loadCurrentPrice = async () => {
-    const pricelabId = '67a392b7b8fa25002a065c6c' // Production property ID
+    // Get pricelabId from property data
+    const pricelabId = propertyData?.pricelabId || '67a392b7b8fa25002a065c6c' // Fallback to production property ID
+    console.log('💰 Using pricelabId:', pricelabId, 'from property:', propertyData?.pricelabId)
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
     const cacheKey = `price_${pricelabId}_${today}`
     
@@ -3418,6 +3430,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       if (result.success && result.data) {
         const propertyData = result.data
         
+        // Set property data state
+        setPropertyData(propertyData)
+        
         // Extract owner ID from property data
         const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.selectedOwnerId || propertyData.agentId || ''
         console.log('Found owner ID in property:', ownerId)
@@ -3494,10 +3509,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     loadInitialData()
   }, [loadFinancialData, loadPayments, loadSavedReplies, loadAutomationSettings])
 
-  // Завантажуємо поточну ціну з PriceLab при монтуванні
+  // Завантажуємо поточну ціну з PriceLab після завантаження property даних
   useEffect(() => {
-    loadCurrentPrice()
-  }, [])
+    if (propertyData?.pricelabId) {
+      loadCurrentPrice()
+    }
+  }, [propertyData?.pricelabId])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -3527,7 +3544,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               ) : currentPrice ? (
                 <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
               ) : (
-                <span className="text-sm font-medium text-orange-700">AED {realProperty.pricePerNight}/night</span>
+                <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
               )}
             </div>
             <button 
