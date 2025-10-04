@@ -2668,16 +2668,33 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         updatedInfo.dtcmLicenseExpiry = value.trim()
         break
       case 'referringAgent':
-        // Format: "Ahmed Al Mansouri (12%)" -> { name: "Ahmed Al Mansouri", commission: 12 }
-        const agentMatch = value.match(/^(.+?)\s*\((\d+(?:\.\d+)?)%\)$/)
-        if (agentMatch) {
-          updatedInfo.referringAgent = {
-            name: agentMatch[1].trim(),
-            commission: parseFloat(agentMatch[2])
+        // Parse JSON object or legacy format
+        try {
+          const agentData = JSON.parse(value)
+          if (agentData && typeof agentData === 'object' && agentData.name) {
+            if (agentData.commission < 0 || agentData.commission > 100) {
+              alert('Commission must be between 0 and 100')
+              return
+            }
+            updatedInfo.referringAgent = {
+              name: agentData.name.trim(),
+              commission: agentData.commission || 0
+            }
+          } else {
+            throw new Error('Invalid agent format')
           }
-        } else {
-          alert('Please enter agent in format: "Name (12%)"')
-          return
+        } catch {
+          // Fallback to legacy format parsing
+          const agentMatch = value.match(/^(.+?)\s*\((\d+(?:\.\d+)?)%\)$/)
+          if (agentMatch) {
+            updatedInfo.referringAgent = {
+              name: agentMatch[1].trim(),
+              commission: parseFloat(agentMatch[2])
+            }
+          } else {
+            alert('Please enter agent in format: "Name (12%)" or use the agent interface')
+            return
+          }
         }
         break
       case 'checkIn':
@@ -2689,8 +2706,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       case 'unitIntakeDate':
         updatedInfo.unitIntakeDate = value.trim()
         break
-      default:
-        updatedInfo[field] = value.trim() as any
+      case 'beds':
+        // Parse JSON string to BedType array
+        try {
+          const bedsArray = JSON.parse(value)
+          if (Array.isArray(bedsArray)) {
+            // Validate each bed entry
+            const validBeds = bedsArray.filter(bed => 
+              bed && 
+              bed.type && 
+              bed.count && 
+              bed.count > 0 &&
+              ['Double Bed', 'Single Bed', 'Queen Bed', 'King Bed', 'Sofa Bed'].includes(bed.type)
+            )
+            updatedInfo.beds = validBeds
+          } else {
+            throw new Error('Invalid beds format')
+          }
+        } catch (error) {
+          alert('Invalid beds format. Please use the bed management interface.')
+          return
+        }
+        break
     }
     
     setPropertyGeneralInfo(updatedInfo)
@@ -4008,6 +4045,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 let inputType = 'text'
                                 if (item.key === 'status' || item.key === 'type') {
                                   inputType = 'select'
+                                } else if (item.key === 'location') {
+                                  inputType = 'location' // Special searchable dropdown
                                 } else if (item.key === 'parkingSlots' || item.key === 'agencyFee') {
                                   inputType = 'number'
                                 } else if (item.key === 'dtcmLicenseExpiry' || item.key === 'unitIntakeDate') {
@@ -4017,9 +4056,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 } else if (item.key === 'size') {
                                   inputType = 'size' // Special component
                                 } else if (item.key === 'referringAgent') {
-                                  inputType = 'text' // Will be handled specially in validation
+                                  inputType = 'referringAgent' // Special component
                                 } else if (item.key === 'beds') {
-                                  inputType = 'textarea' // For complex bed structure
+                                  inputType = 'beds' // Special dynamic component
                                 }
                                 
                                 // For date fields, use only the date part without calculations
@@ -4028,6 +4067,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                   editValue = propertyGeneralInfo.dtcmLicenseExpiry
                                 } else if (item.key === 'unitIntakeDate') {
                                   editValue = propertyGeneralInfo.unitIntakeDate
+                                } else if (item.key === 'beds') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.beds)
+                                } else if (item.key === 'referringAgent') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.referringAgent)
                                 }
                                 handleEditField('general', item.key, editValue, item.label, inputType)
                               }}
@@ -5402,6 +5445,30 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </>
                       ) : null}
                     </select>
+                  ) : editModal.inputType === 'location' ? (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={modalValue}
+                        onChange={(e) => setModalValue(e.target.value)}
+                        className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Search location..."
+                        autoFocus
+                      />
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR'].filter(location => 
+                          location.toLowerCase().includes(modalValue.toLowerCase())
+                        ).map(location => (
+                          <button
+                            key={location}
+                            onClick={() => setModalValue(location)}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                          >
+                            {location}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ) : editModal.inputType === 'time' ? (
                     <select
                       value={modalValue}
@@ -5439,6 +5506,152 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <option value="m²">m²</option>
                         <option value="sqft">sqft</option>
                       </select>
+                    </div>
+                  ) : editModal.inputType === 'referringAgent' ? (
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-600 mb-2">Agent Name:</div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={(() => {
+                            try {
+                              const agent = JSON.parse(modalValue || '{}')
+                              return agent.name || ''
+                            } catch {
+                              return modalValue.split(' (')[0] || ''
+                            }
+                          })()}
+                          onChange={(e) => {
+                            const name = e.target.value
+                            try {
+                              const current = JSON.parse(modalValue || '{}')
+                              const newAgent = { ...current, name }
+                              setModalValue(JSON.stringify(newAgent))
+                            } catch {
+                              setModalValue(name)
+                            }
+                          }}
+                          className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Search agent..."
+                          autoFocus
+                        />
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          {['Ahmed Al Mansouri', 'Sarah Johnson', 'Mohammed Al Rashid', 'Emma Thompson', 'Ali Hassan'].filter(agent => 
+                            agent.toLowerCase().includes(modalValue.toLowerCase())
+                          ).map(agent => (
+                            <button
+                              key={agent}
+                              onClick={() => {
+                                try {
+                                  const current = JSON.parse(modalValue || '{}')
+                                  const newAgent = { ...current, name: agent }
+                                  setModalValue(JSON.stringify(newAgent))
+                                } catch {
+                                  setModalValue(agent)
+                                }
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                            >
+                              {agent}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">Commission (%):</div>
+                      <input
+                        type="number"
+                        value={(() => {
+                          try {
+                            const agent = JSON.parse(modalValue || '{}')
+                            return agent.commission || ''
+                          } catch {
+                            const match = modalValue.match(/\((\d+(?:\.\d+)?)%\)/)
+                            return match ? match[1] : ''
+                          }
+                        })()}
+                        onChange={(e) => {
+                          const commission = parseFloat(e.target.value) || 0
+                          try {
+                            const current = JSON.parse(modalValue || '{}')
+                            const newAgent = { ...current, commission }
+                            setModalValue(JSON.stringify(newAgent))
+                          } catch {
+                            const name = modalValue.split(' (')[0] || ''
+                            setModalValue(JSON.stringify({ name, commission }))
+                          }
+                        }}
+                        className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="12"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                      />
+                    </div>
+                  ) : editModal.inputType === 'beds' ? (
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-600 mb-2">Add bed types:</div>
+                      {(() => {
+                        // Parse current beds from modalValue or use default
+                        let currentBeds = []
+                        try {
+                          currentBeds = JSON.parse(modalValue || '[]')
+                        } catch {
+                          currentBeds = [{ type: 'Double Bed', count: 1 }]
+                        }
+                        
+                        return (
+                          <div className="space-y-2">
+                            {currentBeds.map((bed: any, index: number) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <select
+                                  value={bed.type}
+                                  onChange={(e) => {
+                                    const newBeds = [...currentBeds]
+                                    newBeds[index] = { ...newBeds[index], type: e.target.value }
+                                    setModalValue(JSON.stringify(newBeds))
+                                  }}
+                                  className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                >
+                                  <option value="Double Bed">Double Bed</option>
+                                  <option value="Single Bed">Single Bed</option>
+                                  <option value="Queen Bed">Queen Bed</option>
+                                  <option value="King Bed">King Bed</option>
+                                  <option value="Sofa Bed">Sofa Bed</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  value={bed.count}
+                                  onChange={(e) => {
+                                    const newBeds = [...currentBeds]
+                                    newBeds[index] = { ...newBeds[index], count: parseInt(e.target.value) || 1 }
+                                    setModalValue(JSON.stringify(newBeds))
+                                  }}
+                                  className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                  min="1"
+                                />
+                                <button
+                                  onClick={() => {
+                                    const newBeds = currentBeds.filter((_: any, i: number) => i !== index)
+                                    setModalValue(JSON.stringify(newBeds))
+                                  }}
+                                  className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => {
+                                const newBeds = [...currentBeds, { type: 'Double Bed', count: 1 }]
+                                setModalValue(JSON.stringify(newBeds))
+                              }}
+                              className="px-3 py-2 text-sm text-orange-600 hover:text-orange-800 transition-colors border border-orange-300 rounded-lg"
+                            >
+                              + Add Bed Type
+                            </button>
+                          </div>
+                        )
+                      })()}
                     </div>
                   ) : (
                   <input
