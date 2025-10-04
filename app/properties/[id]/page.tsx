@@ -5408,12 +5408,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       autoFocus
                     />
                   ) : editModal.inputType === 'select' ? (
+                    <div className="relative">
                     <select
                       value={modalValue}
                       onChange={(e) => setModalValue(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
                       autoFocus
                     >
+                        <option value="">Select an option...</option>
                       {editModal.field === 'status' ? (
                         <>
                           <option value="Active">Active</option>
@@ -5445,41 +5447,67 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </>
                       ) : null}
                     </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   ) : editModal.inputType === 'location' ? (
                     <div className="relative">
                       <input
                         type="text"
                         value={modalValue}
                         onChange={(e) => setModalValue(e.target.value)}
-                        className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         placeholder="Search location..."
                         autoFocus
                       />
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                        {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR'].filter(location => 
-                          location.toLowerCase().includes(modalValue.toLowerCase())
-                        ).map(location => (
-                          <button
-                            key={location}
-                            onClick={() => setModalValue(location)}
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
-                          >
-                            {location}
-                          </button>
-                        ))}
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
                       </div>
+                      {modalValue && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR', 'Dubai Hills', 'Dubai Silicon Oasis', 'Dubai Sports City', 'International City'].filter(location => 
+                            location.toLowerCase().includes(modalValue.toLowerCase())
+                          ).map(location => (
+                            <button
+                              key={location}
+                              onClick={() => setModalValue(location)}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                            >
+                              {location}
+                            </button>
+                          ))}
+                          {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR', 'Dubai Hills', 'Dubai Silicon Oasis', 'Dubai Sports City', 'International City'].filter(location => 
+                            location.toLowerCase().includes(modalValue.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-3 py-2 text-sm text-gray-500">No locations found</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : editModal.inputType === 'time' ? (
-                    <select
-                      value={modalValue}
-                      onChange={(e) => setModalValue(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      autoFocus
-                    >
-                      {['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'].map(time => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={modalValue}
+                        onChange={(e) => setModalValue(e.target.value)}
+                        className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
+                        autoFocus
+                      >
+                        <option value="">Select time...</option>
+                        {['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'].map(time => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   ) : editModal.inputType === 'size' ? (
                     <div className="flex space-x-2">
                       <input
@@ -5495,17 +5523,24 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         step="0.1"
                         autoFocus
                       />
-                      <select
-                        value={modalValue.split(' ')[1] || 'm²'}
-                        onChange={(e) => {
-                          const value = modalValue.split(' ')[0] || ''
-                          setModalValue(`${value} ${e.target.value}`)
-                        }}
-                        className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      >
-                        <option value="m²">m²</option>
-                        <option value="sqft">sqft</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={modalValue.split(' ')[1] || 'm²'}
+                          onChange={(e) => {
+                            const value = modalValue.split(' ')[0] || ''
+                            setModalValue(`${value} ${e.target.value}`)
+                          }}
+                          className="w-20 h-10 px-3 py-2 pr-6 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
+                        >
+                          <option value="m²">m²</option>
+                          <option value="sqft">sqft</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   ) : editModal.inputType === 'referringAgent' ? (
                     <div className="space-y-2">
@@ -5603,21 +5638,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           <div className="space-y-2">
                             {currentBeds.map((bed: any, index: number) => (
                               <div key={index} className="flex items-center space-x-2">
-                                <select
-                                  value={bed.type}
-                                  onChange={(e) => {
-                                    const newBeds = [...currentBeds]
-                                    newBeds[index] = { ...newBeds[index], type: e.target.value }
-                                    setModalValue(JSON.stringify(newBeds))
-                                  }}
-                                  className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                >
-                                  <option value="Double Bed">Double Bed</option>
-                                  <option value="Single Bed">Single Bed</option>
-                                  <option value="Queen Bed">Queen Bed</option>
-                                  <option value="King Bed">King Bed</option>
-                                  <option value="Sofa Bed">Sofa Bed</option>
-                                </select>
+                                <div className="relative flex-1">
+                                  <select
+                                    value={bed.type}
+                                    onChange={(e) => {
+                                      const newBeds = [...currentBeds]
+                                      newBeds[index] = { ...newBeds[index], type: e.target.value }
+                                      setModalValue(JSON.stringify(newBeds))
+                                    }}
+                                    className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
+                                  >
+                                    <option value="Double Bed">Double Bed</option>
+                                    <option value="Single Bed">Single Bed</option>
+                                    <option value="Queen Bed">Queen Bed</option>
+                                    <option value="King Bed">King Bed</option>
+                                    <option value="Sofa Bed">Sofa Bed</option>
+                                  </select>
+                                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
+                                </div>
                                 <input
                                   type="number"
                                   value={bed.count}
