@@ -1875,15 +1875,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       return savedOwner
     }
     
-    // Default empty owner structure
+    // Default empty owner structure - will be loaded from API
     return {
       id: '',
-      name: 'Unknown',
-      flag: '🏳️',
-      country: 'Unknown',
-      email: 'Unknown',
-      phone: 'Unknown',
-      status: 'Unknown'
+      name: '',
+      flag: '',
+      country: '',
+      email: '',
+      phone: '',
+      status: ''
     }
   })
 
@@ -3392,15 +3392,22 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.selectedOwnerId || propertyData.agentId || ''
         console.log('Found owner ID in property:', ownerId)
         
-        // Fetch owner data if we have an owner ID and no saved owner
-        const savedOwner = ownerDataManager.load(params?.id || 'default')
-        if (ownerId && !savedOwner) {
+        // Always fetch owner data from API if we have an owner ID
+        if (ownerId) {
+          console.log('Fetching owner data from API for ID:', ownerId)
           await fetchOwnerData(ownerId)
-        } else if (!ownerId) {
-          debugLog('No owner ID found in property data')
-          // Keep current state (either saved owner or default "Unknown" values)
         } else {
-          debugLog('Using saved owner data instead of fetching from API')
+          debugLog('No owner ID found in property data - no owner assigned')
+          // Reset owner to empty state if no owner ID
+          setOwner({
+            id: '',
+            name: '',
+            flag: '',
+            country: '',
+            email: '',
+            phone: '',
+            status: ''
+          })
         }
       } else {
         console.error('Failed to fetch property data:', result.message)
@@ -3587,13 +3594,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </button>
                   </div>
                   
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
+                  {owner.id && owner.name ? (
+                    <div className="flex items-start space-x-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
@@ -3637,6 +3645,22 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </div>
                     </div>
                   </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <User size={48} className="mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Owner Assigned</h3>
+                        <p className="text-gray-500 mb-4">This property doesn't have an owner assigned yet.</p>
+                        <button 
+                          onClick={handleEditOwner}
+                          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2 mx-auto"
+                        >
+                          <User size={14} />
+                          <span>Assign Owner</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Income Distribution */}

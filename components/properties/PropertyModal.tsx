@@ -148,11 +148,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation: owner must be selected
-    if (!formData.selectedOwnerId) {
-      alert('Please select an owner for this property.')
-      return
-    }
+    // Owner selection is optional
     
     // Validation: price must be greater than 0
     if (!formData.price_per_night || formData.price_per_night <= 0) {
@@ -183,10 +179,10 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         pricePerNight: formData.price_per_night,
         description: `Property in ${formData.location}`,
         amenities: [],
-        ownerId: formData.selectedOwnerId,
-        owner_name: selectedOwner?.firstName + ' ' + selectedOwner?.lastName,
-        owner_email: selectedOwner?.email,
-        owner_phone: selectedOwner?.phone,
+        ownerId: formData.selectedOwnerId || null,
+        owner_name: selectedOwner ? `${selectedOwner.firstName} ${selectedOwner.lastName}` : null,
+        owner_email: selectedOwner?.email || null,
+        owner_phone: selectedOwner?.phone || null,
         status: formData.status
         // Remove houseRules field entirely - backend will use default
       }
@@ -383,7 +379,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Select Owner <span className="text-red-500">*</span>
+                      Select Owner
                     </label>
                     <div className="relative owner-dropdown-container">
                       <button
