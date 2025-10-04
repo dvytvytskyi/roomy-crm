@@ -172,37 +172,39 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
     );
   }
 
-  // Use mock data if property loading failed or property not found
-  if (propertyError || !property) {
-    const mockProperty = {
-      id: propertyId,
-      name: "A I Westwood | 616",
-      nickname: "A I Westwood | 616",
-      title: "Westwood | Next to Metro | Great Amenities",
-      type: "APARTMENT",
-      type_of_unit: "SINGLE",
-      address: "24QQ+RRF - Jebel Ali Village - Dubai - United Arab Emirates",
-      city: "Dubai",
-      country: "United Arab Emirates",
-      capacity: 2,
-      bedrooms: 0,
-      bathrooms: 1,
-      pricePerNight: 170,
-      pricelabId: "67a392b7b8fa25002a065c6c",
-      primaryImage: "",
-      status: "Active",
-      createdAt: "2024-12-27T06:07:33.322Z",
-      lastModifiedAt: "2025-10-04T00:43:08.930Z",
-      amenities: ["WiFi", "AC", "Kitchen", "Parking"],
-      rules: ["No smoking", "No pets", "No parties"],
-      tags: [],
-      ownerId: null,
-      agentId: null,
-      agentName: null
-    };
-    
-    // Use mock property data
-    property = mockProperty;
+  // Create mock property data for fallback
+  const mockProperty = {
+    id: propertyId,
+    name: "A I Westwood | 616",
+    nickname: "A I Westwood | 616",
+    title: "Westwood | Next to Metro | Great Amenities",
+    type: "APARTMENT",
+    type_of_unit: "SINGLE",
+    address: "24QQ+RRF - Jebel Ali Village - Dubai - United Arab Emirates",
+    city: "Dubai",
+    country: "United Arab Emirates",
+    capacity: 2,
+    bedrooms: 0,
+    bathrooms: 1,
+    pricePerNight: 170,
+    pricelabId: "67a392b7b8fa25002a065c6c",
+    primaryImage: "",
+    status: "Active",
+    createdAt: "2024-12-27T06:07:33.322Z",
+    lastModifiedAt: "2025-10-04T00:43:08.930Z",
+    amenities: ["WiFi", "AC", "Kitchen", "Parking"],
+    rules: ["No smoking", "No pets", "No parties"],
+    tags: [],
+    ownerId: null,
+    agentId: null,
+    agentName: null
+  };
+
+  // Use mock property data if property loading failed or property not found
+  const displayProperty = property || mockProperty;
+  const isUsingMockData = propertyError || !property;
+  
+  if (isUsingMockData) {
     console.log('Using mock property data due to error:', propertyError || 'Property not found');
   }
 
@@ -388,14 +390,14 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           {/* Left Column */}
           <div className="space-y-4">
             {[
-              { label: 'Name', value: property.name, key: 'name' },
-              { label: 'Nickname', value: property.nickname || 'Not set', key: 'nickname' },
-              { label: 'Status', value: property.status, key: 'status' },
-              { label: 'Type', value: property.type, key: 'type' },
-              { label: 'City', value: property.city, key: 'city' },
-              { label: 'Address', value: property.address, key: 'address' },
-              { label: 'Capacity', value: property.capacity, key: 'capacity' },
-              { label: 'Bedrooms', value: property.bedrooms, key: 'bedrooms' }
+              { label: 'Name', value: displayProperty.name, key: 'name' },
+              { label: 'Nickname', value: displayProperty.nickname || 'Not set', key: 'nickname' },
+              { label: 'Status', value: displayProperty.status, key: 'status' },
+              { label: 'Type', value: displayProperty.type, key: 'type' },
+              { label: 'City', value: displayProperty.city, key: 'city' },
+              { label: 'Address', value: displayProperty.address, key: 'address' },
+              { label: 'Capacity', value: displayProperty.capacity, key: 'capacity' },
+              { label: 'Bedrooms', value: displayProperty.bedrooms, key: 'bedrooms' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center space-x-2">
@@ -411,8 +413,8 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           {/* Right Column */}
           <div className="space-y-4">
             {[
-              { label: 'Bathrooms', value: property.bathrooms, key: 'bathrooms' },
-              { label: 'Price per Night', value: `AED ${property.pricePerNight}`, key: 'pricePerNight' },
+              { label: 'Bathrooms', value: displayProperty.bathrooms, key: 'bathrooms' },
+              { label: 'Price per Night', value: `AED ${displayProperty.pricePerNight}`, key: 'pricePerNight' },
               { label: 'Current Price', value: (
                 <div className="flex items-center space-x-2">
                   {priceLoading ? (
@@ -432,11 +434,11 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
                   )}
                 </div>
               ), key: 'currentPrice' },
-              { label: 'Type of Unit', value: property.type_of_unit || 'Not specified', key: 'typeOfUnit' },
-              { label: 'Country', value: property.country, key: 'country' },
-              { label: 'Created', value: new Date(property.createdAt).toLocaleDateString(), key: 'createdAt' },
-              { label: 'Last Modified', value: new Date(property.lastModifiedAt).toLocaleDateString(), key: 'lastModifiedAt' },
-              { label: 'Agent', value: property.agentName || 'Not assigned', key: 'agentName' }
+              { label: 'Type of Unit', value: displayProperty.type_of_unit || 'Not specified', key: 'typeOfUnit' },
+              { label: 'Country', value: displayProperty.country, key: 'country' },
+              { label: 'Created', value: new Date(displayProperty.createdAt).toLocaleDateString(), key: 'createdAt' },
+              { label: 'Last Modified', value: new Date(displayProperty.lastModifiedAt).toLocaleDateString(), key: 'lastModifiedAt' },
+              { label: 'Agent', value: displayProperty.agentName || 'Not assigned', key: 'agentName' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center space-x-2">
