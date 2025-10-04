@@ -1736,14 +1736,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
   
 
-  // Function to calculate days since intake date
-  const calculateDaysSinceIntake = (intakeDate: string) => {
-    const intake = new Date(intakeDate.split('.').reverse().join('-'))
-    const today = new Date()
-    const diffTime = today.getTime() - intake.getTime()
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
   // Auto-detect current date (04 October 2025)
   const getCurrentDate = () => {
     const today = new Date()
@@ -1819,6 +1811,32 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       unitIntakeDate: '2024-03-15'
     }
   })
+
+  // Helper functions for date calculations
+  const calculateDaysUntilExpiry = (expiryDate: string): string => {
+    if (!expiryDate) return 'No date set'
+    const today = new Date()
+    const expiry = new Date(expiryDate)
+    const diffTime = expiry.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return 'Expired'
+    if (diffDays === 0) return 'Expires today'
+    if (diffDays === 1) return '1 day left'
+    return `${diffDays} days left`
+  }
+
+  const calculateDaysSinceIntake = (intakeDate: string): string => {
+    if (!intakeDate) return 'No date set'
+    const today = new Date()
+    const intake = new Date(intakeDate)
+    const diffTime = today.getTime() - intake.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return '1 day ago'
+    return `${diffDays} days ago`
+  }
 
   const handleDateRangeChange = async (range: string) => {
     setDateRange(range)
@@ -2616,8 +2634,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         // Format: "53 m²" -> { value: 53, unit: "m²" }
         const sizeMatch = value.match(/^(\d+(?:\.\d+)?)\s*(m²|sqft)$/)
         if (sizeMatch) {
+          const sizeValue = parseFloat(sizeMatch[1])
+          if (sizeValue <= 0) {
+            alert('Size must be greater than 0')
+            return
+          }
           updatedInfo.size = {
-            value: parseFloat(sizeMatch[1]),
+            value: sizeValue,
             unit: sizeMatch[2] as 'm²' | 'sqft'
           }
         } else {
@@ -3966,12 +3989,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         { label: 'Size', value: `${propertyGeneralInfo.size.value} ${propertyGeneralInfo.size.unit}`, key: 'size' },
                         { label: 'Beds', value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), key: 'beds' },
                         { label: 'Parking Slots', value: propertyGeneralInfo.parkingSlots.toString(), key: 'parkingSlots' },
-                        { label: 'Agency Fee', value: `${propertyGeneralInfo.agencyFee}%`, key: 'agencyFee' },
-                        { label: 'DTCM License Expiry', value: propertyGeneralInfo.dtcmLicenseExpiry, key: 'dtcmLicenseExpiry' },
+                        { label: 'Agency Fee (%)', value: `${propertyGeneralInfo.agencyFee}%`, key: 'agencyFee' },
+                        { label: 'DTCM License Expiry', value: `${propertyGeneralInfo.dtcmLicenseExpiry} (${calculateDaysUntilExpiry(propertyGeneralInfo.dtcmLicenseExpiry)})`, key: 'dtcmLicenseExpiry' },
                         { label: 'Referring Agent', value: `${propertyGeneralInfo.referringAgent.name} (${propertyGeneralInfo.referringAgent.commission}%)`, key: 'referringAgent' },
                         { label: 'Check-in', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
                         { label: 'Check-out', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
-                        { label: 'Unit Intake Date', value: propertyGeneralInfo.unitIntakeDate, key: 'unitIntakeDate' }
+                        { label: 'Unit Intake Date', value: `${propertyGeneralInfo.unitIntakeDate} (${calculateDaysSinceIntake(propertyGeneralInfo.unitIntakeDate)})`, key: 'unitIntakeDate' }
                       ].map((item, index) => {
                         return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
@@ -3992,13 +4015,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 } else if (item.key === 'checkIn' || item.key === 'checkOut') {
                                   inputType = 'time'
                                 } else if (item.key === 'size') {
-                                  inputType = 'text' // Will be handled specially in validation
+                                  inputType = 'size' // Special component
                                 } else if (item.key === 'referringAgent') {
                                   inputType = 'text' // Will be handled specially in validation
                                 } else if (item.key === 'beds') {
                                   inputType = 'textarea' // For complex bed structure
                                 }
-                                handleEditField('general', item.key, String(item.value), item.label, inputType)
+                                
+                                // For date fields, use only the date part without calculations
+                                let editValue = String(item.value)
+                                if (item.key === 'dtcmLicenseExpiry') {
+                                  editValue = propertyGeneralInfo.dtcmLicenseExpiry
+                                } else if (item.key === 'unitIntakeDate') {
+                                  editValue = propertyGeneralInfo.unitIntakeDate
+                                }
+                                handleEditField('general', item.key, editValue, item.label, inputType)
                               }}
                               className="text-orange-600 hover:text-orange-700 cursor-pointer"
                               data-testid="edit-property-btn"
@@ -5313,6 +5344,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {editModal.title}
+                    {editModal.field === 'name' && (
+                      <span className="text-xs text-gray-500 ml-2">(max 150 characters)</span>
+                    )}
+                    {editModal.field === 'agencyFee' && (
+                      <span className="text-xs text-gray-500 ml-2">(0-100%)</span>
+                    )}
+                    {editModal.field === 'size' && (
+                      <span className="text-xs text-gray-500 ml-2">(number + unit)</span>
+                    )}
+                    {editModal.field === 'referringAgent' && (
+                      <span className="text-xs text-gray-500 ml-2">(format: "Name (12%)")</span>
+                    )}
                   </label>
                   {editModal.inputType === 'textarea' ? (
                     <textarea
@@ -5370,6 +5413,33 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <option key={time} value={time}>{time}</option>
                       ))}
                     </select>
+                  ) : editModal.inputType === 'size' ? (
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        value={modalValue.split(' ')[0] || ''}
+                        onChange={(e) => {
+                          const unit = modalValue.split(' ')[1] || 'm²'
+                          setModalValue(`${e.target.value} ${unit}`)
+                        }}
+                        className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="53"
+                        min="0"
+                        step="0.1"
+                        autoFocus
+                      />
+                      <select
+                        value={modalValue.split(' ')[1] || 'm²'}
+                        onChange={(e) => {
+                          const value = modalValue.split(' ')[0] || ''
+                          setModalValue(`${value} ${e.target.value}`)
+                        }}
+                        className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="m²">m²</option>
+                        <option value="sqft">sqft</option>
+                      </select>
+                    </div>
                   ) : (
                   <input
                     type={editModal.inputType}
