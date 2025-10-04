@@ -192,12 +192,20 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
     status: "Active",
     createdAt: "2024-12-27T06:07:33.322Z",
     lastModifiedAt: "2025-10-04T00:43:08.930Z",
-    amenities: ["WiFi", "AC", "Kitchen", "Parking"],
-    rules: ["No smoking", "No pets", "No parties"],
-    tags: [],
-    ownerId: null,
-    agentId: null,
-    agentName: null
+      description: "Beautiful modern apartment in the heart of Dubai with stunning city views. Perfect for business travelers and tourists. Located next to metro station with easy access to all major attractions.",
+      amenities: ["WiFi", "AC", "Kitchen", "Parking", "Gym", "Pool", "Concierge", "Laundry", "Balcony", "City View"],
+      rules: ["No smoking", "No pets", "No parties", "Check-in after 3 PM", "Check-out before 11 AM", "Max 4 guests"],
+      utilities: ["Electricity", "Water", "Internet", "Cable TV", "Heating", "Cooling"],
+      photos: [
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800",
+        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800"
+      ],
+      tags: ["Modern", "Downtown", "Metro Access", "City View"],
+      ownerId: null,
+      agentId: null,
+      agentName: null
   };
 
   // Use mock property data if property loading failed or property not found
@@ -450,6 +458,83 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
+        <p className="text-gray-700 leading-relaxed">{displayProperty.description}</p>
+      </div>
+
+      {/* Photos */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Photos</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {displayProperty.photos?.map((photo, index) => (
+            <div key={index} className="aspect-square rounded-lg overflow-hidden">
+              <img 
+                src={photo} 
+                alt={`Property photo ${index + 1}`}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+              />
+            </div>
+          )) || (
+            <div className="col-span-4 text-center py-8 text-gray-500">
+              No photos available
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Amenities */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {displayProperty.amenities?.map((amenity, index) => (
+            <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <span className="text-sm text-gray-700">{amenity}</span>
+            </div>
+          )) || (
+            <div className="col-span-full text-center py-4 text-gray-500">
+              No amenities listed
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Utilities */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Utilities</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {displayProperty.utilities?.map((utility, index) => (
+            <div key={index} className="flex items-center space-x-2 bg-blue-50 rounded-lg px-3 py-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm text-gray-700">{utility}</span>
+            </div>
+          )) || (
+            <div className="col-span-full text-center py-4 text-gray-500">
+              No utilities listed
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Rules */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Rules & Policies</h2>
+        <div className="space-y-3">
+          {displayProperty.rules?.map((rule, index) => (
+            <div key={index} className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-gray-700">{rule}</span>
+            </div>
+          )) || (
+            <div className="text-center py-4 text-gray-500">
+              No rules specified
+            </div>
+          )}
         </div>
       </div>
 
