@@ -1643,32 +1643,48 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     console.log('🚀 ===== STARTING PRICE LOAD =====')
     console.log('💰 Loading price for ID:', pricelabId)
     console.log('💰 Current states - priceLoading:', priceLoading, 'currentPrice:', currentPrice, 'priceError:', priceError)
+    console.log('💰 priceLabService object:', priceLabService)
+    console.log('💰 priceLabService.getCurrentPrice:', priceLabService.getCurrentPrice)
     
     setPriceLoading(true)
     setPriceError(null)
     
     try {
       console.log('💰 Calling priceLabService.getCurrentPrice...')
-      const response = await priceLabService.getCurrentPrice(pricelabId)
-      console.log('💰 PriceLab API response:', response)
-      console.log('💰 Response type:', typeof response)
-      console.log('💰 Response keys:', Object.keys(response))
-      console.log('💰 Response.success:', response.success)
-      console.log('💰 Response.data:', response.data)
-      console.log('💰 Response.error:', response.error)
       
-      if (response.success && response.data && response.data.currentPrice) {
-        console.log('💰 SUCCESS: Setting currentPrice to:', response.data.currentPrice)
-        setCurrentPrice(response.data.currentPrice)
-        console.log('💰 Price loaded successfully:', response.data.currentPrice, 'AED')
+      // Direct API test first
+      console.log('🧪 Testing direct API call...')
+      const directResponse = await fetch('https://api.pricelabs.co/v1/listing_prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'tVygp3mB7UbvdGjlRnrVT2m3wU4rBryzvDfQ3Mce'
+        },
+        body: JSON.stringify({
+          listings: [
+            {
+              id: pricelabId,
+              pms: 'guesty',
+              dateFrom: '2025-10-04',
+              dateTo: '2025-10-04'
+            }
+          ]
+        })
+      })
+      
+      console.log('🧪 Direct API response status:', directResponse.status)
+      const directData = await directResponse.json()
+      console.log('🧪 Direct API response:', directData)
+      
+      if (directData && directData.length > 0 && directData[0].data && directData[0].data.length > 0) {
+        const price = directData[0].data[0].price
+        console.log('🧪 Direct API price found:', price)
+        setCurrentPrice(price)
+        console.log('💰 Price loaded successfully via direct API:', price, 'AED')
       } else {
-        console.log('💰 FAILURE: Price not available')
-        console.log('💰 - response.success:', response.success)
-        console.log('💰 - response.data:', response.data)
-        console.log('💰 - response.data?.currentPrice:', response.data?.currentPrice)
-        setPriceError('Price not available')
-        console.log('💰 Price not available, response:', response)
+        setPriceError('Price not available via direct API')
       }
+      
     } catch (error) {
       console.log('💰 ERROR: Caught exception')
       setPriceError('Failed to load price')
