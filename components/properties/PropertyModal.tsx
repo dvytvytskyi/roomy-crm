@@ -53,12 +53,15 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
     setOwnersLoading(true)
     try {
       const response = await ownerService.getOwners({ limit: 100 })
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.owners) {
         setOwners(response.data.owners)
+      } else {
+        setOwners([])
       }
     } catch (error) {
       console.error('Error loading owners:', error)
       onShowToast?.('Failed to load owners list')
+      setOwners([])
     } finally {
       setOwnersLoading(false)
     }
@@ -118,7 +121,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
 
   // Set selected owner when owners are loaded and property has ownerId
   useEffect(() => {
-    if (owners.length > 0 && property && (property.ownerId || property.selectedOwnerId)) {
+    if (owners && owners.length > 0 && property && (property.ownerId || property.selectedOwnerId)) {
       const ownerId = property.ownerId || property.selectedOwnerId
       const owner = owners.find(o => o.id === ownerId)
       if (owner) {
@@ -401,7 +404,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                           {ownersLoading ? (
                             <div className="px-3 py-2 text-sm text-gray-500">Loading owners...</div>
-                          ) : owners.length === 0 ? (
+                          ) : !owners || owners.length === 0 ? (
                             <div className="px-3 py-2 text-sm text-gray-500">No owners found</div>
                           ) : (
                             owners.map((owner) => (
