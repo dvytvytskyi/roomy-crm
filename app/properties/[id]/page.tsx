@@ -1640,27 +1640,46 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Simple price loading - always fetch fresh data
   const loadCurrentPrice = async () => {
     const pricelabId = '67a392b7b8fa25002a065c6c' // Always use the working ID
+    console.log('🚀 ===== STARTING PRICE LOAD =====')
     console.log('💰 Loading price for ID:', pricelabId)
+    console.log('💰 Current states - priceLoading:', priceLoading, 'currentPrice:', currentPrice, 'priceError:', priceError)
     
     setPriceLoading(true)
     setPriceError(null)
     
     try {
+      console.log('💰 Calling priceLabService.getCurrentPrice...')
       const response = await priceLabService.getCurrentPrice(pricelabId)
       console.log('💰 PriceLab API response:', response)
+      console.log('💰 Response type:', typeof response)
+      console.log('💰 Response keys:', Object.keys(response))
+      console.log('💰 Response.success:', response.success)
+      console.log('💰 Response.data:', response.data)
+      console.log('💰 Response.error:', response.error)
       
       if (response.success && response.data && response.data.currentPrice) {
+        console.log('💰 SUCCESS: Setting currentPrice to:', response.data.currentPrice)
         setCurrentPrice(response.data.currentPrice)
         console.log('💰 Price loaded successfully:', response.data.currentPrice, 'AED')
       } else {
+        console.log('💰 FAILURE: Price not available')
+        console.log('💰 - response.success:', response.success)
+        console.log('💰 - response.data:', response.data)
+        console.log('💰 - response.data?.currentPrice:', response.data?.currentPrice)
         setPriceError('Price not available')
         console.log('💰 Price not available, response:', response)
       }
     } catch (error) {
+      console.log('💰 ERROR: Caught exception')
       setPriceError('Failed to load price')
       console.error('💰 Error loading price:', error)
+      console.error('💰 Error type:', typeof error)
+      console.error('💰 Error message:', error instanceof Error ? error.message : String(error))
+      console.error('💰 Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     } finally {
+      console.log('💰 Finally: Setting priceLoading to false')
       setPriceLoading(false)
+      console.log('🚀 ===== ENDING PRICE LOAD =====')
     }
   }
   
@@ -3487,7 +3506,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Завантажуємо поточну ціну з PriceLab при монтуванні
   useEffect(() => {
+    console.log('🎯 ===== COMPONENT MOUNTED =====')
     console.log('💰 Loading price on component mount')
+    console.log('💰 Component states:', { priceLoading, currentPrice, priceError })
     loadCurrentPrice()
   }, [])
 
@@ -3512,39 +3533,52 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-2 rounded-lg">
               <span className="text-lg">🏷️</span>
-              {priceLoading ? (
-                <span className="text-sm font-medium text-orange-700">Loading price...</span>
-              ) : priceError ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-red-600">Price unavailable</span>
-                  <button 
-                    onClick={loadCurrentPrice}
-                    className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : currentPrice ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
-                  <button 
-                    onClick={loadCurrentPrice}
-                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
-                  >
-                    Refresh
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
-                  <button 
-                    onClick={loadCurrentPrice}
-                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
-                  >
-                    Load PriceLab
-                  </button>
-                </div>
-              )}
+              {(() => {
+                console.log('🎨 RENDERING PRICE - states:', { priceLoading, currentPrice, priceError, propertyData: propertyData?.pricePerNight })
+                if (priceLoading) {
+                  console.log('🎨 Rendering: Loading state')
+                  return <span className="text-sm font-medium text-orange-700">Loading price...</span>
+                } else if (priceError) {
+                  console.log('🎨 Rendering: Error state')
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-red-600">Price unavailable</span>
+                      <button 
+                        onClick={loadCurrentPrice}
+                        className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )
+                } else if (currentPrice) {
+                  console.log('🎨 Rendering: Success state with price:', currentPrice)
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
+                      <button 
+                        onClick={loadCurrentPrice}
+                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                  )
+                } else {
+                  console.log('🎨 Rendering: Fallback state')
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
+                      <button 
+                        onClick={loadCurrentPrice}
+                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
+                      >
+                        Load PriceLab
+                      </button>
+                    </div>
+                  )
+                }
+              })()}
             </div>
             <button 
               onClick={handleAddBooking}
