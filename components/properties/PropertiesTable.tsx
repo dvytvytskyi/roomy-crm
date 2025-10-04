@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Trash2, Home, Building, ChevronUp, ChevronDown } from 'lucide-react'
+import { ownerService, Owner } from '../../lib/api/services/ownerService'
 
 interface PropertiesTableProps {
   searchTerm: string
@@ -25,6 +26,7 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   const [sortField, setSortField] = useState<string>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<string | number | null>(null)
+  const [ownersData, setOwnersData] = useState<Map<string, Owner>>(new Map())
 
   // Reset hover state when properties change (e.g., after deletion)
   useEffect(() => {
@@ -88,14 +90,74 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   }
 
   const getOwnerName = (property: any) => {
+    const ownerId = getOwnerId(property)
+    
+    if (ownerId && ownersData.has(ownerId)) {
+      const owner = ownersData.get(ownerId)!
+      return `${owner.firstName} ${owner.lastName}`
+    }
+    
     if (property.owner) {
       if (typeof property.owner === 'string') {
         return property.owner
       }
-      return property.owner.name || property.owner.firstName + ' ' + property.owner.lastName || 'Unknown Owner'
+      if (property.owner.name) {
+        return property.owner.name
+      }
+      if (property.owner.firstName && property.owner.lastName) {
+        return `${property.owner.firstName} ${property.owner.lastName}`
+      }
     }
-    return 'No Owner'
+    
+    return ownerId ? 'Loading...' : 'No Owner'
   }
+
+  const getOwnerId = (property: any) => {
+    if (property.owner) {
+      if (typeof property.owner === 'string') {
+        return null // Can't navigate if owner is just a string
+      }
+      return property.owner.id || property.ownerId || property.selectedOwnerId || null
+    }
+    return null
+  }
+
+  // Function to load owner data
+  const loadOwnerData = async (ownerId: string) => {
+    if (ownersData.has(ownerId)) {
+      return // Already loaded
+    }
+
+    try {
+      console.log('Loading owner data for ID:', ownerId)
+      const response = await ownerService.getOwner(ownerId)
+      if (response.success && response.data) {
+        setOwnersData(prev => new Map(prev).set(ownerId, response.data))
+        console.log('Owner data loaded:', response.data.firstName, response.data.lastName)
+      }
+    } catch (error) {
+      console.error('Error loading owner data:', error)
+    }
+  }
+
+  // Load owner data when properties change
+  useEffect(() => {
+    if (properties && properties.length > 0) {
+      // Get unique owner IDs
+      const ownerIds = new Set<string>()
+      properties.forEach(property => {
+        const ownerId = getOwnerId(property)
+        if (ownerId) {
+          ownerIds.add(ownerId)
+        }
+      })
+
+      // Load data for each unique owner ID
+      ownerIds.forEach(ownerId => {
+        loadOwnerData(ownerId)
+      })
+    }
+  }, [properties])
   
   const filteredProperties = dataSource.filter(property => {
     if (!property) return false
@@ -434,7 +496,28 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                   </span>
               </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {getOwnerName(property)}
+                  {(() => {
+                    const ownerName = getOwnerName(property)
+                    const ownerId = getOwnerId(property)
+                    
+                    if (ownerId && ownerName !== 'No Owner' && ownerName !== 'Loading...') {
+                      return (
+                        <button
+                          onClick={() => window.location.href = `/owners/${ownerId}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                          title="Click to view owner details"
+                        >
+                          {ownerName}
+                        </button>
+                      )
+                    }
+                    
+                    return (
+                      <span className={`${ownerName === 'Loading...' ? 'text-orange-500' : 'text-gray-500'}`}>
+                        {ownerName}
+                      </span>
+                    )
+                  })()}
               </td>
               <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                 <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === property.id ? 'opacity-100' : 'opacity-70'}`}>
