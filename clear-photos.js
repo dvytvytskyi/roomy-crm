@@ -1,0 +1,1 @@
+console.log('Clearing old photo data...'); Object.keys(localStorage).forEach(key => { if (key.startsWith('propertyPhotos_')) { console.log('Removing:', key); localStorage.removeItem(key); } }); console.log('Done!');
