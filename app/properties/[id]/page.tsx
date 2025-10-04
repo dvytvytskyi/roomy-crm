@@ -1609,353 +1609,6 @@ const realProperty = {
   ]
 }
 
-// General Information Edit Modal
-interface GeneralInfoEditModalProps {
-  propertyInfo: PropertyGeneralInfo
-  onSave: (info: PropertyGeneralInfo) => void
-  onCancel: () => void
-}
-
-function GeneralInfoEditModal({ propertyInfo, onSave, onCancel }: GeneralInfoEditModalProps) {
-  const [formData, setFormData] = useState(propertyInfo)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<any>({})
-
-  // Options for dropdowns
-  const statusOptions = ['Active', 'Inactive', 'Under Maintenance', 'Pending Approval', 'Draft']
-  const typeOptions = ['Apartment', 'Villa', 'Townhouse', 'Studio', 'Penthouse', 'Loft', 'Hotel Apartment']
-  const locationOptions = ['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR']
-  const bedTypeOptions = ['Double Bed', 'Single Bed', 'Queen Bed', 'King Bed', 'Sofa Bed']
-  const sizeUnitOptions = ['m²', 'sqft']
-  const timeOptions = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00']
-
-  const handleSave = async () => {
-    setIsSubmitting(true)
-    setErrors({})
-    
-    try {
-      // Validation
-      if (!formData.name.trim()) {
-        setErrors({ name: 'Name is required' })
-        setIsSubmitting(false)
-        return
-      }
-      if (formData.name.length > 150) {
-        setErrors({ name: 'Name must be 150 characters or less' })
-        setIsSubmitting(false)
-        return
-      }
-      if (!formData.nickname.trim()) {
-        setErrors({ nickname: 'Nickname is required' })
-        setIsSubmitting(false)
-        return
-      }
-      if (formData.agencyFee < 0 || formData.agencyFee > 100) {
-        setErrors({ agencyFee: 'Agency fee must be between 0 and 100' })
-        setIsSubmitting(false)
-        return
-      }
-
-      // Save to localStorage
-      localStorage.setItem(`propertyGeneralInfo_default`, JSON.stringify(formData))
-      
-      setTimeout(() => {
-        onSave(formData)
-      }, 500)
-      } catch (error) {
-      console.error('Error saving general info:', error)
-      setErrors({ general: 'Failed to save information' })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const addBedType = () => {
-    setFormData({
-      ...formData,
-      beds: [...formData.beds, { type: 'Double Bed', count: 1 }]
-    })
-  }
-
-  const removeBedType = (index: number) => {
-    setFormData({
-      ...formData,
-      beds: formData.beds.filter((_, i) => i !== index)
-    })
-  }
-
-  const updateBedType = (index: number, field: 'type' | 'count', value: any) => {
-    const newBeds = [...formData.beds]
-    newBeds[index] = { ...newBeds[index], [field]: value }
-    setFormData({ ...formData, beds: newBeds })
-  }
-
-  return (
-    <div className="max-h-96 overflow-y-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {/* Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="Descriptive property name"
-            maxLength={150}
-          />
-          {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
-        </div>
-
-        {/* Nickname */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nickname *</label>
-          <input
-            type="text"
-            value={formData.nickname}
-            onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="Unique internal identifier"
-          />
-          {errors.nickname && <p className="text-red-600 text-xs mt-1">{errors.nickname}</p>}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            {statusOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-          <select
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            {typeOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Location */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-          <select
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            {locationOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-          <input
-            type="text"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            placeholder="Full address with coordinates"
-          />
-        </div>
-
-        {/* Size */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Size</label>
-          <div className="flex space-x-2">
-            <input
-              type="number"
-              value={formData.size.value}
-              onChange={(e) => setFormData({ ...formData, size: { ...formData.size, value: Number(e.target.value) } })}
-              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              min="0"
-            />
-            <select
-              value={formData.size.unit}
-              onChange={(e) => setFormData({ ...formData, size: { ...formData.size, unit: e.target.value as any } })}
-              className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              {sizeUnitOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Parking Slots */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Parking Slots</label>
-          <input
-            type="number"
-            value={formData.parkingSlots}
-            onChange={(e) => setFormData({ ...formData, parkingSlots: Number(e.target.value) })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            min="0"
-          />
-        </div>
-
-        {/* Agency Fee */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Agency Fee (%)</label>
-          <input
-            type="number"
-            value={formData.agencyFee}
-            onChange={(e) => setFormData({ ...formData, agencyFee: Number(e.target.value) })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            min="0"
-            max="100"
-          />
-          {errors.agencyFee && <p className="text-red-600 text-xs mt-1">{errors.agencyFee}</p>}
-        </div>
-
-        {/* DTCM License Expiry */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">DTCM License Expiry</label>
-          <input
-            type="date"
-            value={formData.dtcmLicenseExpiry}
-            onChange={(e) => setFormData({ ...formData, dtcmLicenseExpiry: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Referring Agent */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Referring Agent</label>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={formData.referringAgent.name}
-              onChange={(e) => setFormData({ ...formData, referringAgent: { ...formData.referringAgent, name: e.target.value } })}
-              className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="Agent name"
-            />
-            <input
-              type="number"
-              value={formData.referringAgent.commission}
-              onChange={(e) => setFormData({ ...formData, referringAgent: { ...formData.referringAgent, commission: Number(e.target.value) } })}
-              className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              min="0"
-              max="100"
-              placeholder="%"
-            />
-          </div>
-        </div>
-
-        {/* Check-in */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Time</label>
-          <select
-            value={formData.checkIn}
-            onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            {timeOptions.map(time => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Check-out */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Time</label>
-          <select
-            value={formData.checkOut}
-            onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          >
-            {timeOptions.map(time => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Unit Intake Date */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Unit Intake Date</label>
-          <input
-            type="date"
-            value={formData.unitIntakeDate}
-            onChange={(e) => setFormData({ ...formData, unitIntakeDate: e.target.value })}
-            className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      {/* Beds - Dynamic List */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Beds</label>
-        <div className="space-y-2">
-          {formData.beds.map((bed, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <select
-                value={bed.type}
-                onChange={(e) => updateBedType(index, 'type', e.target.value)}
-                className="flex-1 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                {bedTypeOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                value={bed.count}
-                onChange={(e) => updateBedType(index, 'count', Number(e.target.value))}
-                className="w-20 h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                min="1"
-              />
-              <button
-                onClick={() => removeBedType(index)}
-                className="px-3 py-2 text-sm text-red-600 hover:text-red-800 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={addBedType}
-            className="px-3 py-2 text-sm text-orange-600 hover:text-orange-800 transition-colors border border-orange-300 rounded-lg"
-          >
-            + Add Bed Type
-          </button>
-        </div>
-      </div>
-
-      {errors.general && <p className="text-red-600 text-sm mb-4">{errors.general}</p>}
-      
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={isSubmitting}
-          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors disabled:opacity-50"
-        >
-          {isSubmitting ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-    </div>
-  )
-}
 
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
@@ -2123,22 +1776,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Settings State
   const [settings, setSettings] = useState<any>(null)
 
-  // General Information Edit Modal State
-  const [isGeneralInfoEditOpen, setIsGeneralInfoEditOpen] = useState(false)
-
-  // General Information handlers
-  const handleEditGeneralInfo = () => {
-    setIsGeneralInfoEditOpen(true)
-  }
-
-  const handleSaveGeneralInfo = (updatedInfo: PropertyGeneralInfo) => {
-    setPropertyGeneralInfo(updatedInfo)
-    setIsGeneralInfoEditOpen(false)
-  }
-
-  const handleCancelGeneralInfo = () => {
-    setIsGeneralInfoEditOpen(false)
-  }
 
   // General Information State
   const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
@@ -2949,9 +2586,88 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       return
     }
     
-    const updatedInfo = {
-      ...propertyGeneralInfo,
-      [field]: value.trim()
+    let updatedInfo = { ...propertyGeneralInfo }
+    
+    // Обробляємо різні типи полів
+    switch (field) {
+      case 'name':
+        if (value.length > 150) {
+          alert('Name must be 150 characters or less')
+          return
+        }
+        updatedInfo.name = value.trim()
+        break
+      case 'nickname':
+        updatedInfo.nickname = value.trim()
+        break
+      case 'status':
+        updatedInfo.status = value as any
+        break
+      case 'type':
+        updatedInfo.type = value as any
+        break
+      case 'location':
+        updatedInfo.location = value.trim()
+        break
+      case 'address':
+        updatedInfo.address = value.trim()
+        break
+      case 'size':
+        // Format: "53 m²" -> { value: 53, unit: "m²" }
+        const sizeMatch = value.match(/^(\d+(?:\.\d+)?)\s*(m²|sqft)$/)
+        if (sizeMatch) {
+          updatedInfo.size = {
+            value: parseFloat(sizeMatch[1]),
+            unit: sizeMatch[2] as 'm²' | 'sqft'
+          }
+        } else {
+          alert('Please enter size in format: "53 m²" or "53 sqft"')
+          return
+        }
+        break
+      case 'parkingSlots':
+        const parkingSlots = parseInt(value)
+        if (isNaN(parkingSlots) || parkingSlots < 0) {
+          alert('Parking slots must be a positive number')
+          return
+        }
+        updatedInfo.parkingSlots = parkingSlots
+        break
+      case 'agencyFee':
+        const agencyFee = parseFloat(value)
+        if (isNaN(agencyFee) || agencyFee < 0 || agencyFee > 100) {
+          alert('Agency fee must be between 0 and 100')
+          return
+        }
+        updatedInfo.agencyFee = agencyFee
+        break
+      case 'dtcmLicenseExpiry':
+        updatedInfo.dtcmLicenseExpiry = value.trim()
+        break
+      case 'referringAgent':
+        // Format: "Ahmed Al Mansouri (12%)" -> { name: "Ahmed Al Mansouri", commission: 12 }
+        const agentMatch = value.match(/^(.+?)\s*\((\d+(?:\.\d+)?)%\)$/)
+        if (agentMatch) {
+          updatedInfo.referringAgent = {
+            name: agentMatch[1].trim(),
+            commission: parseFloat(agentMatch[2])
+          }
+        } else {
+          alert('Please enter agent in format: "Name (12%)"')
+          return
+        }
+        break
+      case 'checkIn':
+        updatedInfo.checkIn = value.trim()
+        break
+      case 'checkOut':
+        updatedInfo.checkOut = value.trim()
+        break
+      case 'unitIntakeDate':
+        updatedInfo.unitIntakeDate = value.trim()
+        break
+      default:
+        updatedInfo[field] = value.trim() as any
     }
     
     setPropertyGeneralInfo(updatedInfo)
@@ -3000,25 +2716,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Оновлюємо поля General Information
       if (editModal.type === 'general') {
         console.log('Updating general info field:', editModal.field, 'with value:', newValue)
-        const updatedInfo = {
-          ...propertyGeneralInfo,
-          [editModal.field]: newValue
-        }
-        setPropertyGeneralInfo(updatedInfo)
-        
-        // Зберігаємо в localStorage
-        localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
-        console.log('General info saved to localStorage:', updatedInfo)
-        
-        // Відправляємо на сервер (симуляція API виклику)
-        try {
-          // В реальному додатку тут буде API виклик
-          // await propertyService.updateProperty(params?.id || 'default', { [editModal.field]: newValue })
-          console.log('Property updated on server:', { [editModal.field]: newValue })
-        } catch (apiError) {
-          console.error('Failed to update on server:', apiError)
-          // Показуємо помилку користувачу, але зберігаємо локально
-        }
+        handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, newValue)
       }
       
       // Оновлюємо поля Marketing
@@ -4255,15 +3953,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
                 {/* General Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900">General information</h2>
-                    <button
-                      onClick={handleEditGeneralInfo}
-                      className="px-3 py-1 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-                    >
-                      Edit
-                    </button>
-                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-6">General information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {[
@@ -4295,8 +3985,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                                 let inputType = 'text'
                                 if (item.key === 'status' || item.key === 'type') {
                                   inputType = 'select'
-                                } else if (item.key === 'parkingSlots') {
+                                } else if (item.key === 'parkingSlots' || item.key === 'agencyFee') {
                                   inputType = 'number'
+                                } else if (item.key === 'dtcmLicenseExpiry' || item.key === 'unitIntakeDate') {
+                                  inputType = 'date'
+                                } else if (item.key === 'checkIn' || item.key === 'checkOut') {
+                                  inputType = 'time'
+                                } else if (item.key === 'size') {
+                                  inputType = 'text' // Will be handled specially in validation
+                                } else if (item.key === 'referringAgent') {
+                                  inputType = 'text' // Will be handled specially in validation
+                                } else if (item.key === 'beds') {
+                                  inputType = 'textarea' // For complex bed structure
                                 }
                                 handleEditField('general', item.key, String(item.value), item.label, inputType)
                               }}
@@ -5632,7 +5332,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         <>
                           <option value="Active">Active</option>
                           <option value="Inactive">Inactive</option>
-                          <option value="Maintenance">Maintenance</option>
+                          <option value="Under Maintenance">Under Maintenance</option>
+                          <option value="Pending Approval">Pending Approval</option>
+                          <option value="Draft">Draft</option>
                         </>
                       ) : editModal.field === 'type' ? (
                         <>
@@ -5641,8 +5343,32 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                           <option value="Townhouse">Townhouse</option>
                           <option value="Studio">Studio</option>
                           <option value="Penthouse">Penthouse</option>
+                          <option value="Loft">Loft</option>
+                          <option value="Hotel Apartment">Hotel Apartment</option>
+                        </>
+                      ) : editModal.field === 'location' ? (
+                        <>
+                          <option value="Downtown Dubai">Downtown Dubai</option>
+                          <option value="Business Bay">Business Bay</option>
+                          <option value="Dubai Marina">Dubai Marina</option>
+                          <option value="Jumeirah Village Circle (JVC)">Jumeirah Village Circle (JVC)</option>
+                          <option value="Palm Jumeirah">Palm Jumeirah</option>
+                          <option value="Jumeirah">Jumeirah</option>
+                          <option value="DIFC">DIFC</option>
+                          <option value="JBR">JBR</option>
                         </>
                       ) : null}
+                    </select>
+                  ) : editModal.inputType === 'time' ? (
+                    <select
+                      value={modalValue}
+                      onChange={(e) => setModalValue(e.target.value)}
+                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      autoFocus
+                    >
+                      {['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'].map(time => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
                     </select>
                   ) : (
                   <input
@@ -6042,27 +5768,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       </div>
     </div>
     
-    {/* General Information Edit Modal */}
-    {isGeneralInfoEditOpen && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Edit General Information</h3>
-            <button 
-              onClick={handleCancelGeneralInfo}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          <GeneralInfoEditModal 
-            propertyInfo={propertyGeneralInfo}
-            onSave={handleSaveGeneralInfo}
-            onCancel={handleCancelGeneralInfo}
-          />
-        </div>
-      </div>
-    )}
     
     {/* Toast Notification */}
     {showToast && (
