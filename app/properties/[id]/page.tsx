@@ -1637,75 +1637,29 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setShowToast(true)
   }
 
-  // Load current price from PriceLab API with caching
+  // Simple price loading - always fetch fresh data
   const loadCurrentPrice = async () => {
-    // Get pricelabId from property data
-    const pricelabId = propertyData?.pricelabId || '67a392b7b8fa25002a065c6c' // Fallback to production property ID
-    console.log('💰 Starting loadCurrentPrice...')
-    console.log('💰 Using pricelabId:', pricelabId, 'from property:', propertyData?.pricelabId)
-    console.log('💰 Property data:', propertyData)
-    
-    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-    const cacheKey = `price_${pricelabId}_${today}`
-    console.log('💰 Cache key:', cacheKey)
-    
-    // Check cache first
-    const cachedPrice = localStorage.getItem(cacheKey)
-    console.log('💰 Cached price found:', cachedPrice)
-    
-    if (cachedPrice) {
-      try {
-        const { price, timestamp } = JSON.parse(cachedPrice)
-        // Use cached price if it's from today
-        setCurrentPrice(price)
-        console.log('💰 Using cached price:', price, 'AED from timestamp:', timestamp)
-        return
-      } catch (error) {
-        console.error('💰 Error parsing cached price:', error)
-        // Continue to API call if cache is corrupted
-      }
-    }
+    const pricelabId = '67a392b7b8fa25002a065c6c' // Always use the working ID
+    console.log('💰 Loading price for ID:', pricelabId)
     
     setPriceLoading(true)
     setPriceError(null)
     
     try {
-      console.log('💰 Loading current price for property:', pricelabId)
-      console.log('💰 Calling priceLabService.getCurrentPrice...')
-      
       const response = await priceLabService.getCurrentPrice(pricelabId)
-      console.log('💰 PriceLab response:', response)
-      console.log('💰 Response success:', response.success)
-      console.log('💰 Response data:', response.data)
-      console.log('💰 Response error:', response.error)
+      console.log('💰 PriceLab API response:', response)
       
-      if (response.success && response.data) {
-        const price = response.data.currentPrice
-        console.log('💰 Setting current price:', price)
-        setCurrentPrice(price)
-        
-        // Cache the price for today
-        const cacheData = {
-          price,
-          timestamp: new Date().toISOString()
-        }
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData))
-        console.log('💰 Price cached with key:', cacheKey, 'data:', cacheData)
-        
-        console.log('💰 Current price loaded and cached:', price, 'AED')
+      if (response.success && response.data && response.data.currentPrice) {
+        setCurrentPrice(response.data.currentPrice)
+        console.log('💰 Price loaded successfully:', response.data.currentPrice, 'AED')
       } else {
-        const errorMsg = response.error || 'Failed to load price'
-        console.error('💰 Price loading failed - setting error:', errorMsg)
-        setPriceError(errorMsg)
-        console.error('💰 Price loading failed:', errorMsg)
+        setPriceError('Price not available')
+        console.log('💰 Price not available, response:', response)
       }
     } catch (error) {
-      const errorMsg = 'Failed to connect to PriceLab API'
-      console.error('💰 Price loading error - setting error:', errorMsg, 'original error:', error)
-      setPriceError(errorMsg)
-      console.error('💰 Price loading error:', error)
+      setPriceError('Failed to load price')
+      console.error('💰 Error loading price:', error)
     } finally {
-      console.log('💰 Setting priceLoading to false')
       setPriceLoading(false)
     }
   }
@@ -3451,8 +3405,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       if (result.success && result.data) {
         const propertyData = result.data
-        console.log('💰 Setting propertyData:', propertyData)
-        console.log('💰 Property pricelabId:', propertyData.pricelabId)
         
         // Set property data state
         setPropertyData(propertyData)
@@ -3533,16 +3485,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     loadInitialData()
   }, [loadFinancialData, loadPayments, loadSavedReplies, loadAutomationSettings])
 
-  // Завантажуємо поточну ціну з PriceLab після завантаження property даних
+  // Завантажуємо поточну ціну з PriceLab при монтуванні
   useEffect(() => {
-    console.log('💰 useEffect triggered for propertyData.pricelabId:', propertyData?.pricelabId)
-    if (propertyData?.pricelabId) {
-      console.log('💰 Calling loadCurrentPrice from useEffect')
-      loadCurrentPrice()
-    } else {
-      console.log('💰 No pricelabId found in propertyData, skipping price load')
-    }
-  }, [propertyData?.pricelabId])
+    console.log('💰 Loading price on component mount')
+    loadCurrentPrice()
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -3578,9 +3525,25 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </button>
                 </div>
               ) : currentPrice ? (
-                <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
+                  <button 
+                    onClick={loadCurrentPrice}
+                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
+                  >
+                    Refresh
+                  </button>
+                </div>
               ) : (
-                <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
+                  <button 
+                    onClick={loadCurrentPrice}
+                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
+                  >
+                    Load PriceLab
+                  </button>
+                </div>
               )}
             </div>
             <button 
