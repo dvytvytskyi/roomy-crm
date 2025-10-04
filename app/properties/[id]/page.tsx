@@ -1613,15 +1613,27 @@ const realProperty = {
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [propertyNickname, setPropertyNickname] = useState(() => {
-    // Try to get nickname from ai_studio_code.json first
+    // Try to get nickname from localStorage first (property-specific)
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`propertyNickname_${params?.id || 'default'}`)
+      if (saved) {
+        return saved
+      }
+    }
+    
+    // Try to get nickname from ai_studio_code.json
     const aiStudioNickname = aiStudioCode.find(item => item.nickname)?.nickname
     if (aiStudioNickname) {
       return aiStudioNickname
     }
     
-    // Fallback to localStorage or default
-    const saved = localStorage.getItem('propertyNickname')
-    return saved || 'Apartment Burj Khalifa 2'
+    // Fallback to general localStorage or default
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('propertyNickname')
+      if (saved) return saved
+    }
+    
+    return 'Apartment Burj Khalifa 2'
   })
   const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
   
@@ -1639,6 +1651,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setPropertyNickname(propertyData.nickname)
     }
   }, [propertyData?.nickname])
+
   
   // Toast state
   const [showToast, setShowToast] = useState(false)
@@ -1718,7 +1731,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.log('💰 Using fallback price: 236 AED')
       }
       
-    } catch (error) {
+      } catch (error) {
       console.log('💰 ERROR: Caught exception, using fallback price')
       console.error('💰 Error loading price:', error)
       console.error('💰 Error type:', typeof error)
@@ -1784,10 +1797,25 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     
+    // Отримуємо нікнейм з localStorage для цієї властивості
+    let defaultNickname = 'Apartment Burj Khalifa 2'
+    if (typeof window !== 'undefined') {
+      const savedNickname = localStorage.getItem(`propertyNickname_${params?.id || 'default'}`)
+      if (savedNickname) {
+        defaultNickname = savedNickname
+      } else {
+        // Fallback to ai_studio_code.json
+        const aiStudioNickname = aiStudioCode.find(item => item.nickname)?.nickname
+        if (aiStudioNickname) {
+          defaultNickname = aiStudioNickname
+        }
+      }
+    }
+    
     // Значення за замовчуванням
     return {
       name: 'Apartment in Downtown Dubai 1 bedroom',
-      nickname: propertyNickname,
+      nickname: defaultNickname,
       status: 'Active',
       type: 'Apartment',
       location: 'Downtown Dubai',
@@ -1811,6 +1839,35 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       unitIntakeDate: '2024-03-15'
     }
   })
+
+  // Sync nickname between propertyNickname and propertyGeneralInfo on component mount
+  useEffect(() => {
+    // If propertyGeneralInfo has a nickname but propertyNickname is different, sync them
+    if (propertyGeneralInfo.nickname && propertyGeneralInfo.nickname !== propertyNickname) {
+      setPropertyNickname(propertyGeneralInfo.nickname)
+    }
+  }, [propertyGeneralInfo.nickname, propertyNickname])
+
+  // Load photos from API
+  useEffect(() => {
+    const loadPhotos = async () => {
+      try {
+        setPhotosLoading(true)
+        const { photoService } = await import('@/lib/api/services/photoService')
+        const photosData = await photoService.getPhotos(params?.id || 'default')
+        setPhotos(photosData)
+    } catch (error) {
+        console.error('Error loading photos:', error)
+        setPhotos([])
+    } finally {
+        setPhotosLoading(false)
+      }
+    }
+
+    if (params?.id) {
+      loadPhotos()
+    }
+  }, [params?.id])
 
   // Helper functions for date calculations
   const calculateDaysUntilExpiry = (expiryDate: string): string => {
@@ -2017,26 +2074,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
-  // Photos State - завантажуємо тільки з localStorage
-  const [photos, setPhotos] = useState<Photo[]>(() => {
-    // Завантажуємо з localStorage
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${params?.id || 'default'}`)
-    if (savedPhotos) {
-      try {
-        const parsed = JSON.parse(savedPhotos)
-        // Перевіряємо, чи це не blob URL-и (старі дані)
-        const hasBlobUrls = parsed.some((photo: Photo) => photo.url.startsWith('blob:'))
-        if (!hasBlobUrls) {
-          return parsed
-        }
-      } catch (error) {
-        console.error('Error parsing saved photos:', error)
-      }
-    }
-    
-    // Повертаємо порожній масив - тільки ваші фото
-    return []
-  })
+  // Photos State - завантажуємо з API
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [photosLoading, setPhotosLoading] = useState(true)
   const [deleteExpenseModal, setDeleteExpenseModal] = useState<{isOpen: boolean, index?: number, expense?: any}>({isOpen: false})
   const [addUtilityModal, setAddUtilityModal] = useState(false)
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
@@ -2742,7 +2782,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     if (field === 'nickname') {
       setPropertyNickname(value.trim())
       if (typeof window !== 'undefined') {
-        localStorage.setItem('propertyNickname', value.trim())
+        localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, value.trim())
       }
     }
   }
@@ -2763,7 +2803,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
       setPropertyGeneralInfo(updatedInfo)
       // Зберігаємо в localStorage
-      localStorage.setItem('propertyNickname', newValue)
+      localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
       localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
       console.log('Nickname updated and saved to localStorage')
       }
@@ -2777,6 +2817,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       if (editModal.type === 'general') {
         console.log('Updating general info field:', editModal.field, 'with value:', newValue)
         handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, newValue)
+        
+        // Special handling for nickname to ensure header is updated
+        if (editModal.field === 'nickname') {
+          console.log('Also updating header nickname from', propertyNickname, 'to', newValue)
+          setPropertyNickname(newValue)
+          localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
+        }
       }
       
       // Оновлюємо поля Marketing
@@ -3102,30 +3149,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const result = await photoService.uploadPhotos(params?.id || 'default', Array.from(files))
       
       if (result.success) {
-        const updatedPhotos = [...photos, ...result.photos]
-        setPhotos(updatedPhotos)
-        
-        // Зберігаємо локально
-        photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
+        // Оновлюємо стан з новими фото
+        setPhotos(prevPhotos => [...prevPhotos, ...result.photos])
         
         console.log('Photos uploaded successfully:', result.photos)
       }
     } catch (error) {
       console.error('Error uploading photos:', error)
       
-      // Fallback: локальне збереження
-      const newPhotos: Photo[] = Array.from(files).map((file, index) => ({
-        id: `photo_${Date.now()}_${index}`,
-        url: URL.createObjectURL(file),
-        name: file.name,
-        size: file.size,
-        isCover: photos.length === 0 && index === 0,
-        uploadedAt: new Date().toISOString()
-      }))
-
-      const updatedPhotos = [...photos, ...newPhotos]
-      setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to upload photos to S3')
+      alert('Failed to upload photos. Please try again.')
     }
   }
 
@@ -3134,18 +3168,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { photoService } = await import('@/lib/api/services/photoService')
       const updatedPhotos = await photoService.setCoverPhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
     } catch (error) {
       console.error('Error setting cover photo:', error)
       
-      // Fallback: локальне оновлення
-      const updatedPhotos = photos.map(photo => ({
-        ...photo,
-        isCover: photo.id === photoId
-      }))
-      
-      setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to set cover photo in S3')
+      alert('Failed to set cover photo. Please try again.')
     }
   }
 
@@ -3154,21 +3182,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const { photoService } = await import('@/lib/api/services/photoService')
       const updatedPhotos = await photoService.deletePhoto(params?.id || 'default', photoId)
       setPhotos(updatedPhotos)
-      photoService.savePhotosLocally(params?.id || 'default', updatedPhotos)
     } catch (error) {
       console.error('Error deleting photo:', error)
       
-      // Fallback: локальне видалення
-      const updatedPhotos = photos.filter(photo => photo.id !== photoId)
-      
-      // Якщо видаляємо обкладинку, встановлюємо нову
-      const deletedPhoto = photos.find(photo => photo.id === photoId)
-      if (deletedPhoto?.isCover && updatedPhotos.length > 0) {
-        updatedPhotos[0].isCover = true
-      }
-      
-      setPhotos(updatedPhotos)
-      localStorage.setItem(`propertyPhotos_${params?.id || 'default'}`, JSON.stringify(updatedPhotos))
+      // Fallback: показуємо помилку користувачу
+      console.error('Failed to delete photo from S3')
+      alert('Failed to delete photo. Please try again.')
     }
   }
 
@@ -3780,10 +3799,39 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           <div className="w-80 flex-shrink-0">
             {/* Property Photo */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-              <div className="aspect-video bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3 relative">
+              <div className="aspect-video rounded-lg mb-3 relative overflow-hidden">
+                {(() => {
+                  const coverPhoto = photos.find(photo => photo.isCover)
+                  if (coverPhoto) {
+                    return (
+                      <>
+                        <img
+                          src={coverPhoto.url}
+                          alt={coverPhoto.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Cover photo failed to load:', coverPhoto.url)
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
                 <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
                   Main Photo
                 </span>
+                      </>
+                    )
+                  } else {
+                    return (
+                      <>
+                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                          <span className="text-white text-sm">No Photo</span>
+                        </div>
+                        <span className="absolute top-2 left-2 bg-gray-500 text-white text-xs px-2 py-1 rounded">
+                          Main Photo
+                        </span>
+                      </>
+                    )
+                  }
+                })()}
           </div>
           
               {/* Property Name and Address */}
@@ -4015,6 +4063,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">General information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left Column */}
                     <div className="space-y-4">
                       {[
                         { label: 'Name', value: propertyGeneralInfo.name, key: 'name' },
@@ -4024,7 +4073,63 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         { label: 'Location', value: propertyGeneralInfo.location, key: 'location' },
                         { label: 'Address', value: propertyGeneralInfo.address, key: 'address' },
                         { label: 'Size', value: `${propertyGeneralInfo.size.value} ${propertyGeneralInfo.size.unit}`, key: 'size' },
-                        { label: 'Beds', value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), key: 'beds' },
+                        { label: 'Beds', value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), key: 'beds' }
+                      ].map((item, index) => {
+                        return (
+                        <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-gray-600">{item.label}:</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm text-gray-900">{String(item.value)}</span>
+                            <button 
+                              onClick={() => {
+                                let inputType = 'text'
+                                if (item.key === 'status' || item.key === 'type') {
+                                  inputType = 'select'
+                                } else if (item.key === 'location') {
+                                  inputType = 'location' // Special searchable dropdown
+                                } else if (item.key === 'parkingSlots' || item.key === 'agencyFee') {
+                                  inputType = 'number'
+                                } else if (item.key === 'dtcmLicenseExpiry' || item.key === 'unitIntakeDate') {
+                                  inputType = 'date'
+                                } else if (item.key === 'checkIn' || item.key === 'checkOut') {
+                                  inputType = 'time'
+                                } else if (item.key === 'size') {
+                                  inputType = 'size' // Special component
+                                } else if (item.key === 'referringAgent') {
+                                  inputType = 'referringAgent' // Special component
+                                } else if (item.key === 'beds') {
+                                  inputType = 'beds' // Special dynamic component
+                                }
+                                
+                                // For date fields, use only the date part without calculations
+                                let editValue = String(item.value)
+                                if (item.key === 'dtcmLicenseExpiry') {
+                                  editValue = propertyGeneralInfo.dtcmLicenseExpiry
+                                } else if (item.key === 'unitIntakeDate') {
+                                  editValue = propertyGeneralInfo.unitIntakeDate
+                                } else if (item.key === 'beds') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.beds)
+                                } else if (item.key === 'referringAgent') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.referringAgent)
+                                }
+                                handleEditField('general', item.key, editValue, item.label, inputType)
+                              }}
+                              className="text-orange-600 hover:text-orange-700 cursor-pointer"
+                              data-testid="edit-property-btn"
+                            >
+                              <Edit size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      {[
                         { label: 'Parking Slots', value: propertyGeneralInfo.parkingSlots.toString(), key: 'parkingSlots' },
                         { label: 'Agency Fee (%)', value: `${propertyGeneralInfo.agencyFee}%`, key: 'agencyFee' },
                         { label: 'DTCM License Expiry', value: `${propertyGeneralInfo.dtcmLicenseExpiry} (${calculateDaysUntilExpiry(propertyGeneralInfo.dtcmLicenseExpiry)})`, key: 'dtcmLicenseExpiry' },
@@ -4084,44 +4189,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         )
                       })}
                     </div>
-                    <div className="space-y-4">
-                      {[
-                        { label: 'Parking Slot', value: propertyGeneralInfo.parkingSlots, key: 'parkingSlots' },
-                        { label: 'Agency Fee', value: propertyGeneralInfo.agencyFee, key: 'agencyFee' },
-                        { label: 'DTCM license expiry', value: propertyGeneralInfo.dtcmLicenseExpiry, key: 'dtcmLicenseExpiry' },
-                        { label: 'Referring agent', value: propertyGeneralInfo.referringAgent, key: 'referringAgent' },
-                        { label: 'Check-in from', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
-                        { label: 'Check-out to', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
-                        { label: 'Unit intake date', value: propertyGeneralInfo.unitIntakeDate, key: 'unitIntakeDate' }
-                      ].map((item, index) => {
-                        console.log(`Rendering field ${item.key}:`, item.value)
-                        return (
-                        <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-600">{item.label}:</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <span className="text-sm text-gray-900">{String(item.value)}</span>
-                            <button 
-                              onClick={() => {
-                                let inputType = 'text'
-                                if (item.key === 'status' || item.key === 'type') {
-                                  inputType = 'select'
-                                } else if (item.key === 'parkingSlots') {
-                                  inputType = 'number'
-                                }
-                                handleEditField('general', item.key, String(item.value), item.label, inputType)
-                              }}
-                              className="text-orange-600 hover:text-orange-700 cursor-pointer"
-                              data-testid="edit-property-btn"
-                            >
-                              <Edit size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        )
-                      })}
-                    </div>
                   </div>
                 </div>
 
@@ -4147,18 +4214,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
-                    {photos.length > 0 && (
-                      <button
-                        onClick={() => {
-                          setPhotos([])
-                          localStorage.removeItem(`propertyPhotos_${params?.id || 'default'}`)
-                          localStorage.removeItem('propertyPhotos')
-                        }}
-                        className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg"
-                      >
-                        Clear Photos
-                      </button>
-                    )}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {photos.map((photo, index) => (
@@ -4232,7 +4287,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </div>
                   </div>
                   
-                  {photos.length === 0 && (
+                  {photosLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                      <p className="text-gray-500">Loading photos...</p>
+                    </div>
+                  ) : photos.length === 0 ? (
                     <div className="text-center py-8">
                       <div className="text-gray-400 mb-4">
                         <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -4242,7 +4302,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       <p className="text-gray-500 mb-2">No photos uploaded yet</p>
                       <p className="text-sm text-gray-400">Click the + button above to add photos</p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Amenities */}
@@ -5455,39 +5515,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     </div>
                   ) : editModal.inputType === 'location' ? (
                     <div className="relative">
-                      <input
-                        type="text"
+                      <select
                         value={modalValue}
                         onChange={(e) => setModalValue(e.target.value)}
-                        className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        placeholder="Search location..."
+                        className="w-full h-10 px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
                         autoFocus
-                      />
+                      >
+                        <option value="">Select a location...</option>
+                        <option value="Downtown Dubai">Downtown Dubai</option>
+                        <option value="Business Bay">Business Bay</option>
+                        <option value="Dubai Marina">Dubai Marina</option>
+                        <option value="Jumeirah Village Circle (JVC)">Jumeirah Village Circle (JVC)</option>
+                        <option value="Palm Jumeirah">Palm Jumeirah</option>
+                        <option value="Jumeirah">Jumeirah</option>
+                        <option value="DIFC">DIFC</option>
+                        <option value="JBR">JBR</option>
+                        <option value="Dubai Hills">Dubai Hills</option>
+                        <option value="Dubai Silicon Oasis">Dubai Silicon Oasis</option>
+                        <option value="Dubai Sports City">Dubai Sports City</option>
+                        <option value="International City">International City</option>
+                      </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
-                      {modalValue && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                          {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR', 'Dubai Hills', 'Dubai Silicon Oasis', 'Dubai Sports City', 'International City'].filter(location => 
-                            location.toLowerCase().includes(modalValue.toLowerCase())
-                          ).map(location => (
-                            <button
-                              key={location}
-                              onClick={() => setModalValue(location)}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                            >
-                              {location}
-                            </button>
-                          ))}
-                          {['Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah Village Circle (JVC)', 'Palm Jumeirah', 'Jumeirah', 'DIFC', 'JBR', 'Dubai Hills', 'Dubai Silicon Oasis', 'Dubai Sports City', 'International City'].filter(location => 
-                            location.toLowerCase().includes(modalValue.toLowerCase())
-                          ).length === 0 && (
-                            <div className="px-3 py-2 text-sm text-gray-500">No locations found</div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   ) : editModal.inputType === 'time' ? (
                     <div className="relative">

@@ -1,4 +1,4 @@
-import { API_CONFIG } from '../config'
+import { API_CONFIG, API_ENDPOINTS, apiClient } from '../config'
 
 export interface Photo {
   id: string
@@ -19,49 +19,51 @@ export const photoService = {
   // Отримати всі фото для властивості
   getPhotos: async (propertyId: string): Promise<Photo[]> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
       console.log(`API: Fetching photos for property ${propertyId}`)
       
-      // Повертаємо з localStorage
-      return photoService.loadFromLocalStorage(propertyId)
+      const response = await apiClient.get(API_ENDPOINTS.PROPERTIES.PHOTOS(propertyId))
+      
+      if (response.data.success) {
+        return response.data.data || []
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch photos')
+      }
     } catch (error) {
       console.error('Error fetching photos:', error)
-      // Повертаємо з localStorage як fallback
-      return photoService.loadFromLocalStorage(propertyId)
+      // Повертаємо порожній масив як fallback
+      return []
     }
   },
 
   // Завантажити нові фото
   uploadPhotos: async (propertyId: string, files: File[]): Promise<PhotoUploadResponse> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
       console.log(`API: Uploading ${files.length} photos for property ${propertyId}`)
       
-      // Створюємо нові фото з blob URL-ами
-      const newPhotos: Photo[] = Array.from(files).map((file, index) => ({
-        id: `photo_${Date.now()}_${index}`,
-        url: URL.createObjectURL(file),
-        name: file.name,
-        size: file.size,
-        isCover: false,
-        uploadedAt: new Date().toISOString()
-      }))
-
-      // Отримуємо існуючі фото
-      const existingPhotos = photoService.loadFromLocalStorage(propertyId)
-      const updatedPhotos = [...existingPhotos, ...newPhotos]
-
-      // Зберігаємо в localStorage
-      photoService.saveToLocalStorage(propertyId, updatedPhotos)
-
-      return {
-        success: true,
-        photos: newPhotos,
-        message: `Successfully uploaded ${files.length} photos`
+      // Створюємо FormData для завантаження файлів
+      const formData = new FormData()
+      files.forEach((file, index) => {
+        formData.append(`photos`, file)
+      })
+      
+      const response = await apiClient.post(
+        API_ENDPOINTS.PROPERTIES.UPLOAD_PHOTOS(propertyId),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
+      
+      if (response.data.success) {
+        return {
+          success: true,
+          photos: response.data.data || [],
+          message: response.data.message || `Successfully uploaded ${files.length} photos`
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to upload photos')
       }
     } catch (error) {
       console.error('Error uploading photos:', error)
@@ -72,24 +74,17 @@ export const photoService = {
   // Встановити обкладинку
   setCoverPhoto: async (propertyId: string, photoId: string): Promise<Photo[]> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
       console.log(`API: Setting cover photo ${photoId} for property ${propertyId}`)
       
-      // Отримуємо поточні фото
-      const photos = photoService.loadFromLocalStorage(propertyId)
+      const response = await apiClient.post(
+        API_ENDPOINTS.PROPERTIES.SET_COVER_PHOTO(propertyId, photoId)
+      )
       
-      // Оновлюємо фото
-      const updatedPhotos = photos.map(photo => ({
-        ...photo,
-        isCover: photo.id === photoId
-      }))
-
-      // Зберігаємо в localStorage
-      photoService.saveToLocalStorage(propertyId, updatedPhotos)
-
-      return updatedPhotos
+      if (response.data.success) {
+        return response.data.data || []
+      } else {
+        throw new Error(response.data.message || 'Failed to set cover photo')
+      }
     } catch (error) {
       console.error('Error setting cover photo:', error)
       throw error
@@ -99,41 +94,21 @@ export const photoService = {
   // Видалити фото
   deletePhoto: async (propertyId: string, photoId: string): Promise<Photo[]> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
       console.log(`API: Deleting photo ${photoId} for property ${propertyId}`)
       
-      // Отримуємо поточні фото
-      const photos = photoService.loadFromLocalStorage(propertyId)
+      const response = await apiClient.delete(
+        API_ENDPOINTS.PROPERTIES.DELETE_PHOTO(propertyId, photoId)
+      )
       
-      // Видаляємо фото
-      const updatedPhotos = photos.filter(photo => photo.id !== photoId)
-      
-      // Якщо видаляємо обкладинку, встановлюємо нову
-      const deletedPhoto = photos.find(photo => photo.id === photoId)
-      if (deletedPhoto?.isCover && updatedPhotos.length > 0) {
-        updatedPhotos[0].isCover = true
+      if (response.data.success) {
+        return response.data.data || []
+      } else {
+        throw new Error(response.data.message || 'Failed to delete photo')
       }
-
-      // Зберігаємо в localStorage
-      photoService.saveToLocalStorage(propertyId, updatedPhotos)
-
-      return updatedPhotos
     } catch (error) {
       console.error('Error deleting photo:', error)
       throw error
     }
   },
 
-  // Зберегти фото локально (для offline режиму)
-  savePhotosLocally: (propertyId: string, photos: Photo[]) => {
-    localStorage.setItem(`propertyPhotos_${propertyId}`, JSON.stringify(photos))
-  },
-
-  // Завантажити фото з локального сховища
-  loadPhotosLocally: (propertyId: string): Photo[] => {
-    const savedPhotos = localStorage.getItem(`propertyPhotos_${propertyId}`)
-    return savedPhotos ? JSON.parse(savedPhotos) : []
-  }
 }

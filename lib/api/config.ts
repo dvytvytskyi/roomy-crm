@@ -56,6 +56,10 @@ export const API_ENDPOINTS = {
     LOCATIONS: '/properties/dubai-locations',
     PRICING_RULES: (id: string) => `/properties/${id}/pricing-rules`,
     PRICE_HISTORY: (id: string) => `/properties/${id}/price-history`,
+    PHOTOS: (id: string) => `/properties/${id}/photos`,
+    UPLOAD_PHOTOS: (id: string) => `/properties/${id}/photos/upload`,
+    SET_COVER_PHOTO: (id: string, photoId: string) => `/properties/${id}/photos/${photoId}/cover`,
+    DELETE_PHOTO: (id: string, photoId: string) => `/properties/${id}/photos/${photoId}`,
   },
   
   // Reservations
