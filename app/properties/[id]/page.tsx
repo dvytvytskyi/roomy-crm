@@ -9,6 +9,7 @@ import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import { apiRequest, ownerDataManager, safeLocalStorage, debugLog } from '../../../lib/api/production-utils'
 import { priceLabService } from '../../../lib/api/services/pricelabService'
+import aiStudioCode from '../../../ai_studio_code.json'
 
 interface AmenitiesEditModalProps {
   amenities: string[]
@@ -1572,81 +1573,56 @@ const realProperty = {
 
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [property, setProperty] = useState<any>(null)
-  const [priceLabPrice, setPriceLabPrice] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [propertyNickname, setPropertyNickname] = useState('')
-  const [propertyAddress, setPropertyAddress] = useState('')
+  const [propertyNickname, setPropertyNickname] = useState(() => {
+    // Try to get nickname from ai_studio_code.json first
+    const aiStudioNickname = aiStudioCode.find(item => item.nickname)?.nickname
+    if (aiStudioNickname) {
+      return aiStudioNickname
+    }
+    
+    // Fallback to localStorage or default
+    const saved = localStorage.getItem('propertyNickname')
+    return saved || 'Apartment Burj Khalifa 2'
+  })
+  const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
+  
+  // PriceLab integration
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null)
+  const [priceLoading, setPriceLoading] = useState(false)
+  const [priceError, setPriceError] = useState<string | null>(null)
   
   // Toast state
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-
-  // Load property data from API
-  const loadPropertyData = useCallback(async () => {
-    if (!params?.id) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/properties/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || 'test'}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          const propertyData = data.data
-          setProperty(propertyData)
-          setPropertyNickname(propertyData.nickname || propertyData.name || 'Unknown Property')
-          setPropertyAddress(propertyData.address || 'No address')
-          
-          // Load PriceLab data if pricelabId exists
-          if (propertyData.pricelabId) {
-            await loadPriceLabData(propertyData.pricelabId)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading property data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [params?.id])
-
-  // Load PriceLab data
-  const loadPriceLabData = async (pricelabId: string) => {
-    try {
-      const response = await priceLabService.getCurrentPrice(pricelabId)
-      if (response.success && response.data) {
-        setPriceLabPrice(response.data.currentPrice)
-      }
-    } catch (error) {
-      console.error('Error loading PriceLab data:', error)
-    }
-  }
   
   const handleShowToast = (message: string) => {
     setToastMessage(message)
     setShowToast(true)
   }
 
-  // Load data on component mount
-  useEffect(() => {
-    loadPropertyData()
-  }, [loadPropertyData])
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading property details...</p>
-        </div>
-      </div>
-    )
+  // Load current price from PriceLab API
+  const loadCurrentPrice = async () => {
+    const pricelabId = '67a392b7b8fa25002a065c6c' // Production property ID
+    setPriceLoading(true)
+    setPriceError(null)
+    
+    try {
+      console.log('💰 Loading current price for property:', pricelabId)
+      const response = await priceLabService.getCurrentPrice(pricelabId)
+      
+      if (response.success && response.data) {
+        setCurrentPrice(response.data.currentPrice)
+        console.log('💰 Current price loaded:', response.data.currentPrice)
+      } else {
+        setPriceError(response.error || 'Failed to load price')
+        console.error('💰 Price loading failed:', response.error)
+      }
+    } catch (error) {
+      setPriceError('Failed to connect to PriceLab API')
+      console.error('💰 Price loading error:', error)
+    } finally {
+      setPriceLoading(false)
+    }
   }
   
 
@@ -1658,9 +1634,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
   }
+  // Auto-detect current date (04 October 2025)
+  const getCurrentDate = () => {
+    const today = new Date()
+    return today.toISOString().split('T')[0] // Format: YYYY-MM-DD
+  }
+  
   const [dateRange, setDateRange] = useState('lastweek')
-  const [dateFrom, setDateFrom] = useState('2024-09-01')
-  const [dateTo, setDateTo] = useState('2024-09-30')
+  const [dateFrom, setDateFrom] = useState(() => {
+    const today = new Date()
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    return firstDayOfMonth.toISOString().split('T')[0]
+  })
+  const [dateTo, setDateTo] = useState(() => {
+    const today = new Date()
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    return lastDayOfMonth.toISOString().split('T')[0]
+  })
 
   // Income Distribution State
   const [incomeDistribution, setIncomeDistribution] = useState<IncomeDistribution>(() => {
@@ -3446,6 +3436,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     loadInitialData()
   }, [loadFinancialData, loadPayments, loadSavedReplies, loadAutomationSettings])
 
+  // Завантажуємо поточну ціну з PriceLab при монтуванні
+  useEffect(() => {
+    loadCurrentPrice()
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Navigation */}
@@ -3462,19 +3457,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             >
               <ArrowLeft size={16} />
             </button>
-            <h1 className="text-xl font-medium text-slate-900">{propertyNickname || 'Loading...'}</h1>
+            <h1 className="text-xl font-medium text-slate-900">{propertyNickname}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-2 rounded-lg">
               <span className="text-lg">🏷️</span>
-              <span className="text-sm font-medium text-orange-700">
-                AED {priceLabPrice || property?.pricePerNight || 0}/night
-                {priceLabPrice && (
-                  <span className="text-xs text-green-600 ml-1">
-                    (PriceLab)
-                  </span>
-                )}
-              </span>
+              {priceLoading ? (
+                <span className="text-sm font-medium text-orange-700">Loading price...</span>
+              ) : priceError ? (
+                <span className="text-sm font-medium text-red-600">Price unavailable</span>
+              ) : currentPrice ? (
+                <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
+              ) : (
+                <span className="text-sm font-medium text-orange-700">AED {realProperty.pricePerNight}/night</span>
+              )}
             </div>
             <button 
               onClick={handleAddBooking}
