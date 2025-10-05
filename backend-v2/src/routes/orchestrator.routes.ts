@@ -22,6 +22,13 @@ router.post('/reservations/:id/confirm', OrchestratorController.confirmReservati
 router.post('/reservations/:id/cancel', OrchestratorController.cancelReservation);
 
 /**
+ * @route POST /api/v2/orchestrator/reservations/:id/checkin
+ * @desc Check-in a reservation (trigger the check-in workflow)
+ * @access Private (ADMIN, MANAGER, AGENT)
+ */
+router.post('/reservations/:id/checkin', OrchestratorController.checkInReservation);
+
+/**
  * @route GET /api/v2/orchestrator/reservations/:id/status
  * @desc Get orchestrator status for a reservation
  * @access Private (All authenticated users)

@@ -16,6 +16,13 @@ router.use(authenticateToken);
 router.get('/', ReservationController.getAllReservations);
 
 /**
+ * @route   GET /api/v2/reservations/stats
+ * @desc    Get reservation statistics
+ * @access  Private (JWT required) - ADMIN, MANAGER, OWNER, AGENT can access
+ */
+router.get('/stats', ReservationController.getReservationStats);
+
+/**
  * @route   POST /api/v2/reservations
  * @desc    Create new reservation
  * @access  Private (JWT required) - ADMIN, MANAGER, AGENT can create
@@ -37,5 +44,13 @@ router.get('/:id', ReservationController.getReservationById);
  * @params  id - Reservation ID
  */
 router.put('/:id', ReservationController.updateReservation);
+
+/**
+ * @route   PUT /api/v2/reservations/:id/dates
+ * @desc    Update reservation dates with availability check
+ * @access  Private (JWT required) - RBAC handled in service layer
+ * @params  id - Reservation ID
+ */
+router.put('/:id/dates', ReservationController.updateReservationDates);
 
 export default router;

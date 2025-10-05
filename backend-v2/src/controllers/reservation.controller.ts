@@ -333,4 +333,107 @@ export class ReservationController extends BaseController {
       ReservationController.error(res, error, 500, 'Reservation update failed');
     }
   };
+
+  /**
+   * Update reservation dates endpoint
+   * PUT /api/v2/reservations/:id/dates
+   */
+  public static updateReservationDates = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { checkIn, checkOut } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (!checkIn || !checkOut) {
+        ReservationController.validationError(res, [], 'Both check-in and check-out dates are required');
+        return;
+      }
+
+      // Validate dates
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      
+      if (isNaN(checkInDate.getTime())) {
+        ReservationController.validationError(res, [], 'Invalid check-in date format. Use ISO 8601 format (YYYY-MM-DD)');
+        return;
+      }
+
+      if (isNaN(checkOutDate.getTime())) {
+        ReservationController.validationError(res, [], 'Invalid check-out date format. Use ISO 8601 format (YYYY-MM-DD)');
+        return;
+      }
+
+      if (checkInDate >= checkOutDate) {
+        ReservationController.validationError(res, [], 'Check-out date must be after check-in date');
+        return;
+      }
+
+      // Check if dates are in the future (business rule)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (checkInDate < today) {
+        ReservationController.validationError(res, [], 'Check-in date cannot be in the past');
+        return;
+      }
+
+      const datesData = {
+        checkIn,
+        checkOut
+      };
+
+      // Update reservation dates
+      const updateResult = await ReservationService.updateDates(currentUser, id, datesData);
+
+      if (!updateResult.success || !updateResult.data) {
+        ReservationController.error(res, updateResult.error || 'Reservation dates update failed', 400, updateResult.message);
+        return;
+      }
+
+      // Log reservation dates update
+      logger.info(`Reservation dates updated successfully: ${updateResult.data.reservationId}`);
+
+      // Return updated reservation
+      ReservationController.success(res, updateResult.data, 'Reservation dates updated successfully');
+    } catch (error) {
+      logger.error('Update reservation dates error:', error);
+      ReservationController.error(res, error, 500, 'Reservation dates update failed');
+    }
+  };
+
+  /**
+   * Get reservation statistics
+   * @route GET /api/v2/reservations/stats
+   */
+  public static async getReservationStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const currentUser = req.user;
+
+      logger.info(`Getting reservation statistics for user ${currentUser.email}`);
+
+      const result = await ReservationService.getStats(currentUser);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to retrieve reservation statistics', result.statusCode || 500, result.message);
+        return;
+      }
+
+      logger.info(`Reservation statistics retrieved for user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Reservation statistics retrieved successfully');
+    } catch (error) {
+      logger.error('Error in getReservationStats controller:', error);
+      ReservationController.error(res, error, 500, 'An error occurred while retrieving reservation statistics');
+    }
+  }
 }

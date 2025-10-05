@@ -10,6 +10,9 @@ import ReservationsBlock from '../../components/analytics/ReservationsBlock'
 import AgentsBlock from '../../components/analytics/AgentsBlock'
 import CustomReportsBlock from '../../components/analytics/CustomReportsBlock'
 import { TrendingUp, Calendar, Download, Filter, BarChart3, PieChart, LineChart } from 'lucide-react'
+import { financialServiceAdapted } from '../../lib/api/adapters/apiAdapter'
+import { useState, useEffect } from 'react'
+import type { KPIOverviewV2, UnitsAnalyticsV2 } from '../../lib/api/services/financialService-v2'
 
 export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
@@ -18,6 +21,45 @@ export default function AnalyticsPage() {
     to: ''
   })
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
+  const [kpiData, setKpiData] = useState<KPIOverviewV2 | null>(null)
+  const [unitsData, setUnitsData] = useState<UnitsAnalyticsV2 | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Load analytics data
+  useEffect(() => {
+    const loadAnalyticsData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load KPI overview
+        const kpiResponse = await financialServiceAdapted.getKPIOverview({
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined
+        })
+        
+        if (kpiResponse.success) {
+          setKpiData(kpiResponse.data)
+        }
+        
+        // Load units analytics
+        const unitsResponse = await financialServiceAdapted.getUnitsAnalytics({
+          dateFrom: dateRange.from || undefined,
+          dateTo: dateRange.to || undefined
+        })
+        
+        if (unitsResponse.success) {
+          setUnitsData(unitsResponse.data)
+        }
+        
+      } catch (error) {
+        console.error('Error loading analytics data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadAnalyticsData()
+  }, [dateRange])
 
   const periods = [
     { value: 'week', label: 'This Week' },

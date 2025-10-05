@@ -43,12 +43,23 @@ export const API_V2_ENDPOINTS = {
   PROPERTIES: {
     BASE: '/properties',
     BY_ID: (id: string) => `/properties/${id}`,
+    MARKETING: (id: string) => `/properties/${id}/marketing`,
+    AVAILABILITY: (id: string) => `/properties/${id}/availability`,
   },
 
   // Reservations
   RESERVATIONS: {
     BASE: '/reservations',
     BY_ID: (id: string) => `/reservations/${id}`,
+    DATES: (id: string) => `/reservations/${id}/dates`,
+  },
+
+  // Orchestrator
+  ORCHESTRATOR: {
+    CONFIRM_RESERVATION: (id: string) => `/orchestrator/reservations/${id}/confirm`,
+    CANCEL_RESERVATION: (id: string) => `/orchestrator/reservations/${id}/cancel`,
+    CHECKIN_RESERVATION: (id: string) => `/orchestrator/reservations/${id}/checkin`,
+    GET_STATUS: (id: string) => `/orchestrator/reservations/${id}/status`,
   },
 };
 
@@ -74,3 +85,41 @@ export interface FilterParams {
   role?: string;
   [key: string]: any;
 }
+
+// Create axios instance for V2 API
+import axios from 'axios';
+
+export const apiClientV2 = axios.create({
+  baseURL: API_V2_CONFIG.BASE_URL,
+  timeout: API_V2_CONFIG.TIMEOUT,
+  headers: API_V2_CONFIG.HEADERS,
+});
+
+// Add request interceptor to include auth token
+apiClientV2.interceptors.request.use(
+  (config) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for error handling
+apiClientV2.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

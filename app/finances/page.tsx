@@ -7,17 +7,18 @@ import FinancialsTable from '../../components/finances/FinancialsTable'
 import FinancialsFilters from '../../components/finances/FinancialsFilters'
 import AddPaymentModal from '../../components/finances/AddPaymentModal'
 import { Filter, Download, Plus, DollarSign, TrendingUp, TrendingDown, CreditCard, AlertCircle } from 'lucide-react'
-import { financeService, FinancialTransaction, FinancialStats, FinancialFilters as FinancialFiltersType } from '../../lib/api/services/financeService'
+import { financialServiceAdapted } from '../../lib/api/adapters/apiAdapter'
+import type { FinancialOverviewV2 } from '../../lib/api/services/financialService-v2'
 
 export default function FinancialsPage() {
   const [loading, setLoading] = useState(true)
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
-  const [stats, setStats] = useState<FinancialStats | null>(null)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [stats, setStats] = useState<FinancialOverviewV2 | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTransactions, setSelectedTransactions] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
-  const [filters, setFilters] = useState<FinancialFiltersType>({})
+  const [filters, setFilters] = useState<any>({})
   const [dateRange, setDateRange] = useState({
     from: '',
     to: ''
@@ -29,22 +30,18 @@ export default function FinancialsPage() {
       try {
         setLoading(true)
         
-        // Load transactions with filters
-        const transactionsResponse = await financeService.getFinancialTransactions({
+        // Load financial overview
+        const statsResponse = await financialServiceAdapted.getFinancialOverview({
           ...filters,
-          search: searchTerm || undefined,
           dateFrom: dateRange.from || undefined,
           dateTo: dateRange.to || undefined
         })
         
-        // Load stats
-        const statsResponse = await financeService.getFinancialStats({
-          dateFrom: dateRange.from || undefined,
-          dateTo: dateRange.to || undefined
-        })
-        
-        setTransactions(transactionsResponse.data)
-        setStats(statsResponse.data)
+        if (statsResponse.success) {
+          setStats(statsResponse.data)
+          // For now, we'll use empty transactions array since we don't have transaction list endpoint yet
+          setTransactions([])
+        }
       } catch (error) {
         console.error('Error loading financial data:', error)
       } finally {

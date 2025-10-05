@@ -27,6 +27,12 @@ model User {
   reservations_reservations_agent_idTousers reservations[] @relation("reservations_agent_idTousers")
   reservations_reservations_guest_idTousers reservations[] @relation("reservations_guest_idTousers")
   transactions                              transactions[]
+  
+  // Task relations
+  assigned_tasks                            tasks[]        @relation("TaskAssignedUser")
+  created_tasks                             tasks[]        @relation("TaskCreator")
+  task_comments                             task_comments[]
+  task_attachments                          task_attachments[] @relation("TaskAttachmentUploader")
 
   @@map("users")
 }
@@ -116,6 +122,11 @@ model properties {
   property_photos                  property_photos[]
   reservations                     reservations[]
   transactions                     transactions[]
+  
+  // Task relations
+  tasks                           tasks[]
+  // Scheduler relations
+  manual_blocks                   manual_blocks[]
 }
 
 model property_photos {
@@ -246,4 +257,132 @@ enum TransactionType {
   FEE
   EXPENSE
   REVENUE
+}
+
+enum TaskType {
+  CLEANING
+  MAINTENANCE
+}
+
+enum TaskStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model tasks {
+  id                String        @id @default(cuid())
+  title             String
+  description       String?
+  type              TaskType
+  status            TaskStatus    @default(SCHEDULED)
+  priority          TaskPriority  @default(NORMAL)
+  property_id       String
+  assigned_to       String?
+  created_by        String
+  scheduled_date    DateTime?
+  completed_date    DateTime?
+  estimated_duration String?      // e.g., "2 hours"
+  actual_duration   String?       // e.g., "1.5 hours"
+  cost              Decimal?      @db.Decimal(10,2)
+  notes             String?
+  is_active         Boolean       @default(true)
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  
+  // Relations
+  property          properties    @relation(fields: [property_id], references: [id])
+  assigned_user     User?         @relation("TaskAssignedUser", fields: [assigned_to], references: [id])
+  creator           User          @relation("TaskCreator", fields: [created_by], references: [id])
+  comments          task_comments[]
+  checklist_items   task_checklist_items[]
+  attachments       task_attachments[]
+
+  @@map("tasks")
+}
+
+model task_comments {
+  id        String   @id @default(cuid())
+  task_id   String
+  user_id   String
+  content   String
+  type      String   @default("user") // 'cleaner', 'completion', 'inspection', 'user'
+  created_at DateTime @default(now())
+  
+  // Relations
+  task      tasks    @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [user_id], references: [id])
+
+  @@map("task_comments")
+}
+
+model task_checklist_items {
+  id        String   @id @default(cuid())
+  task_id   String
+  item      String
+  completed Boolean  @default(false)
+  order     Int      @default(0)
+  created_at DateTime @default(now())
+  
+  // Relations
+  task      tasks    @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@map("task_checklist_items")
+}
+
+model task_attachments {
+  id          String   @id @default(cuid())
+  task_id     String
+  filename    String
+  original_name String
+  file_path   String
+  file_size   Int
+  mime_type   String
+  uploaded_by String
+  created_at  DateTime @default(now())
+  
+  // Relations
+  task        tasks    @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        User     @relation("TaskAttachmentUploader", fields: [uploaded_by], references: [id])
+
+  @@map("task_attachments")
+}
+
+model manual_blocks {
+  id          String     @id @default(cuid())
+  property_id String     @map("property_id")
+  start_date  DateTime   @map("start_date")
+  end_date    DateTime   @map("end_date")
+  title       String
+  notes       String?
+  created_at  DateTime   @default(now()) @map("created_at")
+  created_by  String     @map("created_by")
+
+  // Relations
+  property    properties @relation(fields: [property_id], references: [id], onDelete: Cascade)
+
+  @@map("manual_blocks")
+}
+
+model settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  category    String   @default("general")
+  type        String   @default("string") // string, number, boolean, json
+  is_editable Boolean  @default(true)
+  created_at  DateTime @default(now()) @map("created_at")
+  updated_at  DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
 }

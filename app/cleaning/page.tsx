@@ -6,13 +6,14 @@ import CleaningTable from '../../components/cleaning/CleaningTable'
 import CleaningFilters from '../../components/cleaning/CleaningFilters'
 import AddCleaningModal from '../../components/cleaning/AddCleaningModal'
 import { Plus, Filter, Sparkles, Home, Calendar } from 'lucide-react'
-import { cleaningService, CleaningTask, CleaningStats, CleaningFilters as CleaningFiltersType } from '../../lib/api/services/cleaningService'
+import { taskServiceAdapted } from '../../lib/api/adapters/apiAdapter'
+import type { TaskWithDetailsV2, TaskStatsV2 } from '../../lib/api/services/taskService-v2'
 
 export default function CleaningPage() {
   const [loading, setLoading] = useState(true)
-  const [tasks, setTasks] = useState<CleaningTask[]>([])
-  const [stats, setStats] = useState<CleaningStats | null>(null)
-  const [filters, setFilters] = useState<CleaningFiltersType>({})
+  const [tasks, setTasks] = useState<TaskWithDetailsV2[]>([])
+  const [stats, setStats] = useState<TaskStatsV2 | null>(null)
+  const [filters, setFilters] = useState<any>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCleaning, setSelectedCleaning] = useState<number[]>([])
 
@@ -30,17 +31,18 @@ export default function CleaningPage() {
       try {
         setLoading(true)
         
-        // Load tasks with filters
-        const tasksResponse = await cleaningService.getCleaningTasks({
+        // Load tasks with filters (only cleaning tasks)
+        const tasksResponse = await taskServiceAdapted.getAll({
           ...filters,
+          type: 'CLEANING',
           search: searchTerm || undefined
         })
         if (tasksResponse.success) {
-          setTasks(tasksResponse.data)
+          setTasks(tasksResponse.data.data)
         }
         
         // Load stats
-        const statsResponse = await cleaningService.getCleaningStats()
+        const statsResponse = await taskServiceAdapted.getStats()
         if (statsResponse.success) {
           setStats(statsResponse.data)
         }

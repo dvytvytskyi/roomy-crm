@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../utils/logger';
+import { PrismaClient, Prisma } from '@prisma/client';
+import logger from '../utils/logger';
 import { BaseService } from './BaseService';
 import { CurrentUser } from '../types/dto';
 import { ServiceResponse } from '../types';
@@ -29,21 +29,10 @@ export class ReservationOrchestratorService extends BaseService {
     reservationId: string
   ): Promise<ServiceResponse<ReservationOrchestratorResponse>> {
     const prisma = new PrismaClient();
-    const steps: OrchestratorStep[] = [];
-
+    logger.info(`[Saga START] Confirming reservation ${reservationId}`);
     try {
-      logger.info(`Starting reservation confirmation saga for reservation: ${reservationId}`);
-
-      // Execute all steps in a single transaction
-      const result = await prisma.$transaction(async (tx) => {
-        // Step 1: Validation
-        steps.push({
-          step: 'validation',
-          status: 'pending',
-          message: 'Validating reservation...',
-          timestamp: new Date()
-        });
-
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        logger.info(`[Saga Step 1/7] Validating...`);
         const reservation = await tx.reservations.findUnique({
           where: { id: reservationId },
           include: {
@@ -54,42 +43,26 @@ export class ReservationOrchestratorService extends BaseService {
         });
 
         if (!reservation) {
-          steps[0].status = 'failed';
-          steps[0].message = 'Reservation not found';
           throw new Error('Reservation not found');
         }
+        
+        logger.info(`[Saga Step 1/7] Reservation found. Status: ${reservation.status}`);
 
         if (reservation.status !== 'PENDING') {
-          steps[0].status = 'failed';
-          steps[0].message = `Reservation status is ${reservation.status}, expected PENDING`;
-          throw new Error(`Reservation status is ${reservation.status}, expected PENDING`);
+          throw new Error(`Reservation is not in PENDING state. Current status: ${reservation.status}`);
         }
 
         // Check permissions
         if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'AGENT') {
-          steps[0].status = 'failed';
-          steps[0].message = 'Insufficient permissions to confirm reservation';
           throw new Error('Insufficient permissions to confirm reservation');
         }
 
         // If AGENT, check if they manage this reservation
         if (currentUser.role === 'AGENT' && reservation.agent_id !== currentUser.id) {
-          steps[0].status = 'failed';
-          steps[0].message = 'Agent can only confirm their own reservations';
           throw new Error('Agent can only confirm their own reservations');
         }
 
-        steps[0].status = 'completed';
-        steps[0].message = 'Reservation validation successful';
-
-        // Step 2: Update Status
-        steps.push({
-          step: 'update_status',
-          status: 'pending',
-          message: 'Updating reservation status...',
-          timestamp: new Date()
-        });
-
+        logger.info(`[Saga Step 2/7] Updating status...`);
         const updatedReservation = await tx.reservations.update({
           where: { id: reservationId },
           data: {
@@ -98,181 +71,116 @@ export class ReservationOrchestratorService extends BaseService {
           }
         });
 
-        steps[1].status = 'completed';
-        steps[1].message = 'Reservation status updated to CONFIRMED';
-
-        // Step 3: Create Tasks (using system_settings as task storage)
-        steps.push({
-          step: 'create_tasks',
-          status: 'pending',
-          message: 'Creating automatic tasks...',
-          timestamp: new Date()
-        });
-
+        logger.info(`[Saga Step 3/7] Creating task...`);
         const taskId = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        // Create task entry in system_settings (temporary solution)
-        await tx.system_settings.create({
-          data: {
-            id: taskId,
-            key: `task_${reservationId}_pre_cleaning`,
-            value: {
-              type: 'PRE_ARRIVAL_CLEANING',
-              reservation_id: reservationId,
-              property_id: reservation.property_id,
-              status: 'PENDING',
-              assigned_to: reservation.agent_id || currentUser.id,
-              due_date: new Date(reservation.check_in.getTime() - 24 * 60 * 60 * 1000), // 1 day before check-in
-              created_by: currentUser.id,
-              description: 'Pre-arrival cleaning and preparation'
-            },
-            description: 'Pre-arrival cleaning task',
-            category: 'TASKS'
-          }
-        });
+        const preArrivalCleaningData = {
+          id: taskId,
+          key: `task_${reservationId}_pre_cleaning`,
+          value: {
+            type: 'PRE_ARRIVAL_CLEANING',
+            reservation_id: reservationId,
+            property_id: reservation.property_id,
+            status: 'PENDING',
+            assigned_to: reservation.agent_id || currentUser.id,
+            due_date: new Date(reservation.check_in.getTime() - 24 * 60 * 60 * 1000),
+            created_by: currentUser.id,
+            description: 'Pre-arrival cleaning and preparation'
+          },
+          description: 'Pre-arrival cleaning task',
+          category: 'TASKS',
+          updated_at: new Date()
+        };
+        
+        await tx.system_settings.create({ data: preArrivalCleaningData });
 
-        // Create check-in meeting task
+        logger.info(`[Saga Step 4/7] Creating check-in task...`);
         const checkInTaskId = `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        await tx.system_settings.create({
-          data: {
-            id: checkInTaskId,
-            key: `task_${reservationId}_checkin_meeting`,
-            value: {
-              type: 'CHECKIN_MEETING',
-              reservation_id: reservationId,
-              property_id: reservation.property_id,
-              status: 'PENDING',
-              assigned_to: reservation.agent_id || currentUser.id,
-              due_date: reservation.check_in,
-              created_by: currentUser.id,
-              description: 'Guest check-in meeting and key handover'
-            },
-            description: 'Check-in meeting task',
-            category: 'TASKS'
-          }
-        });
+        
+        const checkInMeetingData = {
+          id: checkInTaskId,
+          key: `task_${reservationId}_checkin_meeting`,
+          value: {
+            type: 'CHECKIN_MEETING',
+            reservation_id: reservationId,
+            property_id: reservation.property_id,
+            status: 'PENDING',
+            assigned_to: reservation.agent_id || currentUser.id,
+            due_date: reservation.check_in,
+            created_by: currentUser.id,
+            description: 'Guest check-in meeting and key handover'
+          },
+          description: 'Check-in meeting task',
+          category: 'TASKS',
+          updated_at: new Date()
+        };
+        
+        await tx.system_settings.create({ data: checkInMeetingData });
 
-        steps[2].status = 'completed';
-        steps[2].message = 'Automatic tasks created (Pre-arrival cleaning, Check-in meeting)';
-
-        // Step 4: Financial Updates
-        steps.push({
-          step: 'financial_updates',
-          status: 'pending',
-          message: 'Updating financial records...',
-          timestamp: new Date()
-        });
-
-        // Update payment status if needed
+        logger.info(`[Saga Step 5/7] Processing financial updates...`);
         if (updatedReservation.paid_amount < updatedReservation.total_amount) {
-          // Create a transaction record for outstanding balance
           const transactionId = `txn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          await tx.transactions.create({
-            data: {
-              id: transactionId,
-              transaction_id: `TXN-${Date.now()}`,
-              property_id: reservation.property_id,
-              reservation_id: reservationId,
-              user_id: reservation.guest_id,
-              type: 'REVENUE',
-              category: 'RESERVATION_PAYMENT',
-              amount: updatedReservation.outstanding_balance,
-              net_amount: updatedReservation.outstanding_balance,
-              currency: 'USD',
-              status: 'PENDING',
-              description: `Outstanding payment for reservation ${reservation.reservation_id}`,
-              created_at: new Date(),
-              updated_at: new Date()
-            }
-          });
+          
+          const transactionData = {
+            id: transactionId,
+            transaction_id: `TXN-${Date.now()}`,
+            property_id: reservation.property_id,
+            reservation_id: reservationId,
+            user_id: reservation.guest_id,
+            type: 'REVENUE' as const,
+            category: 'RESERVATION_PAYMENT',
+            amount: updatedReservation.outstanding_balance,
+            net_amount: updatedReservation.outstanding_balance,
+            currency: 'USD',
+            status: 'PENDING' as const,
+            description: `Outstanding payment for reservation ${reservation.reservation_id}`,
+            created_at: new Date(),
+            updated_at: new Date()
+          };
+          
+          await tx.transactions.create({ data: transactionData });
         }
 
-        steps[3].status = 'completed';
-        steps[3].message = 'Financial records updated';
-
-        // Step 5: Notifications (Logging for now)
-        steps.push({
-          step: 'notifications',
-          status: 'pending',
-          message: 'Sending notifications...',
-          timestamp: new Date()
-        });
-
-        // Log notification actions
-        logger.info(`Sending confirmation email to guest: ${reservation.guest_email}`);
-        logger.info(`Notifying property owner about confirmed reservation`);
-        logger.info(`Sending confirmation SMS to guest: ${reservation.guest_phone}`);
-
-        steps[4].status = 'completed';
-        steps[4].message = 'Notifications sent (logged)';
-
-        // Step 6: Audit Logging
-        steps.push({
-          step: 'audit_logging',
-          status: 'pending',
-          message: 'Recording audit trail...',
-          timestamp: new Date()
-        });
-
-        // Create audit log entry
+        logger.info(`[Saga Step 6/7] Creating audit log...`);
         const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        await tx.audit_logs.create({
-          data: {
-            id: auditId,
-            users: { connect: { id: currentUser.id } },
-            action: 'RESERVATION_CONFIRMED',
-            entity_type: 'RESERVATION',
-            entity_id: reservationId,
-            ip_address: '127.0.0.1', // TODO: Get from request
-            user_agent: 'Backend-V2-Orchestrator'
-          }
-        });
+        
+        const auditData = {
+          id: auditId,
+          user_id: currentUser.id,
+          action: 'RESERVATION_CONFIRMED',
+          entity_type: 'RESERVATION',
+          entity_id: reservationId,
+          ip_address: '127.0.0.1',
+          user_agent: 'Backend-V2-Orchestrator'
+        };
+        
+        await tx.audit_logs.create({ data: auditData });
 
-        steps[5].status = 'completed';
-        steps[5].message = 'Audit trail recorded';
-
-        return {
+        logger.info(`[Saga END] Transaction successful.`);
+        
+        const response: ReservationOrchestratorResponse = {
+          success: true,
           reservationId: reservationId,
           status: 'CONFIRMED',
-          steps: steps
+          message: 'Reservation confirmed successfully',
+          steps: []
         };
-
+        
+        return { success: true, data: response, message: 'Reservation confirmed successfully.' };
       });
-
       await prisma.$disconnect();
-
-      const response: ReservationOrchestratorResponse = {
-        success: true,
-        reservationId: reservationId,
-        status: 'CONFIRMED',
-        message: 'Reservation confirmed successfully',
-        steps: result.steps
-      };
-
-      logger.info(`Reservation confirmation saga completed successfully: ${reservationId}`);
-      return ReservationOrchestratorService.prototype.success(response, 'Reservation confirmed successfully');
-
-    } catch (error) {
+      return result;
+    } catch (error: any) {
       await prisma.$disconnect();
-      logger.error('Reservation confirmation saga failed:', error);
-
-      // Mark any pending steps as failed
-      steps.forEach(step => {
-        if (step.status === 'pending') {
-          step.status = 'failed';
-          step.message = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        }
+      logger.error(`[Saga FAILED] Error during reservation confirmation for ${reservationId}:`, {
+        message: error.message,
+        stack: error.stack,
+        // Якщо це помилка Prisma, вона матиме додаткові корисні поля
+        code: error.code,
+        meta: error.meta,
       });
-
-      const response: ReservationOrchestratorResponse = {
-        success: false,
-        reservationId: reservationId,
-        status: 'FAILED',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        steps: steps
-      };
-
-      return ReservationOrchestratorService.prototype.error('Saga Failed', error instanceof Error ? error.message : 'Unknown error');
+      // Викидаємо помилку далі, щоб контролер її зловив
+      throw new Error('Failed to confirm reservation due to an internal error.'); 
     }
   }
 
@@ -285,20 +193,10 @@ export class ReservationOrchestratorService extends BaseService {
     reason?: string
   ): Promise<ServiceResponse<ReservationOrchestratorResponse>> {
     const prisma = new PrismaClient();
-    const steps: OrchestratorStep[] = [];
-
+    logger.info(`[Saga START] Cancelling reservation ${reservationId}`);
     try {
-      logger.info(`Starting reservation cancellation saga for reservation: ${reservationId}`);
-
-      const result = await prisma.$transaction(async (tx) => {
-        // Step 1: Validation
-        steps.push({
-          step: 'validation',
-          status: 'pending',
-          message: 'Validating reservation for cancellation...',
-          timestamp: new Date()
-        });
-
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        logger.info(`[Saga Step 1/5] Validating reservation for cancellation...`);
         const reservation = await tx.reservations.findUnique({
           where: { id: reservationId },
           include: {
@@ -307,35 +205,19 @@ export class ReservationOrchestratorService extends BaseService {
         });
 
         if (!reservation) {
-          steps[0].status = 'failed';
-          steps[0].message = 'Reservation not found';
           throw new Error('Reservation not found');
         }
 
         if (reservation.status === 'CANCELLED') {
-          steps[0].status = 'failed';
-          steps[0].message = 'Reservation is already cancelled';
           throw new Error('Reservation is already cancelled');
         }
 
-        if (reservation.status === 'COMPLETED') {
-          steps[0].status = 'failed';
-          steps[0].message = 'Cannot cancel completed reservation';
+        if (reservation.status === 'CHECKED_OUT') {
           throw new Error('Cannot cancel completed reservation');
         }
 
-        steps[0].status = 'completed';
-        steps[0].message = 'Reservation validation successful';
-
-        // Step 2: Update Status
-        steps.push({
-          step: 'update_status',
-          status: 'pending',
-          message: 'Updating reservation status to cancelled...',
-          timestamp: new Date()
-        });
-
-        await tx.reservations.update({
+        logger.info(`[Saga Step 2/5] Updating reservation status to CANCELLED...`);
+        const updatedReservation = await tx.reservations.update({
           where: { id: reservationId },
           data: {
             status: 'CANCELLED',
@@ -344,17 +226,7 @@ export class ReservationOrchestratorService extends BaseService {
           }
         });
 
-        steps[1].status = 'completed';
-        steps[1].message = 'Reservation status updated to CANCELLED';
-
-        // Step 3: Cancel Tasks
-        steps.push({
-          step: 'cancel_tasks',
-          status: 'pending',
-          message: 'Cancelling related tasks...',
-          timestamp: new Date()
-        });
-
+        logger.info(`[Saga Step 3/5] Cancelling related tasks...`);
         // Update task status to cancelled
         await tx.system_settings.updateMany({
           where: {
@@ -371,19 +243,8 @@ export class ReservationOrchestratorService extends BaseService {
           }
         });
 
-        steps[2].status = 'completed';
-        steps[2].message = 'Related tasks cancelled';
-
-        // Step 4: Refund Processing
-        steps.push({
-          step: 'refund_processing',
-          status: 'pending',
-          message: 'Processing refunds...',
-          timestamp: new Date()
-        });
-
+        logger.info(`[Saga Step 4/5] Processing refunds...`);
         if (reservation.paid_amount > 0) {
-          // Create refund transaction
           const refundId = `txn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           await tx.transactions.create({
             data: {
@@ -392,12 +253,12 @@ export class ReservationOrchestratorService extends BaseService {
               property_id: reservation.property_id,
               reservation_id: reservationId,
               user_id: reservation.guest_id,
-              type: 'REFUND',
+              type: 'REFUND' as const,
               category: 'RESERVATION_CANCELLATION',
               amount: -reservation.paid_amount,
               net_amount: -reservation.paid_amount,
               currency: 'USD',
-              status: 'PENDING',
+              status: 'PENDING' as const,
               description: `Refund for cancelled reservation ${reservation.reservation_id}`,
               created_at: new Date(),
               updated_at: new Date()
@@ -405,39 +266,12 @@ export class ReservationOrchestratorService extends BaseService {
           });
         }
 
-        steps[3].status = 'completed';
-        steps[3].message = 'Refund processing initiated';
-
-        // Step 5: Notifications
-        steps.push({
-          step: 'notifications',
-          status: 'pending',
-          message: 'Sending cancellation notifications...',
-          timestamp: new Date()
-        });
-
-        logger.info(`Sending cancellation email to guest: ${reservation.guest_email}`);
-        logger.info(`Notifying property owner about cancelled reservation`);
-        if (reservation.paid_amount > 0) {
-          logger.info(`Sending refund notification to guest`);
-        }
-
-        steps[4].status = 'completed';
-        steps[4].message = 'Cancellation notifications sent';
-
-        // Step 6: Audit Logging
-        steps.push({
-          step: 'audit_logging',
-          status: 'pending',
-          message: 'Recording audit trail...',
-          timestamp: new Date()
-        });
-
+        logger.info(`[Saga Step 5/5] Creating audit log...`);
         const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await tx.audit_logs.create({
           data: {
             id: auditId,
-            users: { connect: { id: currentUser.id } },
+            user_id: currentUser.id,
             action: 'RESERVATION_CANCELLED',
             entity_type: 'RESERVATION',
             entity_id: reservationId,
@@ -446,41 +280,102 @@ export class ReservationOrchestratorService extends BaseService {
           }
         });
 
-        steps[5].status = 'completed';
-        steps[5].message = 'Audit trail recorded';
-
-        return {
+        logger.info(`[Saga END] Transaction successful.`);
+        
+        const response: ReservationOrchestratorResponse = {
+          success: true,
           reservationId: reservationId,
           status: 'CANCELLED',
-          steps: steps
+          message: 'Reservation cancelled successfully',
+          steps: []
         };
+        
+        return { success: true, data: response, message: 'Reservation cancelled successfully.' };
       });
-
       await prisma.$disconnect();
-
-      const response: ReservationOrchestratorResponse = {
-        success: true,
-        reservationId: reservationId,
-        status: 'CANCELLED',
-        message: 'Reservation cancelled successfully',
-        steps: result.steps
-      };
-
-      logger.info(`Reservation cancellation saga completed successfully: ${reservationId}`);
-      return ReservationOrchestratorService.prototype.success(response, 'Reservation cancelled successfully');
-
-    } catch (error) {
+      return result;
+    } catch (error: any) {
       await prisma.$disconnect();
-      logger.error('Reservation cancellation saga failed:', error);
+      logger.error(`[Saga FAILED] Error during reservation cancellation for ${reservationId}:`, {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        meta: error.meta,
+      });
+      throw new Error('Failed to cancel reservation due to an internal error.'); 
+    }
+  }
 
-      steps.forEach(step => {
-        if (step.status === 'pending') {
-          step.status = 'failed';
-          step.message = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  /**
+   * Check-in a reservation
+   */
+  public static async checkIn(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<ReservationOrchestratorResponse>> {
+    const prisma = new PrismaClient();
+    logger.info(`[Saga START] Checking in reservation ${reservationId}`);
+    try {
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        logger.info(`[Saga Step 1/3] Validating reservation for check-in...`);
+        const reservation = await tx.reservations.findUnique({
+          where: { id: reservationId }
+        });
+
+        if (!reservation) {
+          throw new Error('Reservation not found');
         }
-      });
 
-      return ReservationOrchestratorService.prototype.error('Saga Failed', error instanceof Error ? error.message : 'Unknown error');
+        if (reservation.status !== 'CONFIRMED') {
+          throw new Error(`Reservation must be CONFIRMED to check in. Current status: ${reservation.status}`);
+        }
+
+        logger.info(`[Saga Step 2/3] Updating reservation status to CHECKED_IN...`);
+        const updatedReservation = await tx.reservations.update({
+          where: { id: reservationId },
+          data: {
+            status: 'CHECKED_IN',
+            updated_at: new Date()
+          }
+        });
+
+        logger.info(`[Saga Step 3/3] Creating audit log...`);
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'RESERVATION_CHECKED_IN',
+            entity_type: 'RESERVATION',
+            entity_id: reservationId,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-Orchestrator'
+          }
+        });
+
+        logger.info(`[Saga END] Transaction successful.`);
+        
+        const response: ReservationOrchestratorResponse = {
+          success: true,
+          reservationId: reservationId,
+          status: 'CHECKED_IN',
+          message: 'Reservation checked in successfully',
+          steps: []
+        };
+        
+        return { success: true, data: response, message: 'Reservation checked in successfully.' };
+      });
+      await prisma.$disconnect();
+      return result;
+    } catch (error: any) {
+      await prisma.$disconnect();
+      logger.error(`[Saga FAILED] Error during reservation check-in for ${reservationId}:`, {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        meta: error.meta,
+      });
+      throw new Error('Failed to check in reservation due to an internal error.'); 
     }
   }
 }

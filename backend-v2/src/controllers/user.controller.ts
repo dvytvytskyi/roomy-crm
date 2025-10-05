@@ -261,38 +261,37 @@ export class UserController extends BaseController {
    * Delete user endpoint
    * DELETE /api/v2/users/:id
    */
-  public static deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public static deleteUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      const currentUser = req.user;
+
+      if (!currentUser) {
+        UserController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
 
       if (!id) {
         UserController.validationError(res, [], 'User ID is required');
         return;
       }
 
-      // Prevent self-deletion
-      const currentUser = (req as AuthenticatedRequest).user;
-      if (currentUser && currentUser.id === id) {
-        UserController.error(res, 'Cannot delete your own account', 400, 'Self-deletion is not allowed');
-        return;
-      }
-
-      // Delete user
-      const deleteResult = await UserService.delete(id);
+      // Deactivate user (soft delete)
+      const deleteResult = await UserService.delete(currentUser, id);
 
       if (!deleteResult.success || !deleteResult.data) {
-        UserController.error(res, deleteResult.error || 'User deletion failed', 400, deleteResult.message);
+        UserController.error(res, deleteResult.error || 'User deactivation failed', 400, deleteResult.message);
         return;
       }
 
-      // Log user deletion
-      logger.info(`User deleted: ${deleteResult.data.email}`);
+      // Log user deactivation
+      logger.info(`User deactivated: ${deleteResult.data.email}`);
 
-      // Return deleted user
-      UserController.success(res, deleteResult.data, 'User deleted successfully');
+      // Return deactivated user
+      UserController.success(res, deleteResult.data, 'User deactivated successfully');
     } catch (error) {
       logger.error('Delete user error:', error);
-      UserController.error(res, error, 500, 'User deletion failed');
+      UserController.error(res, error, 500, 'User deactivation failed');
     }
   };
 
@@ -339,4 +338,29 @@ export class UserController extends BaseController {
       UserController.error(res, error, 500, 'Password update failed');
     }
   };
+
+  /**
+   * Get user statistics
+   * @route GET /api/v2/users/stats
+   */
+  public static async getUserStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const currentUser = req.user;
+
+      logger.info(`Getting user statistics for user ${currentUser.email}`);
+
+      const result = await UserService.getStats(currentUser);
+
+      if (!result.success) {
+        UserController.error(res, result.error || 'Failed to retrieve user statistics', result.statusCode || 500, result.message);
+        return;
+      }
+
+      logger.info(`User statistics retrieved for user ${currentUser.email}`);
+      UserController.success(res, result.data, 'User statistics retrieved successfully');
+    } catch (error) {
+      logger.error('Error in getUserStats controller:', error);
+      UserController.error(res, error, 500, 'An error occurred while retrieving user statistics');
+    }
+  }
 }

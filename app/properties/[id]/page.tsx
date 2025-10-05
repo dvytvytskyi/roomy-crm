@@ -2631,7 +2631,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   // Проста функція для збереження полів General Information
-  const handleSaveGeneralField = (field: keyof PropertyGeneralInfo, value: string) => {
+  const handleSaveGeneralField = async (field: keyof PropertyGeneralInfo, value: string) => {
     console.log(`Saving general field ${field} with value:`, value)
     
     // Валідація - не зберігаємо порожні значення якщо це не дозволено
@@ -2766,20 +2766,36 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         break
     }
     
-    setPropertyGeneralInfo(updatedInfo)
-    
-    // Зберігаємо в localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
-      console.log('General info saved to localStorage:', updatedInfo)
-    }
-    
-    // Якщо це nickname, також оновлюємо propertyNickname
-    if (field === 'nickname') {
-      setPropertyNickname(value.trim())
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, value.trim())
+    try {
+      // Оновлюємо через API
+      const updateData = { [field]: value.trim() }
+      const response = await propertyServiceAdapted.update(params?.id || '', updateData)
+      
+      if (response.success) {
+        setPropertyGeneralInfo(updatedInfo)
+        
+        // Зберігаємо в localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
+          console.log('General info saved to localStorage:', updatedInfo)
+        }
+        
+        // Якщо це nickname, також оновлюємо propertyNickname
+        if (field === 'nickname') {
+          setPropertyNickname(value.trim())
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, value.trim())
+          }
+        }
+        
+        console.log(`Field ${field} updated successfully via API`)
+      } else {
+        console.error('Failed to update property field via API')
+        alert('Failed to save changes. Please try again.')
       }
+    } catch (error) {
+      console.error('Error updating property field:', error)
+      alert('Error saving changes. Please try again.')
     }
   }
 

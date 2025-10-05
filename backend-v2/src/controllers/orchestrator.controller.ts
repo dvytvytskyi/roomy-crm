@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { ReservationOrchestratorService } from '../services/reservation-orchestrator.service';
 import { BaseController } from './BaseController';
-import { AuthenticatedRequest } from '../types/dto';
-import { logger } from '../utils/logger';
+import { AuthenticatedRequest } from '../types';
+import logger from '../utils/logger';
 
 export class OrchestratorController extends BaseController {
   /**
@@ -15,31 +15,41 @@ export class OrchestratorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const reservationId = req.params.id;
+      const reservationId = req.params['id'];
       const currentUser = req.user;
 
       if (!currentUser) {
-        OrchestratorController.validationError(res, 'Authentication required');
-        return;
+        // Повертаємо і одразу виходимо з функції
+        return OrchestratorController.validationError(res, ['Authentication required']);
       }
 
       if (!reservationId) {
-        OrchestratorController.validationError(res, 'Reservation ID is required');
-        return;
+        // Повертаємо і одразу виходимо
+        return OrchestratorController.validationError(res, ['Reservation ID is required']);
       }
 
       logger.info(`Orchestrator: Confirming reservation ${reservationId} by user ${currentUser.email}`);
 
-      const result = await ReservationOrchestratorService.confirm(currentUser, reservationId);
+      // Весь виклик сервісу обертаємо в try...catch
+      // Це єдине місце, де може виникнути помилка бізнес-логіки
+      const result = await ReservationOrchestratorService.confirm(currentUser as any, reservationId);
 
-      if (result && result.success) {
-        OrchestratorController.success(res, result.data, result.message);
-      } else {
-        OrchestratorController.error(res, result?.message || 'Unknown error', result?.statusCode || 500);
-      }
-    } catch (error) {
-      logger.error('Orchestrator Controller Error:', error);
-      OrchestratorController.error(res, 'Internal server error', 500);
+      // Якщо ми дійшли до цього рядка, значить сервіс виконав свою роботу успішно
+      logger.info(`Orchestrator: Service call completed successfully. Sending success response.`);
+      OrchestratorController.success(res, result.data, result.message);
+
+    } catch (error: any) {
+      // Тут ми ловимо ВСІ помилки, що сталися вище, включаючи помилки з сервісу
+      logger.error('Orchestrator Controller caught an error:', { 
+        message: error.message, 
+        stack: error.stack 
+      });
+      
+      // Перевіряємо, чи це наша кастомна помилка, чи щось інше
+      const errorMessage = error.message || 'Internal server error';
+      const statusCode = error.statusCode || 500; // Якщо у помилки є статус-код, використовуємо його
+
+      OrchestratorController.error(res, errorMessage, statusCode);
     }
   }
 
@@ -53,32 +63,76 @@ export class OrchestratorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const reservationId = req.params.id;
+      const reservationId = req.params['id'];
       const currentUser = req.user;
       const { reason } = req.body;
 
       if (!currentUser) {
-        OrchestratorController.validationError(res, 'Authentication required');
-        return;
+        return OrchestratorController.validationError(res, ['Authentication required']);
       }
 
       if (!reservationId) {
-        OrchestratorController.validationError(res, 'Reservation ID is required');
-        return;
+        return OrchestratorController.validationError(res, ['Reservation ID is required']);
       }
 
       logger.info(`Orchestrator: Cancelling reservation ${reservationId} by user ${currentUser.email}`);
 
-      const result = await ReservationOrchestratorService.cancel(currentUser, reservationId, reason);
+      const result = await ReservationOrchestratorService.cancel(currentUser as any, reservationId, reason);
 
-      if (result && result.success) {
-        OrchestratorController.success(res, result.data, result.message);
-      } else {
-        OrchestratorController.error(res, result?.message || 'Unknown error', result?.statusCode || 500);
+      logger.info(`Orchestrator: Service call completed successfully. Sending success response.`);
+      OrchestratorController.success(res, result.data, result.message);
+
+    } catch (error: any) {
+      logger.error('Orchestrator Controller caught an error:', { 
+        message: error.message, 
+        stack: error.stack 
+      });
+      
+      const errorMessage = error.message || 'Internal server error';
+      const statusCode = error.statusCode || 500;
+
+      OrchestratorController.error(res, errorMessage, statusCode);
+    }
+  }
+
+  /**
+   * Check-in a reservation
+   * POST /api/v2/orchestrator/reservations/:id/checkin
+   */
+  public static async checkInReservation(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const reservationId = req.params['id'];
+      const currentUser = req.user;
+
+      if (!currentUser) {
+        return OrchestratorController.validationError(res, ['Authentication required']);
       }
-    } catch (error) {
-      logger.error('Orchestrator Controller Error:', error);
-      OrchestratorController.error(res, 'Internal server error', 500);
+
+      if (!reservationId) {
+        return OrchestratorController.validationError(res, ['Reservation ID is required']);
+      }
+
+      logger.info(`Orchestrator: Checking in reservation ${reservationId} by user ${currentUser.email}`);
+
+      const result = await ReservationOrchestratorService.checkIn(currentUser as any, reservationId);
+
+      logger.info(`Orchestrator: Service call completed successfully. Sending success response.`);
+      OrchestratorController.success(res, result.data, result.message);
+
+    } catch (error: any) {
+      logger.error('Orchestrator Controller caught an error:', { 
+        message: error.message, 
+        stack: error.stack 
+      });
+      
+      const errorMessage = error.message || 'Internal server error';
+      const statusCode = error.statusCode || 500;
+
+      OrchestratorController.error(res, errorMessage, statusCode);
     }
   }
 
@@ -92,16 +146,16 @@ export class OrchestratorController extends BaseController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const reservationId = req.params.id;
+      const reservationId = req.params['id'];
       const currentUser = req.user;
 
       if (!currentUser) {
-        OrchestratorController.validationError(res, 'Authentication required');
+        OrchestratorController.validationError(res, ['Authentication required']);
         return;
       }
 
       if (!reservationId) {
-        OrchestratorController.validationError(res, 'Reservation ID is required');
+        OrchestratorController.validationError(res, ['Reservation ID is required']);
         return;
       }
 
@@ -110,7 +164,7 @@ export class OrchestratorController extends BaseController {
       const statusResponse = {
         reservationId,
         orchestratorStatus: 'READY',
-        availableActions: ['confirm', 'cancel'],
+        availableActions: ['confirm', 'cancel', 'checkin'],
         lastUpdated: new Date().toISOString()
       };
 

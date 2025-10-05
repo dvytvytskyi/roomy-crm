@@ -49,17 +49,19 @@ const transports = [
   // Allow to print all the error level messages inside the error.log file
   new DailyRotateFile({
     filename: 'logs/error-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
+    datePattern: 'YYYY-MM-DD-HH',
     level: 'error',
-    maxSize: '20m',
-    maxFiles: '14d',
+    maxSize: '10m',
+    maxFiles: '1d', // Keep only 1 day of error logs
+    maxAge: '1h',   // Delete files older than 1 hour
   }),
   // Allow to print all the error message inside the all.log file
   new DailyRotateFile({
     filename: 'logs/all-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    maxSize: '20m',
-    maxFiles: '14d',
+    datePattern: 'YYYY-MM-DD-HH',
+    maxSize: '10m',
+    maxFiles: '1d', // Keep only 1 day of all logs
+    maxAge: '1h',   // Delete files older than 1 hour
   }),
 ];
 

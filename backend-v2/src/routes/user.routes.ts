@@ -26,6 +26,13 @@ router.get('/test', UserController.test);
  */
 router.get('/', UserController.getAllUsers);
 
+/**
+ * GET /api/v2/users/stats
+ * Get user statistics
+ * Requires ADMIN or MANAGER role
+ */
+router.get('/stats', requireManagerOrAdmin, UserController.getUserStats);
+
 
 /**
  * POST /api/v2/users

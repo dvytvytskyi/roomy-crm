@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Save, DollarSign, AlertCircle, Calculator } from 'lucide-react'
+import { settingsServiceAdapted } from '@/lib/api/adapters/apiAdapter'
 
 interface EditPricingModalProps {
   reservation: any
@@ -17,6 +18,31 @@ export default function EditPricingModal({ reservation, onClose, onSave }: EditP
   })
   const [errors, setErrors] = useState<any>({})
   const [isCalculating, setIsCalculating] = useState(false)
+  const [settings, setSettings] = useState({
+    cleaningFee: 50,
+    taxRate: 0.1
+  })
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    try {
+      const [cleaningFeeResponse, taxRateResponse] = await Promise.all([
+        settingsServiceAdapted.get('default_cleaning_fee'),
+        settingsServiceAdapted.get('default_tax_rate')
+      ])
+
+      setSettings({
+        cleaningFee: cleaningFeeResponse.success && cleaningFeeResponse.data ? parseFloat(cleaningFeeResponse.data.value) : 50,
+        taxRate: taxRateResponse.success && taxRateResponse.data ? parseFloat(taxRateResponse.data.value) : 0.1
+      })
+    } catch (error) {
+      console.error('Error loading settings:', error)
+      // Use defaults if settings fail to load
+    }
+  }
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -31,8 +57,8 @@ export default function EditPricingModal({ reservation, onClose, onSave }: EditP
     const newTotal = parseFloat(formData.total_amount)
     const nights = reservation.nights
     const baseRate = newTotal / nights
-    const cleaningFee = 50 // Default cleaning fee
-    const taxes = newTotal * 0.1 // 10% tax
+    const cleaningFee = settings.cleaningFee // From settings
+    const taxes = newTotal * settings.taxRate // From settings
     
     return {
       base_rate: baseRate,

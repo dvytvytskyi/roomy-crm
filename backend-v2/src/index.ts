@@ -7,12 +7,23 @@ import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 
 import { config, validateConfig } from './config';
+import { initSentry, sentryMiddleware, flushSentry } from './config/sentry';
+import { sentryUserContext, sentryPerformanceContext } from './middleware/sentry.middleware';
 import logger from './utils/logger';
 
 // Validate configuration on startup
 validateConfig();
 
+// Initialize Sentry before creating the Express app
+initSentry();
+
 const app = express();
+
+// Sentry middleware (must be first)
+app.use(sentryMiddleware.requestHandler);
+app.use(sentryMiddleware.tracingHandler);
+app.use(sentryUserContext);
+app.use(sentryPerformanceContext);
 
 // Security middleware
 app.use(helmet());
@@ -75,6 +86,12 @@ import userRoutes from './routes/user.routes';
 import propertyRoutes from './routes/property.routes';
 import reservationRoutes from './routes/reservation.routes';
 import orchestratorRoutes from './routes/orchestrator.routes';
+import taskRoutes from './routes/task.routes';
+import financialRoutes from './routes/financial.routes';
+import schedulerRoutes from './routes/scheduler.routes';
+import settingsRoutes from './routes/settings.routes';
+import webhookRoutes from './routes/webhook.routes';
+import healthRoutes from './routes/health.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -89,6 +106,10 @@ app.get('/api/v2', (_req, res) => {
       properties: '/api/v2/properties',
       reservations: '/api/v2/reservations',
       orchestrator: '/api/v2/orchestrator',
+      tasks: '/api/v2/tasks',
+      financials: '/api/v2/financials',
+      scheduler: '/api/v2/scheduler',
+      webhooks: '/api/v2/webhooks'
     },
   });
 });
@@ -99,6 +120,12 @@ app.use('/api/v2/users', userRoutes);
 app.use('/api/v2/properties', propertyRoutes);
 app.use('/api/v2/reservations', reservationRoutes);
 app.use('/api/v2/orchestrator', orchestratorRoutes);
+app.use('/api/v2/tasks', taskRoutes);
+app.use('/api/v2/financials', financialRoutes);
+app.use('/api/v2/scheduler', schedulerRoutes);
+app.use('/api/v2/settings', settingsRoutes);
+app.use('/api/v2/webhooks', webhookRoutes);
+app.use('/health', healthRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -110,6 +137,9 @@ app.use('*', (req, res) => {
 });
 
 // Global error handler
+// Sentry error handler (must be before other error handlers)
+app.use(sentryMiddleware.errorHandler);
+
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error(`Error: ${err.message}`);
   
@@ -165,13 +195,15 @@ process.on('unhandledRejection', (err) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  await flushSentry(2000);
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  await flushSentry(2000);
   process.exit(0);
 });
 

@@ -11,6 +11,7 @@ import GenerateInvoiceModal from '@/components/reservations/GenerateInvoiceModal
 import EditPricingModal from '@/components/reservations/EditPricingModal'
 import AddAdjustmentModal from '@/components/reservations/AddAdjustmentModal'
 import { reservationService, Reservation } from '@/lib/api/services/reservationService'
+import { reservationServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 interface ReservationDetailsPageProps {
   params: {
@@ -32,7 +33,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
         setError(null)
         console.log('📅 Loading reservation:', params.id)
         
-        const response = await reservationService.getReservationById(params.id)
+        const response = await reservationServiceAdapter.getById(params.id)
         
         if (response.success && response.data) {
           console.log('📅 Reservation loaded:', response.data)
@@ -433,7 +434,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -452,7 +453,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -471,7 +472,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -523,7 +524,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -542,7 +543,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -554,7 +555,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
     }
   }
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = async (action: string) => {
     switch (action) {
       case 'message':
         setIsSendingMessage(true)
@@ -572,10 +573,109 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
         setIsEditingPricing(true)
         break
       case 'confirm':
-        handleUpdateReservationField('status', 'CONFIRMED')
+        await handleConfirmReservation()
+        break
+      case 'cancel':
+        await handleCancelReservation()
+        break
+      case 'checkin':
+        await handleCheckInReservation()
         break
       default:
         console.log('Unknown action:', action)
+    }
+  }
+
+  const handleConfirmReservation = async () => {
+    if (!reservationData) return;
+    
+    try {
+      console.log('📅 Confirming reservation using orchestrator:', reservationData.id);
+      
+      const response = await reservationServiceAdapter.confirmReservation(reservationData.id);
+      
+      if (response.success) {
+        console.log('📅 Reservation confirmed successfully:', response.data);
+        
+        // Reload reservation to get updated data
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData.id);
+        if (updatedResponse.success && updatedResponse.data) {
+          setReservationData(updatedResponse.data);
+          console.log('📅 Reservation data updated:', updatedResponse.data);
+        }
+        
+        // Show success message
+        alert('Reservation confirmed successfully! Tasks have been created and notifications sent.');
+      } else {
+        console.error('📅 Failed to confirm reservation:', response.error);
+        alert('Failed to confirm reservation. Please try again.');
+      }
+    } catch (error) {
+      console.error('📅 Error confirming reservation:', error);
+      alert('Error confirming reservation. Please check the console for details.');
+    }
+  }
+
+  const handleCancelReservation = async () => {
+    if (!reservationData) return;
+    
+    const reason = prompt('Please enter the reason for cancellation:');
+    if (!reason) return;
+    
+    try {
+      console.log('📅 Cancelling reservation using orchestrator:', reservationData.id);
+      
+      const response = await reservationServiceAdapter.cancelReservation(reservationData.id, reason);
+      
+      if (response.success) {
+        console.log('📅 Reservation cancelled successfully:', response.data);
+        
+        // Reload reservation to get updated data
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData.id);
+        if (updatedResponse.success && updatedResponse.data) {
+          setReservationData(updatedResponse.data);
+          console.log('📅 Reservation data updated:', updatedResponse.data);
+        }
+        
+        // Show success message
+        alert('Reservation cancelled successfully! Refund process initiated.');
+      } else {
+        console.error('📅 Failed to cancel reservation:', response.error);
+        alert('Failed to cancel reservation. Please try again.');
+      }
+    } catch (error) {
+      console.error('📅 Error cancelling reservation:', error);
+      alert('Error cancelling reservation. Please check the console for details.');
+    }
+  }
+
+  const handleCheckInReservation = async () => {
+    if (!reservationData) return;
+    
+    try {
+      console.log('📅 Checking in reservation using orchestrator:', reservationData.id);
+      
+      const response = await reservationServiceAdapter.checkInReservation(reservationData.id);
+      
+      if (response.success) {
+        console.log('📅 Reservation checked in successfully:', response.data);
+        
+        // Reload reservation to get updated data
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData.id);
+        if (updatedResponse.success && updatedResponse.data) {
+          setReservationData(updatedResponse.data);
+          console.log('📅 Reservation data updated:', updatedResponse.data);
+        }
+        
+        // Show success message
+        alert('Guest checked in successfully!');
+      } else {
+        console.error('📅 Failed to check in reservation:', response.error);
+        alert('Failed to check in reservation. Please try again.');
+      }
+    } catch (error) {
+      console.error('📅 Error checking in reservation:', error);
+      alert('Error checking in reservation. Please check the console for details.');
     }
   }
 
@@ -673,7 +773,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -691,7 +791,7 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
       
       if (response.success && response.data) {
         // Reload reservation to get updated data
-        const updatedResponse = await reservationService.getReservationById(reservationData!.id)
+        const updatedResponse = await reservationServiceAdapter.getById(reservationData!.id)
         if (updatedResponse.success && updatedResponse.data) {
           setReservationData(updatedResponse.data)
         }
@@ -936,6 +1036,39 @@ export default function ReservationDetailsPage({ params }: ReservationDetailsPag
                     <Calendar size={16} className="inline mr-1" />
                     Dates
                   </button>
+                </div>
+                
+                {/* Status-specific actions */}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="grid grid-cols-1 gap-2">
+                    {reservationData.status === 'PENDING' && (
+                      <button 
+                        onClick={() => handleQuickAction('confirm')}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center justify-center"
+                      >
+                        <CheckCircle size={16} className="inline mr-1" />
+                        Confirm Reservation
+                      </button>
+                    )}
+                    {reservationData.status === 'CONFIRMED' && (
+                      <button 
+                        onClick={() => handleQuickAction('checkin')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center justify-center"
+                      >
+                        <CheckCircle size={16} className="inline mr-1" />
+                        Check In Guest
+                      </button>
+                    )}
+                    {(reservationData.status === 'PENDING' || reservationData.status === 'CONFIRMED') && (
+                      <button 
+                        onClick={() => handleQuickAction('cancel')}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center justify-center"
+                      >
+                        <XCircle size={16} className="inline mr-1" />
+                        Cancel Reservation
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

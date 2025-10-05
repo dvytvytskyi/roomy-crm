@@ -166,7 +166,12 @@ class PropertyServiceV2 {
       console.log('🏠 PropertyServiceV2: API Response:', response);
       console.log('🏠 PropertyServiceV2: Properties count:', response.data?.data?.length || 0);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('🏠 PropertyServiceV2: Error fetching properties:', error);
       throw error;
@@ -184,7 +189,12 @@ class PropertyServiceV2 {
       
       console.log('🏠 PropertyServiceV2: Property details:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('🏠 PropertyServiceV2: Error fetching property:', error);
       throw error;
@@ -229,7 +239,12 @@ class PropertyServiceV2 {
       
       console.log('🏠 PropertyServiceV2: Property created:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('🏠 PropertyServiceV2: Error creating property:', error);
       throw error;
@@ -249,9 +264,84 @@ class PropertyServiceV2 {
       
       console.log('🏠 PropertyServiceV2: Property updated:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('🏠 PropertyServiceV2: Error updating property:', error);
+      throw error;
+    }
+  }
+
+  async updateMarketing(id: string, marketingData: any): Promise<ApiResponseV2<PropertyV2>> {
+    console.log('🏠 PropertyServiceV2: Updating property marketing:', id);
+    console.log('🏠 PropertyServiceV2: Marketing data:', marketingData);
+    
+    try {
+      const response = await apiClientV2.put<PropertyV2>(
+        API_V2_ENDPOINTS.PROPERTIES.MARKETING(id),
+        marketingData
+      );
+      
+      console.log('🏠 PropertyServiceV2: Property marketing updated:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error updating property marketing:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailability(id: string, availabilityData: any): Promise<ApiResponseV2<PropertyV2>> {
+    console.log('🏠 PropertyServiceV2: Updating property availability:', id);
+    console.log('🏠 PropertyServiceV2: Availability data:', availabilityData);
+    
+    try {
+      const response = await apiClientV2.put<PropertyV2>(
+        API_V2_ENDPOINTS.PROPERTIES.AVAILABILITY(id),
+        availabilityData
+      );
+      
+      console.log('🏠 PropertyServiceV2: Property availability updated:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error updating property availability:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string): Promise<ApiResponseV2<PropertyV2>> {
+    console.log('🏠 PropertyServiceV2: Deleting property:', id);
+    
+    try {
+      const response = await apiClientV2.delete<PropertyV2>(
+        API_V2_ENDPOINTS.PROPERTIES.BY_ID(id)
+      );
+      
+      console.log('🏠 PropertyServiceV2: Property deleted:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error deleting property:', error);
       throw error;
     }
   }

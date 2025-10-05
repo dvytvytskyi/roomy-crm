@@ -158,7 +158,12 @@ class ReservationServiceV2 {
       console.log('📅 ReservationServiceV2: API Response:', response);
       console.log('📅 ReservationServiceV2: Reservations count:', response.data?.data?.length || 0);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('📅 ReservationServiceV2: Error fetching reservations:', error);
       throw error;
@@ -176,7 +181,12 @@ class ReservationServiceV2 {
       
       console.log('📅 ReservationServiceV2: Reservation details:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('📅 ReservationServiceV2: Error fetching reservation:', error);
       throw error;
@@ -243,7 +253,12 @@ class ReservationServiceV2 {
       
       console.log('📅 ReservationServiceV2: Reservation created:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('📅 ReservationServiceV2: Error creating reservation:', error);
       throw error;
@@ -263,9 +278,135 @@ class ReservationServiceV2 {
       
       console.log('📅 ReservationServiceV2: Reservation updated:', response.data);
       
-      return response;
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('📅 ReservationServiceV2: Error updating reservation:', error);
+      throw error;
+    }
+  }
+
+  // Confirm reservation (trigger orchestrator workflow)
+  async confirmReservation(id: string): Promise<ApiResponseV2<any>> {
+    console.log('📅 ReservationServiceV2: Confirming reservation:', id);
+    
+    try {
+      const response = await apiClientV2.post<any>(
+        API_V2_ENDPOINTS.ORCHESTRATOR.CONFIRM_RESERVATION(id),
+        {}
+      );
+      
+      console.log('📅 ReservationServiceV2: Reservation confirmation response:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('📅 ReservationServiceV2: Error confirming reservation:', error);
+      throw error;
+    }
+  }
+
+  // Cancel reservation (trigger orchestrator workflow)
+  async cancelReservation(id: string, reason?: string): Promise<ApiResponseV2<any>> {
+    console.log('📅 ReservationServiceV2: Cancelling reservation:', id);
+    console.log('📅 ReservationServiceV2: Cancellation reason:', reason);
+    
+    try {
+      const response = await apiClientV2.post<any>(
+        API_V2_ENDPOINTS.ORCHESTRATOR.CANCEL_RESERVATION(id),
+        { reason }
+      );
+      
+      console.log('📅 ReservationServiceV2: Reservation cancellation response:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('📅 ReservationServiceV2: Error cancelling reservation:', error);
+      throw error;
+    }
+  }
+
+  // Check-in reservation (trigger orchestrator workflow)
+  async checkInReservation(id: string): Promise<ApiResponseV2<any>> {
+    console.log('📅 ReservationServiceV2: Checking in reservation:', id);
+    
+    try {
+      const response = await apiClientV2.post<any>(
+        API_V2_ENDPOINTS.ORCHESTRATOR.CHECKIN_RESERVATION(id),
+        {}
+      );
+      
+      console.log('📅 ReservationServiceV2: Reservation check-in response:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('📅 ReservationServiceV2: Error checking in reservation:', error);
+      throw error;
+    }
+  }
+
+  // Update reservation dates
+  async updateDates(id: string, datesData: { checkIn: string; checkOut: string }): Promise<ApiResponseV2<ReservationV2>> {
+    console.log('📅 ReservationServiceV2: Updating reservation dates:', id);
+    console.log('📅 ReservationServiceV2: Dates data:', datesData);
+    
+    try {
+      const response = await apiClientV2.put<ReservationV2>(
+        API_V2_ENDPOINTS.RESERVATIONS.DATES(id),
+        datesData
+      );
+      
+      console.log('📅 ReservationServiceV2: Reservation dates updated:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('📅 ReservationServiceV2: Error updating reservation dates:', error);
+      throw error;
+    }
+  }
+
+  // Delete reservation
+  async delete(id: string): Promise<ApiResponseV2<ReservationV2>> {
+    console.log('📅 ReservationServiceV2: Deleting reservation:', id);
+    
+    try {
+      const response = await apiClientV2.delete<ReservationV2>(
+        API_V2_ENDPOINTS.RESERVATIONS.BY_ID(id)
+      );
+      
+      console.log('📅 ReservationServiceV2: Reservation deleted:', response.data);
+      
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('📅 ReservationServiceV2: Error deleting reservation:', error);
       throw error;
     }
   }

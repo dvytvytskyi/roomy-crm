@@ -75,29 +75,86 @@ export class UserService extends BaseService {
   /**
    * Delete user
    */
-  public static async delete(id: string): Promise<ServiceResponse<UserResponseDto>> {
+  public static async delete(currentUser: CurrentUser, id: string): Promise<ServiceResponse<UserResponseDto>> {
     try {
       const prisma = new PrismaClient();
 
+      logger.info(`[User Deactivation] Starting user deactivation for ID: ${id}`);
+
       // Check if user exists
-      const existingUser = await UserService.findById(id);
-      if (!existingUser.success || !existingUser.data) {
+      const existingUser = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      if (!existingUser) {
         await prisma.$disconnect();
-        return UserService.prototype.error('User not found', 'The specified user does not exist');
+        return UserService.prototype.error('Not Found', 'User not found');
       }
 
-      const deletedUser = await prisma.user.delete({
-        where: { id },
+      // Check permissions - only ADMIN and MANAGER can deactivate users
+      if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER') {
+        await prisma.$disconnect();
+        return UserService.prototype.error('Forbidden', 'Only ADMIN and MANAGER can deactivate users');
+      }
+
+      // Prevent self-deactivation
+      if (currentUser.id === id) {
+        await prisma.$disconnect();
+        return UserService.prototype.error('Bad Request', 'You cannot deactivate your own account');
+      }
+
+      // Check if user is already deactivated
+      if (!existingUser.is_active) {
+        await prisma.$disconnect();
+        return UserService.prototype.error('Bad Request', 'User is already deactivated');
+      }
+
+      // Deactivate user in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[User Deactivation Step 1/2] Deactivating user...`);
+        
+        // Deactivate user instead of deleting
+        const deactivatedUser = await tx.user.update({
+          where: { id },
+          data: {
+            is_active: false,
+          },
+        });
+
+        logger.info(`[User Deactivation Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'USER_DEACTIVATED',
+            entity_type: 'USER',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-UserService',
+            changes: {
+              deactivated_by: currentUser.email,
+              user_email: existingUser.email,
+              action: 'deactivated',
+              reason: 'User deactivated by admin'
+            }
+          }
+        });
+
+        logger.info(`[User Deactivation END] User deactivated successfully: ${deactivatedUser.email}`);
+        return deactivatedUser;
       });
 
       await prisma.$disconnect();
 
-      const userResponse = UserService.mapToUserResponse(deletedUser);
-      
-      logger.info(`User deleted successfully: ${deletedUser.email}`);
-      return UserService.prototype.success(userResponse, 'User deleted successfully');
+      const userResponse = UserService.mapToUserResponse(result);
+      logger.info(`User deactivated successfully: ${result.email} by ${currentUser.email}`);
+      return UserService.prototype.success(userResponse, 'User deactivated successfully');
     } catch (error) {
-      logger.error('Error deleting user:', error);
+      await prisma.$disconnect();
+      logger.error('Error deactivating user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
   }
@@ -161,27 +218,67 @@ export class UserService extends BaseService {
       // Hash password
       const hashedPassword = await bcrypt.hash(data.password, 12);
 
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          email: data.email,
-          password: hashedPassword,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone,
-          role: data.role || 'GUEST',
-          is_active: data.status === 'ACTIVE' || data.status === undefined,
-          isVerified: false,
-        },
+      logger.info(`[User Creation] Starting user creation for role: ${data.role}`);
+
+      // Create user in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[User Creation Step 1/3] Creating user record...`);
+        
+        // Create user
+        const user = await tx.user.create({
+          data: {
+            email: data.email,
+            password: hashedPassword,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            role: data.role || 'GUEST',
+            is_active: data.status === 'ACTIVE' || data.status === undefined,
+            isVerified: false,
+          },
+        });
+
+        logger.info(`[User Creation Step 2/3] User created with ID: ${user.id}`);
+
+        // For OWNER role, we don't need to create separate PropertyOwner records
+        // The relationship is handled through properties.owner_id directly
+        if (data.role === 'OWNER') {
+          logger.info(`[User Creation Step 3/3] Owner user created - properties can be assigned later`);
+        } else {
+          logger.info(`[User Creation Step 3/3] User creation completed for role: ${data.role}`);
+        }
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'USER_CREATED',
+            entity_type: 'USER',
+            entity_id: user.id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-UserService',
+            changes: {
+              created_by: currentUser.email,
+              user_role: data.role,
+              user_email: data.email
+            }
+          }
+        });
+
+        logger.info(`[User Creation END] User created successfully: ${user.email}`);
+        return user;
       });
 
-      // TODO: Add audit logging when schema is fixed
       await prisma.$disconnect();
 
-      const userResponse = UserService.mapToUserResponse(user);
-      logger.info(`User created: ${user.email} by ${currentUser.email}`);
-      return UserService.prototype.success(userResponse);
+
+      const userResponse = UserService.mapToUserResponse(result);
+      logger.info(`User created successfully: ${result.email} by ${currentUser.email}`);
+      return UserService.prototype.success(userResponse, 'User created successfully');
     } catch (error) {
+      await prisma.$disconnect();
       logger.error('Error creating user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -248,13 +345,15 @@ export class UserService extends BaseService {
       });
 
       // Log audit action
+      const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       await prisma.audit_logs.create({
         data: {
+          id: auditId,
           user_id: currentUser.id,
           action: 'UPDATE_USER',
           entity_type: 'USER',
           entity_id: id,
-          details: {
+          changes: {
             updated_fields: Object.keys(updateData),
             target_user_email: existingUser.email,
           },
@@ -526,5 +625,56 @@ export class UserService extends BaseService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  /**
+   * Get user statistics
+   */
+  public static async getStats(currentUser: CurrentUser): Promise<ServiceResponse<any>> {
+    try {
+      logger.info(`Getting user statistics for user ${currentUser.email}`);
+
+      // RBAC check - only ADMIN and MANAGER can see user statistics
+      if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER') {
+        return {
+          success: false,
+          error: 'Forbidden',
+          message: 'Only ADMIN and MANAGER roles can access user statistics'
+        };
+      }
+
+      // Create Prisma instance for static method
+      const prisma = new (require('@prisma/client').PrismaClient)();
+
+      // Get basic counts
+      const totalUsers = await prisma.user.count();
+      const activeUsers = await prisma.user.count({ where: { is_active: true } });
+      const inactiveUsers = await prisma.user.count({ where: { is_active: false } });
+
+      const stats = {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: inactiveUsers,
+        byRole: [],
+        byStatus: [],
+        recentUsers: []
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`User statistics retrieved for user ${currentUser.email}`);
+      return {
+        success: true,
+        data: stats,
+        message: 'User statistics retrieved successfully'
+      };
+    } catch (error) {
+      logger.error('Error retrieving user statistics:', error);
+      return {
+        success: false,
+        error: 'Database operation failed',
+        message: 'An error occurred while processing your request'
+      };
+    }
   }
 }

@@ -16,6 +16,13 @@ router.use(authenticateToken);
 router.get('/', PropertyController.getAllProperties);
 
 /**
+ * @route   GET /api/v2/properties/stats
+ * @desc    Get property statistics
+ * @access  Private (JWT required) - ADMIN, MANAGER, OWNER, AGENT can access
+ */
+router.get('/stats', PropertyController.getPropertyStats);
+
+/**
  * @route   POST /api/v2/properties
  * @desc    Create new property
  * @access  Private (JWT required) - ADMIN, MANAGER, OWNER can create
@@ -37,5 +44,29 @@ router.get('/:id', PropertyController.getPropertyById);
  * @params  id - Property ID
  */
 router.put('/:id', PropertyController.updateProperty);
+
+/**
+ * @route   PUT /api/v2/properties/:id/marketing
+ * @desc    Update property marketing information
+ * @access  Private (JWT required) - RBAC handled in service layer
+ * @params  id - Property ID
+ */
+router.put('/:id/marketing', PropertyController.updatePropertyMarketing);
+
+/**
+ * @route   PUT /api/v2/properties/:id/availability
+ * @desc    Update property availability information
+ * @access  Private (JWT required) - RBAC handled in service layer
+ * @params  id - Property ID
+ */
+router.put('/:id/availability', PropertyController.updatePropertyAvailability);
+
+/**
+ * @route   DELETE /api/v2/properties/:id
+ * @desc    Delete (deactivate) property by ID
+ * @access  Private (JWT required) - Only ADMIN and MANAGER can deactivate
+ * @params  id - Property ID
+ */
+router.delete('/:id', PropertyController.deleteProperty);
 
 export default router;

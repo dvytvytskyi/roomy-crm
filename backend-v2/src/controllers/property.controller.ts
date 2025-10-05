@@ -287,4 +287,159 @@ export class PropertyController extends BaseController {
       PropertyController.error(res, error, 500, 'Property update failed');
     }
   };
+
+  /**
+   * Delete (deactivate) property endpoint
+   * DELETE /api/v2/properties/:id
+   */
+  public static deleteProperty = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        PropertyController.validationError(res, [], 'Property ID is required');
+        return;
+      }
+
+      // Delete (deactivate) property
+      const deleteResult = await PropertyService.delete(currentUser, id);
+
+      if (!deleteResult.success || !deleteResult.data) {
+        PropertyController.error(res, deleteResult.error || 'Property deactivation failed', 400, deleteResult.message);
+        return;
+      }
+
+      // Log property deactivation
+      logger.info(`Property deactivated: ${deleteResult.data.name}`);
+
+      // Return deactivated property
+      PropertyController.success(res, deleteResult.data, 'Property deactivated successfully');
+    } catch (error) {
+      logger.error('Delete property error:', error);
+      PropertyController.error(res, error, 500, 'Property deactivation failed');
+    }
+  };
+
+  /**
+   * Update property marketing endpoint
+   * PUT /api/v2/properties/:id/marketing
+   */
+  public static updatePropertyMarketing = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const marketingData = req.body;
+
+      if (!id) {
+        PropertyController.validationError(res, [], 'Property ID is required');
+        return;
+      }
+
+      // Update property marketing
+      const updateResult = await PropertyService.updateMarketing(currentUser, id, marketingData);
+
+      if (!updateResult.success || !updateResult.data) {
+        PropertyController.error(res, updateResult.error || 'Property marketing update failed', 400, updateResult.message);
+        return;
+      }
+
+      // Log property marketing update
+      logger.info(`Property marketing updated: ${id}`);
+
+      // Return updated property
+      PropertyController.success(res, updateResult.data, 'Property marketing updated successfully');
+    } catch (error) {
+      logger.error('Update property marketing error:', error);
+      PropertyController.error(res, error, 500, 'Property marketing update failed');
+    }
+  };
+
+  /**
+   * Update property availability endpoint
+   * PUT /api/v2/properties/:id/availability
+   */
+  public static updatePropertyAvailability = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const availabilityData = req.body;
+
+      if (!id) {
+        PropertyController.validationError(res, [], 'Property ID is required');
+        return;
+      }
+
+      // Validate numeric fields if provided
+      if (availabilityData.capacity && availabilityData.capacity < 1) {
+        PropertyController.validationError(res, [], 'Capacity must be at least 1');
+        return;
+      }
+
+      if (availabilityData.pricePerNight && availabilityData.pricePerNight <= 0) {
+        PropertyController.validationError(res, [], 'Price per night must be positive');
+        return;
+      }
+
+      // Update property availability
+      const updateResult = await PropertyService.updateAvailability(currentUser, id, availabilityData);
+
+      if (!updateResult.success || !updateResult.data) {
+        PropertyController.error(res, updateResult.error || 'Property availability update failed', 400, updateResult.message);
+        return;
+      }
+
+      // Log property availability update
+      logger.info(`Property availability updated: ${id}`);
+
+      // Return updated property
+      PropertyController.success(res, updateResult.data, 'Property availability updated successfully');
+    } catch (error) {
+      logger.error('Update property availability error:', error);
+      PropertyController.error(res, error, 500, 'Property availability update failed');
+    }
+  };
+
+  /**
+   * Get property statistics
+   * @route GET /api/v2/properties/stats
+   */
+  public static async getPropertyStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const currentUser = req.user;
+
+      logger.info(`Getting property statistics for user ${currentUser.email}`);
+
+      const result = await PropertyService.getStats(currentUser);
+
+      if (!result.success) {
+        PropertyController.error(res, result.error || 'Failed to retrieve property statistics', result.statusCode || 500, result.message);
+        return;
+      }
+
+      logger.info(`Property statistics retrieved for user ${currentUser.email}`);
+      PropertyController.success(res, result.data, 'Property statistics retrieved successfully');
+    } catch (error) {
+      logger.error('Error in getPropertyStats controller:', error);
+      PropertyController.error(res, error, 500, 'An error occurred while retrieving property statistics');
+    }
+  }
 }

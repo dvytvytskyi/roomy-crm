@@ -7,6 +7,10 @@ import { propertyService } from '../services/propertyService';
 import { propertyServiceV2 } from '../services/propertyService-v2';
 import { reservationService } from '../services/reservationService';
 import { reservationServiceV2 } from '../services/reservationService-v2';
+import { taskServiceV2 } from '../services/taskService-v2';
+import { financialServiceV2 } from '../services/financialService-v2';
+import { schedulerServiceV2 } from '../services/schedulerService-v2';
+import { settingsServiceV2 } from '../services/settingsService-v2';
 
 // Auth Service Adapter
 export const authServiceAdapter = {
@@ -179,8 +183,7 @@ export const propertyServiceAdapter = {
   async create(data: any) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Property Service for create');
-      // V2 doesn't support create yet, fallback to V1
-      return propertyService.createProperty(data);
+      return propertyServiceV2.create(data);
     } else {
       console.log('🔄 Using V1 Property Service for create');
       return propertyService.createProperty(data);
@@ -190,19 +193,37 @@ export const propertyServiceAdapter = {
   async update(id: string, data: any) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Property Service for update');
-      // V2 doesn't support update yet, fallback to V1
-      return propertyService.updateProperty(id, data);
+      return propertyServiceV2.update(id, data);
     } else {
       console.log('🔄 Using V1 Property Service for update');
       return propertyService.updateProperty(id, data);
     }
   },
 
+  async updateMarketing(id: string, data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Property Service for updateMarketing');
+      return propertyServiceV2.updateMarketing(id, data);
+    } else {
+      console.log('🔄 V1 Property Service does not support updateMarketing');
+      throw new Error('Property marketing update not supported in V1 API');
+    }
+  },
+
+  async updateAvailability(id: string, data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Property Service for updateAvailability');
+      return propertyServiceV2.updateAvailability(id, data);
+    } else {
+      console.log('🔄 V1 Property Service does not support updateAvailability');
+      throw new Error('Property availability update not supported in V1 API');
+    }
+  },
+
   async delete(id: string) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Property Service for delete');
-      // V2 doesn't support delete yet, fallback to V1
-      return propertyService.deleteProperty(id);
+      return propertyServiceV2.delete(id);
     } else {
       console.log('🔄 Using V1 Property Service for delete');
       return propertyService.deleteProperty(id);
@@ -235,8 +256,7 @@ export const reservationServiceAdapter = {
   async create(data: any) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Reservation Service for create');
-      // V2 doesn't support create yet, fallback to V1
-      return reservationService.createReservation(data);
+      return reservationServiceV2.create(data);
     } else {
       console.log('🔄 Using V1 Reservation Service for create');
       return reservationService.createReservation(data);
@@ -246,22 +266,252 @@ export const reservationServiceAdapter = {
   async update(id: string, data: any) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Reservation Service for update');
-      // V2 doesn't support update yet, fallback to V1
-      return reservationService.updateReservation(id, data);
+      return reservationServiceV2.update(id, data);
     } else {
       console.log('🔄 Using V1 Reservation Service for update');
       return reservationService.updateReservation(id, data);
     }
   },
 
+  async updateDates(id: string, datesData: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Reservation Service for updateDates');
+      return reservationServiceV2.updateDates(id, datesData);
+    } else {
+      console.log('🔄 V1 Reservation Service does not support updateDates');
+      throw new Error('Reservation dates update not supported in V1 API');
+    }
+  },
+
   async delete(id: string) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Reservation Service for delete');
-      // V2 doesn't support delete yet, fallback to V1
-      return reservationService.deleteReservation(id);
+      return reservationServiceV2.delete(id);
     } else {
       console.log('🔄 Using V1 Reservation Service for delete');
       return reservationService.deleteReservation(id);
+    }
+  },
+
+  async confirmReservation(id: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Reservation Service for confirmReservation');
+      return reservationServiceV2.confirmReservation(id);
+    } else {
+      console.log('🔄 V1 Reservation Service does not support confirmReservation');
+      throw new Error('Reservation confirmation not supported in V1 API');
+    }
+  },
+
+  async cancelReservation(id: string, reason?: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Reservation Service for cancelReservation');
+      return reservationServiceV2.cancelReservation(id, reason);
+    } else {
+      console.log('🔄 V1 Reservation Service does not support cancelReservation');
+      throw new Error('Reservation cancellation not supported in V1 API');
+    }
+  },
+
+  async checkInReservation(id: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Reservation Service for checkInReservation');
+      return reservationServiceV2.checkInReservation(id);
+    } else {
+      console.log('🔄 V1 Reservation Service does not support checkInReservation');
+      throw new Error('Reservation check-in not supported in V1 API');
+    }
+  }
+};
+
+// Task Service Adapter
+export const taskServiceAdapter = {
+  async getAll(params: any = {}) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for getAll');
+      return taskServiceV2.getAll(params);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.getAll(params);
+    }
+  },
+
+  async getById(id: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for getById');
+      return taskServiceV2.getById(id);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.getById(id);
+    }
+  },
+
+  async create(data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for create');
+      return taskServiceV2.create(data);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.create(data);
+    }
+  },
+
+  async update(id: string, data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for update');
+      return taskServiceV2.update(id, data);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.update(id, data);
+    }
+  },
+
+  async delete(id: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for delete');
+      return taskServiceV2.delete(id);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.delete(id);
+    }
+  },
+
+  async updateStatus(id: string, data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for updateStatus');
+      return taskServiceV2.updateStatus(id, data);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.updateStatus(id, data);
+    }
+  },
+
+  async getStats() {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for getStats');
+      return taskServiceV2.getStats();
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.getStats();
+    }
+  },
+
+  async addComment(id: string, content: string, type: string = 'user') {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for addComment');
+      return taskServiceV2.addComment(id, content, type);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.addComment(id, content, type);
+    }
+  },
+
+  async updateChecklistItem(id: string, itemId: string, completed: boolean) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for updateChecklistItem');
+      return taskServiceV2.updateChecklistItem(id, itemId, completed);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.updateChecklistItem(id, itemId, completed);
+    }
+  },
+
+  async uploadAttachment(id: string, file: File) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Task Service for uploadAttachment');
+      return taskServiceV2.uploadAttachment(id, file);
+    } else {
+      console.log('🔄 V1 Task Service not available, using V2');
+      return taskServiceV2.uploadAttachment(id, file);
+    }
+  }
+};
+
+// Financial Service Adapter
+export const financialServiceAdapter = {
+  async getFinancialOverview(filters: any = {}) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Financial Service for getFinancialOverview');
+      return financialServiceV2.getFinancialOverview(filters);
+    } else {
+      console.log('🔄 V1 Financial Service not available, using V2');
+      return financialServiceV2.getFinancialOverview(filters);
+    }
+  },
+
+  async getKPIOverview(filters: any = {}) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Financial Service for getKPIOverview');
+      return financialServiceV2.getKPIOverview(filters);
+    } else {
+      console.log('🔄 V1 Financial Service not available, using V2');
+      return financialServiceV2.getKPIOverview(filters);
+    }
+  },
+
+  async getUnitsAnalytics(filters: any = {}) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Financial Service for getUnitsAnalytics');
+      return financialServiceV2.getUnitsAnalytics(filters);
+    } else {
+      console.log('🔄 V1 Financial Service not available, using V2');
+      return financialServiceV2.getUnitsAnalytics(filters);
+    }
+  }
+};
+
+// Scheduler Service Adapter
+export const schedulerServiceAdapter = {
+  async getEvents(filters: any = {}) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Scheduler Service for getEvents');
+      return schedulerServiceV2.getEvents(filters);
+    } else {
+      console.log('🔄 V1 Scheduler Service not available, using V2');
+      return schedulerServiceV2.getEvents(filters);
+    }
+  },
+
+  async createBlock(data: any) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Scheduler Service for createBlock');
+      return schedulerServiceV2.createBlock(data);
+    } else {
+      console.log('🔄 V1 Scheduler Service not available, using V2');
+      return schedulerServiceV2.createBlock(data);
+    }
+  }
+};
+
+// Settings Service Adapter
+export const settingsServiceAdapter = {
+  async getAll() {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Settings Service for getAll');
+      return settingsServiceV2.getAll();
+    } else {
+      console.log('🔄 V1 Settings Service not available, using V2');
+      return settingsServiceV2.getAll();
+    }
+  },
+
+  async get(key: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Settings Service for get');
+      return settingsServiceV2.get(key);
+    } else {
+      console.log('🔄 V1 Settings Service not available, using V2');
+      return settingsServiceV2.get(key);
+    }
+  },
+
+  async update(key: string, value: string) {
+    if (shouldUseV2API()) {
+      console.log('🔄 Using V2 Settings Service for update');
+      return settingsServiceV2.update(key, value);
+    } else {
+      console.log('🔄 V1 Settings Service not available, using V2');
+      return settingsServiceV2.update(key, value);
     }
   }
 };
@@ -271,3 +521,7 @@ export const authServiceAdapted = authServiceAdapter;
 export const userServiceAdapted = userServiceAdapter;
 export const propertyServiceAdapted = propertyServiceAdapter;
 export const reservationServiceAdapted = reservationServiceAdapter;
+export const taskServiceAdapted = taskServiceAdapter;
+export const financialServiceAdapted = financialServiceAdapter;
+export const schedulerServiceAdapted = schedulerServiceAdapter;
+export const settingsServiceAdapted = settingsServiceAdapter;

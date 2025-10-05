@@ -490,58 +490,81 @@ export class ReservationService extends BaseService {
         }
       }
 
-      // Generate reservation ID
-      const reservationId = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      logger.info(`[Reservation Creation] Starting reservation creation: ${data.guestName}`);
 
-      // Create reservation
-      const reservation = await prisma.reservations.create({
-        data: {
-          id: `reservation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          reservation_id: reservationId,
-          property_id: data.propertyId,
-          guest_id: data.guestId || null,
-          agent_id: data.agentId || currentUser.id,
-          check_in: new Date(data.checkIn),
-          check_out: new Date(data.checkOut),
-          guests: data.guests,
-          total_amount: data.totalAmount,
-          paid_amount: 0,
-          outstanding_balance: data.totalAmount,
-          status: 'PENDING',
-          source: data.source,
-          guest_name: data.guestName,
-          guest_email: data.guestEmail,
-          guest_phone: data.guestPhone,
-          special_requests: data.specialRequests,
-          notes: data.notes,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
+      // Create reservation in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Reservation Creation Step 1/2] Creating reservation record...`);
+        
+        // Generate reservation ID
+        const reservationId = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+        // Create reservation
+        const reservation = await tx.reservations.create({
+          data: {
+            id: `reservation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            reservation_id: reservationId,
+            property_id: data.propertyId,
+            guest_id: data.guestId || null,
+            agent_id: data.agentId || currentUser.id,
+            check_in: new Date(data.checkIn),
+            check_out: new Date(data.checkOut),
+            guests: data.guests,
+            total_amount: data.totalAmount,
+            paid_amount: 0,
+            outstanding_balance: data.totalAmount,
+            status: 'PENDING',
+            source: data.source,
+            guest_name: data.guestName,
+            guest_email: data.guestEmail,
+            guest_phone: data.guestPhone,
+            special_requests: data.specialRequests,
+            notes: data.notes,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Reservation Creation Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'RESERVATION_CREATED',
+            entity_type: 'RESERVATION',
+            entity_id: reservation.id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-ReservationService',
+            changes: {
+              created_by: currentUser.email,
+              reservation_id: reservationId,
+              guest_name: data.guestName,
+              guest_email: data.guestEmail,
+              property_id: data.propertyId,
+              check_in: data.checkIn,
+              check_out: data.checkOut,
+              total_amount: data.totalAmount
+            }
+          }
+        });
+
+        logger.info(`[Reservation Creation END] Reservation created successfully: ${reservationId}`);
+        return reservation;
       });
-
-      // TODO: Log audit action - temporarily disabled
-      // await prisma.audit_logs.create({
-      //   data: {
-      //     id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      //     user_id: currentUser.id,
-      //     action: 'CREATE_RESERVATION',
-      //     entity_type: 'RESERVATION',
-      //     entity_id: reservation.id,
-      //     ip_address: '127.0.0.1', // TODO: Get from request
-      //     user_agent: 'Backend-V2',
-      //   },
-      // });
 
       await prisma.$disconnect();
 
       // Return the created reservation with full details
-      const reservationResult = await ReservationService.findById(currentUser, reservation.id);
+      const reservationResult = await ReservationService.findById(currentUser, result.id);
       if (!reservationResult.success || !reservationResult.data) {
         return ReservationService.prototype.error('Error', 'Failed to retrieve created reservation', 500);
       }
 
-      logger.info(`Reservation created: ${reservationId} by ${currentUser.email}`);
-      return ReservationService.prototype.success(reservationResult.data);
+      logger.info(`Reservation created successfully: ${result.reservation_id} by ${currentUser.email}`);
+      return ReservationService.prototype.success(reservationResult.data, 'Reservation created successfully');
     } catch (error) {
       logger.error('Error creating reservation:', error);
       return ReservationService.prototype.handleDatabaseError(error);
@@ -643,26 +666,46 @@ export class ReservationService extends BaseService {
       if (data.specialRequests !== undefined) updateData.special_requests = data.specialRequests;
       if (data.notes !== undefined) updateData.notes = data.notes;
 
-      // Update reservation
-      const updatedReservation = await prisma.reservations.update({
-        where: { id },
-        data: updateData,
-      });
+      logger.info(`[Reservation Update] Starting reservation update: ${existingReservation.reservation_id}`);
 
-      // Log audit action
-      await prisma.audit_logs.create({
-        data: {
-          user_id: currentUser.id,
-          action: 'UPDATE_RESERVATION',
-          entity_type: 'RESERVATION',
-          entity_id: id,
-          details: {
-            updated_fields: Object.keys(updateData),
-            reservation_id: existingReservation.reservation_id,
+      // Update reservation in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Reservation Update Step 1/2] Updating reservation record...`);
+        
+        // Update reservation
+        const updatedReservation = await tx.reservations.update({
+          where: { id },
+          data: {
+            ...updateData,
+            updated_at: new Date(),
           },
-          ip_address: '127.0.0.1', // TODO: Get from request
-          user_agent: 'Backend-V2',
-        },
+        });
+
+        logger.info(`[Reservation Update Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'RESERVATION_UPDATED',
+            entity_type: 'RESERVATION',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-ReservationService',
+            changes: {
+              updated_by: currentUser.email,
+              updated_fields: Object.keys(updateData),
+              reservation_id: existingReservation.reservation_id,
+              old_values: updateData,
+              new_values: updateData
+            }
+          }
+        });
+
+        logger.info(`[Reservation Update END] Reservation updated successfully: ${updatedReservation.reservation_id}`);
+        return updatedReservation;
       });
 
       await prisma.$disconnect();
@@ -673,11 +716,217 @@ export class ReservationService extends BaseService {
         return ReservationService.prototype.error('Error', 'Failed to retrieve updated reservation', 500);
       }
 
-      logger.info(`Reservation updated: ${updatedReservation.reservation_id} by ${currentUser.email}`);
-      return ReservationService.prototype.success(reservationResult.data);
+      logger.info(`Reservation updated successfully: ${result.reservation_id} by ${currentUser.email}`);
+      return ReservationService.prototype.success(reservationResult.data, 'Reservation updated successfully');
     } catch (error) {
       logger.error('Error updating reservation:', error);
       return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Update reservation dates with availability check
+   */
+  public static async updateDates(currentUser: CurrentUser, id: string, datesData: { checkIn: string; checkOut: string }): Promise<ServiceResponse<ReservationResponseDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Reservation Dates Update] Starting dates update for reservation ID: ${id}`);
+
+      // Check if reservation exists
+      const existingReservation = await prisma.reservations.findUnique({
+        where: { id },
+        include: {
+          properties: true
+        }
+      });
+
+      if (!existingReservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // Check permissions
+      const canEdit = currentUser.role === 'ADMIN' || 
+                     currentUser.role === 'MANAGER' || 
+                     (currentUser.role === 'AGENT' && existingReservation.agent_id === currentUser.id) ||
+                     (currentUser.role === 'OWNER' && existingReservation.property_id);
+
+      // If OWNER, check if they own the property
+      if (currentUser.role === 'OWNER' && existingReservation.property_id) {
+        const property = await prisma.properties.findUnique({
+          where: { id: existingReservation.property_id },
+        });
+
+        if (property && property.owner_id !== currentUser.id) {
+          await prisma.$disconnect();
+          return ReservationService.prototype.error('Forbidden', 'OWNER can only edit reservations for their properties', 403);
+        }
+      }
+
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to edit this reservation', 403);
+      }
+
+      // Check if reservation can be modified (business rules)
+      if (existingReservation.status === 'CHECKED_OUT' || existingReservation.status === 'CANCELLED') {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Bad Request', 'Cannot modify dates for completed or cancelled reservations', 400);
+      }
+
+      // Check availability for new dates
+      const checkInDate = new Date(datesData.checkIn);
+      const checkOutDate = new Date(datesData.checkOut);
+
+      // Check for overlapping reservations (excluding current reservation)
+      const overlappingReservations = await prisma.reservations.findMany({
+        where: {
+          property_id: existingReservation.property_id,
+          id: { not: id },
+          status: { not: 'CANCELLED' },
+          OR: [
+            {
+              check_in: { lt: checkOutDate },
+              check_out: { gt: checkInDate }
+            }
+          ]
+        }
+      });
+
+      if (overlappingReservations.length > 0) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Conflict', 'Property is not available for the selected dates', 409);
+      }
+
+      // Update reservation dates in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Reservation Dates Update Step 1/2] Updating dates...`);
+        
+        // Update reservation dates
+        const updatedReservation = await tx.reservations.update({
+          where: { id },
+          data: {
+            check_in: checkInDate,
+            check_out: checkOutDate,
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Reservation Dates Update Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'RESERVATION_DATES_UPDATED',
+            entity_type: 'RESERVATION',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-ReservationService',
+            changes: {
+              updated_by: currentUser.email,
+              reservation_id: existingReservation.reservation_id,
+              old_check_in: existingReservation.check_in.toISOString(),
+              old_check_out: existingReservation.check_out.toISOString(),
+              new_check_in: checkInDate.toISOString(),
+              new_check_out: checkOutDate.toISOString(),
+              property_id: existingReservation.property_id
+            }
+          }
+        });
+
+        logger.info(`[Reservation Dates Update END] Dates updated successfully: ${updatedReservation.reservation_id}`);
+        return updatedReservation;
+      });
+
+      await prisma.$disconnect();
+
+      // Return the updated reservation with full details
+      const reservationResult = await ReservationService.findById(currentUser, id);
+      if (!reservationResult.success || !reservationResult.data) {
+        return ReservationService.prototype.error('Error', 'Failed to retrieve updated reservation', 500);
+      }
+
+      logger.info(`Reservation dates updated successfully: ${result.reservation_id} by ${currentUser.email}`);
+      return ReservationService.prototype.success(reservationResult.data, 'Reservation dates updated successfully');
+    } catch (error) {
+      logger.error('Error updating reservation dates:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Get reservation statistics
+   */
+  public static async getStats(currentUser: CurrentUser): Promise<ServiceResponse<any>> {
+    try {
+      logger.info(`Getting reservation statistics for user ${currentUser.email}`);
+
+      // RBAC check
+      if (currentUser.role === 'GUEST') {
+        return {
+          success: false,
+          error: 'Forbidden',
+          message: 'GUEST role cannot access reservation statistics'
+        };
+      }
+
+      // Create Prisma instance for static method
+      const prisma = new (require('@prisma/client').PrismaClient)();
+
+      // Get statistics based on user role
+      let whereClause = {};
+
+      if (currentUser.role === 'OWNER') {
+        // Owners can see reservations for their properties
+        whereClause = {
+          properties: {
+            owner_id: currentUser.id
+          }
+        };
+      } else if (currentUser.role === 'AGENT') {
+        // Agents can see reservations they manage
+        whereClause = { agent_id: currentUser.id };
+      }
+      // ADMIN and MANAGER can see all reservations
+
+      // Get basic counts
+      const totalReservations = await prisma.reservations.count({ where: whereClause });
+      const pendingReservations = await prisma.reservations.count({ where: { ...whereClause, status: 'PENDING' } });
+      const confirmedReservations = await prisma.reservations.count({ where: { ...whereClause, status: 'CONFIRMED' } });
+      const checkedInReservations = await prisma.reservations.count({ where: { ...whereClause, status: 'CHECKED_IN' } });
+      const checkedOutReservations = await prisma.reservations.count({ where: { ...whereClause, status: 'CHECKED_OUT' } });
+      const cancelledReservations = await prisma.reservations.count({ where: { ...whereClause, status: 'CANCELLED' } });
+
+      const stats = {
+        total: totalReservations,
+        pending: pendingReservations,
+        confirmed: confirmedReservations,
+        checkedIn: checkedInReservations,
+        checkedOut: checkedOutReservations,
+        cancelled: cancelledReservations,
+        byStatus: [],
+        byMonth: []
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Reservation statistics retrieved for user ${currentUser.email}`);
+      return {
+        success: true,
+        data: stats,
+        message: 'Reservation statistics retrieved successfully'
+      };
+    } catch (error) {
+      logger.error('Error retrieving reservation statistics:', error);
+      return {
+        success: false,
+        error: 'Database operation failed',
+        message: 'An error occurred while processing your request'
+      };
     }
   }
 }

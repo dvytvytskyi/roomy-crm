@@ -460,65 +460,81 @@ export class PropertyService extends BaseService {
         }
       }
 
-      // Create property
-      const property = await prisma.properties.create({
-        data: {
-          id: `property-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: data.name,
-          nickname: data.nickname,
-          title: data.title,
-          type: data.type as any,
-          type_of_unit: data.typeOfUnit as any,
-          address: data.address,
-          city: data.city,
-          country: data.country,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          capacity: data.capacity,
-          bedrooms: data.bedrooms,
-          bathrooms: data.bathrooms,
-          area: data.area,
-          price_per_night: data.pricePerNight,
-          description: data.description,
-          amenities: data.amenities || [],
-          house_rules: data.houseRules || [],
-          tags: data.tags || [],
-          is_active: true,
-          is_published: false,
-          owner_id: data.ownerId,
-          agent_id: data.agentId,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      });
+      logger.info(`[Property Creation] Starting property creation: ${data.name}`);
 
-      // TODO: Log audit action - temporarily disabled
-      // await prisma.audit_logs.create({
-      //   data: {
-      //     user_id: currentUser.id,
-      //     action: 'CREATE_PROPERTY',
-      //     entity_type: 'PROPERTY',
-      //     entity_id: property.id,
-      //     details: {
-      //       property_name: data.name,
-      //       owner_id: data.ownerId,
-      //       agent_id: data.agentId,
-      //     },
-      //     ip_address: '127.0.0.1', // TODO: Get from request
-      //     user_agent: 'Backend-V2',
-      //   },
-      // });
+      // Create property in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Property Creation Step 1/2] Creating property record...`);
+        
+        // Create property
+        const property = await tx.properties.create({
+          data: {
+            id: `property-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: data.name,
+            nickname: data.nickname,
+            title: data.title,
+            type: data.type as any,
+            type_of_unit: data.typeOfUnit as any,
+            address: data.address,
+            city: data.city,
+            country: data.country,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            capacity: data.capacity,
+            bedrooms: data.bedrooms,
+            bathrooms: data.bathrooms,
+            area: data.area,
+            price_per_night: data.pricePerNight,
+            description: data.description,
+            amenities: data.amenities || [],
+            house_rules: data.houseRules || [],
+            tags: data.tags || [],
+            is_active: true,
+            is_published: false,
+            owner_id: data.ownerId,
+            agent_id: data.agentId,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Property Creation Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'PROPERTY_CREATED',
+            entity_type: 'PROPERTY',
+            entity_id: property.id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-PropertyService',
+            changes: {
+              created_by: currentUser.email,
+              property_name: data.name,
+              owner_id: data.ownerId,
+              agent_id: data.agentId,
+              property_type: data.type
+            }
+          }
+        });
+
+        logger.info(`[Property Creation END] Property created successfully: ${property.name}`);
+        return property;
+      });
 
       await prisma.$disconnect();
 
       // Return the created property with full details
-      const propertyResult = await PropertyService.findById(currentUser, property.id);
+      const propertyResult = await PropertyService.findById(currentUser, result.id);
       if (!propertyResult.success || !propertyResult.data) {
         return PropertyService.prototype.error('Error', 'Failed to retrieve created property', 500);
       }
 
-      logger.info(`Property created: ${property.name} by ${currentUser.email}`);
-      return PropertyService.prototype.success(propertyResult.data);
+      logger.info(`Property created successfully: ${result.name} by ${currentUser.email}`);
+      return PropertyService.prototype.success(propertyResult.data, 'Property created successfully');
     } catch (error) {
       logger.error('Error creating property:', error);
       return PropertyService.prototype.handleDatabaseError(error);
@@ -613,26 +629,46 @@ export class PropertyService extends BaseService {
         updateData.owner_id = data.ownerId;
       }
 
-      // Update property
-      const updatedProperty = await prisma.properties.update({
-        where: { id },
-        data: updateData,
-      });
+      logger.info(`[Property Update] Starting property update: ${existingProperty.name}`);
 
-      // Log audit action
-      await prisma.audit_logs.create({
-        data: {
-          user_id: currentUser.id,
-          action: 'UPDATE_PROPERTY',
-          entity_type: 'PROPERTY',
-          entity_id: id,
-          details: {
-            updated_fields: Object.keys(updateData),
-            property_name: existingProperty.name,
+      // Update property in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Property Update Step 1/2] Updating property record...`);
+        
+        // Update property
+        const updatedProperty = await tx.properties.update({
+          where: { id },
+          data: {
+            ...updateData,
+            updated_at: new Date(),
           },
-          ip_address: '127.0.0.1', // TODO: Get from request
-          user_agent: 'Backend-V2',
-        },
+        });
+
+        logger.info(`[Property Update Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'PROPERTY_UPDATED',
+            entity_type: 'PROPERTY',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-PropertyService',
+            changes: {
+              updated_by: currentUser.email,
+              updated_fields: Object.keys(updateData),
+              property_name: existingProperty.name,
+              old_values: updateData,
+              new_values: updateData
+            }
+          }
+        });
+
+        logger.info(`[Property Update END] Property updated successfully: ${updatedProperty.name}`);
+        return updatedProperty;
       });
 
       await prisma.$disconnect();
@@ -643,11 +679,343 @@ export class PropertyService extends BaseService {
         return PropertyService.prototype.error('Error', 'Failed to retrieve updated property', 500);
       }
 
-      logger.info(`Property updated: ${updatedProperty.name} by ${currentUser.email}`);
-      return PropertyService.prototype.success(propertyResult.data);
+      logger.info(`Property updated successfully: ${result.name} by ${currentUser.email}`);
+      return PropertyService.prototype.success(propertyResult.data, 'Property updated successfully');
     } catch (error) {
       logger.error('Error updating property:', error);
       return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Delete (deactivate) property
+   */
+  public static async delete(currentUser: CurrentUser, id: string): Promise<ServiceResponse<PropertyResponseDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Deactivation] Starting property deactivation for ID: ${id}`);
+
+      // Check if property exists
+      const existingProperty = await prisma.properties.findUnique({
+        where: { id },
+      });
+
+      if (!existingProperty) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check permissions - only ADMIN and MANAGER can deactivate properties
+      if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER') {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'Only ADMIN and MANAGER can deactivate properties', 403);
+      }
+
+      // Check if property is already deactivated
+      if (!existingProperty.is_active) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Bad Request', 'Property is already deactivated', 400);
+      }
+
+      // Deactivate property in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Property Deactivation Step 1/2] Deactivating property...`);
+        
+        // Deactivate property instead of deleting
+        const deactivatedProperty = await tx.properties.update({
+          where: { id },
+          data: {
+            is_active: false,
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Property Deactivation Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'PROPERTY_DEACTIVATED',
+            entity_type: 'PROPERTY',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-PropertyService',
+            changes: {
+              deactivated_by: currentUser.email,
+              property_name: existingProperty.name,
+              action: 'deactivated',
+              reason: 'Property deactivated by admin'
+            }
+          }
+        });
+
+        logger.info(`[Property Deactivation END] Property deactivated successfully: ${deactivatedProperty.name}`);
+        return deactivatedProperty;
+      });
+
+      await prisma.$disconnect();
+
+      // Return the updated property with full details
+      const propertyResult = await PropertyService.findById(currentUser, id);
+      if (!propertyResult.success || !propertyResult.data) {
+        return PropertyService.prototype.error('Error', 'Failed to retrieve deactivated property', 500);
+      }
+
+      logger.info(`Property deactivated successfully: ${result.name} by ${currentUser.email}`);
+      return PropertyService.prototype.success(propertyResult.data, 'Property deactivated successfully');
+    } catch (error) {
+      logger.error('Error deactivating property:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Update property marketing information
+   */
+  public static async updateMarketing(currentUser: CurrentUser, id: string, marketingData: any): Promise<ServiceResponse<PropertyResponseDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Marketing Update] Starting marketing update for property ID: ${id}`);
+
+      // Check if property exists
+      const existingProperty = await prisma.properties.findUnique({
+        where: { id },
+      });
+
+      if (!existingProperty) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check permissions
+      const canEdit = currentUser.role === 'ADMIN' || 
+                     currentUser.role === 'MANAGER' || 
+                     (currentUser.role === 'OWNER' && existingProperty.owner_id === currentUser.id) ||
+                     (currentUser.role === 'AGENT' && existingProperty.agent_id === currentUser.id);
+
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'You do not have permission to edit this property', 403);
+      }
+
+      // Build marketing update data
+      const updateData: any = {};
+      if (marketingData.title !== undefined) updateData.title = marketingData.title;
+      if (marketingData.description !== undefined) updateData.description = marketingData.description;
+      if (marketingData.tags !== undefined) updateData.tags = marketingData.tags;
+      if (marketingData.isPublished !== undefined) updateData.is_published = marketingData.isPublished;
+      if (marketingData.primaryImage !== undefined) updateData.primary_image = marketingData.primaryImage;
+      if (marketingData.pricelabId !== undefined) updateData.pricelab_id = marketingData.pricelabId;
+
+      // Update property marketing in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Property Marketing Update Step 1/2] Updating marketing information...`);
+        
+        const updatedProperty = await tx.properties.update({
+          where: { id },
+          data: {
+            ...updateData,
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Property Marketing Update Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'PROPERTY_MARKETING_UPDATED',
+            entity_type: 'PROPERTY',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-PropertyService',
+            changes: {
+              updated_by: currentUser.email,
+              updated_fields: Object.keys(updateData),
+              property_name: existingProperty.name,
+              marketing_changes: updateData
+            }
+          }
+        });
+
+        logger.info(`[Property Marketing Update END] Marketing updated successfully: ${updatedProperty.name}`);
+        return updatedProperty;
+      });
+
+      await prisma.$disconnect();
+
+      // Return the updated property with full details
+      const propertyResult = await PropertyService.findById(currentUser, id);
+      if (!propertyResult.success || !propertyResult.data) {
+        return PropertyService.prototype.error('Error', 'Failed to retrieve updated property', 500);
+      }
+
+      logger.info(`Property marketing updated successfully: ${result.name} by ${currentUser.email}`);
+      return PropertyService.prototype.success(propertyResult.data, 'Property marketing updated successfully');
+    } catch (error) {
+      logger.error('Error updating property marketing:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Update property availability
+   */
+  public static async updateAvailability(currentUser: CurrentUser, id: string, availabilityData: any): Promise<ServiceResponse<PropertyResponseDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Availability Update] Starting availability update for property ID: ${id}`);
+
+      // Check if property exists
+      const existingProperty = await prisma.properties.findUnique({
+        where: { id },
+      });
+
+      if (!existingProperty) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check permissions
+      const canEdit = currentUser.role === 'ADMIN' || 
+                     currentUser.role === 'MANAGER' || 
+                     (currentUser.role === 'OWNER' && existingProperty.owner_id === currentUser.id) ||
+                     (currentUser.role === 'AGENT' && existingProperty.agent_id === currentUser.id);
+
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'You do not have permission to edit this property', 403);
+      }
+
+      // Build availability update data
+      const updateData: any = {};
+      if (availabilityData.isActive !== undefined) updateData.is_active = availabilityData.isActive;
+      if (availabilityData.isPublished !== undefined) updateData.is_published = availabilityData.isPublished;
+      if (availabilityData.pricePerNight !== undefined) updateData.price_per_night = availabilityData.pricePerNight;
+      if (availabilityData.capacity !== undefined) updateData.capacity = availabilityData.capacity;
+
+      // Update property availability in transaction with audit logging
+      const result = await prisma.$transaction(async (tx) => {
+        logger.info(`[Property Availability Update Step 1/2] Updating availability information...`);
+        
+        const updatedProperty = await tx.properties.update({
+          where: { id },
+          data: {
+            ...updateData,
+            updated_at: new Date(),
+          },
+        });
+
+        logger.info(`[Property Availability Update Step 2/2] Creating audit log...`);
+
+        // Create audit log
+        const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await tx.audit_logs.create({
+          data: {
+            id: auditId,
+            user_id: currentUser.id,
+            action: 'PROPERTY_AVAILABILITY_UPDATED',
+            entity_type: 'PROPERTY',
+            entity_id: id,
+            ip_address: '127.0.0.1',
+            user_agent: 'Backend-V2-PropertyService',
+            changes: {
+              updated_by: currentUser.email,
+              updated_fields: Object.keys(updateData),
+              property_name: existingProperty.name,
+              availability_changes: updateData
+            }
+          }
+        });
+
+        logger.info(`[Property Availability Update END] Availability updated successfully: ${updatedProperty.name}`);
+        return updatedProperty;
+      });
+
+      await prisma.$disconnect();
+
+      // Return the updated property with full details
+      const propertyResult = await PropertyService.findById(currentUser, id);
+      if (!propertyResult.success || !propertyResult.data) {
+        return PropertyService.prototype.error('Error', 'Failed to retrieve updated property', 500);
+      }
+
+      logger.info(`Property availability updated successfully: ${result.name} by ${currentUser.email}`);
+      return PropertyService.prototype.success(propertyResult.data, 'Property availability updated successfully');
+    } catch (error) {
+      logger.error('Error updating property availability:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Get property statistics
+   */
+  public static async getStats(currentUser: CurrentUser): Promise<ServiceResponse<any>> {
+    try {
+      logger.info(`Getting property statistics for user ${currentUser.email}`);
+
+      // RBAC check
+      if (currentUser.role === 'GUEST') {
+        return {
+          success: false,
+          error: 'Forbidden',
+          message: 'GUEST role cannot access property statistics'
+        };
+      }
+
+      // Create Prisma instance for static method
+      const prisma = new (require('@prisma/client').PrismaClient)();
+
+      // Get statistics based on user role
+      let whereClause = {};
+
+      if (currentUser.role === 'OWNER') {
+        whereClause = { owner_id: currentUser.id };
+      } else if (currentUser.role === 'AGENT') {
+        whereClause = { agent_id: currentUser.id };
+      }
+      // ADMIN and MANAGER can see all properties
+
+      // Get basic counts
+      const totalProperties = await prisma.properties.count({ where: whereClause });
+      const activeProperties = await prisma.properties.count({ where: { ...whereClause, is_active: true } });
+      const inactiveProperties = await prisma.properties.count({ where: { ...whereClause, is_active: false } });
+      const publishedProperties = await prisma.properties.count({ where: { ...whereClause, is_published: true } });
+
+      const stats = {
+        total: totalProperties,
+        active: activeProperties,
+        inactive: inactiveProperties,
+        published: publishedProperties,
+        byType: [],
+        byStatus: []
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Property statistics retrieved for user ${currentUser.email}`);
+      return {
+        success: true,
+        data: stats,
+        message: 'Property statistics retrieved successfully'
+      };
+    } catch (error) {
+      logger.error('Error retrieving property statistics:', error);
+      return {
+        success: false,
+        error: 'Database operation failed',
+        message: 'An error occurred while processing your request'
+      };
     }
   }
 }

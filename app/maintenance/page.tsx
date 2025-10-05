@@ -6,16 +6,17 @@ import MaintenanceTable from '../../components/maintenance/MaintenanceTable'
 import MaintenanceFilters from '../../components/maintenance/MaintenanceFilters'
 import AddMaintenanceModal from '../../components/maintenance/AddMaintenanceModal'
 import { Plus, Filter, Wrench, Home, Calendar, Search } from 'lucide-react'
-import { maintenanceService, MaintenanceTask, MaintenanceStats, MaintenanceFilters as MaintenanceFiltersType } from '../../lib/api/services/maintenanceService'
+import { taskServiceAdapted } from '../../lib/api/adapters/apiAdapter'
+import type { TaskWithDetailsV2, TaskStatsV2 } from '../../lib/api/services/taskService-v2'
 
 export default function MaintenancePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMaintenance, setSelectedMaintenance] = useState<number[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [tasks, setTasks] = useState<MaintenanceTask[]>([])
-  const [stats, setStats] = useState<MaintenanceStats | null>(null)
-  const [filters, setFilters] = useState<MaintenanceFiltersType>({})
+  const [tasks, setTasks] = useState<TaskWithDetailsV2[]>([])
+  const [stats, setStats] = useState<TaskStatsV2 | null>(null)
+  const [filters, setFilters] = useState<any>({})
 
   // Load data
   useEffect(() => {
@@ -23,17 +24,18 @@ export default function MaintenancePage() {
       try {
         setLoading(true)
         
-        // Load tasks
-        const tasksResponse = await maintenanceService.getMaintenanceTasks({
+        // Load tasks (only maintenance tasks)
+        const tasksResponse = await taskServiceAdapted.getAll({
           ...filters,
+          type: 'MAINTENANCE',
           search: searchTerm || undefined
         })
         if (tasksResponse.success) {
-          setTasks(tasksResponse.data)
+          setTasks(tasksResponse.data.data)
         }
         
         // Load stats
-        const statsResponse = await maintenanceService.getMaintenanceStats()
+        const statsResponse = await taskServiceAdapted.getStats()
         if (statsResponse.success) {
           setStats(statsResponse.data)
         }

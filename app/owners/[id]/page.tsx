@@ -11,7 +11,7 @@ import CashPaymentModal from '@/components/owners/CashPaymentModal'
 import BankPaymentModal from '@/components/owners/BankPaymentModal'
 import AddBankAccountModal from '@/components/owners/AddBankAccountModal'
 import UploadDocumentModal from '@/components/owners/UploadDocumentModal'
-import { ownerService, Owner } from '@/lib/api/services/ownerService'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 interface OwnerDetailsPageProps {
   params: {
@@ -286,7 +286,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         setError(null)
         console.log('🏠 Loading owner details from API...')
         
-        const response = await ownerService.getOwner(params.id)
+        const response = await userServiceAdapter.getUserById(params.id)
         if (response.success && response.data) {
           console.log('🏠 Owner details loaded:', response.data)
           setOwner(response.data)
@@ -569,7 +569,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         [editModal.field]: newValue
       }
       
-      const response = await ownerService.updateOwner(owner.id, updateData)
+      const response = await userServiceAdapter.updateUser(owner.id, updateData)
       if (response.success && response.data) {
         // Update the local state with the new value
         setOwner(prev => prev ? { ...prev, [editModal.field]: newValue } : null)
