@@ -216,6 +216,13 @@ enum UserRole {
   MAINTENANCE
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  VIP
+}
+
 enum PricingRuleType {
   PERCENTAGE
   FIXED_AMOUNT

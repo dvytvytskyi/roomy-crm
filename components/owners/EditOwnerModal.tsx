@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, Upload, Plus, Minus, ChevronDown } from 'lucide-react'
-import { userService } from '@/lib/api/services/userService'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { User as UserType } from '@/lib/api'
 
 // Function to get country flag emoji
@@ -127,7 +127,7 @@ export default function EditOwnerModal({ owner, onClose, onSave }: EditOwnerModa
         totalUnits: formData.properties.length
       }
       
-      await userService.updateOwner(owner.id, updatedOwner)
+      await userServiceAdapter.updateUser(owner.id, updatedOwner)
       onSave(updatedOwner)
       onClose()
     } catch (error) {

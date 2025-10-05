@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Eye, Edit, Trash2, Star, Crown, User, Mail, Phone, Calendar, MapPin, Building, Info, ChevronUp, ChevronDown } from 'lucide-react'
 import { Owner } from '@/lib/api/services/ownerService'
 import EditOwnerModal from './EditOwnerModal'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 // Function to get country flag emoji
 const getCountryFlag = (nationality: string) => {
@@ -46,6 +47,7 @@ interface OwnersTableProps {
   onSelectionChange: (selectedIds: string[]) => void
   onPageChange?: (page: number) => void
   onRefresh?: () => void
+  onDeleteOwner?: (ownerId: string) => void
 }
 
 export default function OwnersTableSimple({ 
@@ -56,7 +58,8 @@ export default function OwnersTableSimple({
   selectedOwners, 
   onSelectionChange, 
   onPageChange,
-  onRefresh
+  onRefresh,
+  onDeleteOwner
 }: OwnersTableProps) {
   const [sortField, setSortField] = useState<string>('firstName')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -279,9 +282,11 @@ export default function OwnersTableSimple({
                   onClick={async () => {
                     if (confirm(`Are you sure you want to delete ${owner.firstName} ${owner.lastName}?`)) {
                       try {
-                        await userService.deleteOwner(owner.id)
-                        console.log('Owner deleted:', owner.id)
-                        onRefresh?.()
+                        if (onDeleteOwner) {
+                          await onDeleteOwner(owner.id)
+                          console.log('Owner deleted:', owner.id)
+                          alert('Owner deleted successfully!')
+                        }
                       } catch (error) {
                         console.error('Error deleting owner:', error)
                         alert('Failed to delete owner. Please try again.')

@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from './enums';
+import { UserRole } from '@prisma/client';
 
 // Existing imports and types...
 export interface CreateUserDto {
@@ -8,7 +8,7 @@ export interface CreateUserDto {
   lastName: string;
   phone?: string;
   role?: UserRole;
-  status?: UserStatus;
+  status?: string;
 }
 
 export interface UpdateUserDto {
@@ -17,7 +17,7 @@ export interface UpdateUserDto {
   lastName?: string;
   phone?: string;
   role?: UserRole;
-  status?: UserStatus;
+  status?: string;
 }
 
 export interface UserResponseDto {
@@ -27,8 +27,12 @@ export interface UserResponseDto {
   lastName: string;
   phone?: string;
   role: UserRole;
-  isActive: boolean;
+  status: UserStatus;
+  avatar?: string;
+  country?: string;
+  flag?: string;
   isVerified: boolean;
+  lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,7 +42,7 @@ export interface UserQueryParams {
   limit?: number;
   search?: string;
   role?: UserRole;
-  status?: UserStatus;
+  status?: string;
 }
 
 export interface PropertyQueryParams {
@@ -455,4 +459,32 @@ export interface UpdateSettingDto {
 export interface CreateTaskChecklistItemDto {
   item: string;
   order?: number;
+}
+
+// Additional types for user management
+export interface CurrentUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+}
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationOptions;
+}
+
+export interface UserWithStatsDto extends UserResponseDto {
+  _count: {
+    properties: number;
+    reservations: number;
+    transactions: number;
+  };
 }

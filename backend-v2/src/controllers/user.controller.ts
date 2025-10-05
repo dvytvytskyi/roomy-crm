@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
 import { BaseController } from './BaseController';
-import { CreateUserDto, UpdateUserDto, UserRole, UserStatus, UserQueryParams } from '../types/dto';
+import { CreateUserDto, UpdateUserDto, UserQueryParams } from '../types/dto';
+import { UserRole } from '@prisma/client';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
 
@@ -98,7 +99,7 @@ export class UserController extends BaseController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
       const role = req.query.role as UserRole;
-      const status = req.query.status as UserStatus;
+      const status = req.query.status as string;
       const search = req.query.search as string;
 
       // Validate role if provided
@@ -108,8 +109,8 @@ export class UserController extends BaseController {
       }
 
       // Validate status if provided
-      if (status && !Object.values(UserStatus).includes(status)) {
-        UserController.validationError(res, [], `Invalid status. Must be one of: ${Object.values(UserStatus).join(', ')}`);
+      if (status && !['ACTIVE', 'INACTIVE', 'SUSPENDED', 'VIP'].includes(status)) {
+        UserController.validationError(res, [], `Invalid status. Must be one of: ACTIVE, INACTIVE, SUSPENDED, VIP`);
         return;
       }
 
@@ -222,8 +223,8 @@ export class UserController extends BaseController {
       }
 
       // Validate status if provided
-      if (updateData.status && !Object.values(UserStatus).includes(updateData.status)) {
-        UserController.validationError(res, [], `Invalid status. Must be one of: ${Object.values(UserStatus).join(', ')}`);
+      if (updateData.status && !['ACTIVE', 'INACTIVE', 'SUSPENDED', 'VIP'].includes(updateData.status)) {
+        UserController.validationError(res, [], `Invalid status. Must be one of: ACTIVE, INACTIVE, SUSPENDED, VIP`);
         return;
       }
 

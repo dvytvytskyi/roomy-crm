@@ -100,61 +100,55 @@ export class UserService extends BaseService {
       // Prevent self-deactivation
       if (currentUser.id === id) {
         await prisma.$disconnect();
-        return UserService.prototype.error('Bad Request', 'You cannot deactivate your own account');
+        return UserService.prototype.error('Bad Request', 'You cannot delete your own account');
       }
 
-      // Check if user is already deactivated
-      if (!existingUser.is_active) {
-        await prisma.$disconnect();
-        return UserService.prototype.error('Bad Request', 'User is already deactivated');
-      }
+      // Note: Since we're doing permanent deletion, we don't need to check if user is already deactivated
+      // The user will be deleted regardless of their current status
 
-      // Deactivate user in transaction with audit logging
+      // Delete user permanently in transaction with audit logging
       const result = await prisma.$transaction(async (tx) => {
-        logger.info(`[User Deactivation Step 1/2] Deactivating user...`);
+        logger.info(`[User Deletion Step 1/2] Deleting user permanently...`);
         
-        // Deactivate user instead of deleting
-        const deactivatedUser = await tx.user.update({
-          where: { id },
-          data: {
-            is_active: false,
-          },
-        });
-
-        logger.info(`[User Deactivation Step 2/2] Creating audit log...`);
-
-        // Create audit log
+        // Create audit log BEFORE deletion
         const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await tx.audit_logs.create({
           data: {
             id: auditId,
             user_id: currentUser.id,
-            action: 'USER_DEACTIVATED',
+            action: 'USER_DELETED',
             entity_type: 'USER',
             entity_id: id,
             ip_address: '127.0.0.1',
             user_agent: 'Backend-V2-UserService',
             changes: {
-              deactivated_by: currentUser.email,
+              deleted_by: currentUser.email,
               user_email: existingUser.email,
-              action: 'deactivated',
-              reason: 'User deactivated by admin'
+              action: 'permanently deleted',
+              reason: 'User deleted by admin'
             }
           }
         });
 
-        logger.info(`[User Deactivation END] User deactivated successfully: ${deactivatedUser.email}`);
-        return deactivatedUser;
+        logger.info(`[User Deletion Step 2/2] Deleting user record...`);
+        
+        // Delete user permanently
+        const deletedUser = await tx.user.delete({
+          where: { id },
+        });
+
+        logger.info(`[User Deletion END] User deleted permanently: ${deletedUser.email}`);
+        return deletedUser;
       });
 
       await prisma.$disconnect();
 
       const userResponse = UserService.mapToUserResponse(result);
-      logger.info(`User deactivated successfully: ${result.email} by ${currentUser.email}`);
-      return UserService.prototype.success(userResponse, 'User deactivated successfully');
+      logger.info(`User deleted successfully: ${result.email} by ${currentUser.email}`);
+      return UserService.prototype.success(userResponse, 'User deleted successfully');
     } catch (error) {
       await prisma.$disconnect();
-      logger.error('Error deactivating user:', error);
+      logger.error('Error deleting user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
   }

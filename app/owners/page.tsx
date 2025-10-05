@@ -12,7 +12,7 @@ export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     nationality: [] as string[],
-    status: [] as string[],
+    status: ['Active'] as string[], // По умолчанию показываем только активных владельцев
     dateOfBirth: {
       from: '',
       to: ''
@@ -23,8 +23,8 @@ export default function OwnersPage() {
   const [selectedOwners, setSelectedOwners] = useState<string[]>([])
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
   const [page, setPage] = useState(1)
-  const [limit] = useState(10)
-  const [owners, setOwners] = useState<any[]>([])
+  const [limit] = useState(20)
+  const [owners, setOwners] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState({
@@ -73,56 +73,121 @@ export default function OwnersPage() {
   ])
 
   // Load owners data from API
-  useEffect(() => {
-    const loadOwners = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        console.log('🏠 Loading owners from API...')
+  const loadOwners = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('🏠 Loading owners from API...')
+      
+      const response = await userServiceAdapted.getOwners({
+        search: debouncedSearchTerm,
+        page,
+        limit,
+        nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
+        // По умолчанию показываем только активных владельцев, если не выбраны другие фильтры
+        status: filters.status.length > 0 
+          ? (filters.status.includes('Active') ? 'ACTIVE' : filters.status.includes('Inactive') ? 'INACTIVE' : undefined)
+          : 'ACTIVE', // По умолчанию только активные
+        dateOfBirthFrom: filters.dateOfBirth.from || undefined,
+        dateOfBirthTo: filters.dateOfBirth.to || undefined,
+        phoneNumber: filters.phoneNumber || undefined,
+        comments: filters.comments || undefined
+      })
+      
+      console.log('🏠 Full response received:', response)
+      
+      if (response.success && response.data) {
+        console.log('🏠 Owners loaded:', response.data)
+        console.log('🏠 Setting owners:', response.data.users || response.data.owners || response.data)
+        setOwners(response.data.users || response.data.owners || response.data)
         
-        const response = await userServiceAdapted.getOwners({
-          search: debouncedSearchTerm,
-          page,
-          limit,
-          nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
-          isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined,
-          dateOfBirthFrom: filters.dateOfBirth.from || undefined,
-          dateOfBirthTo: filters.dateOfBirth.to || undefined,
-          phoneNumber: filters.phoneNumber || undefined,
-          comments: filters.comments || undefined
+        // Calculate stats
+        const ownersData = response.data.users || response.data.owners || response.data
+        const totalOwners = ownersData?.length || 0
+        const activeOwners = ownersData?.filter((o: ApiUser) => o.isActive).length || 0
+        const totalUnits = ownersData?.reduce((sum: number, owner: ApiUser) => sum + (owner.totalUnits || 0), 0) || 0
+        const vipOwners = ownersData?.filter((o: ApiUser) => o.comments?.includes('VIP')).length || 0
+        
+        setStats({
+          totalOwners,
+          activeOwners,
+          totalUnits,
+          vipOwners
+        })
+      } else {
+        setError('Failed to load owners')
+      }
+    } catch (err) {
+      console.error('🏠 Error loading owners:', err)
+      setError('Error loading owners')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Delete owner function
+  const handleDeleteOwner = async (ownerId: string) => {
+    try {
+      console.log('🗑️ Starting delete process for owner:', ownerId)
+      
+      // Find the owner before deletion for stats calculation
+      const ownerToDelete = owners.find(owner => owner.id === ownerId)
+      console.log('🗑️ Owner to delete:', ownerToDelete?.firstName, ownerToDelete?.lastName)
+      
+      const response = await userServiceAdapted.deleteUser(ownerId)
+      console.log('🗑️ Delete API response:', response)
+      
+      if (response.success) {
+        console.log('🗑️ Owner deleted successfully from backend')
+        
+        // Update local state by removing the deleted owner
+        setOwners(prevOwners => {
+          const updatedOwners = prevOwners.filter(owner => owner.id !== ownerId)
+          console.log('🗑️ Updated owners list:', updatedOwners.length, 'owners remaining (was', prevOwners.length, ')')
+          return updatedOwners
         })
         
-        console.log('🏠 Full response received:', response)
+        // Also remove from selected owners if it was selected
+        setSelectedOwners(prevSelected => {
+          const updatedSelected = prevSelected.filter(id => id !== ownerId)
+          console.log('🗑️ Updated selected owners:', updatedSelected.length, 'selected (was', prevSelected.length, ')')
+          return updatedSelected
+        })
         
-        if (response.success && response.data) {
-          console.log('🏠 Owners loaded:', response.data)
-          console.log('🏠 Setting owners:', response.data.users || response.data.owners || response.data)
-          setOwners(response.data.users || response.data.owners || response.data)
-          
-          // Calculate stats
-          const ownersData = response.data.users || response.data.owners || response.data
-          const totalOwners = ownersData?.length || 0
-          const activeOwners = ownersData?.filter(o => o.isActive).length || 0
-          const totalUnits = ownersData?.reduce((sum, owner) => sum + (owner.totalUnits || 0), 0) || 0
-          const vipOwners = ownersData?.filter(o => o.comments?.includes('VIP')).length || 0
-          
-          setStats({
-            totalOwners,
-            activeOwners,
-            totalUnits,
-            vipOwners
+        // Update stats - find the deleted owner to get accurate stats
+        if (ownerToDelete) {
+          setStats(prevStats => {
+            const newStats = {
+              ...prevStats,
+              totalOwners: prevStats.totalOwners - 1,
+              activeOwners: (ownerToDelete.isActive || ownerToDelete.status === 'ACTIVE') 
+                ? prevStats.activeOwners - 1 
+                : prevStats.activeOwners,
+              vipOwners: ownerToDelete.comments?.includes('VIP')
+                ? prevStats.vipOwners - 1
+                : prevStats.vipOwners,
+              totalUnits: ownerToDelete.totalUnits
+                ? prevStats.totalUnits - ownerToDelete.totalUnits
+                : prevStats.totalUnits
+            }
+            console.log('🗑️ Updated stats:', newStats)
+            return newStats
           })
-        } else {
-          setError('Failed to load owners')
         }
-      } catch (err) {
-        console.error('🏠 Error loading owners:', err)
-        setError('Error loading owners')
-      } finally {
-        setLoading(false)
+        
+        console.log('🗑️ State update completed successfully')
+        
+      } else {
+        console.error('🗑️ Failed to delete owner:', response.error)
+        throw new Error(response.error || 'Failed to delete owner')
       }
+    } catch (error) {
+      console.error('🗑️ Error deleting owner:', error)
+      throw error // Re-throw to let the component handle the error display
     }
+  }
 
+  useEffect(() => {
     loadOwners()
   }, [debouncedSearchTerm, page, limit, filters])
 
@@ -133,7 +198,7 @@ export default function OwnersPage() {
   const handleClearFilters = () => {
     setFilters({
       nationality: [],
-      status: [],
+      status: ['Active'], // По умолчанию показываем только активных
       dateOfBirth: { from: '', to: '' },
       phoneNumber: '',
       comments: ''
@@ -148,12 +213,12 @@ export default function OwnersPage() {
   const handleAddOwner = async (owner: any) => {
     try {
       console.log('Adding owner:', owner)
-      const response = await ownerService.createOwner(owner)
+      const response = await userServiceAdapted.createUser(owner)
       
       if (response.success) {
         setShowAddOwnerModal(false)
         // Refresh owners list after adding
-        window.location.reload()
+        loadOwners()
       } else {
         setError('Failed to add owner')
       }
@@ -162,6 +227,7 @@ export default function OwnersPage() {
       setError('Error adding owner')
     }
   }
+
 
   return (
     <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
@@ -357,9 +423,8 @@ export default function OwnersPage() {
               selectedOwners={selectedOwners}
               onSelectionChange={setSelectedOwners}
               onPageChange={setPage}
-              onRefresh={() => {
-                window.location.reload()
-              }}
+              onRefresh={loadOwners}
+              onDeleteOwner={handleDeleteOwner}
             />
               )}
             </div>

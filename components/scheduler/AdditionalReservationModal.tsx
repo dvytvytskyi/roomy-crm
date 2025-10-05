@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { X, User, Users, Dog, Baby, DollarSign, MessageSquare, Plus, Search } from 'lucide-react'
 import { useGuests } from '../../hooks/useUsers'
 import { useApi } from '../../hooks/useApi'
-import { userService } from '../../lib/api'
+import { userServiceAdapter } from '../../lib/api/adapters/apiAdapter'
 
 interface Guest {
   id: string
@@ -58,7 +58,7 @@ export default function AdditionalReservationModal({
   
   // Load guests data only when modal is open and guest search is shown
   const { data: guests, loading: guestsLoading } = useApi(
-    () => userService.getGuests(),
+    () => userServiceAdapter.getGuests(),
     { immediate: isOpen && showGuestSearch }
   )
   
