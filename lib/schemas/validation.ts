@@ -7,8 +7,9 @@ export const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   phone: z.string().optional(),
+  description: z.string().optional(),
   role: z.enum(['ADMIN', 'MANAGER', 'AGENT', 'OWNER', 'GUEST']).optional(),
-  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'VIP', 'SUSPENDED']).optional(),
   country: z.string().optional(),
 });
 
@@ -69,13 +70,30 @@ export const updateReservationSchema = createReservationSchema.partial();
 // Owner-specific schema (extends user schema)
 export const createOwnerSchema = createUserSchema.extend({
   role: z.literal('OWNER'),
-  nationality: z.string().optional(),
-  dateOfBirth: z.string().optional(),
+  nationality: z.string().min(1, 'Nationality is required'),
+  country: z.string().min(1, 'Country is required'),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
   whatsapp: z.string().optional(),
   telegram: z.string().optional(),
   comments: z.string().optional(),
   paymentPreferences: z.string().optional(),
   personalStayDays: z.number().optional(),
+}).omit({ password: true }).refine((data) => {
+  // Перевіряємо, що phone не пустий, якщо він переданий
+  return !data.phone || data.phone.trim().length > 0;
+}, {
+  message: 'Phone number is required',
+  path: ['phone'],
+}).refine((data) => {
+  // Валідація формату телефону
+  if (data.phone) {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(data.phone.replace(/[\s\-\(\)]/g, ''));
+  }
+  return true;
+}, {
+  message: 'Please enter a valid phone number',
+  path: ['phone'],
 });
 
 // Guest-specific schema

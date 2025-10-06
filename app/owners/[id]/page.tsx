@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { 
   User, Mail, Phone, Calendar, MapPin, Building, DollarSign, MessageSquare, 
   Edit, Trash2, Plus, Eye, Star, Crown, Download, Upload, FileText, 
-  ArrowLeft, Settings, CreditCard, TrendingUp, Clock, AlertCircle, XCircle
+  ArrowLeft, Settings, CreditCard, TrendingUp, Clock, AlertCircle, XCircle, X
 } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import CashPaymentModal from '@/components/owners/CashPaymentModal'
 import BankPaymentModal from '@/components/owners/BankPaymentModal'
-import AddBankAccountModal from '@/components/owners/AddBankAccountModal'
 import UploadDocumentModal from '@/components/owners/UploadDocumentModal'
 import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
@@ -163,120 +162,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     filename?: string
   }>>([])
 
-  // Mock data for the specific owner (fallback)
-  const mockOwner: ExtendedOwner = {
-    id: params.id,
-    firstName: 'Ahmed',
-    lastName: 'Al-Rashid',
-    name: 'Ahmed Al-Rashid',
-    nationality: 'Emirati',
-    dateOfBirth: '1975-03-15',
-    email: 'ahmed.alrashid@example.com',
-    phone: '+971 50 123 4567',
-    whatsapp: '+971 50 123 4567',
-    telegram: '@ahmedrashid',
-    reservationCount: 45,
-    properties: ['Burj Khalifa Studio', 'Marina View', 'Downtown Loft'],
-    units: [
-      {
-        id: 1,
-        name: 'Burj Khalifa Studio',
-        nickname: 'BK Studio',
-        location: 'Downtown Dubai',
-        profitFormula: '70% Owner / 30% Company',
-        totalProfit: 12500,
-        photo: '/api/placeholder/150/100'
-      },
-      {
-        id: 2,
-        name: 'Marina View',
-        nickname: 'Marina Apt',
-        location: 'Marina District',
-        profitFormula: '65% Owner / 35% Company',
-        totalProfit: 18750,
-        photo: '/api/placeholder/150/100'
-      },
-      {
-        id: 3,
-        name: 'Downtown Loft',
-        nickname: 'DT Loft',
-        location: 'Business Bay',
-        profitFormula: '75% Owner / 25% Company',
-        totalProfit: 9800,
-        photo: '/api/placeholder/150/100'
-      }
-    ],
-    comments: 'VIP owner, prefers bank transfer payments',
-    status: 'Active',
-    vipStatus: true,
-    paymentPreferences: 'Bank Transfer',
-    personalStayDays: 30,
-    totalUnits: 3,
-    totalProfit: 41050,
-    lifetimeValue: 287500,
-    role: 'OWNER',
-    isActive: true,
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-07-20T14:20:00Z',
-    documents: [
-      {
-        id: 1,
-        name: 'Property Ownership Agreement.pdf',
-        type: 'Contract',
-        uploadedAt: '2024-01-15T10:30:00Z',
-        size: '2.3 MB'
-      },
-      {
-        id: 2,
-        name: 'ID Copy.pdf',
-        type: 'ID',
-        uploadedAt: '2024-01-15T10:35:00Z',
-        size: '1.1 MB'
-      }
-    ],
-    bankDetails: [],
-    transactions: [],
-    activityLog: [],
-    createdBy: 'Admin',
-    lastModifiedBy: 'Manager',
-    lastModifiedAt: '2024-07-20T14:20:00Z'
-  }
+  // Owner data will be loaded from API
 
-  // Mock activity log
-  const mockActivityLog = [
-    {
-      id: 1,
-      action: 'Unit Added',
-      description: 'Added "Downtown Loft" to owner portfolio',
-      user: 'Manager',
-      timestamp: '2024-07-20T14:20:00Z',
-      type: 'unit'
-    },
-    {
-      id: 2,
-      action: 'Payment Method Updated',
-      description: 'Changed payment preference to Bank Transfer',
-      user: 'Admin',
-      timestamp: '2024-06-15T11:45:00Z',
-      type: 'payment'
-    },
-    {
-      id: 3,
-      action: 'Status Changed',
-      description: 'Updated status to VIP',
-      user: 'Admin',
-      timestamp: '2024-05-10T09:30:00Z',
-      type: 'status'
-    },
-    {
-      id: 4,
-      action: 'Profile Created',
-      description: 'Owner profile created',
-      user: 'Admin',
-      timestamp: '2024-01-15T10:30:00Z',
-      type: 'create'
-    }
-  ]
+  // Activity log will be loaded from API
+
+  // Properties state - will be loaded from API
+  const [properties, setProperties] = useState([])
+  const [availableProperties, setAvailableProperties] = useState([])
+  const [showLinkPropertyModal, setShowLinkPropertyModal] = useState(false)
 
   // Load owner data
   useEffect(() => {
@@ -301,17 +194,51 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
             setTransactions(response.data.transactions)
           }
           
-          // Load activity log if available
-          if (response.data.activityLog && Array.isArray(response.data.activityLog)) {
-            setActivityLog(response.data.activityLog)
+          // Load activity log from API
+          try {
+            const activityLogResponse = await userServiceAdapter.getUserActivityLog(params.id)
+            if (activityLogResponse.success && activityLogResponse.data) {
+              setActivityLog(activityLogResponse.data)
+            }
+          } catch (error) {
+            console.error('Error loading activity log:', error)
           }
           
-          // Load documents if available
-          if (response.data.documents && Array.isArray(response.data.documents)) {
-            setDocuments(response.data.documents)
+          // Load documents from API
+          try {
+            const documentsResponse = await userServiceAdapter.getUserDocuments(params.id)
+            if (documentsResponse.success && documentsResponse.data) {
+              setDocuments(documentsResponse.data)
+            }
+          } catch (error) {
+            console.error('Error loading documents:', error)
           }
         } else {
           setError('Owner not found')
+        }
+
+        // Load properties owned by this user
+        console.log('🏠 Loading properties for owner...')
+        const propertiesResponse = await userServiceAdapter.getUserProperties(params.id)
+        if (propertiesResponse.success && propertiesResponse.data) {
+          console.log('🏠 Properties loaded:', propertiesResponse.data)
+          setProperties(propertiesResponse.data)
+        }
+
+        // Load bank accounts for this user
+        console.log('🏦 Loading bank accounts for owner...')
+        const bankAccountsResponse = await userServiceAdapter.getUserBankAccounts(params.id)
+        if (bankAccountsResponse.success && bankAccountsResponse.data) {
+          console.log('🏦 Bank accounts loaded:', bankAccountsResponse.data)
+          setBankDetails(bankAccountsResponse.data)
+        }
+
+        // Load transactions for this user
+        console.log('💰 Loading transactions for owner...')
+        const transactionsResponse = await userServiceAdapter.getUserTransactions(params.id)
+        if (transactionsResponse.success && transactionsResponse.data) {
+          console.log('💰 Transactions loaded:', transactionsResponse.data)
+          setTransactions(transactionsResponse.data)
         }
       } catch (err) {
         console.error('🏠 Error loading owner:', err)
@@ -323,6 +250,36 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
 
     loadOwner()
   }, [params.id])
+
+  // Load available properties when modal opens
+  useEffect(() => {
+    const loadAvailableProperties = async () => {
+      if (showLinkPropertyModal) {
+        try {
+          console.log('🏠 Loading available properties...')
+          console.log('🏠 showLinkPropertyModal:', showLinkPropertyModal)
+          const { propertyServiceAdapter } = await import('@/lib/api/adapters/apiAdapter')
+          console.log('🏠 propertyServiceAdapter imported:', propertyServiceAdapter)
+          const response = await propertyServiceAdapter.getAvailableProperties()
+          console.log('🏠 API response:', response)
+          if (response.success && response.data) {
+            console.log('🏠 Available properties loaded:', response.data)
+            console.log('🏠 Setting availableProperties to:', response.data)
+            setAvailableProperties(response.data)
+          } else {
+            console.error('🏠 Failed to load available properties:', response.error)
+            setAvailableProperties([])
+          }
+        } catch (error) {
+          console.error('🏠 Error loading available properties:', error)
+          setAvailableProperties([])
+        }
+      } else {
+        console.log('🏠 Modal not open, not loading properties')
+      }
+    }
+    loadAvailableProperties()
+  }, [showLinkPropertyModal])
 
 
   // State declarations
@@ -343,121 +300,11 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     inputType: 'text'
   })
 
-  // Bank details state
-  const [bankDetails, setBankDetails] = useState([
-    {
-      id: 1,
-      bankName: 'Emirates NBD',
-      accountHolderName: 'Ahmed Al-Rashid',
-      accountNumber: '1012345678901',
-      iban: 'AE070331234567890123456',
-      swiftCode: 'EBILAEAD',
-      bankAddress: 'Sheikh Zayed Road, Dubai, UAE',
-      isPrimary: true,
-      addedDate: '2024-01-15T10:30:00Z',
-      addedBy: 'Admin',
-      addedByEmail: 'admin@company.com'
-    },
-    {
-      id: 2,
-      bankName: 'ADCB',
-      accountHolderName: 'Ahmed Al-Rashid',
-      accountNumber: '2012345678902',
-      iban: 'AE070331234567890123457',
-      swiftCode: 'ADCBAEAA',
-      bankAddress: 'Corniche Road, Abu Dhabi, UAE',
-      isPrimary: false,
-      addedDate: '2024-02-20T14:15:00Z',
-      addedBy: 'Manager',
-      addedByEmail: 'manager@company.com'
-    }
-  ])
+  // Bank details state - will be loaded from API
+  const [bankDetails, setBankDetails] = useState([])
 
-  // Transaction history state
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: 'payment',
-      amount: 2500.00,
-      currency: 'AED',
-      description: 'Monthly rental income - Burj Khalifa Studio',
-      bankDetailId: 1,
-      status: 'completed',
-      date: '2024-01-15T10:30:00Z',
-      processedBy: 'Admin',
-      processedByEmail: 'admin@company.com',
-      reference: 'PAY-2024-001'
-    },
-    {
-      id: 2,
-      type: 'payment',
-      amount: 1800.00,
-      currency: 'AED',
-      description: 'Monthly rental income - Downtown Studio',
-      bankDetailId: 1,
-      status: 'completed',
-      date: '2024-01-15T10:30:00Z',
-      processedBy: 'Admin',
-      processedByEmail: 'admin@company.com',
-      reference: 'PAY-2024-002'
-    },
-    {
-      id: 3,
-      type: 'payment',
-      amount: 3200.00,
-      currency: 'AED',
-      description: 'Monthly rental income - Marina View',
-      bankDetailId: 2,
-      status: 'pending',
-      date: '2024-02-15T09:15:00Z',
-      processedBy: 'Manager',
-      processedByEmail: 'manager@company.com',
-      reference: 'PAY-2024-003'
-    },
-    {
-      id: 4,
-      type: 'refund',
-      amount: -500.00,
-      currency: 'AED',
-      description: 'Security deposit refund - Burj Khalifa Studio',
-      bankDetailId: 1,
-      status: 'completed',
-      date: '2024-02-10T14:20:00Z',
-      processedBy: 'Admin',
-      processedByEmail: 'admin@company.com',
-      reference: 'REF-2024-001'
-    },
-    {
-      id: 5,
-      type: 'cash_payment',
-      amount: 1500.00,
-      currency: 'AED',
-      description: 'Cash payment - Monthly bonus',
-      bankDetailId: null,
-      status: 'completed',
-      date: '2024-02-25T16:45:00Z',
-      processedBy: 'Manager',
-      processedByEmail: 'manager@company.com',
-      reference: 'CASH-2024-001',
-      title: 'Monthly Performance Bonus',
-      responsible: 'Sarah Johnson'
-    },
-    {
-      id: 6,
-      type: 'cash_payment',
-      amount: 800.00,
-      currency: 'AED',
-      description: 'Cash payment - Maintenance refund',
-      bankDetailId: null,
-      status: 'completed',
-      date: '2024-03-01T11:30:00Z',
-      processedBy: 'Admin',
-      processedByEmail: 'admin@company.com',
-      reference: 'CASH-2024-002',
-      title: 'Maintenance Cost Refund',
-      responsible: 'Mike Chen'
-    }
-  ])
+  // Transaction history state - will be loaded from API
+  const [transactions, setTransactions] = useState([])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -531,6 +378,10 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     })
   }
 
+  const getAuthToken = () => {
+    return localStorage.getItem('accessToken') || 'mock-token'
+  }
+
   const getAge = (dateOfBirth: string) => {
     const today = new Date()
     const birthDate = new Date(dateOfBirth)
@@ -559,6 +410,147 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       title,
       inputType
     })
+  }
+
+  const handleLinkProperty = async (propertyId: string) => {
+    try {
+      console.log('🔗 Linking property to owner...')
+      const response = await userServiceAdapter.linkPropertyToUser(params.id, propertyId)
+      if (response.success) {
+        console.log('🔗 Property linked successfully')
+        // Reload properties
+        const propertiesResponse = await userServiceAdapter.getUserProperties(params.id)
+        if (propertiesResponse.success && propertiesResponse.data) {
+          setProperties(propertiesResponse.data)
+        }
+        setShowLinkPropertyModal(false)
+      } else {
+        console.error('🔗 Failed to link property:', response.error)
+      }
+    } catch (error) {
+      console.error('🔗 Error linking property:', error)
+    }
+  }
+
+  const handleUnlinkProperty = async (propertyId: string) => {
+    try {
+      console.log('🔗 Unlinking property from owner...')
+      const response = await userServiceAdapter.unlinkPropertyFromUser(params.id, propertyId)
+      if (response.success) {
+        console.log('🔗 Property unlinked successfully')
+        // Reload properties
+        const propertiesResponse = await userServiceAdapter.getUserProperties(params.id)
+        if (propertiesResponse.success && propertiesResponse.data) {
+          setProperties(propertiesResponse.data)
+        }
+      } else {
+        console.error('🔗 Failed to unlink property:', response.error)
+      }
+    } catch (error) {
+      console.error('🔗 Error unlinking property:', error)
+    }
+  }
+
+  const handleAddBankAccount = async (bankAccountData: any) => {
+    try {
+      console.log('🏦 Adding bank account...')
+      const response = await userServiceAdapter.createUserBankAccount(params.id, bankAccountData)
+      if (response.success) {
+        console.log('🏦 Bank account added successfully')
+        // Reload bank accounts
+        const bankAccountsResponse = await userServiceAdapter.getUserBankAccounts(params.id)
+        if (bankAccountsResponse.success && bankAccountsResponse.data) {
+          setBankDetails(bankAccountsResponse.data)
+        }
+        setIsAddBankAccountModalOpen(false)
+      } else {
+        console.error('🏦 Failed to add bank account:', response.error)
+      }
+    } catch (error) {
+      console.error('🏦 Error adding bank account:', error)
+    }
+  }
+
+  const handleDeleteBankAccount = async (accountId: string) => {
+    try {
+      console.log('🏦 Deleting bank account...')
+      const response = await userServiceAdapter.deleteUserBankAccount(params.id, accountId)
+      if (response.success) {
+        console.log('🏦 Bank account deleted successfully')
+        // Reload bank accounts
+        const bankAccountsResponse = await userServiceAdapter.getUserBankAccounts(params.id)
+        if (bankAccountsResponse.success && bankAccountsResponse.data) {
+          setBankDetails(bankAccountsResponse.data)
+        }
+      } else {
+        console.error('🏦 Failed to delete bank account:', response.error)
+      }
+    } catch (error) {
+      console.error('🏦 Error deleting bank account:', error)
+    }
+  }
+
+  const handleCashPayment = async (paymentData: any) => {
+    try {
+      console.log('💰 Creating cash payment...')
+      const transactionData = {
+        type: 'PAYMENT',
+        category: 'RENTAL_PAYMENT',
+        amount: paymentData.amount,
+        currency: paymentData.currency || 'AED',
+        description: paymentData.description || 'Cash payment received',
+        payment_method: 'CASH',
+        payment_reference: `CASH_${Date.now()}`
+      }
+      
+      const response = await userServiceAdapter.createUserTransaction(params.id, transactionData)
+      if (response.success) {
+        console.log('💰 Cash payment created successfully')
+        // Reload transactions
+        const transactionsResponse = await userServiceAdapter.getUserTransactions(params.id)
+        if (transactionsResponse.success && transactionsResponse.data) {
+          setTransactions(transactionsResponse.data)
+        }
+        setIsCashPaymentModalOpen(false)
+      } else {
+        console.error('💰 Failed to create cash payment:', response.error)
+      }
+    } catch (error) {
+      console.error('💰 Error creating cash payment:', error)
+    }
+  }
+
+  const handleBankPayment = async (paymentData: any) => {
+    try {
+      console.log('🏦 Creating bank payment...')
+      const transactionData = {
+        type: 'PAYMENT',
+        category: 'RENTAL_PAYMENT',
+        amount: paymentData.amount,
+        currency: paymentData.currency || 'AED',
+        description: paymentData.description || 'Bank transfer received',
+        payment_method: 'BANK_TRANSFER',
+        payment_reference: paymentData.reference || `BANK_${Date.now()}`,
+        platform: paymentData.platform,
+        platform_fee: paymentData.platform_fee || 0,
+        transaction_fee: paymentData.transaction_fee || 0
+      }
+      
+      const response = await userServiceAdapter.createUserTransaction(params.id, transactionData)
+      if (response.success) {
+        console.log('🏦 Bank payment created successfully')
+        // Reload transactions
+        const transactionsResponse = await userServiceAdapter.getUserTransactions(params.id)
+        if (transactionsResponse.success && transactionsResponse.data) {
+          setTransactions(transactionsResponse.data)
+        }
+        setIsBankPaymentModalOpen(false)
+      } else {
+        console.error('🏦 Failed to create bank payment:', response.error)
+      }
+    } catch (error) {
+      console.error('🏦 Error creating bank payment:', error)
+    }
   }
 
   const handleSaveEdit = async (newValue: string) => {
@@ -593,91 +585,23 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
 
 
 
-  const handleRemoveBankDetail = async (bankDetailId: number) => {
-    if (!confirm('Are you sure you want to delete this bank detail?')) return
-    if (!owner) return
 
-    const newBankDetails = bankDetails.filter(detail => detail.id !== bankDetailId)
-    
-    // Update local state first
-    setBankDetails(newBankDetails)
-
-    // Save to backend
+  const handleSetPrimaryBank = async (accountId: string) => {
     try {
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: newBankDetails
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      console.log('🏦 Setting primary bank account...')
+      const response = await userServiceAdapter.updateUserBankAccount(params.id, accountId, { is_primary: true })
       if (response.success) {
-        console.log('Bank account deleted successfully')
+        console.log('🏦 Primary bank account updated successfully')
+        // Reload bank accounts
+        const bankAccountsResponse = await userServiceAdapter.getUserBankAccounts(params.id)
+        if (bankAccountsResponse.success && bankAccountsResponse.data) {
+          setBankDetails(bankAccountsResponse.data)
+        }
       } else {
-        console.error('Failed to delete bank account')
-        alert('Failed to delete bank account. Please try again.')
-        // Revert local state on error
-        setBankDetails(bankDetails)
+        console.error('🏦 Failed to update primary bank account:', response.error)
       }
     } catch (error) {
-      console.error('Error deleting bank account:', error)
-      alert('Failed to delete bank account. Please try again.')
-      // Revert local state on error
-      setBankDetails(bankDetails)
-    }
-  }
-
-  const handleSetPrimaryBank = async (bankDetailId: number) => {
-    if (!owner) return
-
-    const newBankDetails = bankDetails.map(detail => ({
-      ...detail,
-      isPrimary: detail.id === bankDetailId
-    }))
-
-    // Update local state first
-    setBankDetails(newBankDetails)
-
-    // Save to backend
-    try {
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: newBankDetails
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
-      if (response.success) {
-        console.log('Primary bank account updated successfully')
-      } else {
-        console.error('Failed to update primary bank account')
-        alert('Failed to update primary bank account. Please try again.')
-        // Revert local state on error
-        setBankDetails(bankDetails)
-      }
-    } catch (error) {
-      console.error('Error updating primary bank account:', error)
-      alert('Failed to update primary bank account. Please try again.')
-      // Revert local state on error
-      setBankDetails(bankDetails)
+      console.error('🏦 Error updating primary bank account:', error)
     }
   }
 
@@ -685,13 +609,6 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     setIsBankPaymentModalOpen(true)
   }
 
-  const handleCashPayment = () => {
-    setIsCashPaymentModalOpen(true)
-  }
-
-  const handleAddBankAccount = () => {
-    setIsAddBankAccountModalOpen(true)
-  }
 
   const handleUploadDocument = async (documentData: {
     name: string
@@ -707,11 +624,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       formData.append('folder', 'documents')
       formData.append('ownerId', owner.id)
 
-      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+      // Get the actual token from localStorage
+      const token = getAuthToken()
+      
+      const uploadResponse = await fetch('http://localhost:3002/api/v2/files/upload', {
         method: 'POST',
         body: formData,
         headers: {
-          'Authorization': 'Bearer mock-token'
+          'Authorization': `Bearer ${token}`
         }
       })
 
@@ -726,53 +646,36 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         id: (documents.length || 0) + 1,
         name: documentData.name,
         type: documentData.type,
-        uploadedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
         size: `${(documentData.file.size / 1024 / 1024).toFixed(1)} MB`,
-        s3Key: uploadResult.key,
-        s3Url: uploadResult.url,
+        s3_key: uploadResult.key,
+        s3_url: uploadResult.url,
         filename: uploadResult.filename
       }
 
-      // Update local state first
-      const newDocuments = [...documents, newDocument]
-      setDocuments(newDocuments)
-      setOwner(prev => prev ? {
-        ...prev,
-        documents: newDocuments
-      } : null)
-
-      // Save document metadata to backend
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: owner.bankDetails || [],
-        transactions: owner.transactions || [],
-        documents: newDocuments
+      // Save document to backend via API
+      const apiDocumentData = {
+        name: newDocument.name,
+        type: newDocument.type,
+        filename: newDocument.filename || documentData.file.name,
+        size: newDocument.size,
+        s3_key: newDocument.s3_key,
+        s3_url: newDocument.s3_url,
+        uploaded_by: 'Current User'
       }
 
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      const response = await userServiceAdapter.createUserDocument(params.id, apiDocumentData)
       if (response.success) {
         console.log('Document uploaded and saved successfully')
-        // Add activity log entry - pass newDocuments to ensure consistency
-        addActivityLogEntry('document', 'Document Uploaded', `Uploaded document: ${documentData.name} (${documentData.type})`, newDocuments)
+        // Update local state with the response data
+        const newDocuments = [...documents, response.data]
+        setDocuments(newDocuments)
+        
+        // Add activity log entry
+        await addActivityLogEntry('document', 'Document Uploaded', `Uploaded document: ${apiDocumentData.name} (${apiDocumentData.type})`)
       } else {
         console.error('Failed to save document metadata')
         alert('Failed to save document metadata. Please try again.')
-        // Revert local state on error
-        setDocuments(documents)
-        setOwner(prev => prev ? {
-          ...prev,
-          documents: documents
-        } : null)
       }
     } catch (error) {
       console.error('Error uploading document:', error)
@@ -794,22 +697,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     const documentToDelete = documents.find(doc => doc.id === documentId)
     if (!documentToDelete) return
 
-    const newDocuments = documents.filter(doc => doc.id !== documentId)
-
-    // Update local state first
-    setDocuments(newDocuments)
-    setOwner(prev => prev ? {
-      ...prev,
-      documents: newDocuments
-    } : null)
-
     try {
-      // Delete file from S3 if it has s3Key
-      if (documentToDelete.s3Key) {
-        const deleteResponse = await fetch(`http://localhost:3001/api/files/${encodeURIComponent(documentToDelete.s3Key)}`, {
+      // Delete file from S3 if it has s3_key
+      if (documentToDelete.s3_key) {
+        const token = getAuthToken()
+        const deleteResponse = await fetch(`http://localhost:3002/api/v2/files/${encodeURIComponent(documentToDelete.s3_key)}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': 'Bearer mock-token'
+            'Authorization': `Bearer ${token}`
           }
         })
 
@@ -819,49 +714,24 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         }
       }
 
-      // Save to backend
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: owner.bankDetails || [],
-        transactions: owner.transactions || [],
-        documents: newDocuments
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      // Delete document from backend via API
+      const response = await userServiceAdapter.deleteUserDocument(params.id, documentId.toString())
       if (response.success) {
         console.log('Document deleted successfully')
-        // Add activity log entry - pass newDocuments to ensure consistency
-        addActivityLogEntry('document', 'Document Deleted', `Deleted document: ${documentToDelete.name}`, newDocuments)
+        // Update local state
+        const newDocuments = documents.filter(doc => doc.id !== documentId)
+        setDocuments(newDocuments)
+        
+        // Add activity log entry
+        await addActivityLogEntry('document', 'Document Deleted', `Deleted document: ${documentToDelete.name}`)
       } else {
         console.error('Failed to delete document')
         alert('Failed to delete document. Please try again.')
-        // Revert local state on error
-        setDocuments(documents)
-        setOwner(prev => prev ? {
-          ...prev,
-          documents: documents
-        } : null)
       }
     } catch (error) {
       console.error('Error deleting document:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       alert(`Failed to delete document: ${errorMessage}`)
-      // Revert local state on error
-      setDocuments(documents)
-      setOwner(prev => prev ? {
-        ...prev,
-        documents: documents
-      } : null)
     }
   }
 
@@ -869,47 +739,30 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
   const addActivityLogEntry = async (
     type: 'create' | 'update' | 'delete' | 'payment' | 'document' | 'unit',
     action: string,
-    description: string,
-    updatedDocuments?: Array<any>
+    description: string
   ) => {
     if (!owner) return
 
-    const newActivity = {
-      id: (activityLog.length || 0) + 1,
+    try {
+      // Create activity log entry via API
+      const activityData = {
       action,
       description,
-      user: 'Current User',
-      timestamp: new Date().toISOString(),
-      type
-    }
-
-    // Update local activity log
-    const newActivityLog = [newActivity, ...activityLog]
-    setActivityLog(newActivityLog)
-
-    // Save to backend - use updatedDocuments if provided to ensure we have the latest
-    try {
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: owner.bankDetails || [],
-        transactions: owner.transactions || [],
-        documents: updatedDocuments !== undefined ? updatedDocuments : documents,
-        activityLog: newActivityLog
+        type,
+        performed_by: 'Current User'
       }
 
-      await userService.updateOwner(owner.id, apiOwnerData)
+      const response = await userServiceAdapter.createUserActivityLog(params.id, activityData)
+      if (response.success) {
+        console.log('Activity log entry created successfully')
+        // Update local state with the response data
+        const newActivityLog = [response.data, ...activityLog]
+    setActivityLog(newActivityLog)
+      } else {
+        console.error('Failed to create activity log entry')
+      }
     } catch (error) {
-      console.error('Error saving activity log:', error)
+      console.error('Error creating activity log entry:', error)
     }
   }
 
@@ -959,7 +812,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         units: [...(owner.units || []), newUnit]
       }
 
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      const response = await userServiceAdapter.updateUser(owner.id, apiOwnerData)
       if (response.success) {
         console.log('Unit added successfully')
       } else {
@@ -1021,7 +874,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         units: newUnits
       }
 
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
+      const response = await userServiceAdapter.updateUser(owner.id, apiOwnerData)
       if (response.success) {
         console.log('Unit removed successfully')
       } else {
@@ -1046,198 +899,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     }
   }
 
-  const handleSaveCashPayment = async (paymentData: {
-    amount: number
-    date: string
-    title: string
-    responsible: string
-    description: string
-  }) => {
-    if (!owner) return
 
-    // Create new transaction
-    const newTransaction = {
-      id: transactions.length + 1,
-      type: 'cash_payment' as const,
-      amount: paymentData.amount,
-      currency: 'AED',
-      description: paymentData.description || `Cash payment - ${paymentData.title}`,
-      bankDetailId: null,
-      status: 'completed' as const,
-      date: new Date(paymentData.date).toISOString(),
-      processedBy: 'Current User', // In real app, this would be the logged-in user
-      processedByEmail: 'user@company.com',
-      reference: `CASH-2024-${String(transactions.length + 1).padStart(3, '0')}`,
-      title: paymentData.title,
-      responsible: paymentData.responsible
-    }
-
-    // Update local state first
-    setTransactions(prev => [newTransaction, ...prev])
-
-    // Save to backend
-    try {
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: owner.bankDetails || [],
-        transactions: [newTransaction, ...transactions]
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
-      if (response.success) {
-        console.log('Cash payment saved successfully')
-      } else {
-        console.error('Failed to save cash payment')
-        alert('Failed to save cash payment. Please try again.')
-        // Revert local state on error
-        setTransactions(transactions)
-      }
-    } catch (error) {
-      console.error('Error saving cash payment:', error)
-      alert('Failed to save cash payment. Please try again.')
-      // Revert local state on error
-      setTransactions(transactions)
-    }
-  }
-
-  const handleSaveBankPayment = async (paymentData: {
-    amount: number
-    date: string
-    description: string
-    bankAccountId: number
-  }) => {
-    if (!owner) return
-
-    // Create new transaction
-    const newTransaction = {
-      id: transactions.length + 1,
-      type: 'payment' as const,
-      amount: paymentData.amount,
-      currency: 'AED',
-      description: paymentData.description,
-      bankDetailId: paymentData.bankAccountId,
-      status: 'completed' as const,
-      date: new Date(paymentData.date).toISOString(),
-      processedBy: 'Current User', // In real app, this would be the logged-in user
-      processedByEmail: 'user@company.com',
-      reference: `PAY-2024-${String(transactions.length + 1).padStart(3, '0')}`
-    }
-
-    // Update local state first
-    setTransactions(prev => [newTransaction, ...prev])
-
-    // Save to backend
-    try {
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: owner.bankDetails || [],
-        transactions: [newTransaction, ...transactions]
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
-      if (response.success) {
-        console.log('Bank payment saved successfully')
-      } else {
-        console.error('Failed to save bank payment')
-        alert('Failed to save bank payment. Please try again.')
-        // Revert local state on error
-        setTransactions(transactions)
-      }
-    } catch (error) {
-      console.error('Error saving bank payment:', error)
-      alert('Failed to save bank payment. Please try again.')
-      // Revert local state on error
-      setTransactions(transactions)
-    }
-  }
-
-  const handleSaveBankAccount = async (bankData: {
-    bankName: string
-    accountHolderName: string
-    accountNumber: string
-    iban: string
-    swiftCode: string
-    bankAddress: string
-  }) => {
-    if (!owner) return
-
-    // Create new bank account
-    const newBankAccount = {
-      id: bankDetails.length + 1,
-      bankName: bankData.bankName,
-      accountHolderName: bankData.accountHolderName,
-      accountNumber: bankData.accountNumber,
-      iban: bankData.iban,
-      swiftCode: bankData.swiftCode,
-      bankAddress: bankData.bankAddress,
-      isPrimary: bankDetails.length === 0, // First account is primary
-      addedDate: new Date().toISOString(),
-      addedBy: 'Current User', // In real app, this would be the logged-in user
-      addedByEmail: 'user@company.com'
-    }
-
-    // Update local state first
-    setBankDetails(prev => [...prev, newBankAccount])
-
-    // Save to backend
-    try {
-      const updatedOwner = {
-        ...owner,
-        bankDetails: [...bankDetails, newBankAccount]
-      }
-
-      // Convert ExtendedOwner back to API format for update
-      const apiOwnerData = {
-        firstName: owner.firstName || '',
-        lastName: owner.lastName || '',
-        email: owner.email || '',
-        phone: owner.phone || '',
-        nationality: owner.nationality || '',
-        dateOfBirth: owner.dateOfBirth || '',
-        role: (owner.role || 'OWNER') as "ADMIN" | "MANAGER" | "AGENT" | "OWNER" | "GUEST" | "CLEANER" | "MAINTENANCE",
-        isActive: owner.isActive,
-        properties: owner.properties,
-        totalUnits: owner.totalUnits,
-        comments: owner.comments || '',
-        bankDetails: [...bankDetails, newBankAccount]
-      }
-
-      const response = await userService.updateOwner(owner.id, apiOwnerData)
-      if (response.success) {
-        console.log('Bank account saved successfully')
-      } else {
-        console.error('Failed to save bank account')
-        alert('Failed to save bank account. Please try again.')
-        // Revert local state on error
-        setBankDetails(bankDetails)
-      }
-    } catch (error) {
-      console.error('Error saving bank account:', error)
-      alert('Failed to save bank account. Please try again.')
-      // Revert local state on error
-      setBankDetails(bankDetails)
-    }
-  }
 
   // Use real owner data
   const currentOwner = owner
@@ -1423,7 +1085,23 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium text-slate-900">Description</h2>
                   <button 
-                    onClick={() => handleEditField('comments', currentOwner.comments, 'Description', 'textarea')}
+                    onClick={() => handleEditField('description', currentOwner.description, 'Description', 'textarea')}
+                    className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
+                  >
+                    <Edit size={16} />
+                  </button>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <p className="text-sm text-slate-600">{currentOwner.description || 'n/a'}</p>
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium text-slate-900">Comments</h2>
+                  <button 
+                    onClick={() => handleEditField('comments', currentOwner.comments, 'Comments', 'textarea')}
                     className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                   >
                     <Edit size={16} />
@@ -1436,36 +1114,100 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
 
               {/* Properties */}
               <div className="mb-6">
-                <h2 className="text-lg font-medium text-slate-900 mb-4">Properties</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium text-slate-900">Properties</h2>
+                  <button 
+                    onClick={async () => {
+                      setShowLinkPropertyModal(true)
+                      // Load available properties immediately when opening modal
+                      try {
+                        console.log('🏠 Loading available properties immediately...')
+                        const { propertyServiceAdapter } = await import('@/lib/api/adapters/apiAdapter')
+                        const response = await propertyServiceAdapter.getAvailableProperties()
+                        console.log('🏠 Immediate API response:', response)
+                        if (response.success && response.data) {
+                          console.log('🏠 Setting availableProperties immediately:', response.data)
+                          setAvailableProperties(response.data)
+                        } else {
+                          console.error('🏠 Failed to load available properties immediately:', response.error)
+                          setAvailableProperties([])
+                        }
+                      } catch (error) {
+                        console.error('🏠 Error loading available properties immediately:', error)
+                        setAvailableProperties([])
+                      }
+                    }}
+                    className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
+                  >
+                    Link Property
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(currentOwner.properties || []).map((property, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  {properties.map((property, index) => (
+                    <div key={property.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-medium text-slate-900">{property}</h3>
-                          <p className="text-sm text-slate-600">Property</p>
-                          <p className="text-xs text-gray-500">n/a</p>
+                          <h3 className="font-medium text-slate-900">{property.name}</h3>
+                          <p className="text-sm text-slate-600">{property.type} - {property.type_of_unit}</p>
+                          <p className="text-xs text-gray-500">{property.address}, {property.city}</p>
                         </div>
-                        <button className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer">
-                          <Edit size={14} />
+                        <button 
+                          onClick={() => handleUnlinkProperty(property.id)}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded cursor-pointer"
+                          title="Unlink Property"
+                        >
+                          <XCircle size={14} />
                         </button>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Status:</span>
-                          <span className="text-slate-900">n/a</span>
+                          <span className="text-slate-600">Capacity:</span>
+                          <span className="text-slate-900">{property.capacity} guests</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Revenue:</span>
-                          <span className="font-medium text-green-600">n/a</span>
+                          <span className="text-slate-600">Price per night:</span>
+                          <span className="font-medium text-green-600">${property.price_per_night}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            property.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {property.is_published ? 'Published' : 'Draft'}
+                          </span>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {(!currentOwner.properties || currentOwner.properties.length === 0) && (
+                  {properties.length === 0 && (
                     <div className="col-span-full text-center py-8 text-gray-500">
                       <Building size={48} className="mx-auto mb-2 opacity-50" />
                       <p>No properties linked yet</p>
+                      <button 
+                        onClick={async () => {
+                          setShowLinkPropertyModal(true)
+                          // Load available properties immediately when opening modal
+                          try {
+                            console.log('🏠 Loading available properties immediately...')
+                            const { propertyServiceAdapter } = await import('@/lib/api/adapters/apiAdapter')
+                            const response = await propertyServiceAdapter.getAvailableProperties()
+                            console.log('🏠 Immediate API response:', response)
+                            if (response.success && response.data) {
+                              console.log('🏠 Setting availableProperties immediately:', response.data)
+                              setAvailableProperties(response.data)
+                            } else {
+                              console.error('🏠 Failed to load available properties immediately:', response.error)
+                              setAvailableProperties([])
+                            }
+                          } catch (error) {
+                            console.error('🏠 Error loading available properties immediately:', error)
+                            setAvailableProperties([])
+                          }
+                        }}
+                        className="mt-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium"
+                      >
+                        Link First Property
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1476,7 +1218,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium text-slate-900">Bank Details</h2>
                   <button 
-                    onClick={handleAddBankAccount}
+                    onClick={() => setIsAddBankAccountModalOpen(true)}
                     className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
                     data-testid="add-bank-btn"
                   >
@@ -1489,37 +1231,52 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-medium text-slate-900">{bankDetail.bankName}</h3>
-                            {bankDetail.isPrimary && (
-                              <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
+                            <h3 className="font-medium text-slate-900">{bankDetail.bank_name}</h3>
+                            {bankDetail.is_primary && (
+                              <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
                                 Primary
                               </span>
                             )}
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              bankDetail.account_type === 'CHECKING' ? 'bg-blue-100 text-blue-800' :
+                              bankDetail.account_type === 'SAVINGS' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {bankDetail.account_type}
+                            </span>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                             <div>
                               <span className="text-slate-600">Account Holder:</span>
-                              <span className="ml-2 text-slate-900">{bankDetail.accountHolderName}</span>
+                              <span className="ml-2 text-slate-900">{bankDetail.account_holder}</span>
                             </div>
                             <div>
                               <span className="text-slate-600">Account Number:</span>
-                              <span className="ml-2 text-slate-900 font-mono">{bankDetail.accountNumber}</span>
+                              <span className="ml-2 text-slate-900 font-mono">{bankDetail.account_number}</span>
                             </div>
+                            {bankDetail.iban && (
                             <div>
                               <span className="text-slate-600">IBAN:</span>
                               <span className="ml-2 text-slate-900 font-mono">{bankDetail.iban}</span>
                             </div>
+                            )}
+                            {bankDetail.swift_code && (
                             <div>
                               <span className="text-slate-600">SWIFT:</span>
-                              <span className="ml-2 text-slate-900 font-mono">{bankDetail.swiftCode}</span>
+                                <span className="ml-2 text-slate-900 font-mono">{bankDetail.swift_code}</span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="text-slate-600">Currency:</span>
+                              <span className="ml-2 text-slate-900">{bankDetail.currency}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
-                          {!bankDetail.isPrimary && (
+                          {!bankDetail.is_primary && (
                             <button
                               onClick={() => handleSetPrimaryBank(bankDetail.id)}
-                              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 cursor-pointer"
+                              className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 cursor-pointer"
                             >
                               Set Primary
                             </button>
@@ -1528,8 +1285,9 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                             <Edit size={14} />
                           </button>
                           <button 
-                            onClick={() => handleRemoveBankDetail(bankDetail.id)}
-                            className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer"
+                            onClick={() => handleDeleteBankAccount(bankDetail.id)}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded cursor-pointer"
+                            title="Delete Bank Account"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1540,6 +1298,12 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     <div className="text-center py-8 text-gray-500">
                       <CreditCard size={48} className="mx-auto mb-2 opacity-50" />
                       <p>No bank accounts added yet</p>
+                      <button 
+                        onClick={() => setIsAddBankAccountModalOpen(true)}
+                        className="mt-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium"
+                      >
+                        Add First Bank Account
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1551,24 +1315,24 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                   <h2 className="text-lg font-medium text-slate-900">Transaction History</h2>
                   <div className="flex items-center space-x-2">
                     <button 
-                      onClick={handleCashPayment}
+                      onClick={() => setIsCashPaymentModalOpen(true)}
                       className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
                     >
                       Cash Payment
                     </button>
                     <button 
-                      onClick={handleMakePayment}
+                      onClick={() => setIsBankPaymentModalOpen(true)}
                       className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer"
                     >
-                      Make Payment
+                      Bank Payment
                     </button>
                   </div>
                 </div>
                 <div className="space-y-3">
                   {transactions && transactions.length > 0 ? transactions.map((transaction) => {
-                    const bankDetail = transaction.bankDetailId ? bankDetails.find(bd => bd.id === transaction.bankDetailId) : null
-                    const isPayment = transaction.type === 'payment' || transaction.type === 'cash_payment'
-                    const isCashPayment = transaction.type === 'cash_payment'
+                    const isIncome = transaction.type === 'PAYMENT' || transaction.type === 'REVENUE'
+                    const isCashPayment = transaction.payment_method === 'CASH'
+                    const isBankPayment = transaction.payment_method === 'BANK_TRANSFER'
                     const amountColor = transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'
                     const statusColor = transaction.status === 'completed' ? 'bg-gray-100 text-gray-800' : 
                                       transaction.status === 'pending' ? 'bg-gray-100 text-gray-800' : 
@@ -1580,32 +1344,49 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
                               <h3 className="font-medium text-slate-900">
-                                {isCashPayment && transaction.title ? transaction.title : transaction.description}
+                                {transaction.description || transaction.category}
                               </h3>
-                              <span className={`px-2 py-1 text-xs rounded-full ${statusColor}`}>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                transaction.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                transaction.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                transaction.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
                                 {transaction.status}
                               </span>
                               {isCashPayment && (
-                                <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
+                                <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
                                   Cash Payment
+                                </span>
+                              )}
+                              {isBankPayment && (
+                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                  Bank Transfer
                                 </span>
                               )}
                             </div>
                             <div className="text-sm text-slate-600">
-                              <span>Ref: {transaction.reference}</span>
-                              {bankDetail && <span className="ml-3">Bank: {bankDetail.bankName}</span>}
-                              {isCashPayment && transaction.responsible && (
-                                <span className="ml-3">Responsible: {transaction.responsible}</span>
+                              <span>Ref: {transaction.payment_reference}</span>
+                              {transaction.platform && <span className="ml-3">Platform: {transaction.platform}</span>}
+                              {transaction.payment_method && (
+                                <span className="ml-3">Method: {transaction.payment_method}</span>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className={`text-lg font-semibold ${amountColor}`}>
-                              {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString()} {transaction.currency}
+                            <div className={`text-lg font-semibold ${
+                              isIncome ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {isIncome ? '+' : '-'}{transaction.amount.toLocaleString()} {transaction.currency}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {formatDate(transaction.date)}
+                              {new Date(transaction.created_at).toLocaleDateString()}
                             </div>
+                            {transaction.net_amount && transaction.net_amount !== transaction.amount && (
+                              <div className="text-xs text-gray-400">
+                                Net: {transaction.net_amount.toLocaleString()} {transaction.currency}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1641,16 +1422,19 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                           <div className="flex items-center space-x-3 text-sm text-gray-500">
                             <span>{doc.type}</span>
                             <span>{doc.size}</span>
-                            <span>{formatDateTime(doc.uploadedAt)}</span>
+                            <span>{formatDateTime(doc.created_at)}</span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
                           <button 
                             onClick={async () => {
-                              if (doc.s3Key) {
+                              if (doc.s3_url) {
+                                window.open(doc.s3_url, '_blank')
+                              } else if (doc.s3_key) {
                                 try {
-                                  const response = await fetch(`http://localhost:3001/api/files/signed-url?key=${encodeURIComponent(doc.s3Key)}`, {
-                                    headers: { 'Authorization': 'Bearer mock-token' }
+                                  const token = getAuthToken()
+                                  const response = await fetch(`http://localhost:3002/api/v2/files/signed-url?key=${encodeURIComponent(doc.s3_key)}`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
                                   })
                                   const result = await response.json()
                                   if (result.success) {
@@ -1673,10 +1457,16 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                           </button>
                           <button 
                             onClick={async () => {
-                              if (doc.s3Key) {
+                              if (doc.s3_url) {
+                                const link = document.createElement('a')
+                                link.href = doc.s3_url
+                                link.download = doc.filename || doc.name
+                                link.click()
+                              } else if (doc.s3_key) {
                                 try {
-                                  const response = await fetch(`http://localhost:3001/api/files/signed-url?key=${encodeURIComponent(doc.s3Key)}`, {
-                                    headers: { 'Authorization': 'Bearer mock-token' }
+                                  const token = getAuthToken()
+                                  const response = await fetch(`http://localhost:3002/api/v2/files/signed-url?key=${encodeURIComponent(doc.s3_key)}`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
                                   })
                                   const result = await response.json()
                                   if (result.success) {
@@ -1746,8 +1536,8 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                         <h3 className="font-medium text-slate-900">{activity.action}</h3>
                         <p className="text-sm text-slate-600">{activity.description}</p>
                         <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
-                          <span>by {activity.user}</span>
-                          <span>{formatDateTime(activity.timestamp)}</span>
+                          <span>by {activity.performed_by || 'System'}</span>
+                          <span>{formatDateTime(activity.created_at)}</span>
                         </div>
                       </div>
                     </div>
@@ -1843,14 +1633,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
       <CashPaymentModal
         isOpen={isCashPaymentModalOpen}
         onClose={() => setIsCashPaymentModalOpen(false)}
-        onSave={handleSaveCashPayment}
+        onSave={handleCashPayment}
       />
 
       {/* Bank Payment Modal */}
       <BankPaymentModal
         isOpen={isBankPaymentModalOpen}
         onClose={() => setIsBankPaymentModalOpen(false)}
-        onSave={handleSaveBankPayment}
+        onSave={handleBankPayment}
         bankAccounts={bankDetails.map(detail => ({
           id: detail.id,
           bankName: detail.bankName,
@@ -1859,12 +1649,6 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         }))}
       />
 
-      {/* Add Bank Account Modal */}
-      <AddBankAccountModal
-        isOpen={isAddBankAccountModalOpen}
-        onClose={() => setIsAddBankAccountModalOpen(false)}
-        onSave={handleSaveBankAccount}
-      />
 
       {/* Upload Document Modal */}
       <UploadDocumentModal
@@ -1872,6 +1656,225 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={handleUploadDocument}
       />
+
+      {/* Link Property Modal */}
+      {showLinkPropertyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            {console.log('🏠 Modal rendering with availableProperties:', availableProperties)}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-slate-900">Link Property to Owner</h3>
+              <button 
+                onClick={() => setShowLinkPropertyModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <XCircle size={20} />
+              </button>
+    </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Select a property to link to this owner. Only properties without an owner can be linked.
+              </p>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Available Properties</label>
+                <div className="text-xs text-gray-500 mb-2">
+                  Debug: {availableProperties.length} properties loaded
+                </div>
+                <select 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleLinkProperty(e.target.value)
+                    }
+                  }}
+                >
+                  <option value="">Select a property...</option>
+                  {availableProperties.map((property) => {
+                    console.log('🏠 Rendering property option:', property)
+                    return (
+                      <option key={property.id} value={property.id}>
+                        {property.name} - {property.address}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+              
+              {availableProperties.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  <Building size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No available properties to link</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button 
+                onClick={() => setShowLinkPropertyModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Bank Account Modal */}
+      {isAddBankAccountModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-slate-900">Add Bank Account</h3>
+              <button 
+                onClick={() => setIsAddBankAccountModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              const bankAccountData = {
+                bank_name: formData.get('bank_name') as string,
+                account_holder: formData.get('account_holder') as string,
+                account_number: formData.get('account_number') as string,
+                iban: formData.get('iban') as string || undefined,
+                swift_code: formData.get('swift_code') as string || undefined,
+                routing_number: formData.get('routing_number') as string || undefined,
+                account_type: formData.get('account_type') as string || 'CHECKING',
+                currency: formData.get('currency') as string || 'USD',
+                is_primary: formData.get('is_primary') === 'on'
+              }
+              handleAddBankAccount(bankAccountData)
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name *</label>
+                  <input 
+                    type="text" 
+                    name="bank_name"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="e.g., Emirates NBD"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder *</label>
+                  <input 
+                    type="text" 
+                    name="account_holder"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Full name on account"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Number *</label>
+                  <input 
+                    type="text" 
+                    name="account_number"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Account number"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">IBAN</label>
+                  <input 
+                    type="text" 
+                    name="iban"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="International Bank Account Number"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SWIFT Code</label>
+                  <input 
+                    type="text" 
+                    name="swift_code"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Bank SWIFT code"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Routing Number</label>
+                  <input 
+                    type="text" 
+                    name="routing_number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="US routing number"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+                    <select 
+                      name="account_type"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="CHECKING">Checking</option>
+                      <option value="SAVINGS">Savings</option>
+                      <option value="BUSINESS">Business</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                    <select 
+                      name="currency"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="AED">AED</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    name="is_primary"
+                    id="is_primary"
+                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_primary" className="ml-2 block text-sm text-gray-700">
+                    Set as primary account
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddBankAccountModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors"
+                >
+                  Add Bank Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

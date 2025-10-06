@@ -1,27 +1,19 @@
 // Simple API test function
 export async function testApiConnection() {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    console.log('Testing API connection to:', apiUrl)
+    // Use V2 API
+    const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
+    console.log('Testing V2 API connection to:', apiUrl)
     
-    // Test health endpoint
-    const healthResponse = await fetch(`${apiUrl}/health`)
-    console.log('Health check:', healthResponse.status, healthResponse.statusText)
-    
-    if (healthResponse.ok) {
-      const healthData = await healthResponse.json()
-      console.log('Health data:', healthData)
-    }
-    
-    // Test login endpoint
-    const loginResponse = await fetch(`${apiUrl}/api/auth/login`, {
+    // Test login endpoint with real credentials
+    const loginResponse = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'test@roomy.com',
-        password: 'test123'
+        email: 'admin@roomy.com',
+        password: 'admin123'
       })
     })
     

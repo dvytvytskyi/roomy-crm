@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Calendar, DollarSign, Settings, MessageSquare, BarChart3, FileText, Users, Wrench, Home } from 'lucide-react';

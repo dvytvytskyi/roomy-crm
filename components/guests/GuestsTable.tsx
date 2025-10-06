@@ -369,7 +369,7 @@ export default function GuestsTable({ searchTerm, onEditGuest, selectedGuests, o
                       onClick={() => window.location.href = `/guests/${guest.id}`}
                       className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline transition-colors cursor-pointer"
                     >
-                      {guest.name}
+                      {guest.firstName} {guest.lastName}
                     </button>
                     <div className="flex items-center space-x-2 mt-1">
                       {guest.customCategories.map((category, index) => (

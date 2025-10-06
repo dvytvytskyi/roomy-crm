@@ -6,17 +6,13 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react'
 interface OwnersFiltersProps {
   filters: any
   onApplyFilters: (filters: any) => void
-  onClearFilters: () => void
   isSidebar?: boolean
 }
 
-export default function OwnersFilters({ filters, onApplyFilters, onClearFilters, isSidebar = false }: OwnersFiltersProps) {
+export default function OwnersFilters({ filters, onApplyFilters, isSidebar = false }: OwnersFiltersProps) {
   const [openSections, setOpenSections] = useState({
     nationality: true,
-    status: true,
-    dateOfBirth: true,
-    phoneNumber: true,
-    comments: true
+    status: true
   })
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -100,11 +96,6 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
   const getSelectedCount = (filterType: string) => {
     if (filterType === 'nationality') return filters.nationality.length
     if (filterType === 'status') return filters.status.length
-    if (filterType === 'dateOfBirth') {
-      return (filters.dateOfBirth.from ? 1 : 0) + (filters.dateOfBirth.to ? 1 : 0)
-    }
-    if (filterType === 'phoneNumber') return filters.phoneNumber ? 1 : 0
-    if (filterType === 'comments') return filters.comments ? 1 : 0
     return 0
   }
 
@@ -172,106 +163,8 @@ export default function OwnersFilters({ filters, onApplyFilters, onClearFilters,
         )}
       </div>
 
-      {/* Date of Birth */}
-      <div>
-        <button
-          onClick={() => toggleSection('dateOfBirth')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Date of Birth</label>
-          {openSections.dateOfBirth ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.dateOfBirth && (
-          <div className="space-y-2">
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">From</label>
-              <input
-                type="date"
-                value={filters.dateOfBirth.from}
-                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, from: e.target.value }, true)}
-                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">To</label>
-              <input
-                type="date"
-                value={filters.dateOfBirth.to}
-                onChange={(e) => handleFilterChange('dateOfBirth', { ...filters.dateOfBirth, to: e.target.value }, true)}
-                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Phone Number */}
-      <div>
-        <button
-          onClick={() => toggleSection('phoneNumber')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Phone Number</label>
-          {openSections.phoneNumber ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.phoneNumber && (
-          <div>
-            <input
-              type="text"
-              placeholder="Enter phone number"
-              value={filters.phoneNumber}
-              onChange={(e) => handleFilterChange('phoneNumber', e.target.value, true)}
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-            />
-          </div>
-        )}
-      </div>
 
-      {/* Comments */}
-      <div>
-        <button
-          onClick={() => toggleSection('comments')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Comments</label>
-          {openSections.comments ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.comments && (
-          <div>
-            <input
-              type="text"
-              placeholder="Search comments"
-              value={filters.comments}
-              onChange={(e) => handleFilterChange('comments', e.target.value, true)}
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Clear All Button */}
-      {isSidebar && (
-        <div className="pt-4 border-t border-gray-200">
-          <button
-            onClick={onClearFilters}
-            className="w-full px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 cursor-pointer"
-          >
-            Clear All Filters
-          </button>
-        </div>
-      )}
       
       {!isSidebar && (
         <div className="flex space-x-3 pt-4">

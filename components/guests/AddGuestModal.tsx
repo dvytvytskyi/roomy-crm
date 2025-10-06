@@ -1,25 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Save, User, Mail, Phone, Calendar, FileText, Trash2, Star, Crown } from 'lucide-react'
 import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { showToast } from '@/lib/utils/toast'
+import { useGuestEvents } from '@/hooks/useEventBus'
 
 interface AddGuestModalProps {
   isOpen: boolean
   onClose: () => void
   guest?: any
+  onGuestUpdated?: (updatedGuest: any) => void
 }
 
-export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalProps) {
+export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }: AddGuestModalProps) {
+  const { emitGuestUpdated, emitGuestCreated } = useGuestEvents()
   const [formData, setFormData] = useState({
-    name: '',
-    nationality: '',
-    dateOfBirth: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    whatsapp: '',
-    telegram: '',
+    nationality: '',
+    dateOfBirth: '',
     comments: '',
     starGuest: false,
     primaryGuest: false,
@@ -55,6 +57,43 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
     'Chinese', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Turkish', 'Greek'
   ]
 
+  // Populate form data when editing a guest
+  useEffect(() => {
+    if (guest && isOpen) {
+      setFormData({
+        firstName: guest.firstName || '',
+        lastName: guest.lastName || '',
+        email: guest.email || '',
+        phone: guest.phone || '',
+        nationality: guest.nationality || '',
+        dateOfBirth: guest.dateOfBirth || '',
+        comments: guest.comments || '',
+        starGuest: guest.starGuest || false,
+        primaryGuest: guest.primaryGuest || false,
+        loyaltyTier: guest.loyaltyTier || 'Bronze',
+        preferredLanguage: guest.preferredLanguage || 'English',
+        specialRequests: guest.specialRequests || '',
+        documents: []
+      })
+    } else if (!guest && isOpen) {
+      // Reset form for new guest
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        nationality: '',
+        dateOfBirth: '',
+        comments: '',
+        starGuest: false,
+        primaryGuest: false,
+        loyaltyTier: 'Bronze',
+        preferredLanguage: 'English',
+        specialRequests: '',
+        documents: []
+      })
+    }
+  }, [guest, isOpen])
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -87,13 +126,12 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
       const comment = {
         id: Date.now().toString(),
         text: newComment.trim(),
-        author: 'Current User', // In real app, this would be the actual logged-in user
+        author: 'Current User',
         date: new Date().toISOString()
       }
       setCommentsHistory(prev => [comment, ...prev])
       setNewComment('')
       
-      // Update the main comments field to include all comments
       const allComments = [comment, ...commentsHistory].map(c => c.text).join('\n\n')
       setFormData(prev => ({ ...prev, comments: allComments }))
     }
@@ -103,7 +141,6 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
     const updatedHistory = commentsHistory.filter(c => c.id !== commentId)
     setCommentsHistory(updatedHistory)
     
-    // Update the main comments field
     const allComments = updatedHistory.map(c => c.text).join('\n\n')
     setFormData(prev => ({ ...prev, comments: allComments }))
   }
@@ -118,12 +155,15 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
     })
   }
 
-
   const validateForm = () => {
     const newErrors: any = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required'
     }
 
     if (!formData.nationality) {
@@ -153,61 +193,45 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
       return
     }
 
-    const loadingToast = showToast.loading('Creating guest...')
+    const loadingToast = showToast.loading(guest ? 'Updating guest...' : 'Creating guest...')
 
     try {
-      // Prepare data for API
       const guestData = {
-        firstName: formData.name.split(' ')[0] || formData.name,
-        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
         role: 'GUEST' as const,
-        password: 'TempPassword123!', // TODO: Generate secure password
-        status: formData.status === 'Active' ? 'ACTIVE' : 'INACTIVE',
+        password: guest ? undefined : 'TempPassword123!',
+        status: 'ACTIVE',
         country: formData.nationality,
-        // Additional fields for guest
-        nationality: formData.nationality,
-        dateOfBirth: formData.dateOfBirth,
-        whatsapp: formData.whatsapp,
-        telegram: formData.telegram,
-        comments: formData.comments,
-        vipStatus: formData.vipStatus,
-        preferences: formData.preferences,
-        emergencyContact: formData.emergencyContact,
-        documents: formData.documents,
-        notes: formData.notes
+        description: formData.comments
       }
 
-      // Call API to create guest
-      const response = await userServiceAdapter.createUser(guestData)
+      let response
+      if (guest) {
+        response = await userServiceAdapter.updateUser(guest.id, guestData)
+      } else {
+        response = await userServiceAdapter.createUser(guestData)
+      }
       
       if (response.success && response.data) {
         showToast.dismiss(loadingToast)
-        showToast.success('Guest created successfully!')
+        showToast.success(guest ? 'Guest updated successfully!' : 'Guest created successfully!')
         
-        // Transform API response to match expected format
         const transformedGuest = {
           ...response.data,
-          name: `${response.data.firstName} ${response.data.lastName}`,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          email: response.data.email,
+          phone: response.data.phone,
           nationality: formData.nationality,
           dateOfBirth: formData.dateOfBirth,
-          whatsapp: formData.whatsapp,
-          telegram: formData.telegram,
           comments: formData.comments,
-          status: formData.status,
-          vipStatus: formData.vipStatus,
-          preferences: formData.preferences,
-          emergencyContact: formData.emergencyContact,
-          documents: formData.documents,
-          notes: formData.notes,
-          commentsHistory: commentsHistory,
           reservationCount: 0,
           unit: '',
-          createdBy: 'Current User',
-          createdAt: new Date().toISOString(),
-          lastModifiedBy: 'Current User',
-          lastModifiedAt: new Date().toISOString()
+          createdAt: response.data.createdAt || new Date().toISOString(),
+          updatedAt: response.data.updatedAt || new Date().toISOString()
         }
 
         handleSave(transformedGuest)
@@ -223,376 +247,267 @@ export default function AddGuestModal({ isOpen, onClose, guest }: AddGuestModalP
 
   const handleSave = (guestData: any) => {
     console.log('Guest saved:', guestData)
+    
+    // Emit appropriate event based on whether we're creating or updating
+    if (guest) {
+      // Updating existing guest
+      emitGuestUpdated(guest.id, guestData)
+      console.log('📡 AddGuestModal: Emitted guest updated event for:', guest.id)
+    } else {
+      // Creating new guest
+      emitGuestCreated(guestData)
+      console.log('📡 AddGuestModal: Emitted guest created event')
+    }
+    
+    if (onGuestUpdated) {
+      onGuestUpdated(guestData)
+    }
+    
     onClose()
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Add New Guest</h2>
-            <p className="text-sm text-gray-600 mt-1">Create a new guest profile with detailed information</p>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <User className="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {guest ? 'Edit Guest' : 'Add New Guest'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {guest ? 'Update guest information' : 'Create a new guest profile'}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <User size={20} className="mr-2" />
-                Basic Information
-              </h3>
+        {/* Form */}
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="p-6 space-y-6">
+          {/* Basic Information */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center space-x-2">
+              <User size={20} />
+              <span>Basic Information</span>
+            </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.name ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter full name"
-                  />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nationality *
-                  </label>
-                  <select
-                    value={formData.nationality}
-                    onChange={(e) => handleChange('nationality', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.nationality ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select nationality</option>
-                    {nationalities.map(nationality => (
-                      <option key={nationality} value={nationality}>{nationality}</option>
-                    ))}
-                  </select>
-                  {errors.nationality && <p className="text-red-500 text-sm mt-1">{errors.nationality}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar size={16} className="inline mr-2" />
-                    Date of Birth *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Loyalty Tier
-                  </label>
-                  <select
-                    value={formData.loyaltyTier}
-                    onChange={(e) => handleChange('loyaltyTier', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {loyaltyTiers.map(tier => (
-                      <option key={tier.value} value={tier.value}>{tier.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Mail size={20} className="mr-2" />
-                Contact Information
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Mail size={16} className="inline mr-2" />
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="guest@example.com"
-                  />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Phone size={16} className="inline mr-2" />
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleChange('phone', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.phone ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                  {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <div className="w-4 h-4 bg-green-500 rounded-full inline-flex items-center justify-center mr-2">
-                      <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                      </svg>
-                    </div>
-                    WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.whatsapp}
-                    onChange={(e) => handleChange('whatsapp', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Telegram
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.telegram}
-                    onChange={(e) => handleChange('telegram', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="@username"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Guest Status */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Star size={20} className="mr-2" />
-                Guest Status
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-6">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.starGuest}
-                      onChange={(e) => handleChange('starGuest', e.target.checked)}
-                      className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                    />
-                    <Star size={16} className="text-yellow-500" />
-                    <span className="text-sm font-medium text-gray-700">Star Guest</span>
-                  </label>
-                  
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.primaryGuest}
-                      onChange={(e) => handleChange('primaryGuest', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <Crown size={16} className="text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">Primary Guest</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Preferences */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Preferences</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Language</label>
-                  <select
-                    value={formData.preferredLanguage}
-                    onChange={(e) => handleChange('preferredLanguage', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {languages.map(language => (
-                      <option key={language} value={language}>{language}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
-                  <textarea
-                    value={formData.specialRequests}
-                    onChange={(e) => handleChange('specialRequests', e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-                    placeholder="Any special preferences or requests..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Documents */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <FileText size={20} className="mr-2" />
-                Documents
-              </h3>
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name *
+                </label>
                 <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleChange('firstName', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.firstName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter first name"
                 />
-                
-                {formData.documents.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-600">Uploaded documents:</p>
-                    {formData.documents.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <FileText size={16} className="text-gray-400" />
-                          <span className="text-sm text-gray-700">{file.name}</span>
-                          <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveFile(index)}
-                          className="text-red-500 hover:text-red-700 text-sm"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
               </div>
-            </div>
 
-            {/* Comments */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <FileText size={20} className="mr-2" />
-                Guest Comments
-              </h3>
-              
-              <div className="space-y-4">
-                {/* Add New Comment */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Add New Comment</label>
-                  <div className="flex space-x-2">
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      rows={2}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-                      placeholder="Write a comment about this guest..."
-                    />
-                    <button
-                      onClick={addComment}
-                      disabled={!newComment.trim()}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
-                    >
-                      <FileText size={16} />
-                      <span>Add</span>
-                    </button>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.lastName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter last name"
+                />
+                {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+              </div>
 
-                {/* Comments History */}
-                {commentsHistory.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Comments History</label>
-                    <div className="space-y-3 max-h-60 overflow-y-auto">
-                      {commentsHistory.map((comment) => (
-                        <div key={comment.id} className="bg-white border border-gray-200 rounded-lg p-3">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-medium">
-                                  {comment.author.charAt(0)}
-                                </span>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">{comment.author}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-gray-500">{formatDateTime(comment.date)}</span>
-                              <button
-                                onClick={() => removeComment(comment.id)}
-                                className="text-red-500 hover:text-red-700 text-xs"
-                                title="Remove comment"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-700">{comment.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nationality *
+                </label>
+                <select
+                  value={formData.nationality}
+                  onChange={(e) => handleChange('nationality', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.nationality ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select nationality</option>
+                  {nationalities.map(nationality => (
+                    <option key={nationality} value={nationality}>{nationality}</option>
+                  ))}
+                </select>
+                {errors.nationality && <p className="text-red-500 text-sm mt-1">{errors.nationality}</p>}
+              </div>
 
-                <p className="text-xs text-gray-500">
-                  Comments will be visible as a star icon ⭐ next to the guest name in the table if any comments are added.
-                </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar size={16} className="inline mr-2" />
+                  Date of Birth *
+                </label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Loyalty Tier
+                </label>
+                <select
+                  value={formData.loyaltyTier}
+                  onChange={(e) => handleChange('loyaltyTier', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  {loyaltyTiers.map(tier => (
+                    <option key={tier.value} value={tier.value}>{tier.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-          >
-            <Save size={16} />
-            <span>Save Guest</span>
-          </button>
-        </div>
+          {/* Contact Information */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <Mail size={20} className="mr-2" />
+              Contact Information
+            </h3>
+              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Mail size={16} className="inline mr-2" />
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="guest@example.com"
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Phone size={16} className="inline mr-2" />
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                    errors.phone ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="+1 (555) 123-4567"
+                />
+                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Guest Status */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <Star size={20} className="mr-2" />
+              Guest Status
+            </h3>
+              
+            <div className="space-y-4">
+              <div className="flex items-center space-x-6">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.starGuest}
+                    onChange={(e) => handleChange('starGuest', e.target.checked)}
+                    className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                  />
+                  <Star size={16} className="text-yellow-500" />
+                  <span className="text-sm font-medium text-gray-700">Star Guest</span>
+                </label>
+                  
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.primaryGuest}
+                    onChange={(e) => handleChange('primaryGuest', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Crown size={16} className="text-blue-500" />
+                  <span className="text-sm font-medium text-gray-700">Primary Guest</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Comments */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <FileText size={20} className="mr-2" />
+              Guest Comments
+            </h3>
+              
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comments</label>
+                <textarea
+                  value={formData.comments}
+                  onChange={(e) => handleChange('comments', e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                  placeholder="Add any comments about this guest..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center space-x-2 transition-colors"
+            >
+              <Save size={16} />
+              <span>{guest ? 'Update Guest' : 'Create Guest'}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
 }
-

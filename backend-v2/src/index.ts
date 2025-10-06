@@ -55,8 +55,8 @@ const speedLimiter = slowDown({
   delayMs: 500 // begin adding 500ms of delay per request above 50
 });
 
-app.use(limiter);
-app.use(speedLimiter);
+// app.use(limiter); // Temporarily disabled for development
+// app.use(speedLimiter); // Temporarily disabled for development
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -91,6 +91,7 @@ import financialRoutes from './routes/financial.routes';
 import schedulerRoutes from './routes/scheduler.routes';
 import settingsRoutes from './routes/settings.routes';
 import webhookRoutes from './routes/webhook.routes';
+import fileRoutes from './routes/file.routes';
 import healthRoutes from './routes/health.routes';
 
 // API routes
@@ -109,10 +110,14 @@ app.get('/api/v2', (_req, res) => {
       tasks: '/api/v2/tasks',
       financials: '/api/v2/financials',
       scheduler: '/api/v2/scheduler',
-      webhooks: '/api/v2/webhooks'
+      webhooks: '/api/v2/webhooks',
+      files: '/api/v2/files'
     },
   });
 });
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
 
 // Mount API routes
 app.use('/api/v2/auth', authRoutes);
@@ -125,6 +130,7 @@ app.use('/api/v2/financials', financialRoutes);
 app.use('/api/v2/scheduler', schedulerRoutes);
 app.use('/api/v2/settings', settingsRoutes);
 app.use('/api/v2/webhooks', webhookRoutes);
+app.use('/api/v2/files', fileRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler

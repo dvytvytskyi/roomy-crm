@@ -54,8 +54,11 @@ export function middleware(request: NextRequest) {
     const authToken = request.cookies.get('accessToken')?.value || 
                      request.headers.get('authorization')?.replace('Bearer ', '')
 
+    console.log('🔒 Middleware check:', { pathname, hasToken: !!authToken, tokenPreview: authToken?.substring(0, 20) + '...' })
+
     // If no auth token, redirect to login
     if (!authToken) {
+      console.log('❌ No auth token, redirecting to login')
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)

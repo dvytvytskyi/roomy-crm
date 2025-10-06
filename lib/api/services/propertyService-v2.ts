@@ -345,6 +345,21 @@ class PropertyServiceV2 {
       throw error;
     }
   }
+
+  /**
+   * Get available properties (without owners)
+   */
+  async getAvailableProperties(): Promise<ApiResponse<PropertyV2[]>> {
+    try {
+      console.log('🏠 PropertyServiceV2: Getting available properties...');
+      const response = await apiClientV2.get(`${API_V2_ENDPOINTS.PROPERTIES.BASE}/available`);
+      console.log('🏠 PropertyServiceV2: Available properties retrieved:', response);
+      return response;
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error getting available properties:', error);
+      throw error;
+    }
+  }
 }
 
 export const propertyServiceV2 = new PropertyServiceV2();

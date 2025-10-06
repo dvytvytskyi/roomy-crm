@@ -1,6 +1,7 @@
 import { apiClient } from '../client';
 import { API_CONFIG, API_ENDPOINTS } from '../config';
 import { ApiResponse } from '../client';
+import { userServiceAdapter } from '../adapters/apiAdapter';
 
 export interface GuestFilters {
   nationality?: string[];
@@ -21,28 +22,44 @@ export interface GuestDocument {
 
 export interface Guest {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
-  whatsapp?: string;
-  telegram?: string;
-  nationality: string;
-  dateOfBirth: string;
+  role: string;
+  status: string;
+  nationality?: string;
+  dateOfBirth?: string;
   age?: number;
   reservationCount: number;
   unit?: string;
   comments?: string;
-  customCategories: string[];
-  starGuest: boolean;
-  primaryGuest: boolean;
+  customCategories?: string[];
+  starGuest?: boolean;
+  primaryGuest?: boolean;
   loyaltyTier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   preferredLanguage?: string;
   specialRequests?: string;
   documents?: GuestDocument[];
-  createdBy: string;
+  createdBy?: string;
   createdAt: string;
   lastModifiedBy?: string;
   lastModifiedAt?: string;
+  _count?: {
+    properties: number;
+    reservations: number;
+    transactions: number;
+    documents: number;
+    activity_log: number;
+  };
+  // Include related data from API
+  transactions?: any[];
+  documents?: any[];
+  activity_log?: any[];
+  reservations?: any[];
+  // New fields for real data
+  guestReservations?: any[];
+  auditLogs?: any[];
 }
 
 export interface GuestStats {
@@ -75,355 +92,150 @@ export interface GuestActivity {
 
 class GuestService {
   async getGuests(filters?: GuestFilters): Promise<ApiResponse<Guest[]>> {
-    // Always return mock data for now
-    console.log('👥 GuestService: Using mock guests data');
+    console.log('👥 GuestService: Fetching real guests data from API');
     
-    const mockGuests: Guest[] = [
-      {
-        id: 'guest_1',
-        name: 'John Smith',
-        nationality: 'American',
-        dateOfBirth: '1985-03-15',
-        email: 'john.smith@example.com',
-        phone: '+1 (555) 123-4567',
-        whatsapp: '+1 (555) 123-4567',
-        telegram: '@johnsmith',
-        reservationCount: 5,
-        unit: 'Apartment Burj Khalifa 1A',
-        comments: 'VIP guest, prefers high floors. Excellent communication.',
-        customCategories: ['Star Guest', 'VIP'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Gold',
-        preferredLanguage: 'English',
-        specialRequests: 'Ground floor units preferred, late checkout',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2024-01-15T10:30:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-07-20T14:20:00Z'
-      },
-      {
-        id: 'guest_2',
-        name: 'Maria Garcia',
-        nationality: 'Spanish',
-        dateOfBirth: '1990-07-22',
-        email: 'maria.garcia@example.com',
-        phone: '+34 612 345 678',
-        whatsapp: '+34 612 345 678',
-        telegram: '@mariag',
-        reservationCount: 3,
-        unit: 'Apartment Marina 2B',
-        comments: 'Family with children, needs baby crib. Very friendly.',
-        customCategories: ['Family Guest'],
-        starGuest: false,
-        primaryGuest: true,
-        loyaltyTier: 'Silver',
-        preferredLanguage: 'Spanish',
-        specialRequests: 'Baby crib and high chair needed',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2024-02-10T09:15:00Z',
-        lastModifiedBy: 'Admin',
-        lastModifiedAt: '2024-06-15T11:45:00Z'
-      },
-      {
-        id: 'guest_3',
-        name: 'Ahmed Hassan',
-        nationality: 'Egyptian',
-        dateOfBirth: '1988-12-03',
-        email: 'ahmed.hassan@example.com',
-        phone: '+20 123 456 7890',
-        whatsapp: '+20 123 456 7890',
-        telegram: '',
-        reservationCount: 1,
-        unit: 'Studio Downtown 3C',
-        comments: 'Business traveler, needs quiet room. Professional.',
-        customCategories: ['Business Guest'],
-        starGuest: false,
-        primaryGuest: false,
-        loyaltyTier: 'Bronze',
-        preferredLanguage: 'Arabic',
-        specialRequests: 'Quiet room, late checkout',
-        documents: [],
-        createdBy: 'Manager',
-        createdAt: '2024-03-05T16:20:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-03-05T16:20:00Z'
-      },
-      {
-        id: 'guest_4',
-        name: 'Sarah Johnson',
-        nationality: 'British',
-        dateOfBirth: '1992-05-18',
-        email: 'sarah.johnson@example.com',
-        phone: '+44 7700 900123',
-        whatsapp: '+44 7700 900123',
-        telegram: '@sarahj',
-        reservationCount: 8,
-        unit: 'Penthouse Skyline 5A',
-        comments: 'Loyalty program member, frequent visitor. VIP status.',
-        customCategories: ['Star Guest', 'Loyalty Program'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Platinum',
-        preferredLanguage: 'English',
-        specialRequests: 'City view preferred, early check-in',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2023-11-20T08:30:00Z',
-        lastModifiedBy: 'Admin',
-        lastModifiedAt: '2024-08-10T12:15:00Z'
-      },
-      {
-        id: 'guest_5',
-        name: 'Chen Wei',
-        nationality: 'Chinese',
-        dateOfBirth: '1987-09-12',
-        email: 'chen.wei@example.com',
-        phone: '+86 138 0013 8000',
-        whatsapp: '+86 138 0013 8000',
-        telegram: '@chenwei',
-        reservationCount: 2,
-        unit: 'Apartment Business 4D',
-        comments: 'Corporate booking, group leader. Business focused.',
-        customCategories: ['Corporate Guest'],
-        starGuest: false,
-        primaryGuest: true,
-        loyaltyTier: 'Silver',
-        preferredLanguage: 'Chinese',
-        specialRequests: 'Meeting room access, group discounts',
-        documents: [],
-        createdBy: 'Manager',
-        createdAt: '2024-04-12T13:45:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-07-25T10:30:00Z'
-      },
-      {
-        id: 'guest_6',
-        name: 'Emma Thompson',
-        nationality: 'Australian',
-        dateOfBirth: '1995-11-28',
-        email: 'emma.thompson@example.com',
-        phone: '+61 412 345 678',
-        whatsapp: '+61 412 345 678',
-        telegram: '@emmat',
-        reservationCount: 4,
-        unit: 'Beach Villa Palm Jumeirah',
-        comments: 'Young professional, loves beach views. Very active.',
-        customCategories: ['Young Professional'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Gold',
-        preferredLanguage: 'English',
-        specialRequests: 'Beach view, gym access',
-        documents: [],
-        createdBy: 'Agent',
-        createdAt: '2024-05-20T15:10:00Z',
-        lastModifiedBy: 'Agent',
-        lastModifiedAt: '2024-08-15T09:20:00Z'
+    try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('role', 'GUEST');
+      
+      if (filters?.searchTerm) {
+        queryParams.append('search', filters.searchTerm);
       }
-    ];
+      
+      // Use the userServiceAdapter to get guests
+      const response = await userServiceAdapter.getUsers(queryParams.toString());
+      
+      if (response.success && response.data) {
+        // Transform the API response to match our Guest interface
+        const guests: Guest[] = response.data.map((user: any) => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          status: user.status,
+          nationality: user.nationality || 'N/A',
+          dateOfBirth: user.dateOfBirth || 'N/A',
+          reservationCount: user._count?.reservations || 0,
+          unit: 'N/A', // This would need to be fetched separately
+          comments: user.comments || '',
+          customCategories: [],
+          starGuest: false, // This would need business logic
+          primaryGuest: false, // This would need business logic
+          loyaltyTier: 'Bronze', // Default tier
+          preferredLanguage: 'English', // Default language
+          specialRequests: '',
+          documents: [],
+          createdBy: 'System',
+          createdAt: user.createdAt,
+          lastModifiedBy: 'System',
+          lastModifiedAt: user.updatedAt,
+          _count: user._count
+        }));
 
-    // Apply basic filtering
-    let filteredGuests = [...mockGuests];
+        // Apply client-side filtering for fields not supported by backend
+        let filteredGuests = [...guests];
 
-    if (filters?.searchTerm) {
-      const searchTerm = filters.searchTerm.toLowerCase();
-      filteredGuests = filteredGuests.filter(guest => 
-        guest.name.toLowerCase().includes(searchTerm) ||
-        guest.email.toLowerCase().includes(searchTerm) ||
-        guest.nationality.toLowerCase().includes(searchTerm)
-      );
-    }
+        if (filters?.nationality && filters.nationality.length > 0) {
+          filteredGuests = filteredGuests.filter(guest => 
+            filters.nationality!.includes(guest.nationality)
+          );
+        }
 
-    if (filters?.nationality && filters.nationality.length > 0) {
-      filteredGuests = filteredGuests.filter(guest => 
-        filters.nationality!.includes(guest.nationality)
-      );
-    }
+        if (filters?.reservationCount) {
+          if (filters.reservationCount.min) {
+            const min = parseInt(filters.reservationCount.min);
+            filteredGuests = filteredGuests.filter(guest => guest.reservationCount >= min);
+          }
+          if (filters.reservationCount.max) {
+            const max = parseInt(filters.reservationCount.max);
+            filteredGuests = filteredGuests.filter(guest => guest.reservationCount <= max);
+          }
+        }
 
-    if (filters?.reservationCount) {
-      if (filters.reservationCount.min) {
-        const min = parseInt(filters.reservationCount.min);
-        filteredGuests = filteredGuests.filter(guest => guest.reservationCount >= min);
+        return {
+          success: true,
+          data: filteredGuests
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || 'Failed to fetch guests'
+        };
       }
-      if (filters.reservationCount.max) {
-        const max = parseInt(filters.reservationCount.max);
-        filteredGuests = filteredGuests.filter(guest => guest.reservationCount <= max);
-      }
+    } catch (error) {
+      console.error('Error fetching guests:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch guests'
+      };
     }
-
-    return {
-      success: true,
-      data: filteredGuests
-    };
   }
 
   async getGuestById(id: string): Promise<ApiResponse<Guest>> {
-    // Always return mock data for now
-    console.log('👤 GuestService: Using mock guest data for ID:', id);
+    console.log('👤 GuestService: Fetching real guest data for ID:', id);
     
-    const mockGuests: Guest[] = [
-      {
-        id: 'guest_1',
-        name: 'John Smith',
-        nationality: 'American',
-        dateOfBirth: '1985-03-15',
-        email: 'john.smith@example.com',
-        phone: '+1 (555) 123-4567',
-        whatsapp: '+1 (555) 123-4567',
-        telegram: '@johnsmith',
-        reservationCount: 5,
-        unit: 'Apartment Burj Khalifa 1A',
-        comments: 'VIP guest, prefers high floors. Excellent communication.',
-        customCategories: ['Star Guest', 'VIP'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Gold',
-        preferredLanguage: 'English',
-        specialRequests: 'Ground floor units preferred, late checkout',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2024-01-15T10:30:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-07-20T14:20:00Z'
-      },
-      {
-        id: 'guest_2',
-        name: 'Maria Garcia',
-        nationality: 'Spanish',
-        dateOfBirth: '1990-07-22',
-        email: 'maria.garcia@example.com',
-        phone: '+34 612 345 678',
-        whatsapp: '+34 612 345 678',
-        telegram: '@mariag',
-        reservationCount: 3,
-        unit: 'Apartment Marina 2B',
-        comments: 'Family with children, needs baby crib. Very friendly.',
-        customCategories: ['Family Guest'],
-        starGuest: false,
-        primaryGuest: true,
-        loyaltyTier: 'Silver',
-        preferredLanguage: 'Spanish',
-        specialRequests: 'Baby crib and high chair needed',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2024-02-10T09:15:00Z',
-        lastModifiedBy: 'Admin',
-        lastModifiedAt: '2024-06-15T11:45:00Z'
-      },
-      {
-        id: 'guest_3',
-        name: 'Ahmed Hassan',
-        nationality: 'Egyptian',
-        dateOfBirth: '1988-12-03',
-        email: 'ahmed.hassan@example.com',
-        phone: '+20 123 456 7890',
-        whatsapp: '+20 123 456 7890',
-        telegram: '',
-        reservationCount: 1,
-        unit: 'Studio Downtown 3C',
-        comments: 'Business traveler, needs quiet room. Professional.',
-        customCategories: ['Business Guest'],
-        starGuest: false,
-        primaryGuest: false,
-        loyaltyTier: 'Bronze',
-        preferredLanguage: 'Arabic',
-        specialRequests: 'Quiet room, late checkout',
-        documents: [],
-        createdBy: 'Manager',
-        createdAt: '2024-03-05T16:20:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-03-05T16:20:00Z'
-      },
-      {
-        id: 'guest_4',
-        name: 'Sarah Johnson',
-        nationality: 'British',
-        dateOfBirth: '1992-05-18',
-        email: 'sarah.johnson@example.com',
-        phone: '+44 7700 900123',
-        whatsapp: '+44 7700 900123',
-        telegram: '@sarahj',
-        reservationCount: 8,
-        unit: 'Penthouse Skyline 5A',
-        comments: 'Loyalty program member, frequent visitor. VIP status.',
-        customCategories: ['Star Guest', 'Loyalty Program'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Platinum',
-        preferredLanguage: 'English',
-        specialRequests: 'City view preferred, early check-in',
-        documents: [],
-        createdBy: 'Admin',
-        createdAt: '2023-11-20T08:30:00Z',
-        lastModifiedBy: 'Admin',
-        lastModifiedAt: '2024-08-10T12:15:00Z'
-      },
-      {
-        id: 'guest_5',
-        name: 'Chen Wei',
-        nationality: 'Chinese',
-        dateOfBirth: '1987-09-12',
-        email: 'chen.wei@example.com',
-        phone: '+86 138 0013 8000',
-        whatsapp: '+86 138 0013 8000',
-        telegram: '@chenwei',
-        reservationCount: 2,
-        unit: 'Apartment Business 4D',
-        comments: 'Corporate booking, group leader. Business focused.',
-        customCategories: ['Corporate Guest'],
-        starGuest: false,
-        primaryGuest: true,
-        loyaltyTier: 'Silver',
-        preferredLanguage: 'Chinese',
-        specialRequests: 'Meeting room access, group discounts',
-        documents: [],
-        createdBy: 'Manager',
-        createdAt: '2024-04-12T13:45:00Z',
-        lastModifiedBy: 'Manager',
-        lastModifiedAt: '2024-07-25T10:30:00Z'
-      },
-      {
-        id: 'guest_6',
-        name: 'Emma Thompson',
-        nationality: 'Australian',
-        dateOfBirth: '1995-11-28',
-        email: 'emma.thompson@example.com',
-        phone: '+61 412 345 678',
-        whatsapp: '+61 412 345 678',
-        telegram: '@emmat',
-        reservationCount: 4,
-        unit: 'Beach Villa Palm Jumeirah',
-        comments: 'Young professional, loves beach views. Very active.',
-        customCategories: ['Young Professional'],
-        starGuest: true,
-        primaryGuest: true,
-        loyaltyTier: 'Gold',
-        preferredLanguage: 'English',
-        specialRequests: 'Beach view, gym access',
-        documents: [],
-        createdBy: 'Agent',
-        createdAt: '2024-05-20T15:10:00Z',
-        lastModifiedBy: 'Agent',
-        lastModifiedAt: '2024-08-15T09:20:00Z'
-      }
-    ];
+    try {
+      const response = await userServiceAdapter.getUserById(id);
+      
+      if (response.success && response.data) {
+        const user = response.data;
+        
+        // Transform the API response to match our Guest interface
+        const guest: Guest = {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          status: user.status,
+          nationality: user.nationality || 'N/A',
+          dateOfBirth: user.dateOfBirth || 'N/A',
+          reservationCount: user._count?.reservations || 0,
+          unit: user.guestReservations?.[0]?.properties?.name || 'N/A',
+          comments: user.comments || '',
+          customCategories: [],
+          starGuest: (user._count?.reservations || 0) > 5, // Business logic for star guest
+          primaryGuest: (user._count?.reservations || 0) > 0, // Business logic for primary guest
+          loyaltyTier: 'Bronze', // Default tier
+          preferredLanguage: 'English', // Default language
+          specialRequests: '',
+          documents: user.documents || [],
+          createdBy: 'System',
+          createdAt: user.createdAt,
+          lastModifiedBy: 'System',
+          lastModifiedAt: user.updatedAt,
+          _count: user._count,
+          // Include related data from API
+          transactions: user.transactions || [],
+          documents: user.documents || [],
+          activity_log: user.activity_log || [],
+          reservations: user.reservations || [],
+          // New fields for real data
+          guestReservations: user.guestReservations || [],
+          auditLogs: user.auditLogs || []
+        };
 
-    const guest = mockGuests.find(g => g.id === id);
-    
-    if (!guest) {
+        return {
+          success: true,
+          data: guest
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || 'Guest not found'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching guest:', error);
       return {
         success: false,
-        error: 'Guest not found'
+        error: 'Failed to fetch guest'
       };
     }
-
-    return {
-      success: true,
-      data: guest
-    };
   }
 
   async createGuest(guestData: Partial<Guest>): Promise<ApiResponse<Guest>> {
@@ -442,42 +254,82 @@ class GuestService {
   }
 
   async getGuestStats(): Promise<ApiResponse<GuestStats>> {
-    // Always return mock stats for now
-    console.log('👥 GuestService: Using mock guest stats');
+    console.log('👥 GuestService: Fetching real guest stats from API');
     
-    const mockStats: GuestStats = {
-      totalGuests: 6,
-      starGuests: 3,
-      primaryGuests: 5,
-      birthdaysThisMonth: 2,
-      averageReservations: 3.8
-    };
+    try {
+      // Use the new statistics endpoint
+      const response = await userServiceAdapter.getUserStats('GUEST');
+      
+      if (response.success && response.data) {
+        const apiStats = response.data;
+        
+        // Transform API stats to match our GuestStats interface
+        const stats: GuestStats = {
+          totalGuests: apiStats.totalUsers || 0,
+          starGuests: apiStats.usersWithReservations || 0, // Using users with reservations as star guests
+          primaryGuests: apiStats.activeUsers || 0, // Using active users as primary guests
+          birthdaysThisMonth: apiStats.birthdaysThisMonth || 0,
+          averageReservations: apiStats.averageReservations || 0
+        };
 
-    return {
-      success: true,
-      data: mockStats
-    };
+        return {
+          success: true,
+          data: stats
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || 'Failed to fetch guest stats'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching guest stats:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch guest stats'
+      };
+    }
   }
 
   async getGuestDetailStats(id: string): Promise<ApiResponse<GuestDetailStats>> {
-    // Always return mock stats for now
-    console.log('👤 GuestService: Using mock guest detail stats for ID:', id);
+    console.log('👤 GuestService: Fetching real guest detail stats for ID:', id);
     
-    const mockStats: GuestDetailStats = {
-      totalReservations: 1,
-      totalNights: 5,
-      lifetimeValue: 2500,
-      averageBookingValue: 2500,
-      completedReservations: 1,
-      upcomingReservations: 0,
-      cancelledReservations: 0,
-      lastActivity: '2024-03-05T16:20:00Z'
-    };
+    try {
+      // Use the new user detail statistics endpoint
+      const response = await userServiceAdapter.getUserDetailStats(id);
+      
+      if (response.success && response.data) {
+        const apiStats = response.data;
+        
+        // Transform API stats to match our GuestDetailStats interface
+        const stats: GuestDetailStats = {
+          totalReservations: apiStats.totalReservations || 0,
+          totalNights: apiStats.totalNights || 0,
+          lifetimeValue: apiStats.lifetimeValue || 0,
+          averageBookingValue: apiStats.averageBookingValue || 0,
+          completedReservations: apiStats.completedReservations || 0,
+          upcomingReservations: apiStats.upcomingReservations || 0,
+          cancelledReservations: apiStats.cancelledReservations || 0,
+          lastActivity: apiStats.lastActivity || 'N/A'
+        };
 
-    return {
-      success: true,
-      data: mockStats
-    };
+        return {
+          success: true,
+          data: stats
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || 'Failed to fetch guest detail stats'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching guest detail stats:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch guest detail stats'
+      };
+    }
   }
 
   async getGuestReservations(id: string): Promise<ApiResponse<any[]>> {

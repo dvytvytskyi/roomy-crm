@@ -9,7 +9,9 @@ export const API_V2_CONFIG = {
 
 // Check if V2 API should be used
 export const shouldUseV2API = () => {
-  return process.env.NEXT_PUBLIC_USE_V2_API === 'true';
+  // Temporarily always use V2 API for testing
+  return true;
+  // return process.env.NEXT_PUBLIC_USE_V2_API === 'true';
 };
 
 // Get the appropriate API URL
@@ -17,7 +19,7 @@ export const getApiUrl = () => {
   if (shouldUseV2API()) {
     return API_V2_CONFIG.BASE_URL;
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 };
 
 // API V2 Endpoints

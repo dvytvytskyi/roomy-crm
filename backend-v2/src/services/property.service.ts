@@ -1018,4 +1018,63 @@ export class PropertyService extends BaseService {
       };
     }
   }
+
+  /**
+   * Get available properties (without owners)
+   */
+  public static async getAvailableProperties(currentUser: CurrentUser): Promise<ServiceResponse<any[]>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Available Properties] Getting available properties by ${currentUser.email}`);
+
+      // RBAC: Only ADMIN and MANAGER can access
+      if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER') {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'Only administrators and managers can view available properties');
+      }
+
+      // Get properties without owners
+      const properties = await prisma.properties.findMany({
+        where: { 
+          owner_id: null,
+          is_active: true
+        },
+        select: {
+          id: true,
+          name: true,
+          nickname: true,
+          type: true,
+          type_of_unit: true,
+          address: true,
+          city: true,
+          country: true,
+          capacity: true,
+          bedrooms: true,
+          bathrooms: true,
+          area: true,
+          price_per_night: true,
+          description: true,
+          amenities: true,
+          house_rules: true,
+          tags: true,
+          is_active: true,
+          is_published: true,
+          primary_image: true,
+          created_at: true,
+          updated_at: true
+        },
+        orderBy: { created_at: 'desc' }
+      });
+
+      await prisma.$disconnect();
+
+      logger.info(`[Available Properties] Found ${properties.length} available properties`);
+      return PropertyService.prototype.success(properties, 'Available properties retrieved successfully');
+    } catch (error) {
+      await prisma.$disconnect();
+      logger.error('Error getting available properties:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
 }

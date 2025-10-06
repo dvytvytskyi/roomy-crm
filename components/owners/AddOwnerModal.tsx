@@ -66,30 +66,16 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
     'Bank Transfer', 'PayPal', 'Monthly Bank Transfer', 'Quarterly Transfer', 'Wire Transfer'
   ]
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev: any) => ({
-        ...prev,
-        [field]: ''
-      }))
-    }
-  }
 
   const handleAddUnit = () => {
-    if (newUnit && !formData.units.includes(newUnit)) {
-      handleInputChange('units', [...formData.units, newUnit])
+    if (newUnit && !watchedValues.units?.includes(newUnit)) {
+      setValue('units', [...(watchedValues.units || []), newUnit])
       setNewUnit('')
     }
   }
 
   const handleRemoveUnit = (unitToRemove: string) => {
-    handleInputChange('units', formData.units.filter(unit => unit !== unitToRemove))
+    setValue('units', (watchedValues.units || []).filter(unit => unit !== unitToRemove))
   }
 
   const addComment = () => {
@@ -119,40 +105,13 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
     })
   }
 
-  const validateForm = () => {
-    const newErrors: any = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.nationality) {
-      newErrors.nationality = 'Nationality is required'
-    }
-
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Date of birth is required'
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email format is invalid'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    }
-
-    if (formData.units.length === 0) {
-      newErrors.units = 'At least one unit must be selected'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
 
   const onSubmit = async (data: CreateOwnerData) => {
+    console.log('--- CREATE OWNER BUTTON CLICKED ---'); // <-- ДОДАЛИ ДІАГНОСТИЧНИЙ ЛОГ
+    console.log('Form data received:', data);
+    console.log('Form validation errors:', errors);
+    console.log('Is form submitting?', isSubmitting);
+    
     const loadingToast = showToast.loading('Creating owner...')
 
     try {
@@ -164,7 +123,11 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
       }
 
       // Call API to create owner
+      console.log('--- CALLING API TO CREATE OWNER ---');
+      console.log('Owner data to send:', ownerData);
       const response = await userServiceAdapter.createUser(ownerData)
+      console.log('--- API RESPONSE RECEIVED ---');
+      console.log('API response:', response);
       
       if (response.success && response.data) {
         showToast.dismiss(loadingToast)
@@ -200,7 +163,13 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
         throw new Error(response.error || 'Failed to create owner')
       }
     } catch (error: any) {
+      console.log('--- ERROR IN CREATE OWNER ---');
       console.error('Error saving owner:', error)
+      console.log('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       showToast.dismiss(loadingToast)
       showToast.error(error.message || 'Failed to create owner. Please try again.')
     }
@@ -247,7 +216,12 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        <form onSubmit={(e) => {
+          console.log('--- FORM SUBMIT EVENT TRIGGERED ---');
+          console.log('Event:', e);
+          console.log('Form errors before submit:', errors);
+          handleSubmit(onSubmit)(e);
+        }} className="p-6 space-y-6">
           {/* General Error Display */}
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -303,10 +277,10 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    {formData.nationality ? (
+                    {watchedValues.nationality ? (
                       <>
-                        <span className="text-lg">{getCountryFlag(formData.nationality)}</span>
-                        <span className="text-sm text-gray-900">{formData.nationality}</span>
+                        <span className="text-lg">{getCountryFlag(watchedValues.nationality)}</span>
+                        <span className="text-sm text-gray-900">{watchedValues.nationality}</span>
                       </>
                     ) : (
                       <span className="text-sm text-gray-500">Select nationality</span>
@@ -323,7 +297,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                           key={nationality}
                           type="button"
                           onClick={() => {
-                            handleInputChange('nationality', nationality)
+                            setValue('nationality', nationality)
                             setIsNationalityDropdownOpen(false)
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-2"
@@ -346,8 +320,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="date"
-                value={formData.dateOfBirth}
-                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                {...register('dateOfBirth')}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -378,8 +351,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                {...register('phone')}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.phone ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -394,8 +366,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="tel"
-                value={formData.whatsapp}
-                onChange={(e) => handleInputChange('whatsapp', e.target.value)}
+                {...register('whatsapp')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="+971 50 123 4567"
               />
@@ -407,8 +378,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="text"
-                value={formData.telegram}
-                onChange={(e) => handleInputChange('telegram', e.target.value)}
+                {...register('telegram')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="@username"
               />
@@ -420,13 +390,12 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                 Status
               </label>
               <select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
+                {...register('status')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="Active">Active</option>
+                <option value="ACTIVE">Active</option>
                 <option value="VIP">VIP</option>
-                <option value="Inactive">Inactive</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
             </div>
           </div>
@@ -446,7 +415,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               >
                 <option value="">Select a unit to add</option>
                 {availableUnits
-                  .filter(unit => !formData.units.includes(unit))
+                  .filter(unit => !(watchedValues.units || []).includes(unit))
                   .map(unit => (
                     <option key={unit} value={unit}>{unit}</option>
                   ))}
@@ -461,9 +430,9 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </button>
             </div>
 
-            {formData.units.length > 0 && (
+            {(watchedValues.units || []).length > 0 && (
               <div className="space-y-2">
-                {formData.units.map(unit => (
+                {(watchedValues.units || []).map(unit => (
                   <div key={unit} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-sm text-gray-900">{unit}</span>
                     <button
@@ -488,8 +457,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
                 Payment Preferences
               </label>
               <select
-                value={formData.paymentPreferences}
-                onChange={(e) => handleInputChange('paymentPreferences', e.target.value)}
+                {...register('paymentPreferences')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {paymentMethods.map(method => (
@@ -504,8 +472,7 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
               </label>
               <input
                 type="number"
-                value={formData.personalStayDays}
-                onChange={(e) => handleInputChange('personalStayDays', parseInt(e.target.value))}
+                {...register('personalStayDays', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 min="0"
                 max="365"
@@ -579,6 +546,11 @@ export default function AddOwnerModal({ onClose, onSave }: AddOwnerModalProps) {
             <button
               type="submit"
               disabled={isSubmitting}
+              onClick={() => {
+                console.log('--- CREATE OWNER BUTTON CLICKED ---');
+                console.log('Button disabled?', isSubmitting);
+                console.log('Form errors:', errors);
+              }}
               className="px-6 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {isSubmitting ? (

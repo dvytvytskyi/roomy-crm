@@ -54,7 +54,13 @@ export function useAuth() {
         // Store token in cookie for middleware
         const token = response.data.token || response.data.accessToken;
         if (typeof document !== 'undefined' && token) {
-          document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+          // Set cookie with proper attributes
+          document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax; Secure=false`;
+          console.log('🍪 Cookie set:', `accessToken=${token.substring(0, 20)}...`);
+          
+          // Also store in localStorage for consistency
+          localStorage.setItem('accessToken', token);
+          console.log('💾 Token stored in localStorage');
         }
         
         console.log('🎯 useAuth: Auth state updated, user:', response.data.user)

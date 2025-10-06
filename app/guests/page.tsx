@@ -7,6 +7,7 @@ import GuestsTable from '@/components/guests/GuestsTable'
 import GuestsFilters from '@/components/guests/GuestsFilters'
 import AddGuestModal from '@/components/guests/AddGuestModal'
 import { guestService, Guest, GuestFilters } from '@/lib/api/services/guestService'
+import { useGuestEvents } from '@/hooks/useEventBus'
 
 export default function GuestsPage() {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false)
@@ -22,6 +23,8 @@ export default function GuestsPage() {
     reservationCount: { min: '', max: '' },
     unit: []
   })
+  
+  const { onGuestUpdated, onGuestCreated, onGuestDeleted, onGuestRefresh } = useGuestEvents()
 
   // Load guests from API
   const loadGuests = useCallback(async (currentFilters?: GuestFilters) => {
@@ -66,6 +69,57 @@ export default function GuestsPage() {
     loadGuests()
     loadStats()
   }, [filters, searchTerm])
+
+  // Listen for guest update events
+  useEffect(() => {
+    const handleGuestUpdated = (data: { guestId: string; guestData?: any }) => {
+      console.log('📡 GuestsPage: Received guest updated event for:', data.guestId)
+      
+      // Update the guest in the local state
+      setGuests(prevGuests => 
+        prevGuests.map(guest => 
+          guest.id === data.guestId 
+            ? { ...guest, ...data.guestData }
+            : guest
+        )
+      )
+    }
+
+    const handleGuestCreated = (data: { guestData: any }) => {
+      console.log('📡 GuestsPage: Received guest created event')
+      // Reload guests to get the new guest
+      loadGuests()
+    }
+
+    const handleGuestDeleted = (data: { guestId: string }) => {
+      console.log('📡 GuestsPage: Received guest deleted event for:', data.guestId)
+      
+      // Remove the guest from the local state
+      setGuests(prevGuests => 
+        prevGuests.filter(guest => guest.id !== data.guestId)
+      )
+    }
+
+    const handleGuestRefresh = () => {
+      console.log('📡 GuestsPage: Received guest refresh event')
+      // Reload guests
+      loadGuests()
+    }
+
+    // Subscribe to events
+    const unsubscribeUpdated = onGuestUpdated(handleGuestUpdated)
+    const unsubscribeCreated = onGuestCreated(handleGuestCreated)
+    const unsubscribeDeleted = onGuestDeleted(handleGuestDeleted)
+    const unsubscribeRefresh = onGuestRefresh(handleGuestRefresh)
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      unsubscribeUpdated()
+      unsubscribeCreated()
+      unsubscribeDeleted()
+      unsubscribeRefresh()
+    }
+  }, [loadGuests, onGuestUpdated, onGuestCreated, onGuestDeleted, onGuestRefresh])
 
   const handleCreateGuest = () => {
     setSelectedGuest(null)
@@ -286,6 +340,16 @@ export default function GuestsPage() {
         isOpen={isGuestModalOpen}
         onClose={() => setIsGuestModalOpen(false)}
         guest={selectedGuest}
+        onGuestUpdated={(updatedGuest) => {
+          if (selectedGuest) {
+            // Editing existing guest
+            console.log('📡 GuestsPage: Guest updated via modal')
+          } else {
+            // Creating new guest
+            console.log('📡 GuestsPage: Guest created via modal')
+          }
+          setIsGuestModalOpen(false)
+        }}
       />
     </div>
   )

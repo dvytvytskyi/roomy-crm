@@ -46,11 +46,12 @@ export default function EditOwnerModal({ owner, onClose, onSave }: EditOwnerModa
     dateOfBirth: owner.dateOfBirth || '',
     email: owner.email || '',
     phone: owner.phone || '',
+    description: owner.description || '',
     whatsapp: owner.phone || '',
     telegram: '',
     properties: owner.properties || [],
     comments: owner.comments || '',
-    isActive: owner.isActive ?? true,
+    status: owner.status || 'ACTIVE',
     paymentPreferences: 'Bank Transfer',
     personalStayDays: 30
   })
@@ -413,8 +414,8 @@ export default function EditOwnerModal({ owner, onClose, onSave }: EditOwnerModa
                 <input
                   type="radio"
                   name="status"
-                  checked={formData.isActive}
-                  onChange={() => handleInputChange('isActive', true)}
+                  checked={formData.status === 'ACTIVE'}
+                  onChange={() => handleInputChange('status', 'ACTIVE')}
                   className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Active</span>
@@ -423,13 +424,47 @@ export default function EditOwnerModal({ owner, onClose, onSave }: EditOwnerModa
                 <input
                   type="radio"
                   name="status"
-                  checked={!formData.isActive}
-                  onChange={() => handleInputChange('isActive', false)}
+                  checked={formData.status === 'INACTIVE'}
+                  onChange={() => handleInputChange('status', 'INACTIVE')}
                   className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Inactive</span>
               </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="status"
+                  checked={formData.status === 'VIP'}
+                  onChange={() => handleInputChange('status', 'VIP')}
+                  className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">VIP</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="status"
+                  checked={formData.status === 'SUSPENDED'}
+                  onChange={() => handleInputChange('status', 'SUSPENDED')}
+                  className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Suspended</span>
+              </label>
             </div>
+          </div>
+
+          {/* Description */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+              placeholder="Brief description of the owner..."
+            />
           </div>
 
           {/* Comments */}

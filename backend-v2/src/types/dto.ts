@@ -7,6 +7,7 @@ export interface CreateUserDto {
   firstName: string;
   lastName: string;
   phone?: string;
+  description?: string;
   role?: UserRole;
   status?: string;
 }
@@ -16,6 +17,7 @@ export interface UpdateUserDto {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  description?: string;
   role?: UserRole;
   status?: string;
 }
@@ -26,6 +28,7 @@ export interface UserResponseDto {
   firstName: string;
   lastName: string;
   phone?: string;
+  description?: string;
   role: UserRole;
   status: UserStatus;
   avatar?: string;
@@ -486,5 +489,164 @@ export interface UserWithStatsDto extends UserResponseDto {
     properties: number;
     reservations: number;
     transactions: number;
+    documents: number;
+    activity_log: number;
   };
+  // Include related data
+  transactions?: any[];
+  documents?: any[];
+  activity_log?: any[];
+  reservations?: any[];
+}
+
+// Bank Account DTOs
+export interface CreateBankAccountDto {
+  bank_name: string;
+  account_holder: string;
+  account_number: string;
+  iban?: string;
+  swift_code?: string;
+  routing_number?: string;
+  account_type?: string;
+  currency?: string;
+  is_primary?: boolean;
+}
+
+export interface UpdateBankAccountDto {
+  bank_name?: string;
+  account_holder?: string;
+  account_number?: string;
+  iban?: string;
+  swift_code?: string;
+  routing_number?: string;
+  account_type?: string;
+  currency?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
+}
+
+export interface BankAccountResponseDto {
+  id: string;
+  user_id: string;
+  bank_name: string;
+  account_holder: string;
+  account_number: string;
+  iban?: string;
+  swift_code?: string;
+  routing_number?: string;
+  account_type: string;
+  currency: string;
+  is_primary: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Transaction DTOs
+export interface CreateTransactionDto {
+  property_id?: string;
+  reservation_id?: string;
+  type: string;
+  category: string;
+  amount: number;
+  currency?: string;
+  description?: string;
+  platform?: string;
+  platform_fee?: number;
+  transaction_fee?: number;
+  payment_method?: string;
+  payment_reference?: string;
+}
+
+export interface UpdateTransactionDto {
+  type?: string;
+  category?: string;
+  amount?: number;
+  currency?: string;
+  description?: string;
+  platform?: string;
+  platform_fee?: number;
+  transaction_fee?: number;
+  status?: string;
+  payment_method?: string;
+  payment_reference?: string;
+  processed_at?: string;
+}
+
+export interface TransactionResponseDto {
+  id: string;
+  transaction_id: string;
+  property_id?: string;
+  reservation_id?: string;
+  user_id?: string;
+  type: string;
+  category: string;
+  amount: number;
+  currency: string;
+  description?: string;
+  platform?: string;
+  platform_fee?: number;
+  transaction_fee?: number;
+  net_amount: number;
+  status: string;
+  payment_method?: string;
+  payment_reference?: string;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Document DTOs
+export interface CreateDocumentDto {
+  name: string;
+  type: string; // e.g., 'PDF', 'DOC', 'IMAGE'
+  filename: string;
+  size: string; // e.g., '2.5 MB'
+  s3_key?: string;
+  s3_url?: string;
+  uploaded_by?: string;
+}
+
+export interface UpdateDocumentDto {
+  name?: string;
+  type?: string;
+  filename?: string;
+  size?: string;
+  s3_key?: string;
+  s3_url?: string;
+  uploaded_by?: string;
+}
+
+export interface DocumentResponseDto {
+  id: string;
+  user_id: string;
+  name: string;
+  type: string;
+  filename: string;
+  size: string;
+  s3_key?: string;
+  s3_url?: string;
+  uploaded_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Activity Log DTOs
+export interface CreateActivityLogDto {
+  action: string; // e.g., 'Document Uploaded', 'Profile Updated'
+  description: string; // Detailed description of the action
+  type: string; // e.g., 'create', 'update', 'delete', 'payment', 'document', 'unit'
+  performed_by?: string; // User who performed the action
+  metadata?: any; // Additional metadata about the action
+}
+
+export interface ActivityLogResponseDto {
+  id: string;
+  user_id: string;
+  action: string;
+  description: string;
+  type: string;
+  performed_by?: string;
+  metadata?: any;
+  created_at: string;
 }

@@ -14,7 +14,7 @@ const router = Router();
  * User login endpoint
  * Rate limited to prevent brute force attacks
  */
-router.post('/login', authRateLimit(5, 15 * 60 * 1000), AuthController.login);
+router.post('/login', AuthController.login); // Rate limiting temporarily disabled
 
 /**
  * GET /api/v2/auth/me

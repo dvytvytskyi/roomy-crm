@@ -442,4 +442,33 @@ export class PropertyController extends BaseController {
       PropertyController.error(res, error, 500, 'An error occurred while retrieving property statistics');
     }
   }
+
+  /**
+   * Get available properties (without owners) endpoint
+   * GET /api/v2/properties/available
+   */
+  public static getAvailableProperties = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      logger.info(`Getting available properties by ${currentUser.email}`);
+
+      const result = await PropertyService.getAvailableProperties(currentUser);
+
+      if (!result.success) {
+        PropertyController.error(res, result.error || 'Failed to retrieve available properties', result.statusCode || 500, result.message);
+        return;
+      }
+
+      logger.info(`Available properties retrieved by ${currentUser.email}`);
+      PropertyController.success(res, result.data, 'Available properties retrieved successfully');
+    } catch (error) {
+      logger.error('Error in getAvailableProperties controller:', error);
+      PropertyController.error(res, error, 500, 'An error occurred while retrieving available properties');
+    }
+  }
 }

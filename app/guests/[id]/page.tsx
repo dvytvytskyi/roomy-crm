@@ -7,7 +7,9 @@ import {
   TrendingUp, Clock, DollarSign, Building, Users, Award
 } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
+import AddGuestModal from '@/components/guests/AddGuestModal'
 import { guestService, Guest, GuestDetailStats } from '@/lib/api/services/guestService'
+import { useGuestEvents } from '@/hooks/useEventBus'
 
 interface GuestDetailsPageProps {
   params: {
@@ -20,6 +22,8 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<GuestDetailStats | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { emitGuestUpdated } = useGuestEvents()
 
   // Load guest data
   useEffect(() => {
@@ -103,6 +107,33 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     return flags[nationality] || '🌍'
   }
 
+  const handleEditGuest = () => {
+    setIsEditModalOpen(true)
+  }
+
+  const handleGuestUpdated = (updatedGuest: any) => {
+    // Update the guest state with the new data
+    setGuest(prevGuest => ({
+      ...prevGuest,
+      ...updatedGuest,
+      firstName: updatedGuest.firstName,
+      lastName: updatedGuest.lastName,
+      email: updatedGuest.email,
+      phone: updatedGuest.phone,
+      nationality: updatedGuest.nationality,
+      dateOfBirth: updatedGuest.dateOfBirth,
+      comments: updatedGuest.comments
+    }))
+    
+    // Emit event to notify other components about the update
+    if (guest?.id) {
+      emitGuestUpdated(guest.id, updatedGuest)
+      console.log('📡 Guest updated event emitted for guest:', guest.id)
+    }
+    
+    setIsEditModalOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
@@ -148,7 +179,7 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               </button>
               <div>
                 <h1 className="text-xl font-medium text-slate-900 flex items-center space-x-2">
-                  <span>{guest.name}</span>
+                  <span>{guest.firstName} {guest.lastName}</span>
                   {guest.starGuest && <Star size={20} className="text-yellow-500" />}
                   {guest.primaryGuest && <Crown size={20} className="text-orange-500" />}
                 </h1>
@@ -164,7 +195,10 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
               <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getLoyaltyTierColor(guest.loyaltyTier || 'Bronze')}`}>
                 {guest.loyaltyTier || 'Bronze'}
               </span>
-              <button className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2">
+              <button 
+                onClick={handleEditGuest}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+              >
                 <Edit size={16} />
                 <span>Edit Guest</span>
               </button>
@@ -370,26 +404,43 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 <div className="space-y-3">
                   {guest.documents && guest.documents.length > 0 ? (
                     guest.documents.map((doc, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                      <div key={doc.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <FileText size={16} className="text-gray-400" />
                             <div>
-                              <h3 className="font-medium text-slate-900">{doc.name}</h3>
+                              <h3 className="font-medium text-slate-900">{doc.name || doc.filename}</h3>
                               <div className="flex items-center space-x-3 text-sm text-gray-500">
                                 <span>{doc.type}</span>
                                 <span>{doc.size}</span>
-                                <span>{formatDate(doc.uploadedAt)}</span>
+                                <span>{formatDate(doc.created_at || doc.createdAt)}</span>
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" title="View document">
-                              <Eye size={14} />
-                            </button>
-                            <button className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" title="Download document">
-                              <Download size={14} />
-                            </button>
+                            {doc.s3_url && (
+                              <button 
+                                className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" 
+                                title="View document"
+                                onClick={() => window.open(doc.s3_url, '_blank')}
+                              >
+                                <Eye size={14} />
+                              </button>
+                            )}
+                            {doc.s3_url && (
+                              <button 
+                                className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" 
+                                title="Download document"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = doc.s3_url;
+                                  link.download = doc.name || doc.filename;
+                                  link.click();
+                                }}
+                              >
+                                <Download size={14} />
+                              </button>
+                            )}
                             <button className="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer" title="Delete document">
                               <Trash2 size={14} />
                             </button>
@@ -406,47 +457,92 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
               </div>
 
-              {/* Guest Activity */}
-              <div>
-                <h2 className="text-lg font-medium text-slate-900 mb-4">Recent Activity</h2>
+              {/* Recent Reservations */}
+              <div className="mb-6">
+                <h2 className="text-lg font-medium text-slate-900 mb-4">Recent Reservations</h2>
                 <div className="space-y-3">
-                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <Building size={16} className="text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-slate-900">Reservation Created</h3>
-                        <p className="text-sm text-slate-600">New reservation for {guest.unit || 'property'}</p>
-                        <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
-                          <span>by Admin</span>
-                          <span>{formatDate(guest.lastModifiedAt || guest.createdAt)}</span>
+                  {guest.guestReservations && guest.guestReservations.length > 0 ? (
+                    guest.guestReservations.map((reservation, index) => (
+                      <div key={reservation.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            <Building size={16} className="text-orange-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-slate-900">
+                              {reservation.properties?.name || reservation.properties?.nickname || 'Property'}
+                            </h3>
+                            <p className="text-sm text-slate-600">
+                              {formatDate(reservation.check_in)} - {formatDate(reservation.check_out)}
+                            </p>
+                            <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                              <span>Status: {reservation.status}</span>
+                              <span>Guests: {reservation.guests}</span>
+                              <span>{formatDate(reservation.created_at)}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Building size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No reservations found</p>
                     </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User size={16} className="text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-slate-900">Profile Created</h3>
-                        <p className="text-sm text-slate-600">Guest profile was created</p>
-                        <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
-                          <span>by {guest.createdBy}</span>
-                          <span>{formatDate(guest.createdAt)}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Activity Log */}
+              <div className="mb-6">
+                <h2 className="text-lg font-medium text-slate-900 mb-4">Activity Log</h2>
+                <div className="space-y-3">
+                  {guest.auditLogs && guest.auditLogs.length > 0 ? (
+                    guest.auditLogs.map((activity, index) => (
+                      <div key={activity.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            {activity.type === 'document' ? (
+                              <FileText size={16} className="text-orange-600" />
+                            ) : activity.type === 'payment' ? (
+                              <DollarSign size={16} className="text-orange-600" />
+                            ) : activity.type === 'unit' ? (
+                              <Building size={16} className="text-orange-600" />
+                            ) : (
+                              <User size={16} className="text-orange-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-slate-900">{activity.action}</h3>
+                            <p className="text-sm text-slate-600">{activity.description}</p>
+                            <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                              <span>by {activity.performed_by || 'System'}</span>
+                              <span>{formatDate(activity.created_at)}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <User size={48} className="mx-auto mb-2 opacity-50" />
+                      <p>No recent activity</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Edit Guest Modal */}
+      <AddGuestModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        guest={guest}
+        onGuestUpdated={handleGuestUpdated}
+      />
     </div>
   )
 }

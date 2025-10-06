@@ -5,20 +5,14 @@ import { Plus, Filter, Download, Mail, User, Calendar, MapPin, Phone, Mail as Ma
 import TopNavigation from '../../components/TopNavigation'
 import OwnersTableSimple from '../../components/owners/OwnersTableSimple'
 import OwnersFilters from '../../components/owners/OwnersFilters'
-import AddOwnerModal from '../../components/owners/AddOwnerModal'
+import AddOwnerModalNew from '../../components/owners/AddOwnerModalNew'
 import { userServiceAdapted } from '../../lib/api'
 
 export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     nationality: [] as string[],
-    status: ['Active'] as string[], // По умолчанию показываем только активных владельцев
-    dateOfBirth: {
-      from: '',
-      to: ''
-    },
-    phoneNumber: '',
-    comments: ''
+    status: ['Active'] as string[] // По умолчанию показываем только активных владельцев
   })
   const [selectedOwners, setSelectedOwners] = useState<string[]>([])
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
@@ -26,6 +20,8 @@ export default function OwnersPage() {
   const [limit] = useState(20)
   const [owners, setOwners] = useState<ApiUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState({
     totalOwners: 0,
@@ -52,11 +48,7 @@ export default function OwnersPage() {
       page,
       limit,
       nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
-      isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined,
-      dateOfBirthFrom: filters.dateOfBirth.from || undefined,
-      dateOfBirthTo: filters.dateOfBirth.to || undefined,
-      phoneNumber: filters.phoneNumber || undefined,
-      comments: filters.comments || undefined
+      isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined
     }
     // console.log('🔍 Owners filter params:', params) // Disabled to reduce console spam
     return params
@@ -65,23 +57,55 @@ export default function OwnersPage() {
     page, 
     limit, 
     filters.nationality, 
-    filters.status, 
-    filters.dateOfBirth.from, 
-    filters.dateOfBirth.to, 
-    filters.phoneNumber, 
-    filters.comments
+    filters.status
   ])
 
   // Load owners data from API
-  const loadOwners = async () => {
+  const loadStats = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      console.log('🏠 Loading owners from API...')
+      // Load all owners to get accurate stats
+      const allOwnersResponse = await userServiceAdapted.getOwners({
+        page: 1,
+        limit: 100, // Get more to have accurate stats
+        role: 'OWNER'
+      })
       
+      if (allOwnersResponse.success && allOwnersResponse.data) {
+        const allOwners = allOwnersResponse.data
+        const totalOwners = allOwners?.length || 0
+        const activeOwners = allOwners?.filter((o: ApiUser) => o.status === 'ACTIVE').length || 0
+        const totalUnits = allOwners?.reduce((sum: number, owner: ApiUser) => sum + (owner.totalUnits || 0), 0) || 0
+        const vipOwners = allOwners?.filter((o: ApiUser) => o.status === 'VIP').length || 0
+        
+        setStats({
+          totalOwners,
+          activeOwners,
+          totalUnits,
+          vipOwners
+        })
+      }
+    } catch (err) {
+      console.error('🏠 Error loading stats:', err)
+    }
+  }
+
+  const loadOwners = async (reset = true) => {
+    try {
+      if (reset) {
+        setLoading(true)
+        setPage(1)
+        setOwners([])
+        setHasMore(true)
+      } else {
+        setLoadingMore(true)
+      }
+      setError(null)
+      console.log('🏠 Loading owners from API...', reset ? 'initial load' : 'load more')
+
+      const currentPage = reset ? 1 : page + 1
       const response = await userServiceAdapted.getOwners({
         search: debouncedSearchTerm,
-        page,
+        page: currentPage,
         limit,
         nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
         // Логика фильтрации по статусу:
@@ -97,33 +121,25 @@ export default function OwnersPage() {
               ? 'ACTIVE' 
               : filters.status.includes('Inactive') 
                 ? 'INACTIVE' 
-                : undefined,
-        dateOfBirthFrom: filters.dateOfBirth.from || undefined,
-        dateOfBirthTo: filters.dateOfBirth.to || undefined,
-        phoneNumber: filters.phoneNumber || undefined,
-        comments: filters.comments || undefined
+                : undefined
       })
       
       console.log('🏠 Full response received:', response)
       
       if (response.success && response.data) {
         console.log('🏠 Owners loaded:', response.data)
-        console.log('🏠 Setting owners:', response.data.users || response.data.owners || response.data)
-        setOwners(response.data.users || response.data.owners || response.data)
+        const newOwners = response.data
         
-        // Calculate stats
-        const ownersData = response.data.users || response.data.owners || response.data
-        const totalOwners = ownersData?.length || 0
-        const activeOwners = ownersData?.filter((o: ApiUser) => o.isActive).length || 0
-        const totalUnits = ownersData?.reduce((sum: number, owner: ApiUser) => sum + (owner.totalUnits || 0), 0) || 0
-        const vipOwners = ownersData?.filter((o: ApiUser) => o.comments?.includes('VIP')).length || 0
+        if (reset) {
+          setOwners(newOwners)
+        } else {
+          setOwners(prevOwners => [...prevOwners, ...newOwners])
+        }
         
-        setStats({
-          totalOwners,
-          activeOwners,
-          totalUnits,
-          vipOwners
-        })
+        // Check if there are more pages
+        const totalPages = response.pagination?.totalPages || 1
+        setHasMore(currentPage < totalPages)
+        setPage(currentPage)
       } else {
         setError('Failed to load owners')
       }
@@ -132,8 +148,16 @@ export default function OwnersPage() {
       setError('Error loading owners')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
+
+  const loadMoreOwners = () => {
+    if (!loadingMore && hasMore) {
+      loadOwners(false)
+    }
+  }
+
 
   // Delete owner function
   const handleDeleteOwner = async (ownerId: string) => {
@@ -170,10 +194,10 @@ export default function OwnersPage() {
             const newStats = {
               ...prevStats,
               totalOwners: prevStats.totalOwners - 1,
-              activeOwners: (ownerToDelete.isActive || ownerToDelete.status === 'ACTIVE') 
+              activeOwners: (ownerToDelete.status === 'ACTIVE') 
                 ? prevStats.activeOwners - 1 
                 : prevStats.activeOwners,
-              vipOwners: ownerToDelete.comments?.includes('VIP')
+              vipOwners: (ownerToDelete.status === 'VIP')
                 ? prevStats.vipOwners - 1
                 : prevStats.vipOwners,
               totalUnits: ownerToDelete.totalUnits
@@ -187,6 +211,9 @@ export default function OwnersPage() {
         
         console.log('🗑️ State update completed successfully')
         
+        // Reload stats after deletion
+        await loadStats()
+        
       } else {
         console.error('🗑️ Failed to delete owner:', response.error)
         throw new Error(response.error || 'Failed to delete owner')
@@ -198,8 +225,14 @@ export default function OwnersPage() {
   }
 
   useEffect(() => {
-    loadOwners()
-  }, [debouncedSearchTerm, page, limit, filters])
+    loadOwners(true) // Reset and load first page
+    loadStats() // Load stats separately to get accurate totals
+  }, [debouncedSearchTerm, filters])
+
+  // Load stats when component mounts
+  useEffect(() => {
+    loadStats()
+  }, [])
 
   const handleApplyFilters = (newFilters: any) => {
     setFilters(newFilters)
@@ -208,10 +241,7 @@ export default function OwnersPage() {
   const handleClearFilters = () => {
     setFilters({
       nationality: [],
-      status: ['Active'], // По умолчанию показываем только активных
-      dateOfBirth: { from: '', to: '' },
-      phoneNumber: '',
-      comments: ''
+      status: ['Active'] // По умолчанию показываем только активных
     })
   }
 
@@ -222,18 +252,13 @@ export default function OwnersPage() {
 
   const handleAddOwner = async (owner: any) => {
     try {
-      console.log('Adding owner:', owner)
-      const response = await userServiceAdapted.createUser(owner)
+      console.log('Owner created successfully, refreshing page...')
+      setShowAddOwnerModal(false)
       
-      if (response.success) {
-        setShowAddOwnerModal(false)
-        // Refresh owners list after adding
-        loadOwners()
-      } else {
-        setError('Failed to add owner')
-      }
+      // Примусове перезавантаження сторінки
+      window.location.reload()
     } catch (err) {
-      console.error('Error adding owner:', err)
+      console.error('Error handling owner creation:', err)
       setError('Error adding owner')
     }
   }
@@ -353,7 +378,6 @@ export default function OwnersPage() {
                 <OwnersFilters 
                   filters={filters} 
                   onApplyFilters={handleApplyFilters} 
-                  onClearFilters={handleClearFilters}
                   isSidebar={true}
                 />
               </div>
@@ -425,30 +449,33 @@ export default function OwnersPage() {
                   </div>
                 </div>
               ) : (
-            <OwnersTableSimple
-              owners={owners || []}
-              pagination={undefined}
-              searchTerm={searchTerm}
-              filters={filters}
-              selectedOwners={selectedOwners}
-              onSelectionChange={setSelectedOwners}
-              onPageChange={setPage}
-              onRefresh={loadOwners}
-              onDeleteOwner={handleDeleteOwner}
-            />
+                <OwnersTableSimple
+                  owners={owners || []}
+                  pagination={undefined}
+                  searchTerm={searchTerm}
+                  filters={filters}
+                  selectedOwners={selectedOwners}
+                  onSelectionChange={setSelectedOwners}
+                  onPageChange={setPage}
+                  onRefresh={() => loadOwners(true)}
+                  onDeleteOwner={handleDeleteOwner}
+                  loadingMore={loadingMore}
+                  hasMore={hasMore}
+                  onLoadMore={loadMoreOwners}
+                />
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Owner Modal */}
-      {showAddOwnerModal && (
-        <AddOwnerModal
-          onClose={() => setShowAddOwnerModal(false)}
-          onSave={handleAddOwner}
-        />
-      )}
+            {/* Add Owner Modal */}
+            {showAddOwnerModal && (
+              <AddOwnerModalNew
+                onClose={() => setShowAddOwnerModal(false)}
+                onSave={handleAddOwner}
+              />
+            )}
     </div>
   )
 }

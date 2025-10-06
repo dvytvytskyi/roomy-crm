@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from 'react';
 import { Search, Filter, Plus, Eye, Edit, Trash2, MapPin, DollarSign, Users, Calendar } from 'lucide-react';
 import { useProperties } from '@/hooks/useProductionApi';

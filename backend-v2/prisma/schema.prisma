@@ -15,6 +15,7 @@ model User {
   lastName                                  String         @map("last_name")
   phone                                     String?
   avatar                                    String?
+  description                               String?
   role                                      UserRole       @default(GUEST)
   is_active                                 Boolean        @default(true)
   isVerified                                Boolean        @default(false) @map("is_verified")
@@ -27,6 +28,9 @@ model User {
   reservations_reservations_agent_idTousers reservations[] @relation("reservations_agent_idTousers")
   reservations_reservations_guest_idTousers reservations[] @relation("reservations_guest_idTousers")
   transactions                              transactions[]
+  bank_accounts                             bank_accounts[] @relation("UserBankAccounts")
+  documents                                 documents[]    @relation("UserDocuments")
+  activity_log                              activity_log[] @relation("UserActivityLog")
   
   // Task relations
   assigned_tasks                            tasks[]        @relation("TaskAssignedUser")
@@ -392,4 +396,61 @@ model settings {
   updated_at  DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model bank_accounts {
+  id                String   @id @default(cuid())
+  user_id           String
+  bank_name         String
+  account_holder    String
+  account_number    String
+  iban              String?
+  swift_code        String?
+  routing_number    String?
+  account_type      String   @default("CHECKING") // CHECKING, SAVINGS, BUSINESS
+  currency          String   @default("USD")
+  is_primary        Boolean  @default(false)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now()) @map("created_at")
+  updated_at        DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user              User     @relation("UserBankAccounts", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("bank_accounts")
+}
+
+model documents {
+  id                String   @id @default(cuid())
+  user_id           String
+  name              String
+  type              String   // e.g., "PDF", "DOC", "IMAGE"
+  filename          String
+  size              String   // e.g., "2.5 MB"
+  s3_key            String?  @map("s3_key")
+  s3_url            String?  @map("s3_url")
+  uploaded_by       String?  // User who uploaded the document
+  created_at        DateTime @default(now()) @map("created_at")
+  updated_at        DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user              User     @relation("UserDocuments", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("documents")
+}
+
+model activity_log {
+  id                String   @id @default(cuid())
+  user_id           String
+  action            String   // e.g., "Document Uploaded", "Profile Updated"
+  description       String   // Detailed description of the action
+  type              String   // e.g., "create", "update", "delete", "payment", "document", "unit"
+  performed_by      String?  // User who performed the action
+  metadata          Json?    // Additional metadata about the action
+  created_at        DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  user              User     @relation("UserActivityLog", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("activity_log")
 }

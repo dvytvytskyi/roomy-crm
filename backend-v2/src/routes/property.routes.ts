@@ -23,6 +23,13 @@ router.get('/', PropertyController.getAllProperties);
 router.get('/stats', PropertyController.getPropertyStats);
 
 /**
+ * @route   GET /api/v2/properties/available
+ * @desc    Get available properties (without owners)
+ * @access  Private (JWT required) - ADMIN, MANAGER can access
+ */
+router.get('/available', PropertyController.getAvailableProperties);
+
+/**
  * @route   POST /api/v2/properties
  * @desc    Create new property
  * @access  Private (JWT required) - ADMIN, MANAGER, OWNER can create

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import AnalyticsOverview from '../../components/analytics/AnalyticsOverview'
 import FinancialsBlock from '../../components/analytics/FinancialsBlock'
@@ -11,7 +11,6 @@ import AgentsBlock from '../../components/analytics/AgentsBlock'
 import CustomReportsBlock from '../../components/analytics/CustomReportsBlock'
 import { TrendingUp, Calendar, Download, Filter, BarChart3, PieChart, LineChart } from 'lucide-react'
 import { financialServiceAdapted } from '../../lib/api/adapters/apiAdapter'
-import { useState, useEffect } from 'react'
 import type { KPIOverviewV2, UnitsAnalyticsV2 } from '../../lib/api/services/financialService-v2'
 
 export default function AnalyticsPage() {

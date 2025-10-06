@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, Edit, Trash2, Star, Crown, User, Mail, Phone, Calendar, MapPin, Building, Info, ChevronUp, ChevronDown } from 'lucide-react'
+import { Trash2, User, Mail, Phone, Calendar, Building, ChevronUp, ChevronDown } from 'lucide-react'
 import { Owner } from '@/lib/api/services/ownerService'
-import EditOwnerModal from './EditOwnerModal'
-import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 // Function to get country flag emoji
 const getCountryFlag = (nationality: string) => {
@@ -48,6 +46,9 @@ interface OwnersTableProps {
   onPageChange?: (page: number) => void
   onRefresh?: () => void
   onDeleteOwner?: (ownerId: string) => void
+  loadingMore?: boolean
+  hasMore?: boolean
+  onLoadMore?: () => void
 }
 
 export default function OwnersTableSimple({ 
@@ -59,12 +60,14 @@ export default function OwnersTableSimple({
   onSelectionChange, 
   onPageChange,
   onRefresh,
-  onDeleteOwner
+  onDeleteOwner,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore
 }: OwnersTableProps) {
   const [sortField, setSortField] = useState<string>('firstName')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
-  const [editingOwner, setEditingOwner] = useState<UserType | null>(null)
 
   // Filter and sort owners
   const filteredOwners = owners.filter(owner => {
@@ -118,6 +121,16 @@ export default function OwnersTableSimple({
     return sortDirection === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
   }
 
+  // Handle scroll for infinite loading
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100 // Load when 100px from bottom
+    
+    if (isNearBottom && !loadingMore && hasMore && onLoadMore) {
+      onLoadMore()
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Table Header */}
@@ -162,10 +175,10 @@ export default function OwnersTableSimple({
           </div>
           <div 
             className="col-span-1 cursor-pointer flex items-center space-x-1 hover:text-gray-700"
-            onClick={() => handleSort('isActive')}
+            onClick={() => handleSort('status')}
           >
             <span>Status</span>
-            {getSortIcon('isActive')}
+            {getSortIcon('status')}
           </div>
           <div className="col-span-2">Created</div>
           <div className="col-span-1">Actions</div>
@@ -173,13 +186,14 @@ export default function OwnersTableSimple({
       </div>
 
       {/* Table Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         {sortedOwners.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-500">
             No owners found
           </div>
         ) : (
-          sortedOwners.map((owner, index) => (
+          <>
+            {sortedOwners.map((owner, index) => (
             <div
               key={owner.id}
               className={`grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
@@ -245,11 +259,21 @@ export default function OwnersTableSimple({
               
               <div className="col-span-1 flex items-center">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  owner.isActive 
+                  owner.status === 'ACTIVE' 
                     ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
+                    : owner.status === 'INACTIVE'
+                      ? 'bg-red-100 text-red-800'
+                      : owner.status === 'VIP'
+                        ? 'bg-purple-100 text-purple-800'
+                        : owner.status === 'SUSPENDED'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {owner.isActive ? 'Active' : 'Inactive'}
+                  {owner.status === 'ACTIVE' ? 'Active' : 
+                   owner.status === 'INACTIVE' ? 'Inactive' :
+                   owner.status === 'VIP' ? 'VIP' :
+                   owner.status === 'SUSPENDED' ? 'Suspended' :
+                   owner.status || 'Unknown'}
                 </span>
               </div>
               
@@ -263,20 +287,6 @@ export default function OwnersTableSimple({
               </div>
               
               <div className="col-span-1 flex items-center space-x-2">
-                <button 
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  onClick={() => window.location.href = `/owners/${owner.id}`}
-                  title="View owner details"
-                >
-                  <Eye size={16} />
-                </button>
-                <button 
-                  className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
-                  onClick={() => setEditingOwner(owner)}
-                  title="Edit owner"
-                >
-                  <Edit size={16} />
-                </button>
                 <button 
                   className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                   onClick={async () => {
@@ -299,7 +309,25 @@ export default function OwnersTableSimple({
                 </button>
               </div>
             </div>
-          ))
+            ))}
+            
+            {/* Loading More Indicator */}
+            {loadingMore && (
+              <div className="flex items-center justify-center py-4 border-b border-gray-100">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                  <span className="text-sm text-gray-600">Loading more owners...</span>
+                </div>
+              </div>
+            )}
+            
+            {/* End of List Indicator */}
+            {!hasMore && sortedOwners.length > 0 && !loadingMore && (
+              <div className="flex items-center justify-center py-4 border-b border-gray-100">
+                <span className="text-sm text-gray-500">All owners loaded ({sortedOwners.length} total)</span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -335,18 +363,6 @@ export default function OwnersTableSimple({
         </div>
       )}
 
-      {/* Edit Owner Modal */}
-      {editingOwner && (
-        <EditOwnerModal
-          owner={editingOwner}
-          onClose={() => setEditingOwner(null)}
-          onSave={(updatedOwner) => {
-            console.log('Owner updated:', updatedOwner)
-            setEditingOwner(null)
-            onRefresh?.()
-          }}
-        />
-      )}
     </div>
   )
 }
