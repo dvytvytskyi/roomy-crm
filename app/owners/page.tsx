@@ -84,10 +84,20 @@ export default function OwnersPage() {
         page,
         limit,
         nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
-        // По умолчанию показываем только активных владельцев, если не выбраны другие фильтры
-        status: filters.status.length > 0 
-          ? (filters.status.includes('Active') ? 'ACTIVE' : filters.status.includes('Inactive') ? 'INACTIVE' : undefined)
-          : 'ACTIVE', // По умолчанию только активные
+        // Логика фильтрации по статусу:
+        // - Если выбраны оба фильтра (Active и Inactive) - показываем всех (не передаем status)
+        // - Если выбран только Active - показываем только активных
+        // - Если выбран только Inactive - показываем только неактивных
+        // - Если ничего не выбрано - показываем только активных по умолчанию
+        status: filters.status.length === 0 
+          ? 'ACTIVE' // По умолчанию только активные
+          : filters.status.length === 2 
+            ? undefined // Если выбраны оба - показываем всех
+            : filters.status.includes('Active') 
+              ? 'ACTIVE' 
+              : filters.status.includes('Inactive') 
+                ? 'INACTIVE' 
+                : undefined
         dateOfBirthFrom: filters.dateOfBirth.from || undefined,
         dateOfBirthTo: filters.dateOfBirth.to || undefined,
         phoneNumber: filters.phoneNumber || undefined,
