@@ -97,7 +97,7 @@ export default function OwnersPage() {
               ? 'ACTIVE' 
               : filters.status.includes('Inactive') 
                 ? 'INACTIVE' 
-                : undefined
+                : undefined,
         dateOfBirthFrom: filters.dateOfBirth.from || undefined,
         dateOfBirthTo: filters.dateOfBirth.to || undefined,
         phoneNumber: filters.phoneNumber || undefined,
