@@ -82,6 +82,32 @@ export interface CreatePropertyDto {
   pricelabId?: string;
   ownerId?: string;
   agentId?: string;
+  
+  // New fields for property details
+  summary?: string;
+  theSpace?: string;
+  guestAccess?: string;
+  otherThings?: string;
+  
+  // Availability settings
+  bookingWindow?: string;
+  advanceNotice?: string;
+  minStay?: number;
+  maxStay?: number;
+  
+  // Utilities and additional settings
+  utilities?: string[];
+  incomeDistribution?: any;
+  
+  // Financial settings
+  agencyFeePercentage?: number;
+  referringAgentFeePercentage?: number;
+  dtcmLicenseExpiry?: string;
+  
+  // Additional property details
+  parkingSlots?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
 }
 
 export interface UpdatePropertyDto {
@@ -110,6 +136,32 @@ export interface UpdatePropertyDto {
   pricelabId?: string;
   ownerId?: string;
   agentId?: string;
+  
+  // New fields for property details
+  summary?: string;
+  theSpace?: string;
+  guestAccess?: string;
+  otherThings?: string;
+  
+  // Availability settings
+  bookingWindow?: string;
+  advanceNotice?: string;
+  minStay?: number;
+  maxStay?: number;
+  
+  // Utilities and additional settings
+  utilities?: string[];
+  incomeDistribution?: any;
+  
+  // Financial settings
+  agencyFeePercentage?: number;
+  referringAgentFeePercentage?: number;
+  dtcmLicenseExpiry?: string;
+  
+  // Additional property details
+  parkingSlots?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
 }
 
 export interface PropertyResponseDto {
@@ -141,6 +193,32 @@ export interface PropertyResponseDto {
   updatedAt: string;
   ownerId?: string;
   agentId?: string;
+  
+  // New fields for property details
+  summary?: string;
+  theSpace?: string;
+  guestAccess?: string;
+  otherThings?: string;
+  
+  // Availability settings
+  bookingWindow?: string;
+  advanceNotice?: string;
+  minStay?: number;
+  maxStay?: number;
+  
+  // Utilities and additional settings
+  utilities: string[];
+  incomeDistribution?: any;
+  
+  // Financial settings
+  agencyFeePercentage?: number;
+  referringAgentFeePercentage?: number;
+  dtcmLicenseExpiry?: string;
+  
+  // Additional property details
+  parkingSlots?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
 }
 
 export interface PropertyWithDetailsDto extends PropertyResponseDto {

@@ -115,6 +115,33 @@ model properties {
   is_published                     Boolean           @default(false)
   primary_image                    String?
   pricelab_id                      String?
+  
+  // New fields for property details page
+  summary                          String?           // Marketing summary
+  the_space                        String?           // Description of the space
+  guest_access                     String?           // Guest access information
+  other_things                     String?           // Other things to note
+  
+  // Availability settings
+  booking_window                   String?           @default("all-days")
+  advance_notice                   String?           @default("none")
+  min_stay                         Int?              @default(3)
+  max_stay                         Int?              @default(365)
+  
+  // Utilities and additional settings
+  utilities                        String[]          @default([])
+  income_distribution              Json?             // Owner income, agency fee, etc.
+  
+  // Financial settings
+  agency_fee_percentage            Float?            @default(25.0)
+  referring_agent_fee_percentage   Float?            @default(5.0)
+  dtcm_license_expiry              DateTime?
+  
+  // Additional property details
+  parking_slots                    Int?              @default(0)
+  check_in_time                    String?           @default("15:00")
+  check_out_time                   String?           @default("12:00")
+  
   created_at                       DateTime          @default(now())
   updated_at                       DateTime
   owner_id                         String?

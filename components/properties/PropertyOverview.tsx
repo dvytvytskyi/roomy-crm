@@ -119,6 +119,32 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Edit modals state
+  const [showGeneralInfoModal, setShowGeneralInfoModal] = useState(false);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
+  const [showUtilitiesModal, setShowUtilitiesModal] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+  // Form states
+  const [generalInfoForm, setGeneralInfoForm] = useState({
+    name: '',
+    nickname: '',
+    status: '',
+    type: '',
+    city: '',
+    address: '',
+    capacity: '',
+    bedrooms: '',
+    bathrooms: '',
+    pricePerNight: '',
+    typeOfUnit: '',
+    country: ''
+  });
+
+  const [descriptionForm, setDescriptionForm] = useState('');
 
   const handleEditOwner = () => {
     setShowOwnerModal(true);
@@ -137,6 +163,93 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
       }
     } catch (error) {
       setToastMessage('Error assigning owner');
+      setShowToast(true);
+    }
+  };
+
+  // General Information form handlers
+  const handleOpenGeneralInfoModal = () => {
+    if (property) {
+      setGeneralInfoForm({
+        name: property.name || '',
+        nickname: property.nickname || '',
+        status: property.isActive ? 'Active' : 'Inactive',
+        type: property.type || '',
+        city: property.city || '',
+        address: property.address || '',
+        capacity: property.capacity?.toString() || '',
+        bedrooms: property.bedrooms?.toString() || '',
+        bathrooms: property.bathrooms?.toString() || '',
+        pricePerNight: property.pricePerNight?.toString() || '',
+        typeOfUnit: property.typeOfUnit || '',
+        country: property.country || ''
+      });
+    }
+    setShowGeneralInfoModal(true);
+  };
+
+  const handleGeneralInfoChange = (field: string, value: string) => {
+    setGeneralInfoForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveGeneralInfo = async () => {
+    try {
+      const updateData = {
+        name: generalInfoForm.name,
+        nickname: generalInfoForm.nickname,
+        isActive: generalInfoForm.status === 'Active',
+        type: generalInfoForm.type as any,
+        city: generalInfoForm.city,
+        address: generalInfoForm.address,
+        capacity: parseInt(generalInfoForm.capacity) || 0,
+        bedrooms: parseInt(generalInfoForm.bedrooms) || 0,
+        bathrooms: parseInt(generalInfoForm.bathrooms) || 0,
+        pricePerNight: parseFloat(generalInfoForm.pricePerNight) || 0,
+        typeOfUnit: generalInfoForm.typeOfUnit as any,
+        country: generalInfoForm.country
+      };
+
+      const success = await updateProperty(updateData);
+      
+      if (success) {
+        setShowGeneralInfoModal(false);
+        setToastMessage('General information updated successfully');
+        setShowToast(true);
+      } else {
+        setToastMessage('Failed to update general information');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error updating general information:', error);
+      setToastMessage('Error updating general information');
+      setShowToast(true);
+    }
+  };
+
+  // Description form handlers
+  const handleOpenDescriptionModal = () => {
+    setDescriptionForm(property?.description || '');
+    setShowDescriptionModal(true);
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      const success = await updateProperty({ description: descriptionForm });
+      
+      if (success) {
+        setShowDescriptionModal(false);
+        setToastMessage('Description updated successfully');
+        setShowToast(true);
+      } else {
+        setToastMessage('Failed to update description');
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Error updating description:', error);
+      setToastMessage('Error updating description');
       setShowToast(true);
     }
   };
@@ -172,60 +285,8 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
     );
   }
 
-  // Create mock property data for fallback
-  const mockProperty = {
-    id: propertyId,
-    name: "A I Westwood | 616",
-    nickname: "A I Westwood | 616",
-    title: "Westwood | Next to Metro | Great Amenities",
-    type: "APARTMENT",
-    type_of_unit: "SINGLE",
-    address: "24QQ+RRF - Jebel Ali Village - Dubai - United Arab Emirates",
-    city: "Dubai",
-    country: "United Arab Emirates",
-    capacity: 2,
-    bedrooms: 0,
-    bathrooms: 1,
-    pricePerNight: 170,
-    pricelabId: "67a392b7b8fa25002a065c6c",
-    primaryImage: "",
-    status: "Active",
-    createdAt: "2024-12-27T06:07:33.322Z",
-    lastModifiedAt: "2025-10-04T00:43:08.930Z",
-      description: "Beautiful modern apartment in the heart of Dubai with stunning city views. Perfect for business travelers and tourists. Located next to metro station with easy access to all major attractions.",
-      amenities: ["WiFi", "AC", "Kitchen", "Parking", "Gym", "Pool", "Concierge", "Laundry", "Balcony", "City View"],
-      rules: ["No smoking", "No pets", "No parties", "Check-in after 3 PM", "Check-out before 11 AM", "Max 4 guests"],
-      utilities: ["Electricity", "Water", "Internet", "Cable TV", "Heating", "Cooling"],
-      photos: [
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
-        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800",
-        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800"
-      ],
-      tags: ["Modern", "Downtown", "Metro Access", "City View"],
-      ownerId: null,
-      agentId: null,
-      agentName: null
-  };
-
-  // Use mock property data if property loading failed or property not found
-  const displayProperty = property || mockProperty;
-  const isUsingMockData = propertyError || !property;
-  
-  if (isUsingMockData) {
-    console.log('Using mock property data due to error:', propertyError || 'Property not found');
-  }
-
-  // Mock owner data if no owner
-  const mockOwner = {
-    id: 'mock_owner_1',
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    phone: '+971 50 123 4567',
-    country: 'United Arab Emirates',
-    flag: '🇦🇪',
-    status: 'active'
-  };
+  // Use property data from API
+  const displayProperty = property;
 
   const financialSummary = calculateFinancialSummary();
 
@@ -244,46 +305,46 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           </button>
         </div>
         
-        {(owner || mockOwner) ? (
+        {owner ? (
           <div className="flex items-start space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl font-bold text-orange-600">{(owner || mockOwner).name.charAt(0)}</span>
+              <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{(owner || mockOwner).name}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xl">{(owner || mockOwner).flag}</span>
-                      <span className="text-sm font-medium text-gray-900">{(owner || mockOwner).country}</span>
+                      <span className="text-xl">{owner.flag}</span>
+                      <span className="text-sm font-medium text-gray-900">{owner.country}</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Mail size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{(owner || mockOwner).email}</span>
+                    <span className="text-sm text-gray-600">{owner.email}</span>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Phone size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{(owner || mockOwner).phone}</span>
+                    <span className="text-sm text-gray-600">{owner.phone}</span>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className={`w-3 h-3 rounded-full ${
-                      (owner || mockOwner).status === 'active' ? 'bg-green-500' : 
-                      (owner || mockOwner).status === 'vip' ? 'bg-purple-500' : 'bg-gray-400'
+                      owner.status === 'active' ? 'bg-green-500' : 
+                      owner.status === 'vip' ? 'bg-purple-500' : 'bg-gray-400'
                     }`}></div>
                     <span className={`text-sm font-medium capitalize ${
-                      (owner || mockOwner).status === 'active' ? 'text-green-600' : 
-                      (owner || mockOwner).status === 'vip' ? 'text-purple-600' : 'text-gray-600'
+                      owner.status === 'active' ? 'text-green-600' : 
+                      owner.status === 'vip' ? 'text-purple-600' : 'text-gray-600'
                     }`}>
-                      {(owner || mockOwner).status === 'vip' ? 'VIP Owner' : (owner || mockOwner).status}
+                      {owner.status === 'vip' ? 'VIP Owner' : owner.status}
                     </span>
                   </div>
                   
@@ -300,7 +361,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
             <div className="text-center">
               <User size={48} className="mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Owner Assigned</h3>
-              <p className="text-gray-500 mb-4">This property doesn't have an owner assigned yet.</p>
+              <p className="text-gray-500 mb-4">This property doesn&apos;t have an owner assigned yet.</p>
               <button 
                 onClick={handleEditOwner}
                 className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2 mx-auto"
@@ -393,19 +454,28 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
       {/* General Information */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">General Information</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">General Information</h2>
+          <button 
+            onClick={handleOpenGeneralInfoModal}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-4">
             {[
-              { label: 'Name', value: displayProperty.name, key: 'name' },
-              { label: 'Nickname', value: displayProperty.nickname || 'Not set', key: 'nickname' },
-              { label: 'Status', value: displayProperty.status, key: 'status' },
-              { label: 'Type', value: displayProperty.type, key: 'type' },
-              { label: 'City', value: displayProperty.city, key: 'city' },
-              { label: 'Address', value: displayProperty.address, key: 'address' },
-              { label: 'Capacity', value: displayProperty.capacity, key: 'capacity' },
-              { label: 'Bedrooms', value: displayProperty.bedrooms, key: 'bedrooms' }
+              { label: 'Name', value: displayProperty?.name || 'Not set', key: 'name' },
+              { label: 'Nickname', value: displayProperty?.nickname || 'Not set', key: 'nickname' },
+              { label: 'Status', value: displayProperty?.isActive ? 'Active' : 'Inactive', key: 'status' },
+              { label: 'Type', value: displayProperty?.type || 'Not set', key: 'type' },
+              { label: 'City', value: displayProperty?.city || 'Not set', key: 'city' },
+              { label: 'Address', value: displayProperty?.address || 'Not set', key: 'address' },
+              { label: 'Capacity', value: displayProperty?.capacity || 0, key: 'capacity' },
+              { label: 'Bedrooms', value: displayProperty?.bedrooms || 0, key: 'bedrooms' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center space-x-2">
@@ -421,8 +491,8 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           {/* Right Column */}
           <div className="space-y-4">
             {[
-              { label: 'Bathrooms', value: displayProperty.bathrooms, key: 'bathrooms' },
-              { label: 'Price per Night', value: `AED ${displayProperty.pricePerNight}`, key: 'pricePerNight' },
+              { label: 'Bathrooms', value: displayProperty?.bathrooms || 0, key: 'bathrooms' },
+              { label: 'Price per Night', value: `AED ${displayProperty?.pricePerNight || 0}`, key: 'pricePerNight' },
               { label: 'Current Price', value: (
                 <div className="flex items-center space-x-2">
                   {priceLoading ? (
@@ -442,11 +512,11 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
                   )}
                 </div>
               ), key: 'currentPrice' },
-              { label: 'Type of Unit', value: displayProperty.type_of_unit || 'Not specified', key: 'typeOfUnit' },
-              { label: 'Country', value: displayProperty.country, key: 'country' },
-              { label: 'Created', value: new Date(displayProperty.createdAt).toLocaleDateString(), key: 'createdAt' },
-              { label: 'Last Modified', value: new Date(displayProperty.lastModifiedAt).toLocaleDateString(), key: 'lastModifiedAt' },
-              { label: 'Agent', value: displayProperty.agentName || 'Not assigned', key: 'agentName' }
+              { label: 'Type of Unit', value: displayProperty?.typeOfUnit || 'Not specified', key: 'typeOfUnit' },
+              { label: 'Country', value: displayProperty?.country || 'Not set', key: 'country' },
+              { label: 'Created', value: displayProperty ? new Date(displayProperty.createdAt).toLocaleDateString() : 'Not set', key: 'createdAt' },
+              { label: 'Last Modified', value: displayProperty ? new Date(displayProperty.updatedAt).toLocaleDateString() : 'Not set', key: 'lastModifiedAt' },
+              { label: 'Agent', value: displayProperty?.agent ? `${displayProperty.agent.firstName} ${displayProperty.agent.lastName}` : 'Not assigned', key: 'agentName' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                 <div className="flex items-center space-x-2">
@@ -463,19 +533,37 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
       {/* Description */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
-        <p className="text-gray-700 leading-relaxed">{displayProperty.description}</p>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Description</h2>
+          <button 
+            onClick={handleOpenDescriptionModal}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
+        <p className="text-gray-700 leading-relaxed">{displayProperty?.description || 'No description available'}</p>
       </div>
 
       {/* Photos */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Photos</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+          <button 
+            onClick={() => setShowPhotosModal(true)}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {displayProperty.photos?.map((photo, index) => (
+          {displayProperty?.photos?.map((photo, index) => (
             <div key={index} className="aspect-square rounded-lg overflow-hidden">
               <img 
-                src={photo} 
-                alt={`Property photo ${index + 1}`}
+                src={photo.url} 
+                alt={photo.alt || `Property photo ${index + 1}`}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
               />
             </div>
@@ -489,9 +577,18 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
       {/* Amenities */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Amenities</h2>
+          <button 
+            onClick={() => setShowAmenitiesModal(true)}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty.amenities?.map((amenity, index) => (
+          {displayProperty?.amenities?.map((amenity, index) => (
             <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-700">{amenity}</span>
@@ -506,9 +603,18 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
       {/* Utilities */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Utilities</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Utilities</h2>
+          <button 
+            onClick={() => setShowUtilitiesModal(true)}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty.utilities?.map((utility, index) => (
+          {displayProperty?.utilities?.map((utility, index) => (
             <div key={index} className="flex items-center space-x-2 bg-blue-50 rounded-lg px-3 py-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <span className="text-sm text-gray-700">{utility}</span>
@@ -523,9 +629,18 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
       {/* Rules */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Rules & Policies</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Rules & Policies</h2>
+          <button 
+            onClick={() => setShowRulesModal(true)}
+            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
+          >
+            <Edit size={14} />
+            <span>Edit</span>
+          </button>
+        </div>
         <div className="space-y-3">
-          {displayProperty.rules?.map((rule, index) => (
+          {displayProperty?.houseRules?.map((rule, index) => (
             <div key={index} className="flex items-start space-x-3">
               <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
               <span className="text-sm text-gray-700">{rule}</span>
@@ -537,6 +652,254 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           )}
         </div>
       </div>
+
+      {/* General Information Edit Modal */}
+      {showGeneralInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit General Information</h3>
+              <button 
+                onClick={() => setShowGeneralInfoModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={generalInfoForm.name}
+                    onChange={(e) => handleGeneralInfoChange('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nickname</label>
+                  <input
+                    type="text"
+                    value={generalInfoForm.nickname}
+                    onChange={(e) => handleGeneralInfoChange('nickname', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={generalInfoForm.status}
+                    onChange={(e) => handleGeneralInfoChange('status', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <select
+                    value={generalInfoForm.type}
+                    onChange={(e) => handleGeneralInfoChange('type', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="">Select type...</option>
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="VILLA">Villa</option>
+                    <option value="STUDIO">Studio</option>
+                    <option value="PENTHOUSE">Penthouse</option>
+                    <option value="HOUSE">House</option>
+                    <option value="CONDO">Condo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    value={generalInfoForm.city}
+                    onChange={(e) => handleGeneralInfoChange('city', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input
+                    type="text"
+                    value={generalInfoForm.address}
+                    onChange={(e) => handleGeneralInfoChange('address', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+                  <input
+                    type="number"
+                    value={generalInfoForm.capacity}
+                    onChange={(e) => handleGeneralInfoChange('capacity', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+                  <input
+                    type="number"
+                    value={generalInfoForm.bedrooms}
+                    onChange={(e) => handleGeneralInfoChange('bedrooms', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+                  <input
+                    type="number"
+                    value={generalInfoForm.bathrooms}
+                    onChange={(e) => handleGeneralInfoChange('bathrooms', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price per Night (AED)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={generalInfoForm.pricePerNight}
+                    onChange={(e) => handleGeneralInfoChange('pricePerNight', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type of Unit</label>
+                  <select
+                    value={generalInfoForm.typeOfUnit}
+                    onChange={(e) => handleGeneralInfoChange('typeOfUnit', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="">Select unit type...</option>
+                    <option value="SINGLE">Single</option>
+                    <option value="DOUBLE">Double</option>
+                    <option value="FAMILY">Family</option>
+                    <option value="SHARED">Shared</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                  <input
+                    type="text"
+                    value={generalInfoForm.country}
+                    onChange={(e) => handleGeneralInfoChange('country', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Created</label>
+                  <input
+                    type="text"
+                    value={property ? new Date(property.createdAt).toLocaleDateString() : ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Modified</label>
+                  <input
+                    type="text"
+                    value={property ? new Date(property.updatedAt).toLocaleDateString() : ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Agent</label>
+                  <input
+                    type="text"
+                    value={property?.agent ? `${property.agent.firstName} ${property.agent.lastName}` : 'Not assigned'}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
+              <button
+                onClick={() => setShowGeneralInfoModal(false)}
+                className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveGeneralInfo}
+                className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Description Edit Modal */}
+      {showDescriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Description</h3>
+              <button 
+                onClick={() => setShowDescriptionModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <textarea
+                value={descriptionForm}
+                onChange={(e) => setDescriptionForm(e.target.value)}
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                placeholder="Enter property description..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDescriptionModal(false)}
+                className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDescription}
+                className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Owner Selection Modal */}
       <OwnerSelectionModal

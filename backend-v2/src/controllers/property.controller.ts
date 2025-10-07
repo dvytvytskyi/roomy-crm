@@ -419,6 +419,51 @@ export class PropertyController extends BaseController {
   };
 
   /**
+   * Update property amenities endpoint
+   * PUT /api/v2/properties/:id/amenities
+   */
+  public static updatePropertyAmenities = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { amenities } = req.body;
+
+      if (!id) {
+        PropertyController.validationError(res, [], 'Property ID is required');
+        return;
+      }
+
+      if (!Array.isArray(amenities)) {
+        PropertyController.validationError(res, [], 'Amenities must be an array');
+        return;
+      }
+
+      // Update property amenities
+      const updateResult = await PropertyService.updateAmenities(currentUser, id, amenities);
+
+      if (!updateResult.success || !updateResult.data) {
+        PropertyController.error(res, updateResult.error || 'Property amenities update failed', 400, updateResult.message);
+        return;
+      }
+
+      // Log property amenities update
+      logger.info(`Property amenities updated: ${id}`);
+
+      // Return updated property
+      PropertyController.success(res, updateResult.data, 'Property amenities updated successfully');
+    } catch (error) {
+      logger.error('Update property amenities error:', error);
+      PropertyController.error(res, error, 500, 'Property amenities update failed');
+    }
+  };
+
+  /**
    * Get property statistics
    * @route GET /api/v2/properties/stats
    */

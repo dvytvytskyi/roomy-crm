@@ -429,6 +429,26 @@ export const propertyServiceAdapter = {
     }
   },
 
+    async updateAmenities(id: string, amenities: string[]) {
+      if (shouldUseV2API()) {
+        console.log('🔄 Using V2 Property Service for updateAmenities');
+        return propertyServiceV2.updateAmenities(id, amenities);
+      } else {
+        console.log('🔄 V1 Property Service does not support updateAmenities');
+        throw new Error('Property amenities update not supported in V1 API');
+      }
+    },
+
+    async getPricelabPrice(id: string) {
+      if (shouldUseV2API()) {
+        console.log('🔄 Using V2 Property Service for getPricelabPrice');
+        return propertyServiceV2.getPricelabPrice(id);
+      } else {
+        console.log('🔄 V1 Property Service does not support getPricelabPrice');
+        throw new Error('PriceLabs integration not supported in V1 API');
+      }
+    },
+
   async delete(id: string) {
     if (shouldUseV2API()) {
       console.log('🔄 Using V2 Property Service for delete');

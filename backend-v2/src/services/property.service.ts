@@ -59,9 +59,64 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     alt?: string;
     order: number;
   }>;
+  pricingRules?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    value: number;
+    startDate?: Date;
+    endDate?: Date;
+    isActive: boolean;
+    conditions?: any;
+  }>;
+  transactions?: Array<{
+    id: string;
+    transactionId: string;
+    type: string;
+    category: string;
+    amount: number;
+    currency: string;
+    description?: string;
+    platform?: string;
+    status: string;
+    paymentMethod?: string;
+    createdAt: Date;
+  }>;
+  reservations?: Array<{
+    id: string;
+    reservationId: string;
+    checkIn: Date;
+    checkOut: Date;
+    guests: number;
+    totalAmount: number;
+    status: string;
+    guestName?: string;
+    guestEmail?: string;
+    createdAt: Date;
+  }>;
+  documents?: Array<{
+    id: string;
+    filename: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    url: string;
+    uploadedBy?: string;
+    createdAt: Date;
+  }>;
+  auditLogs?: Array<{
+    id: string;
+    action: string;
+    entityType: string;
+    changes?: any;
+    userId?: string;
+    createdAt: Date;
+  }>;
   _count?: {
     reservations?: number;
     photos?: number;
+    pricingRules?: number;
+    transactions?: number;
   };
 }
 
@@ -344,11 +399,58 @@ export class PropertyService extends BaseService {
             where: { is_active: true },
             orderBy: { created_at: 'desc' }
           },
+          transactions: {
+            select: {
+              id: true,
+              transaction_id: true,
+              type: true,
+              category: true,
+              amount: true,
+              currency: true,
+              description: true,
+              platform: true,
+              status: true,
+              payment_method: true,
+              created_at: true
+            },
+            orderBy: { created_at: 'desc' },
+            take: 10 // Limit to recent transactions
+          },
+          reservations: {
+            select: {
+              id: true,
+              reservation_id: true,
+              check_in: true,
+              check_out: true,
+              guests: true,
+              total_amount: true,
+              status: true,
+              guest_name: true,
+              guest_email: true,
+              created_at: true
+            },
+            orderBy: { created_at: 'desc' },
+            take: 10 // Limit to recent reservations
+          },
+          audit_logs: {
+            select: {
+              id: true,
+              action: true,
+              entity_type: true,
+              changes: true,
+              user_id: true,
+              created_at: true
+            },
+            where: { entity_type: 'PROPERTY', entity_id: id },
+            orderBy: { created_at: 'desc' },
+            take: 20 // Limit to recent audit logs
+          },
           _count: {
             select: {
               reservations: true,
               property_photos: true,
-              pricing_rules: true
+              pricing_rules: true,
+              transactions: true
             }
           }
         }
@@ -389,6 +491,33 @@ export class PropertyService extends BaseService {
         updatedAt: property.updated_at,
         ownerId: property.owner_id || undefined,
         agentId: property.agent_id || undefined,
+        
+        // New fields for property details
+        summary: property.summary || undefined,
+        theSpace: property.the_space || undefined,
+        guestAccess: property.guest_access || undefined,
+        otherThings: property.other_things || undefined,
+        
+        // Availability settings
+        bookingWindow: property.booking_window || undefined,
+        advanceNotice: property.advance_notice || undefined,
+        minStay: property.min_stay || undefined,
+        maxStay: property.max_stay || undefined,
+        
+        // Utilities and additional settings
+        utilities: property.utilities || [],
+        incomeDistribution: property.income_distribution || undefined,
+        
+        // Financial settings
+        agencyFeePercentage: property.agency_fee_percentage || undefined,
+        referringAgentFeePercentage: property.referring_agent_fee_percentage || undefined,
+        dtcmLicenseExpiry: property.dtcm_license_expiry || undefined,
+        
+        // Additional property details
+        parkingSlots: property.parking_slots || undefined,
+        checkInTime: property.check_in_time || undefined,
+        checkOutTime: property.check_out_time || undefined,
+        
         owner: property.users_properties_owner_idTousers ? {
           id: property.users_properties_owner_idTousers.id,
           firstName: property.users_properties_owner_idTousers.firstName,
@@ -410,9 +539,54 @@ export class PropertyService extends BaseService {
           alt: photo.alt || undefined,
           order: photo.order
         })),
+        pricingRules: property.pricing_rules.map(rule => ({
+          id: rule.id,
+          name: rule.name,
+          type: rule.type,
+          value: rule.value,
+          startDate: rule.start_date || undefined,
+          endDate: rule.end_date || undefined,
+          isActive: rule.is_active,
+          conditions: rule.conditions || undefined
+        })),
+        transactions: property.transactions.map(transaction => ({
+          id: transaction.id,
+          transactionId: transaction.transaction_id,
+          type: transaction.type,
+          category: transaction.category,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          description: transaction.description || undefined,
+          platform: transaction.platform || undefined,
+          status: transaction.status,
+          paymentMethod: transaction.payment_method || undefined,
+          createdAt: transaction.created_at
+        })),
+        reservations: property.reservations.map(reservation => ({
+          id: reservation.id,
+          reservationId: reservation.reservation_id,
+          checkIn: reservation.check_in,
+          checkOut: reservation.check_out,
+          guests: reservation.guests,
+          totalAmount: reservation.total_amount,
+          status: reservation.status,
+          guestName: reservation.guest_name || undefined,
+          guestEmail: reservation.guest_email || undefined,
+          createdAt: reservation.created_at
+        })),
+        auditLogs: property.audit_logs.map(log => ({
+          id: log.id,
+          action: log.action,
+          entityType: log.entity_type,
+          changes: log.changes || undefined,
+          userId: log.user_id || undefined,
+          createdAt: log.created_at
+        })),
         _count: {
           reservations: property._count.reservations,
-          photos: property._count.property_photos
+          photos: property._count.property_photos,
+          pricingRules: property._count.pricing_rules,
+          transactions: property._count.transactions
         }
       };
 
@@ -497,6 +671,33 @@ export class PropertyService extends BaseService {
             is_published: false,
             owner_id: data.ownerId,
             agent_id: data.agentId,
+            
+            // New fields for property details
+            summary: data.summary,
+            the_space: data.theSpace,
+            guest_access: data.guestAccess,
+            other_things: data.otherThings,
+            
+            // Availability settings
+            booking_window: data.bookingWindow || "all-days",
+            advance_notice: data.advanceNotice || "none",
+            min_stay: data.minStay || 3,
+            max_stay: data.maxStay || 365,
+            
+            // Utilities and additional settings
+            utilities: data.utilities || [],
+            income_distribution: data.incomeDistribution,
+            
+            // Financial settings
+            agency_fee_percentage: data.agencyFeePercentage || 25.0,
+            referring_agent_fee_percentage: data.referringAgentFeePercentage || 5.0,
+            dtcm_license_expiry: data.dtcmLicenseExpiry ? new Date(data.dtcmLicenseExpiry) : null,
+            
+            // Additional property details
+            parking_slots: data.parkingSlots || 0,
+            check_in_time: data.checkInTime || "15:00",
+            check_out_time: data.checkOutTime || "12:00",
+            
             created_at: new Date(),
             updated_at: new Date(),
           },
@@ -627,6 +828,32 @@ export class PropertyService extends BaseService {
       if (data.isActive !== undefined) updateData.is_active = data.isActive;
       if (data.isPublished !== undefined) updateData.is_published = data.isPublished;
       if (data.agentId !== undefined) updateData.agent_id = data.agentId;
+      
+      // New fields for property details
+      if (data.summary !== undefined) updateData.summary = data.summary;
+      if (data.theSpace !== undefined) updateData.the_space = data.theSpace;
+      if (data.guestAccess !== undefined) updateData.guest_access = data.guestAccess;
+      if (data.otherThings !== undefined) updateData.other_things = data.otherThings;
+      
+      // Availability settings
+      if (data.bookingWindow !== undefined) updateData.booking_window = data.bookingWindow;
+      if (data.advanceNotice !== undefined) updateData.advance_notice = data.advanceNotice;
+      if (data.minStay !== undefined) updateData.min_stay = data.minStay;
+      if (data.maxStay !== undefined) updateData.max_stay = data.maxStay;
+      
+      // Utilities and additional settings
+      if (data.utilities !== undefined) updateData.utilities = data.utilities;
+      if (data.incomeDistribution !== undefined) updateData.income_distribution = data.incomeDistribution;
+      
+      // Financial settings
+      if (data.agencyFeePercentage !== undefined) updateData.agency_fee_percentage = data.agencyFeePercentage;
+      if (data.referringAgentFeePercentage !== undefined) updateData.referring_agent_fee_percentage = data.referringAgentFeePercentage;
+      if (data.dtcmLicenseExpiry !== undefined) updateData.dtcm_license_expiry = data.dtcmLicenseExpiry ? new Date(data.dtcmLicenseExpiry) : null;
+      
+      // Additional property details
+      if (data.parkingSlots !== undefined) updateData.parking_slots = data.parkingSlots;
+      if (data.checkInTime !== undefined) updateData.check_in_time = data.checkInTime;
+      if (data.checkOutTime !== undefined) updateData.check_out_time = data.checkOutTime;
 
       // Only ADMIN can change owner
       if (currentUser.role === 'ADMIN' && data.ownerId !== undefined) {
@@ -1078,6 +1305,117 @@ export class PropertyService extends BaseService {
     } catch (error) {
       await prisma.$disconnect();
       logger.error('Error getting available properties:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Update property amenities
+   */
+  public static async updateAmenities(currentUser: CurrentUser, id: string, amenities: string[]): Promise<ServiceResponse<PropertyResponseDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Amenities Update] Starting amenities update for property ID: ${id}`);
+
+      // Check if property exists
+      const existingProperty = await prisma.properties.findUnique({
+        where: { id },
+      });
+
+      if (!existingProperty) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check permissions
+      const canEdit = currentUser.role === 'ADMIN' || 
+                     currentUser.role === 'MANAGER' || 
+                     (currentUser.role === 'OWNER' && existingProperty.owner_id === currentUser.id) ||
+                     (currentUser.role === 'AGENT' && existingProperty.agent_id === currentUser.id);
+
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'Insufficient permissions to update property amenities', 403);
+      }
+
+      // Update amenities
+      const updatedProperty = await prisma.properties.update({
+        where: { id },
+        data: {
+          amenities: amenities,
+          updated_at: new Date()
+        },
+        include: {
+          users_properties_owner_idTousers: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          users_properties_agent_idTousers: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          property_photos: {
+            select: {
+              id: true,
+              url: true,
+              is_cover: true,
+              alt: true,
+              order: true
+            },
+            orderBy: { order: 'asc' }
+          }
+        }
+      });
+
+      await prisma.$disconnect();
+
+      // Transform to response DTO
+      const propertyResponse: PropertyResponseDto = {
+        id: updatedProperty.id,
+        name: updatedProperty.name,
+        nickname: updatedProperty.nickname,
+        title: updatedProperty.title,
+        type: updatedProperty.type,
+        typeOfUnit: updatedProperty.type_of_unit,
+        address: updatedProperty.address,
+        city: updatedProperty.city,
+        country: updatedProperty.country,
+        latitude: updatedProperty.latitude,
+        longitude: updatedProperty.longitude,
+        capacity: updatedProperty.capacity,
+        bedrooms: updatedProperty.bedrooms,
+        bathrooms: updatedProperty.bathrooms,
+        area: updatedProperty.area,
+        pricePerNight: updatedProperty.price_per_night,
+        description: updatedProperty.description,
+        amenities: updatedProperty.amenities,
+        houseRules: updatedProperty.house_rules,
+        tags: updatedProperty.tags,
+        isActive: updatedProperty.is_active,
+        isPublished: updatedProperty.is_published,
+        primaryImage: updatedProperty.primary_image,
+        pricelabId: updatedProperty.pricelab_id,
+        createdAt: updatedProperty.created_at,
+        updatedAt: updatedProperty.updated_at,
+        ownerId: updatedProperty.owner_id,
+        agentId: updatedProperty.agent_id
+      };
+
+      logger.info(`[Property Amenities Update] Successfully updated amenities for property ID: ${id}`);
+      return PropertyService.prototype.success(propertyResponse, 'Property amenities updated successfully');
+    } catch (error) {
+      logger.error('Error updating property amenities:', error);
       return PropertyService.prototype.handleDatabaseError(error);
     }
   }

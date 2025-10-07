@@ -47,6 +47,7 @@ export const API_V2_ENDPOINTS = {
     BY_ID: (id: string) => `/properties/${id}`,
     MARKETING: (id: string) => `/properties/${id}/marketing`,
     AVAILABILITY: (id: string) => `/properties/${id}/availability`,
+    AMENITIES: (id: string) => `/properties/${id}/amenities`,
   },
 
   // Reservations
@@ -62,6 +63,13 @@ export const API_V2_ENDPOINTS = {
     CANCEL_RESERVATION: (id: string) => `/orchestrator/reservations/${id}/cancel`,
     CHECKIN_RESERVATION: (id: string) => `/orchestrator/reservations/${id}/checkin`,
     GET_STATUS: (id: string) => `/orchestrator/reservations/${id}/status`,
+  },
+
+  // Integrations
+  INTEGRATIONS: {
+    PRICELABS: {
+      PRICES: (id: string) => `/integrations/pricelabs/prices/${id}`,
+    },
   },
 };
 

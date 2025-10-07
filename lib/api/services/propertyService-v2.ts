@@ -324,6 +324,52 @@ class PropertyServiceV2 {
     }
   }
 
+  async updateAmenities(id: string, amenities: string[]): Promise<ApiResponseV2<PropertyV2>> {
+    console.log('🏠 PropertyServiceV2: Updating property amenities:', id);
+    console.log('🏠 PropertyServiceV2: Amenities data:', amenities);
+
+    try {
+      const response = await apiClientV2.put<PropertyV2>(
+        API_V2_ENDPOINTS.PROPERTIES.AMENITIES(id),
+        { amenities }
+      );
+
+      console.log('🏠 PropertyServiceV2: Property amenities updated:', response.data);
+
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error updating property amenities:', error);
+      throw error;
+    }
+  }
+
+  async getPricelabPrice(id: string): Promise<ApiResponseV2<any>> {
+    console.log('🏠 PropertyServiceV2: Getting PriceLabs price for property:', id);
+
+    try {
+      const response = await apiClientV2.get<any>(
+        API_V2_ENDPOINTS.INTEGRATIONS.PRICELABS.PRICES(id)
+      );
+
+      console.log('🏠 PropertyServiceV2: PriceLabs price retrieved:', response.data);
+
+      return {
+        success: response.success,
+        data: response.data!,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('🏠 PropertyServiceV2: Error getting PriceLabs price:', error);
+      throw error;
+    }
+  }
+
   async delete(id: string): Promise<ApiResponseV2<PropertyV2>> {
     console.log('🏠 PropertyServiceV2: Deleting property:', id);
     

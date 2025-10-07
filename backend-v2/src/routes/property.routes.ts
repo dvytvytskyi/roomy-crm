@@ -69,6 +69,14 @@ router.put('/:id/marketing', PropertyController.updatePropertyMarketing);
 router.put('/:id/availability', PropertyController.updatePropertyAvailability);
 
 /**
+ * @route   PUT /api/v2/properties/:id/amenities
+ * @desc    Update property amenities
+ * @access  Private (JWT required) - RBAC handled in service layer
+ * @params  id - Property ID
+ */
+router.put('/:id/amenities', PropertyController.updatePropertyAmenities);
+
+/**
  * @route   DELETE /api/v2/properties/:id
  * @desc    Delete (deactivate) property by ID
  * @access  Private (JWT required) - Only ADMIN and MANAGER can deactivate

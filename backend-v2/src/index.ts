@@ -93,6 +93,7 @@ import settingsRoutes from './routes/settings.routes';
 import webhookRoutes from './routes/webhook.routes';
 import fileRoutes from './routes/file.routes';
 import healthRoutes from './routes/health.routes';
+import pricelabsRoutes from './routes/pricelabs.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -131,6 +132,7 @@ app.use('/api/v2/scheduler', schedulerRoutes);
 app.use('/api/v2/settings', settingsRoutes);
 app.use('/api/v2/webhooks', webhookRoutes);
 app.use('/api/v2/files', fileRoutes);
+app.use('/api/v2/integrations/pricelabs', pricelabsRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler
