@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, Save, Home, MapPin, User, DollarSign, ChevronDown } from 'lucide-react'
 import { propertyServiceAdapter, userServiceAdapter } from '../../lib/api/adapters/apiAdapter'
 import { showToast } from '../../lib/utils/toast'
+import { usePropertyEvents } from '../../hooks/usePropertyEvents'
 import { 
   PROPERTY_TYPES, 
   DUBAI_AREAS, 
@@ -23,10 +24,13 @@ interface PropertyModalProps {
 }
 
 export default function PropertyModal({ isOpen, onClose, property, onShowToast, onPropertyCreated }: PropertyModalProps) {
+  // Event Bus integration
+  const { emitPropertyCreated, emitPropertyUpdated } = usePropertyEvents()
+  
   const [formData, setFormData] = useState({
     nickname: '',
     type: 'apartment' as PropertyType,
-    location: '' as DubaiArea | '',
+    locationId: '' as DubaiArea | '',
     address: '',
     bedrooms: 1,
     selectedOwnerId: '',
@@ -52,14 +56,29 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   const loadOwners = async () => {
     setOwnersLoading(true)
     try {
-      const response = await userServiceAdapter.getUsersByRole('OWNER', { limit: 100 })
-      if (response.success && response.data && response.data.data) {
-        setOwners(response.data.data)
+      console.log('🔄 Loading owners from API...')
+      const response = await userServiceAdapter.getOwners({ limit: 100 })
+      console.log('📋 Owners API Response:', response)
+      
+      if (response.success && response.data) {
+        // Handle both V1 and V2 response formats
+        let ownersData = []
+        if (Array.isArray(response.data)) {
+          // V1 format: direct array
+          ownersData = response.data
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // V2 format: paginated response
+          ownersData = response.data.data
+        }
+        
+        console.log('👥 Processed owners data:', ownersData)
+        setOwners(ownersData)
       } else {
+        console.log('❌ No owners data in response')
         setOwners([])
       }
     } catch (error) {
-      console.error('Error loading owners:', error)
+      console.error('❌ Error loading owners:', error)
       showToast.error('Failed to load owners list')
       setOwners([])
     } finally {
@@ -75,7 +94,9 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   }
 
   // Auto-generate property name
-  const propertyName = `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} in ${formData.location} ${formData.bedrooms} bedroom${formData.bedrooms !== 1 ? 's' : ''}`
+  const selectedLocation = dubaiAreas.find(area => area.id === formData.locationId)
+  const locationName = selectedLocation ? selectedLocation.name : 'Unknown Location'
+  const propertyName = `${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} in ${locationName} ${formData.bedrooms.toString()} bedroom${formData.bedrooms !== 1 ? 's' : ''}`
 
   useEffect(() => {
     console.log('🔄 PropertyModal useEffect - isOpen:', isOpen, 'property:', property)
@@ -89,7 +110,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         setFormData({
           nickname: property.nickname || '',
           type: property.type || 'apartment',
-          location: property.location || '',
+          locationId: property.locationId || property.location || '',
           address: property.address || '',
           bedrooms: property.bedrooms || 1,
           selectedOwnerId: property.ownerId || property.selectedOwnerId || '',
@@ -107,7 +128,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         setFormData({
           nickname: '',
           type: 'apartment',
-          location: '',
+          locationId: '',
           address: '',
           bedrooms: 1,
           selectedOwnerId: '',
@@ -162,33 +183,44 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
       return
     }
     
+    // Validation: location is required
+    if (!formData.locationId) {
+      showToast.error('Please select a location/area.')
+      return
+    }
+    
     const loadingToast = showToast.loading(property ? 'Updating property...' : 'Creating property...')
     
     try {
       // Create final property data with generated name
       const finalPropertyData = {
-        name: propertyName, // Auto-generated name
+        name: String(propertyName), // Ensure name is always a string
         nickname: formData.nickname || propertyName,
         type: formData.type.toUpperCase(), // Convert to uppercase for backend
         typeOfUnit: 'SINGLE' as const,
         address: formData.address,
         city: DEFAULT_PROPERTY_VALUES.city,
         country: DEFAULT_PROPERTY_VALUES.country,
-        capacity: DEFAULT_PROPERTY_VALUES.capacity,
-        bedrooms: formData.bedrooms,
-        bathrooms: DEFAULT_PROPERTY_VALUES.bathrooms,
-        area: DEFAULT_PROPERTY_VALUES.area,
-        pricePerNight: formData.price_per_night,
-        description: `Property in ${formData.location}`,
+        capacity: Number(DEFAULT_PROPERTY_VALUES.capacity),
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(DEFAULT_PROPERTY_VALUES.bathrooms),
+        area: Number(DEFAULT_PROPERTY_VALUES.area),
+        pricePerNight: Number(formData.price_per_night),
+        description: `Property in ${locationName}`,
         amenities: [],
         houseRules: [],
         tags: [],
-        ownerIds: formData.selectedOwnerId ? [formData.selectedOwnerId] : [],
+        locationId: formData.locationId, // Send location ID instead of name
+        ownerId: formData.selectedOwnerId, // Send single owner ID, not array
         isActive: formData.status === 'active',
         isPublished: false
       }
       
       console.log('Property data:', finalPropertyData)
+      console.log('Property name type:', typeof finalPropertyData.name, 'value:', finalPropertyData.name)
+      console.log('Property bedrooms type:', typeof finalPropertyData.bedrooms, 'value:', finalPropertyData.bedrooms)
+      console.log('Property locationId type:', typeof finalPropertyData.locationId, 'value:', finalPropertyData.locationId)
+      console.log('Property ownerId type:', typeof finalPropertyData.ownerId, 'value:', finalPropertyData.ownerId)
       
       // Send to backend using V2 API
       const response = property 
@@ -203,7 +235,18 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         
         showToast.success(successMessage)
         
-        // Refresh the properties list
+        // Emit Event Bus events
+        if (property) {
+          // Updating existing property
+          emitPropertyUpdated(property.id, response.data)
+          console.log('📡 PropertyModal: Emitted property updated event for:', property.id)
+        } else {
+          // Creating new property
+          emitPropertyCreated(response.data)
+          console.log('📡 PropertyModal: Emitted property created event')
+        }
+        
+        // Refresh the properties list (legacy callback)
         if (onPropertyCreated) {
           onPropertyCreated()
         }
@@ -319,13 +362,13 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
                     </label>
                     <div className="relative">
                       <select
-                        value={formData.location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        value={formData.locationId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, locationId: e.target.value }))}
                         className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white cursor-pointer"
                       >
                         <option value="">Select area</option>
                         {dubaiAreas.map(area => (
-                          <option key={area} value={area}>{area}</option>
+                          <option key={area.id} value={area.id}>{area.name}</option>
                         ))}
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">

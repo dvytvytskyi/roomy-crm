@@ -83,8 +83,8 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
                   <input
                     type="radio"
                     name="status"
-                    checked={filters.status === 'Active'}
-                    onChange={() => handleInputChange('status', 'Active')}
+                    checked={filters.status === 'ACTIVE'}
+                    onChange={() => handleInputChange('status', 'ACTIVE')}
                     className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                   />
                   <span className="text-sm text-slate-600">Active</span>
@@ -93,8 +93,8 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
                   <input
                     type="radio"
                     name="status"
-                    checked={filters.status === 'Inactive'}
-                    onChange={() => handleInputChange('status', 'Inactive')}
+                    checked={filters.status === 'INACTIVE'}
+                    onChange={() => handleInputChange('status', 'INACTIVE')}
                     className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                   />
                   <span className="text-sm text-slate-600">Inactive</span>
@@ -173,9 +173,9 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
       {/* Quick Filters */}
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => handleInputChange('status', 'Active')}
+          onClick={() => handleInputChange('status', 'ACTIVE')}
           className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-            filters.status === 'Active'
+            filters.status === 'ACTIVE'
               ? 'bg-green-100 text-green-800'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
@@ -183,9 +183,9 @@ export default function AgentsFilters({ filters, onFilterChange, isSidebar = fal
           Active
         </button>
         <button
-          onClick={() => handleInputChange('status', 'Inactive')}
+          onClick={() => handleInputChange('status', 'INACTIVE')}
           className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-            filters.status === 'Inactive'
+            filters.status === 'INACTIVE'
               ? 'bg-gray-100 text-gray-800'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}

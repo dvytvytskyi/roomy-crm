@@ -13,7 +13,6 @@ interface PropertiesTableProps {
   isLoading?: boolean
   filters?: {
     propertyTypes: string[]
-    occupancyRates: string[]
     maxGuests: string[]
     bedrooms: string[]
   }
@@ -187,6 +186,12 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
     // Property type filter
     if (filters?.propertyTypes && filters.propertyTypes.length > 0) {
       const propertyType = getPropertyType(property).toLowerCase()
+      console.log('🏠 Property Type Filter:', {
+        propertyName: property.name,
+        propertyType,
+        filters: filters.propertyTypes,
+        matches: filters.propertyTypes.some(filter => filter.toLowerCase() === propertyType)
+      })
       if (!filters.propertyTypes.some(filter => filter.toLowerCase() === propertyType)) {
         return false
     }
@@ -211,30 +216,31 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
     // Max guests filter
     if (filters?.maxGuests && filters.maxGuests.length > 0) {
       const maxGuests = getMaxGuests(property)
-      const guestMatch = filters.maxGuests.some(filter => {
-        switch (filter) {
-          case '1-2': return maxGuests >= 1 && maxGuests <= 2
-          case '3-4': return maxGuests >= 3 && maxGuests <= 4
-          case '5-6': return maxGuests >= 5 && maxGuests <= 6
-          case '7+': return maxGuests >= 7
-          default: return false
+      console.log('👥 Max Guests Filter:', {
+        propertyName: property.name,
+        maxGuests,
+        filters: filters.maxGuests,
+        propertyData: {
+          capacity: property.capacity,
+          max_guests: property.max_guests,
+          maxGuests: property.maxGuests,
+          guestCapacity: property.guestCapacity
         }
+      })
+      const guestMatch = filters.maxGuests.some(filter => {
+        const result = (() => {
+          switch (filter) {
+            case '1-2': return maxGuests >= 1 && maxGuests <= 2
+            case '3-4': return maxGuests >= 3 && maxGuests <= 4
+            case '5-6': return maxGuests >= 5 && maxGuests <= 6
+            case '7+': return maxGuests >= 7
+            default: return false
+          }
+        })()
+        console.log(`👥 Filter "${filter}" for ${property.name}: ${maxGuests} -> ${result}`)
+        return result
       })
       if (!guestMatch) return false
-    }
-    
-    // Occupancy rate filter (if available)
-    if (filters?.occupancyRates && filters.occupancyRates.length > 0 && property.occupancy_rate) {
-      const occupancyRate = property.occupancy_rate
-      const occupancyMatch = filters.occupancyRates.some(filter => {
-        switch (filter) {
-          case 'high': return occupancyRate >= 80
-          case 'medium': return occupancyRate >= 50 && occupancyRate < 80
-          case 'low': return occupancyRate < 50
-          default: return false
-        }
-      })
-      if (!occupancyMatch) return false
     }
     
     return true

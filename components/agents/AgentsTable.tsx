@@ -202,7 +202,7 @@ export default function AgentsTable({ agents, onEditAgent, selectedAgents, onSel
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-orange-600">
-                        {agent.name.split(' ').map(n => n[0]).join('')}
+                        {(agent.firstName || '').charAt(0)}{(agent.lastName || '').charAt(0)}
                       </span>
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export default function AgentsTable({ agents, onEditAgent, selectedAgents, onSel
                       onClick={() => handleViewAgent(agent.id)}
                       className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
                     >
-                      {agent.name}
+                      {agent.firstName} {agent.lastName}
                     </button>
                     <div className="text-sm text-slate-500">{agent.email}</div>
                   </div>

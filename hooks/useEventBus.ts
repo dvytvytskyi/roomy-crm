@@ -110,4 +110,50 @@ export const useUserEvents = () => {
   };
 };
 
+// Hook for agent-specific events
+export const useAgentEvents = () => {
+  const emitAgentUpdated = useCallback((agentId: string, agentData?: any) => {
+    eventBus.emit('agent:updated', { agentId, agentData });
+  }, []);
+
+  const emitAgentCreated = useCallback((agentData: any) => {
+    eventBus.emit('agent:created', { agentData });
+  }, []);
+
+  const emitAgentDeleted = useCallback((agentId: string) => {
+    eventBus.emit('agent:deleted', { agentId });
+  }, []);
+
+  const emitAgentRefresh = useCallback(() => {
+    eventBus.emit('agent:refresh');
+  }, []);
+
+  const onAgentUpdated = useCallback((callback: (data: { agentId: string; agentData?: any }) => void) => {
+    return eventBus.on('agent:updated', callback);
+  }, []);
+
+  const onAgentCreated = useCallback((callback: (data: { agentData: any }) => void) => {
+    return eventBus.on('agent:created', callback);
+  }, []);
+
+  const onAgentDeleted = useCallback((callback: (data: { agentId: string }) => void) => {
+    return eventBus.on('agent:deleted', callback);
+  }, []);
+
+  const onAgentRefresh = useCallback((callback: () => void) => {
+    return eventBus.on('agent:refresh', callback);
+  }, []);
+
+  return {
+    emitAgentUpdated,
+    emitAgentCreated,
+    emitAgentDeleted,
+    emitAgentRefresh,
+    onAgentUpdated,
+    onAgentCreated,
+    onAgentDeleted,
+    onAgentRefresh,
+  };
+};
+
 export default useEventBusSubscription;

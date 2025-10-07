@@ -59,6 +59,13 @@ export const USER_EVENTS = {
   REFRESH: 'user:refresh'
 } as const;
 
+export const AGENT_EVENTS = {
+  UPDATED: 'agent:updated',
+  CREATED: 'agent:created',
+  DELETED: 'agent:deleted',
+  REFRESH: 'agent:refresh'
+} as const;
+
 export const PROPERTY_EVENTS = {
   UPDATED: 'property:updated',
   CREATED: 'property:created',
@@ -88,6 +95,23 @@ export const emitGuestDeleted = (guestId: string) => {
 
 export const emitGuestRefresh = () => {
   eventBus.emit(GUEST_EVENTS.REFRESH);
+};
+
+// Helper functions for agent operations
+export const emitAgentUpdated = (agentId: string, agentData?: any) => {
+  eventBus.emit(AGENT_EVENTS.UPDATED, { agentId, agentData });
+};
+
+export const emitAgentCreated = (agentData: any) => {
+  eventBus.emit(AGENT_EVENTS.CREATED, { agentData });
+};
+
+export const emitAgentDeleted = (agentId: string) => {
+  eventBus.emit(AGENT_EVENTS.DELETED, { agentId });
+};
+
+export const emitAgentRefresh = () => {
+  eventBus.emit(AGENT_EVENTS.REFRESH);
 };
 
 // React hook for event subscription

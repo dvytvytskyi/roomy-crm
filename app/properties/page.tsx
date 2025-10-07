@@ -8,6 +8,7 @@ import PropertiesFilters from '../../components/properties/PropertiesFilters'
 import Toast from '../../components/Toast'
 import { Plus, Search, Download, Archive, Trash2, Filter, Home, Building, Users, DollarSign } from 'lucide-react'
 import { propertyServiceAdapted } from '../../lib/api/adapters/apiAdapter'
+import { usePropertyEvents } from '../../hooks/usePropertyEvents'
 
 export default function PropertiesPage() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
@@ -21,10 +22,18 @@ export default function PropertiesPage() {
   
   const [filters, setFilters] = useState({
     propertyTypes: [] as string[],
-    occupancyRates: [] as string[],
     maxGuests: [] as string[],
     bedrooms: [] as string[]
   })
+
+  // Event Bus integration
+  const { 
+    onPropertyCreated, 
+    onPropertyUpdated, 
+    onPropertyDeleted, 
+    onPropertyRefresh,
+    emitPropertyDeleted
+  } = usePropertyEvents()
 
   console.log('🏠 PropertiesPage render - properties:', properties, 'isLoading:', isLoading)
 
@@ -40,6 +49,9 @@ export default function PropertiesPage() {
 
   const handleFiltersChange = (newFilters: typeof filters) => {
     console.log('🔍 Filters changed:', newFilters)
+    console.log('🔍 Property Types:', newFilters.propertyTypes)
+    console.log('🔍 Max Guests:', newFilters.maxGuests)
+    console.log('🔍 Bedrooms:', newFilters.bedrooms)
     setFilters(newFilters)
   }
 
@@ -140,6 +152,39 @@ export default function PropertiesPage() {
     loadProperties()
   }, [loadProperties])
 
+  // Event Bus subscriptions for real-time updates
+  useEffect(() => {
+    console.log('📡 PropertiesPage: Setting up Event Bus subscriptions')
+    
+    const unsubscribeCreated = onPropertyCreated((propertyData) => {
+      console.log('📡 PropertiesPage: Property created event received, refreshing list')
+      loadProperties()
+    })
+    
+    const unsubscribeUpdated = onPropertyUpdated((propertyId, propertyData) => {
+      console.log('📡 PropertiesPage: Property updated event received, refreshing list')
+      loadProperties()
+    })
+    
+    const unsubscribeDeleted = onPropertyDeleted((propertyId) => {
+      console.log('📡 PropertiesPage: Property deleted event received, refreshing list')
+      loadProperties()
+    })
+    
+    const unsubscribeRefresh = onPropertyRefresh(() => {
+      console.log('📡 PropertiesPage: Property refresh event received, refreshing list')
+      loadProperties()
+    })
+    
+    return () => {
+      console.log('📡 PropertiesPage: Cleaning up Event Bus subscriptions')
+      unsubscribeCreated()
+      unsubscribeUpdated()
+      unsubscribeDeleted()
+      unsubscribeRefresh()
+    }
+  }, [onPropertyCreated, onPropertyUpdated, onPropertyDeleted, onPropertyRefresh, loadProperties])
+
   const handleDeleteProperty = async (property: any) => {
     try {
       console.log('🗑️ Deleting property:', property.id)
@@ -147,8 +192,9 @@ export default function PropertiesPage() {
       // Call delete API
       await propertyServiceAdapted.delete(property.id)
       
-      // Reload properties from API to get updated list
-      await loadProperties()
+      // Emit property deleted event
+      emitPropertyDeleted(property.id)
+      console.log('📡 Property deleted event emitted for:', property.id)
       
       // Show success message
       setToastMessage('Property deleted successfully')

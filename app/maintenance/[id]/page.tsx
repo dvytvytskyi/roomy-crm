@@ -157,7 +157,7 @@ export default function MaintenanceTaskDetailsPage() {
       formData.append('file', file)
       formData.append('folder', `maintenance/${task.id}`)
       
-      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+      const uploadResponse = await fetch('http://localhost:3002/api/upload', {
         method: 'POST',
         body: formData
       })
@@ -198,7 +198,7 @@ export default function MaintenanceTaskDetailsPage() {
       formData.append('file', file)
       formData.append('folder', `maintenance/${task.id}/${type}`)
       
-      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
+      const uploadResponse = await fetch('http://localhost:3002/api/upload', {
         method: 'POST',
         body: formData
       })

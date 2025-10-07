@@ -9,13 +9,11 @@ interface PropertiesFiltersProps {
   isSidebar?: boolean
   filters?: {
     propertyTypes: string[]
-    occupancyRates: string[]
     maxGuests: string[]
     bedrooms: string[]
   }
   onFiltersChange?: (filters: {
     propertyTypes: string[]
-    occupancyRates: string[]
     maxGuests: string[]
     bedrooms: string[]
   }) => void
@@ -24,7 +22,6 @@ interface PropertiesFiltersProps {
 export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, filters, onFiltersChange }: PropertiesFiltersProps) {
   const [openSections, setOpenSections] = useState({
     propertyType: true,
-    occupancy: true,
     maxGuests: true,
     bedrooms: true
   })
@@ -32,7 +29,6 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
   // Local state for filters
   const [localFilters, setLocalFilters] = useState({
     propertyTypes: filters?.propertyTypes || [],
-    occupancyRates: filters?.occupancyRates || [],
     maxGuests: filters?.maxGuests || [],
     bedrooms: filters?.bedrooms || []
   })
@@ -61,7 +57,6 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
   const clearAllFilters = () => {
     const clearedFilters = {
       propertyTypes: [],
-      occupancyRates: [],
       maxGuests: [],
       bedrooms: []
     }
@@ -120,45 +115,6 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
         )}
       </div>
 
-      {/* Occupancy Range */}
-      <div>
-        <button
-          onClick={() => toggleSection('occupancy')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Occupancy Rate</label>
-          {openSections.occupancy ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.occupancy && (
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">High (80%+)</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Medium (50-80%)</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="ml-2 text-sm text-slate-700">Low (0-50%)</span>
-            </label>
-          </div>
-        )}
-      </div>
 
       {/* Max Guests */}
       <div>
@@ -178,6 +134,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.maxGuests.includes('1-2')}
+              onChange={() => handleFilterChange('maxGuests', '1-2')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">1-2 guests</span>
@@ -185,6 +143,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.maxGuests.includes('3-4')}
+              onChange={() => handleFilterChange('maxGuests', '3-4')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">3-4 guests</span>
@@ -192,6 +152,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.maxGuests.includes('5-6')}
+              onChange={() => handleFilterChange('maxGuests', '5-6')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">5-6 guests</span>
@@ -199,6 +161,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.maxGuests.includes('7+')}
+              onChange={() => handleFilterChange('maxGuests', '7+')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">7+ guests</span>
@@ -225,6 +189,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.bedrooms.includes('0')}
+              onChange={() => handleFilterChange('bedrooms', '0')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">Studio (0)</span>
@@ -232,6 +198,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.bedrooms.includes('1')}
+              onChange={() => handleFilterChange('bedrooms', '1')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">1 bedroom</span>
@@ -239,6 +207,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.bedrooms.includes('2')}
+              onChange={() => handleFilterChange('bedrooms', '2')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">2 bedrooms</span>
@@ -246,6 +216,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.bedrooms.includes('3')}
+              onChange={() => handleFilterChange('bedrooms', '3')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">3 bedrooms</span>
@@ -253,6 +225,8 @@ export default function PropertiesFilters({ isOpen, onClose, isSidebar = false, 
           <label className="flex items-center">
             <input
               type="checkbox"
+              checked={localFilters.bedrooms.includes('4+')}
+              onChange={() => handleFilterChange('bedrooms', '4+')}
               className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
             />
             <span className="ml-2 text-sm text-slate-700">4+ bedrooms</span>

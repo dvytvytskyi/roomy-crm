@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Search, Plus } from 'lucide-react'
 import TopNavigation from '../../components/TopNavigation'
 import AgentsTable from '../../components/agents/AgentsTable'
 import AgentsFilters from '../../components/agents/AgentsFilters'
 import AddAgentModal from '../../components/agents/AddAgentModal'
 import { agentService, Agent } from '../../lib/api/services/agentService'
+import { useAgentEvents } from '../../hooks/useEventBus'
 
 export default function AgentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -16,42 +17,117 @@ export default function AgentsPage() {
     joinDateFrom: '',
     joinDateTo: ''
   })
-  const [selectedAgents, setSelectedAgents] = useState<number[]>([])
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([])
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  const { 
+    onAgentUpdated, 
+    onAgentCreated, 
+    onAgentDeleted, 
+    onAgentRefresh,
+    emitAgentUpdated,
+    emitAgentCreated,
+    emitAgentDeleted
+  } = useAgentEvents()
+
+  // Debounced search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   // Load agents data from API
-  useEffect(() => {
-    const loadAgents = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        console.log('👥 Loading agents from API...')
-        
-        const response = await agentService.getAgents({
-          search: searchTerm,
-          ...filters
-        })
-        
-        if (response.success && response.data) {
-          console.log('👥 Agents loaded:', response.data)
-          setAgents(response.data.agents || response.data)
-        } else {
-          setError('Failed to load agents')
-        }
-      } catch (err) {
-        console.error('👥 Error loading agents:', err)
-        setError('Error loading agents')
-      } finally {
-        setLoading(false)
+  const loadAgents = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('👥 Loading agents from API with filters:', { search: searchTerm, ...filters })
+      
+      const response = await agentService.getAgents({
+        search: debouncedSearchTerm,
+        status: filters.status || undefined,
+        nationality: filters.nationality || undefined,
+        joinDateFrom: filters.joinDateFrom || undefined,
+        joinDateTo: filters.joinDateTo || undefined
+      })
+      
+      if (response.success && response.data) {
+        console.log('👥 Agents loaded:', response.data)
+        setAgents(response.data)
+      } else {
+        setError('Failed to load agents')
       }
+    } catch (err) {
+      console.error('👥 Error loading agents:', err)
+      setError('Error loading agents')
+    } finally {
+      setLoading(false)
+    }
+  }, [debouncedSearchTerm, filters])
+
+  useEffect(() => {
+    loadAgents()
+  }, [loadAgents])
+
+  // Listen for agent update events
+  useEffect(() => {
+    const handleAgentUpdated = (data: { agentId: string; agentData?: any }) => {
+      console.log('📡 AgentsPage: Received agent updated event for:', data.agentId)
+      
+      // Update the agent in the local state
+      setAgents(prevAgents => 
+        prevAgents.map(agent => 
+          agent.id === data.agentId 
+            ? { ...agent, ...data.agentData }
+            : agent
+        )
+      )
     }
 
-    loadAgents()
-  }, [searchTerm, filters])
+    const handleAgentCreated = (data: { agentData: any }) => {
+      console.log('📡 AgentsPage: Received agent created event')
+      // Reload agents to get the new agent
+      loadAgents()
+    }
+
+    const handleAgentDeleted = (data: { agentId: string }) => {
+      console.log('📡 AgentsPage: Received agent deleted event for:', data.agentId)
+      
+      // Remove the agent from the local state
+      setAgents(prevAgents => 
+        prevAgents.filter(agent => agent.id !== data.agentId)
+      )
+    }
+
+    const handleAgentRefresh = () => {
+      console.log('📡 AgentsPage: Received agent refresh event')
+      // Reload agents
+      loadAgents()
+    }
+
+    // Subscribe to events
+    const unsubscribeUpdated = onAgentUpdated(handleAgentUpdated)
+    const unsubscribeCreated = onAgentCreated(handleAgentCreated)
+    const unsubscribeDeleted = onAgentDeleted(handleAgentDeleted)
+    const unsubscribeRefresh = onAgentRefresh(handleAgentRefresh)
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      unsubscribeUpdated()
+      unsubscribeCreated()
+      unsubscribeDeleted()
+      unsubscribeRefresh()
+    }
+  }, [onAgentUpdated, onAgentCreated, onAgentDeleted, onAgentRefresh])
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
@@ -67,29 +143,140 @@ export default function AgentsPage() {
     setIsAgentModalOpen(true)
   }
 
-  const handleBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'export') => {
+  const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete' | 'export') => {
     if (selectedAgents.length === 0) return
     
     switch (action) {
       case 'activate':
-        console.log('Activating agents:', selectedAgents)
+        await handleBulkActivate()
         break
       case 'deactivate':
-        console.log('Deactivating agents:', selectedAgents)
+        await handleBulkDeactivate()
         break
       case 'delete':
-        console.log('Deleting agents:', selectedAgents)
+        await handleBulkDelete()
         break
       case 'export':
-        console.log('Exporting agents:', selectedAgents)
+        handleBulkExport()
         break
     }
   }
 
+  const handleBulkActivate = async () => {
+    const confirmed = confirm(`Are you sure you want to activate ${selectedAgents.length} agent(s)?`)
+    if (!confirmed) return
 
-  // Calculate real statistics
+    try {
+      const promises = selectedAgents.map(agentId => 
+        agentService.updateAgent(agentId, { status: 'ACTIVE' })
+      )
+      
+      const results = await Promise.all(promises)
+      const successCount = results.filter(r => r.success).length
+      
+      if (successCount > 0) {
+        // Emit events for successful updates
+        selectedAgents.forEach(agentId => {
+          emitAgentUpdated(agentId, { status: 'ACTIVE' })
+        })
+        console.log(`📡 Bulk activated ${successCount} agents`)
+        alert(`Successfully activated ${successCount} agent(s)`)
+      } else {
+        alert('Failed to activate agents')
+      }
+    } catch (error) {
+      console.error('Error bulk activating agents:', error)
+      alert('Error activating agents')
+    }
+  }
+
+  const handleBulkDeactivate = async () => {
+    const confirmed = confirm(`Are you sure you want to deactivate ${selectedAgents.length} agent(s)?`)
+    if (!confirmed) return
+
+    try {
+      const promises = selectedAgents.map(agentId => 
+        agentService.updateAgent(agentId, { status: 'INACTIVE' })
+      )
+      
+      const results = await Promise.all(promises)
+      const successCount = results.filter(r => r.success).length
+      
+      if (successCount > 0) {
+        // Emit events for successful updates
+        selectedAgents.forEach(agentId => {
+          emitAgentUpdated(agentId, { status: 'INACTIVE' })
+        })
+        console.log(`📡 Bulk deactivated ${successCount} agents`)
+        alert(`Successfully deactivated ${successCount} agent(s)`)
+      } else {
+        alert('Failed to deactivate agents')
+      }
+    } catch (error) {
+      console.error('Error bulk deactivating agents:', error)
+      alert('Error deactivating agents')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const confirmed = confirm(`Are you sure you want to delete ${selectedAgents.length} agent(s)? This action cannot be undone.`)
+    if (!confirmed) return
+
+    try {
+      const promises = selectedAgents.map(agentId => 
+        agentService.deleteAgent(agentId)
+      )
+      
+      const results = await Promise.all(promises)
+      const successCount = results.filter(r => r.success).length
+      
+      if (successCount > 0) {
+        // Emit events for successful deletions
+        selectedAgents.forEach(agentId => {
+          emitAgentDeleted(agentId)
+        })
+        console.log(`📡 Bulk deleted ${successCount} agents`)
+        alert(`Successfully deleted ${successCount} agent(s)`)
+        setSelectedAgents([])
+      } else {
+        alert('Failed to delete agents')
+      }
+    } catch (error) {
+      console.error('Error bulk deleting agents:', error)
+      alert('Error deleting agents')
+    }
+  }
+
+  const handleBulkExport = () => {
+    const agentsToExport = agents.filter(agent => selectedAgents.includes(agent.id))
+    const csvData = [
+      ['Name', 'Email', 'Phone', 'Status', 'Units Attracted', 'Total Payouts'],
+      ...agentsToExport.map(agent => [
+        `${agent.firstName} ${agent.lastName}`,
+        agent.email,
+        agent.phone || '',
+        agent.status,
+        agent.unitsAttracted || 0,
+        agent.totalPayouts || 0
+      ])
+    ]
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `agents_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    
+    console.log('Exported agents to CSV:', agentsToExport.length)
+  }
+
+
+  // Calculate real statistics from loaded agents
   const totalAgents = agents.length
-  const activeAgents = agents.filter(agent => agent.status === 'Active').length
+  const activeAgents = agents.filter(agent => agent.status === 'ACTIVE').length
   const totalUnits = agents.reduce((sum, agent) => sum + (agent.unitsAttracted || 0), 0)
   const totalPayouts = agents.reduce((sum, agent) => sum + (agent.totalPayouts || 0), 0)
   
@@ -125,6 +312,11 @@ export default function AgentsPage() {
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-80"
                     data-testid="search-input"
                   />
+                  {searchTerm !== debouncedSearchTerm && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={handleCreateAgent}
@@ -199,6 +391,45 @@ export default function AgentsPage() {
             </div>
           </div>
         </div>
+
+        {/* Active Filters Indicator */}
+        {(searchTerm || Object.values(filters).some(value => value !== '')) && (
+          <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-blue-700 font-medium">
+                    Active Filters:
+                  </span>
+                  {searchTerm && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      Search: "{searchTerm}"
+                    </span>
+                  )}
+                  {filters.status && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      Status: {filters.status}
+                    </span>
+                  )}
+                  {filters.nationality && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      Nationality: {filters.nationality}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setFilters({ status: '', nationality: '', joinDateFrom: '', joinDateTo: '' })
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bulk Actions */}
         {selectedAgents.length > 0 && (
@@ -279,6 +510,22 @@ export default function AgentsPage() {
         isOpen={isAgentModalOpen}
         onClose={() => setIsAgentModalOpen(false)}
         agent={selectedAgent}
+        onAgentUpdated={(updatedAgent) => {
+          // Update local state
+          if (selectedAgent) {
+            // Editing existing agent
+            setAgents(prevAgents => 
+              prevAgents.map(agent => 
+                agent.id === selectedAgent.id 
+                  ? { ...agent, ...updatedAgent }
+                  : agent
+              )
+            )
+          } else {
+            // Creating new agent
+            setAgents(prevAgents => [...prevAgents, updatedAgent])
+          }
+        }}
       />
     </div>
   )

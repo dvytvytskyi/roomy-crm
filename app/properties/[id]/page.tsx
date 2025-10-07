@@ -297,7 +297,7 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
     const fetchOwners = async () => {
       try {
         setIsLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
         const authToken = localStorage.getItem('accessToken') || 'test'
         
         const response = await fetch(`${apiUrl}/api/users/owners`, {

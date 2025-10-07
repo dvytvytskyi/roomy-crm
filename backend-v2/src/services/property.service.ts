@@ -122,7 +122,11 @@ export class PropertyService extends BaseService {
           { country: { contains: search, mode: 'insensitive' } }
         ];
       }
-      if (type) where.type = type;
+      if (type) {
+        const upperType = type.toUpperCase();
+        logger.info(`PropertyService.findAll: Filtering by type: "${type}" -> "${upperType}"`);
+        where.type = upperType;
+      }
       if (status) where.is_active = status === 'active';
       if (ownerId) where.owner_id = ownerId;
       if (agentId) where.agent_id = agentId;
