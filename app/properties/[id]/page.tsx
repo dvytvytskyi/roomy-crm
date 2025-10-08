@@ -3814,10 +3814,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
 
       const result = await response.json()
-      console.log('Owner API response:', result)
+      console.log('👤 Owner API response:', JSON.stringify(result, null, 2))
 
       if (result.success && result.data) {
         const ownerData = result.data
+        console.log('👤 Raw owner data from API:', JSON.stringify(ownerData, null, 2))
         
         // Get country flag based on nationality
         const getCountryFlag = (nationality: string): string => {
@@ -3968,6 +3969,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       if (result.success && result.data) {
         const propertyData = result.data
+        
+        console.log('🏠 Property Data from API:', JSON.stringify(propertyData, null, 2))
+        console.log('👤 Property Owner Data:', propertyData.owner)
+        console.log('🆔 Owner ID found:', propertyData.owner?.id || propertyData.ownerId || propertyData.selectedOwnerId || propertyData.agentId || 'NONE')
         
         // Set property data state
         setPropertyData(propertyData)
