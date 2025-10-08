@@ -3788,12 +3788,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Function to fetch owner data from API
   const fetchOwnerData = async (ownerId: string) => {
     if (!ownerId || ownerId === '') {
-      console.log('No owner ID provided, keeping default values')
+      console.log('❌ No owner ID provided, keeping default values')
       return
     }
 
     try {
-      console.log('Fetching owner data for ID:', ownerId)
+      console.log('🔄 fetchOwnerData: Starting to fetch owner data for ID:', ownerId)
       
       // Use API v2 URL
       const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
@@ -3844,7 +3844,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           status: ownerData.isActive ? 'active' : 'inactive'
         }
 
-        console.log('Updated owner data:', updatedOwner)
+        console.log('✅ Updated owner data:', updatedOwner)
+        console.log('🔄 Setting owner state with:', JSON.stringify(updatedOwner, null, 2))
         setOwner(updatedOwner)
         
         // Save to localStorage as fallback (for offline support)
