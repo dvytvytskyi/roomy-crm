@@ -385,10 +385,12 @@ function OwnerEditModalWrapper({ currentOwner, onSave, onCancel }: { currentOwne
   useEffect(() => {
     const loadOwners = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
-        const authToken = localStorage.getItem('accessToken') || 'test'
+        const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
+        const authToken = localStorage.getItem('token') || 'test'
         
-        const response = await fetch(`${apiUrl}/api/users/owners`, {
+        console.log('Loading owners from:', `${apiUrl}/users?role=OWNER`)
+        
+        const response = await fetch(`${apiUrl}/users?role=OWNER`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -401,10 +403,10 @@ function OwnerEditModalWrapper({ currentOwner, onSave, onCancel }: { currentOwne
         }
 
         const result = await response.json()
-        console.log('Available owners:', result)
+        console.log('Available owners response:', result)
 
-        if (result.success && result.data?.users) {
-          setAvailableOwners(result.data.users)
+        if (result.success && result.data) {
+          setAvailableOwners(result.data)
         } else {
           console.error('Failed to fetch owners:', result.message)
         }
@@ -553,13 +555,26 @@ function OwnerEditModal({ initialData, onSave, onCancel }: OwnerEditModalProps) 
             >
               <option value="">Select an owner</option>
               <option value="unknown">Unknown</option>
-              {availableOwners.map((ownerOption) => (
-                <option key={ownerOption.id} value={ownerOption.id}>
-                  {ownerOption.firstName} {ownerOption.lastName} - {ownerOption.email}
-                </option>
-              ))}
+              {availableOwners.length > 0 ? (
+                availableOwners.map((ownerOption) => (
+                  <option key={ownerOption.id} value={ownerOption.id}>
+                    {ownerOption.firstName} {ownerOption.lastName} - {ownerOption.email}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No owners available</option>
+              )}
             </select>
             {errors.owner && <p className="mt-1 text-sm text-red-600">{errors.owner}</p>}
+            
+            {/* Show message if no owners available */}
+            {availableOwners.length === 0 && (
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-700">
+                  No owners found in the system. Please add owners first in the Owners section.
+                </p>
+              </div>
+            )}
             
             {/* Show Unknown owner message */}
             {selectedOwnerId === 'unknown' && (
@@ -1784,7 +1799,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(apiPayload)
       })
@@ -2015,7 +2030,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Завантажуємо дані з API
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       })
 
