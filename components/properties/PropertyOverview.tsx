@@ -265,6 +265,84 @@ export default function PropertyOverview({
     }
   };
 
+  // Photo upload handler
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setToastMessage('Authentication required');
+      setShowToast(true);
+      return;
+    }
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyId}/photos`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload photo: ${response.status}`);
+        }
+      }
+
+      setToastMessage('Photos uploaded successfully!');
+      setShowToast(true);
+      
+      // Refresh property data to show new photos
+      window.location.reload(); // Simple refresh for now
+      
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      setToastMessage('Failed to upload photos');
+      setShowToast(true);
+    }
+  };
+
+  // Photo delete handler
+  const handleDeletePhoto = async (photoId: string) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setToastMessage('Authentication required');
+      setShowToast(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyId}/photos/${photoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete photo: ${response.status}`);
+      }
+
+      setToastMessage('Photo deleted successfully!');
+      setShowToast(true);
+      
+      // Refresh property data to remove deleted photo
+      window.location.reload(); // Simple refresh for now
+      
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      setToastMessage('Failed to delete photo');
+      setShowToast(true);
+    }
+  };
+
   // Description form handlers
   const handleOpenDescriptionModal = () => {
     setDescriptionForm(property?.description || '');
@@ -948,6 +1026,145 @@ export default function PropertyOverview({
         onSelect={handleSelectOwner}
         onClose={() => setShowOwnerModal(false)}
       />
+
+      {/* Photos Edit Modal */}
+      {showPhotosModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Photos</h3>
+              <button 
+                onClick={() => setShowPhotosModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Upload Section */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <div className="space-y-4">
+                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900">Upload Photos</h4>
+                    <p className="text-gray-500">Drag and drop images here, or click to select</p>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    id="photo-upload"
+                    onChange={handlePhotoUpload}
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600 cursor-pointer"
+                  >
+                    Select Photos
+                  </label>
+                </div>
+              </div>
+
+              {/* Current Photos */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">Current Photos</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {displayProperty?.photos?.map((photo: any, index: number) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                        <img 
+                          src={photo.url || '/placeholder-image.jpg'} 
+                          alt={`Property photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleDeletePhoto(photo.id)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )) || (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      No photos uploaded yet
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Amenities Edit Modal */}
+      {showAmenitiesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Amenities</h3>
+              <button 
+                onClick={() => setShowAmenitiesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">Amenities editing functionality coming soon!</p>
+              <p className="text-sm text-gray-400">This will connect to API v2</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Utilities Edit Modal */}
+      {showUtilitiesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Utilities</h3>
+              <button 
+                onClick={() => setShowUtilitiesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">Utilities editing functionality coming soon!</p>
+              <p className="text-sm text-gray-400">This will connect to Property API v2</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rules Edit Modal */}
+      {showRulesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Rules & Policies</h3>
+              <button 
+                onClick={() => setShowRulesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">Rules editing functionality coming soon!</p>
+              <p className="text-sm text-gray-400">This will connect to Property API v2</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {showToast && (

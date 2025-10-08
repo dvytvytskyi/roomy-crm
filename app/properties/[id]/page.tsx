@@ -15,8 +15,19 @@ import { propertyServiceAdapted } from '../../../lib/api/adapters/apiAdapter'
 // Централізований інтерфейс для всіх даних про об'єкт
 interface CentralizedPropertyData {
   // Основна інформація
+  id?: string
+  name?: string
   nickname: string
   address: string
+  type?: string
+  city?: string
+  country?: string
+  capacity?: number
+  bedrooms?: number
+  bathrooms?: number
+  pricePerNight?: number
+  typeOfUnit?: string
+  isActive?: boolean
   generalInfo: PropertyGeneralInfo
   description: string
   
@@ -49,6 +60,13 @@ interface CentralizedPropertyData {
   automationSettings: any
   availabilitySettings: any
   marketingSettings: any
+  
+  // Availability fields
+  bookingWindow?: string
+  minStay?: number
+  maxStay?: number
+  checkInTime?: string
+  checkOutTime?: string
   
   // Платежі та резервації
   payments: any[]
@@ -1718,8 +1736,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   }
 
   // Універсальна функція оновлення даних об'єкта
-  const handlePropertyUpdate = async (updatedData: Partial<CentralizedPropertyData>) => {
-    if (!propertyData) return
+  const handlePropertyUpdate = async (updatedData: Partial<CentralizedPropertyData>): Promise<boolean> => {
+    if (!propertyData) return false
 
     try {
       // Показуємо стан завантаження
@@ -1727,8 +1745,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       // Підготовлюємо дані для API
       const apiPayload: any = {
+        // General Information fields
+        name: updatedData.name || propertyData.name,
         nickname: updatedData.nickname || propertyData.nickname,
         address: updatedData.address || propertyData.address,
+        type: updatedData.type || propertyData.type,
+        city: updatedData.city || propertyData.city,
+        country: updatedData.country || propertyData.country,
+        capacity: updatedData.capacity !== undefined ? updatedData.capacity : propertyData.capacity,
+        bedrooms: updatedData.bedrooms !== undefined ? updatedData.bedrooms : propertyData.bedrooms,
+        bathrooms: updatedData.bathrooms !== undefined ? updatedData.bathrooms : propertyData.bathrooms,
+        pricePerNight: updatedData.pricePerNight !== undefined ? updatedData.pricePerNight : propertyData.pricePerNight,
+        typeOfUnit: updatedData.typeOfUnit || propertyData.typeOfUnit,
+        isActive: updatedData.isActive !== undefined ? updatedData.isActive : propertyData.isActive,
+        
+        // Other fields
         generalInfo: updatedData.generalInfo || propertyData.generalInfo,
         description: updatedData.description || propertyData.description,
         amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
@@ -1780,6 +1811,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
       // Показуємо успішне повідомлення
       handleShowToast('Дані успішно оновлено!')
+      return true
 
     } catch (error) {
       console.error('Помилка при оновленні даних об\'єкта:', error)
@@ -1792,6 +1824,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       } : null)
       
       handleShowToast('Помилка при оновленні даних!')
+      return false
     }
   }
 
@@ -4244,6 +4277,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           <div className="p-4">
             {activeTab === 'overview' && (
               <PropertyOverview 
+                propertyId={params?.id || ''}
                 propertyData={propertyData}
                 onPropertyUpdate={handlePropertyUpdate}
                 isLoading={propertyData?.isLoading || false}
