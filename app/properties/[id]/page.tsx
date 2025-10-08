@@ -6,19 +6,10 @@ import Image from 'next/image';
 import { propertyApiAdapter, PropertyDetailed } from '@/lib/api/adapters/propertyApiAdapter';
 import Toast from '@/components/Toast';
 
-// Import sections (will be created step by step)
-// import PropertyHeader from './sections/PropertyHeader';
-// import OwnerSection from './sections/OwnerSection';
-// import GeneralInformation from './sections/GeneralInformation';
-// import PricingSection from './sections/PricingSection';
-// import PhotosSection from './sections/PhotosSection';
-// import FinancialsSection from './sections/FinancialsSection';
-// import DocumentsSection from './sections/DocumentsSection';
-// import AvailabilitySettingsSection from './sections/AvailabilitySettingsSection';
-// import DescriptionSection from './sections/DescriptionSection';
-// import AmenitiesSection from './sections/AmenitiesSection';
-// import RulesSection from './sections/RulesSection';
-// import MarketingSection from './sections/MarketingSection';
+// Import modals
+import OwnerSelectionModal from '../property-modals/OwnerSelectionModal';
+import GeneralInfoEditModal from '../property-modals/GeneralInfoEditModal';
+import AmenitiesEditModal from '../property-modals/AmenitiesEditModal';
 
 export default function PropertyDetailsPage() {
   const params = useParams();
@@ -36,6 +27,11 @@ export default function PropertyDetailsPage() {
     message: string;
     type: 'success' | 'error' | 'info';
   }>({ show: false, message: '', type: 'info' });
+
+  // Modal states
+  const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+  const [isGeneralInfoModalOpen, setIsGeneralInfoModalOpen] = useState(false);
+  const [isAmenitiesModalOpen, setIsAmenitiesModalOpen] = useState(false);
 
   /**
    * Show toast notification
@@ -225,25 +221,35 @@ export default function PropertyDetailsPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Owner Information</h2>
               {propertyData.owner ? (
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-orange-600 font-semibold">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold">
                       {propertyData.owner.firstName[0]}{propertyData.owner.lastName[0]}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                      <p className="font-medium text-gray-900">
+                        {propertyData.owner.firstName} {propertyData.owner.lastName}
+                      </p>
+                      {propertyData.owner.flag && (
+                        <span className="text-lg" title={propertyData.owner.country}>
+                          {propertyData.owner.flag}
                             </span>
+                      )}
                           </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {propertyData.owner.firstName} {propertyData.owner.lastName}
-                    </p>
-                    <p className="text-gray-600">{propertyData.owner.email}</p>
+                    <p className="text-sm text-gray-600">{propertyData.owner.email}</p>
                     {propertyData.owner.phone && (
-                      <p className="text-gray-600">{propertyData.owner.phone}</p>
+                      <p className="text-sm text-gray-600">{propertyData.owner.phone}</p>
                     )}
                     </div>
                   </div>
                   ) : (
                 <p className="text-gray-500">No owner assigned</p>
               )}
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                        <button 
+                onClick={() => setIsOwnerModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                        >
                 Change Owner
                         </button>
                 </div>
@@ -277,7 +283,10 @@ export default function PropertyDetailsPage() {
                   <p className="font-medium">AED {propertyData.pricePerNight}</p>
                           </div>
                         </div>
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                              <button 
+                onClick={() => setIsGeneralInfoModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
                 Edit Information
                               </button>
                     </div>
@@ -411,7 +420,10 @@ export default function PropertyDetailsPage() {
                   ) : (
                 <p className="text-gray-500">No amenities added</p>
               )}
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                  <button
+                onClick={() => setIsAmenitiesModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
                 Manage Amenities
                   </button>
                 </div>
@@ -450,8 +462,38 @@ export default function PropertyDetailsPage() {
               </button>
         </div>
       )}
-            </div>
-              </div>
-              </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <OwnerSelectionModal
+        isOpen={isOwnerModalOpen}
+        currentOwnerId={propertyData.ownerId}
+        onSave={async (ownerIds) => {
+          const success = await handlePropertyUpdate({ ownerIds } as any);
+          if (success) {
+            await loadPropertyData(); // Reload to get updated owner data
+          }
+          return success;
+        }}
+        onClose={() => setIsOwnerModalOpen(false)}
+      />
+
+      <GeneralInfoEditModal
+        isOpen={isGeneralInfoModalOpen}
+        initialData={propertyData}
+        onSave={handlePropertyUpdate}
+        onClose={() => setIsGeneralInfoModalOpen(false)}
+      />
+
+      <AmenitiesEditModal
+        isOpen={isAmenitiesModalOpen}
+        selectedAmenityIds={propertyData.amenities || []}
+        onSave={async (amenityIds) => {
+          return await handlePropertyUpdate({ amenityIds } as any);
+        }}
+        onClose={() => setIsAmenitiesModalOpen(false)}
+      />
+    </div>
   );
 }
