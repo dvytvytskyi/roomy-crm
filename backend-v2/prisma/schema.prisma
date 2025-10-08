@@ -158,6 +158,8 @@ model properties {
   tasks                           tasks[]
   // Scheduler relations
   manual_blocks                   manual_blocks[]
+  // Expense relations
+  expenses                        expenses[]
 }
 
 model property_photos {
@@ -409,6 +411,23 @@ model manual_blocks {
   property    properties @relation(fields: [property_id], references: [id], onDelete: Cascade)
 
   @@map("manual_blocks")
+}
+
+model expenses {
+  id          String     @id @default(cuid())
+  property_id String     @map("property_id")
+  date        DateTime
+  category    String     // Utilities, Maintenance, Cleaning, etc.
+  amount      Float
+  description String?
+  receipt_url String?    // Optional S3 URL for receipt
+  created_at  DateTime   @default(now()) @map("created_at")
+  updated_at  DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  property    properties @relation(fields: [property_id], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
 }
 
 model settings {

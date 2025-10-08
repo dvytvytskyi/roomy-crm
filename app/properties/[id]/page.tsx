@@ -1726,17 +1726,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       setPropertyData(prev => prev ? { ...prev, isLoading: true, error: null } : null)
 
       // Підготовлюємо дані для API
-      const apiPayload = {
+      const apiPayload: any = {
         nickname: updatedData.nickname || propertyData.nickname,
         address: updatedData.address || propertyData.address,
         generalInfo: updatedData.generalInfo || propertyData.generalInfo,
         description: updatedData.description || propertyData.description,
         amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
-        rules: updatedData.selectedRules || propertyData.selectedRules,
+        houseRules: updatedData.selectedRules || propertyData.selectedRules,
         ownerId: updatedData.owner?.id || propertyData.owner?.id,
         pricelabId: updatedData.pricelabId !== undefined ? updatedData.pricelabId : propertyData.pricelabId,
-        // Додаємо інші поля за потреби
       }
+
+      // Додаємо availability поля якщо вони передані
+      if (updatedData.bookingWindow !== undefined) apiPayload.bookingWindow = updatedData.bookingWindow
+      if (updatedData.minStay !== undefined) apiPayload.minStay = updatedData.minStay
+      if (updatedData.maxStay !== undefined) apiPayload.maxStay = updatedData.maxStay
+      if (updatedData.checkInTime !== undefined) apiPayload.checkInTime = updatedData.checkInTime
+      if (updatedData.checkOutTime !== undefined) apiPayload.checkOutTime = updatedData.checkOutTime
+
+      // Додаємо income distribution якщо передано
+      if (updatedData.incomeDistribution !== undefined) apiPayload.incomeDistribution = updatedData.incomeDistribution
 
       // Відправляємо PUT запит на бекенд
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}`, {
@@ -2311,18 +2320,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   })
 
-  const [expenses, setExpenses] = useState(() => {
-    // Завантажуємо з localStorage або використовуємо порожній масив
-    const savedExpenses = localStorage.getItem(`propertyExpenses_${params?.id || 'default'}`)
-    if (savedExpenses) {
-      try {
-        return JSON.parse(savedExpenses)
-      } catch (error) {
-        console.error('Error parsing saved expenses:', error)
-      }
-    }
-    return []
-  })
+  const [expenses, setExpenses] = useState<any[]>([])
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
   // Photos State - завантажуємо з S3 API
@@ -3027,18 +3025,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
         setPropertyGeneralInfo(updatedInfo)
         
-      // Зберігаємо в localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
-        console.log('General info saved to localStorage:', updatedInfo)
-      }
-        
         // Якщо це nickname, також оновлюємо propertyNickname
         if (field === 'nickname') {
           setPropertyNickname(value.trim())
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, value.trim())
-        }
       }
       
       console.log(`Field ${field} updated successfully via centralized function`)
@@ -3063,10 +3052,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         nickname: newValue
       }
       setPropertyGeneralInfo(updatedInfo)
-      // Зберігаємо в localStorage
-      localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
-      localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
-      console.log('Nickname updated and saved to localStorage')
+      console.log('Nickname updated via API')
       }
     
     // Оновлюємо description якщо це поле description
@@ -3083,7 +3069,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         if (editModal.field === 'nickname') {
           console.log('Also updating header nickname from', propertyNickname, 'to', newValue)
           setPropertyNickname(newValue)
-          localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
         }
       }
       
@@ -3100,19 +3085,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           [editModal.field]: newValue
         }
         setMarketingSettings(updatedMarketing)
-          
-          // Зберігаємо в localStorage
-          localStorage.setItem(`propertyMarketing_${params?.id || 'default'}`, JSON.stringify(updatedMarketing))
-          
-          // Відправляємо на сервер (симуляція API виклику)
-          try {
-            // В реальному додатку тут буде API виклик
-            // await marketingService.updateMarketing(params?.id || 'default', { [editModal.field]: newValue })
-            console.log('Marketing updated on server:', { [editModal.field]: newValue })
-          } catch (apiError) {
-            console.error('Failed to update marketing on server:', apiError)
-            // Показуємо помилку користувачу, але зберігаємо локально
-          }
+        
+        console.log('Marketing updated via API:', { [editModal.field]: newValue })
         }
       }
       
@@ -3299,11 +3273,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveIncomeDistribution = async (newIncome: IncomeDistribution) => {
     try {
-      // Оновлюємо стан
-      setIncomeDistribution(newIncome)
+      console.log('Saving income distribution to API:', newIncome)
       
-      // Зберігаємо в localStorage
-      localStorage.setItem('incomeDistribution', JSON.stringify(newIncome))
+      // Відправляємо на API v2
+      await handlePropertyUpdate({
+        incomeDistribution: newIncome
+      })
+      
+      // Оновлюємо локальний стан
+      setIncomeDistribution(newIncome)
       
       // Оновлюємо фінансові дані на основі нових відсотків
       const updatedFinancialData = {
@@ -3314,31 +3292,41 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
       setFinancialData(updatedFinancialData)
       
-      // Зберігаємо оновлені фінансові дані
-      localStorage.setItem(`financialData_${params?.id || 'default'}`, JSON.stringify(updatedFinancialData))
-      
-      // Відправляємо на сервер (симуляція API виклику)
-      try {
-        // В реальному додатку тут буде API виклик
-        // await incomeService.updateIncomeSettings(params?.id || 'default', newIncome)
-        console.log('Income distribution updated on server:', newIncome)
-      } catch (apiError) {
-        console.error('Failed to update income distribution on server:', apiError)
-        // Показуємо помилку користувачу, але зберігаємо локально
-      }
-      
       setEditModal({ ...editModal, isOpen: false })
       
-      // Show success message (you could add a toast notification here)
-      console.log('Income distribution updated successfully:', newIncome)
+      console.log('✅ Income distribution saved successfully to API')
+      handleShowToast('Income distribution updated successfully!')
     } catch (error) {
-      console.error('Error updating income distribution:', error)
-      // Handle error (show error message, etc.)
+      console.error('❌ Error updating income distribution:', error)
+      handleShowToast('Failed to update income distribution')
     }
   }
 
 
 
+
+  // Load expenses from API
+  const loadExpenses = async () => {
+    try {
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/expenses`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          console.log(`✅ Loaded ${result.data.length} expenses from API`)
+          setExpenses(result.data)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading expenses:', error)
+    }
+  }
 
   const handleAddExpense = () => {
     setAddExpenseModal(true)
@@ -3419,21 +3407,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveAvailability = async (newSettings: any) => {
     try {
-      console.log('Saving availability settings:', newSettings)
+      console.log('Saving availability settings to API:', newSettings)
       
-      // Оновлюємо стан
-        setAvailabilitySettings(newSettings)
-        
-      // Зберігаємо в localStorage
-      localStorage.setItem(`propertyAvailability_${params?.id || 'default'}`, JSON.stringify(newSettings))
+      // Відправляємо на API v2
+      await handlePropertyUpdate({
+        bookingWindow: newSettings.bookingWindow,
+        minStay: newSettings.minimumStay,
+        maxStay: newSettings.maximumStay,
+        checkInTime: newSettings.checkInFrom,
+        checkOutTime: newSettings.checkOutUntil
+      })
       
-      // В реальному додатку тут буде API виклик
-      // await availabilityService.updateSettings(params?.id || 'default', newSettings)
-      
+      // Оновлюємо локальний стан
+      setAvailabilitySettings(newSettings)
       setEditAvailabilityModal(false)
-      console.log('Availability settings saved successfully')
+      
+      console.log('✅ Availability settings saved successfully to API')
+      handleShowToast('Availability settings updated successfully!')
     } catch (error) {
-      console.error('Error saving availability settings:', error)
+      console.error('❌ Error saving availability settings:', error)
+      handleShowToast('Failed to save availability settings')
     }
   }
 
@@ -3491,27 +3484,78 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
-  const handleSaveExpense = (newExpense: any) => {
-    console.log('Saving expense:', newExpense)
-    const updatedExpenses = [...expenses, newExpense]
-    setExpenses(updatedExpenses)
-    // Зберігаємо в localStorage
-    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
-    setAddExpenseModal(false)
-    console.log('Expense saved successfully, total expenses:', updatedExpenses.length)
+  const handleSaveExpense = async (newExpense: any) => {
+    try {
+      console.log('Saving expense to API:', newExpense)
+      
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/expenses`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: newExpense.date,
+          category: newExpense.category,
+          amount: parseFloat(newExpense.amount),
+          description: newExpense.description
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save expense: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('✅ Expense saved to API successfully:', result)
+
+      // Оновлюємо локальний стан
+      const updatedExpenses = [...expenses, result.data]
+      setExpenses(updatedExpenses)
+      setAddExpenseModal(false)
+      
+      handleShowToast('Expense added successfully!')
+    } catch (error) {
+      console.error('❌ Error saving expense:', error)
+      handleShowToast('Failed to save expense')
+    }
   }
 
-  const handleDeleteExpense = (index: number) => {
-    const updatedExpenses = expenses.filter((_: any, i: number) => i !== index)
-    setExpenses(updatedExpenses)
-    // Зберігаємо в localStorage
-    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
-    setDeleteExpenseModal({isOpen: false})
+  const handleDeleteExpense = async (expenseId: string) => {
+    try {
+      console.log('Deleting expense from API:', expenseId)
+      
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/expenses/${expenseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete expense: ${response.status}`)
+      }
+
+      console.log('✅ Expense deleted from API successfully')
+
+      // Оновлюємо локальний стан
+      const updatedExpenses = expenses.filter((exp: any) => exp.id !== expenseId)
+      setExpenses(updatedExpenses)
+      setDeleteExpenseModal({isOpen: false})
+      
+      handleShowToast('Expense deleted successfully!')
+    } catch (error) {
+      console.error('❌ Error deleting expense:', error)
+      handleShowToast('Failed to delete expense')
+    }
   }
 
   const handleConfirmDeleteExpense = () => {
-    if (deleteExpenseModal.index !== undefined) {
-      handleDeleteExpense(deleteExpenseModal.index)
+    if (deleteExpenseModal.expense?.id) {
+      handleDeleteExpense(deleteExpenseModal.expense.id)
     }
   }
 
@@ -3726,10 +3770,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log('handleSaveDescription called with:', newDescription)
       await handlePropertyUpdate({ description: newDescription })
       setDescription(newDescription)
-      localStorage.setItem(`propertyDescription_${params?.id || 'default'}`, JSON.stringify(newDescription))
-      console.log('Description saved successfully to localStorage')
+      console.log('✅ Description saved successfully via API')
+      handleShowToast('Description updated successfully!')
     } catch (error) {
-      console.error('Error saving description:', error)
+      console.error('❌ Error saving description:', error)
+      handleShowToast('Failed to update description')
     }
   }
 
@@ -4002,6 +4047,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     console.log('🎯 ===== COMPONENT MOUNTED =====')
     console.log('📊 Loading all property data on component mount')
     loadPropertyData()
+    loadExpenses() // Завантажуємо expenses з API
   }, [])
 
   // Автоматичне оновлення ціни кожні 5 хвилин
