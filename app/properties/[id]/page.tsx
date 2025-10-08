@@ -4694,11 +4694,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </div>
                   <button 
                     onClick={handleEditAmenities}
-                    className="text-orange-600 hover:text-orange-700 text-sm cursor-pointer"
+                    className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
                     data-testid="edit-amenities-btn"
                   >
-                    <Edit size={14} className="inline mr-1" />
-                    Edit list
+                    <Edit size={14} />
+                    <span>Edit</span>
                   </button>
                 </div>
 
