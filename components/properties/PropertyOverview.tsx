@@ -747,12 +747,29 @@ export default function PropertyOverview({
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty?.amenities?.map((amenity: any, index: number) => (
-            <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-sm text-gray-700">{amenity}</span>
-            </div>
-          )) || (
+          {(() => {
+            console.log('[PropertyOverview] displayProperty?.amenities:', displayProperty?.amenities);
+            console.log('[PropertyOverview] amenities type:', typeof displayProperty?.amenities);
+            console.log('[PropertyOverview] amenities is array:', Array.isArray(displayProperty?.amenities));
+            
+            return displayProperty?.amenities?.map((amenity: any, index: number) => {
+              console.log('[PropertyOverview] Processing amenity:', amenity, 'type:', typeof amenity);
+              
+              // Handle both string and object amenity formats
+              const amenityName = typeof amenity === 'string' ? amenity : (amenity?.name || 'Unknown');
+              const amenityIcon = typeof amenity === 'object' ? amenity?.icon || '' : '';
+              
+              console.log('[PropertyOverview] Rendered amenity name:', amenityName);
+              
+              return (
+                <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  {amenityIcon && <span className="text-sm">{amenityIcon}</span>}
+                  <span className="text-sm text-gray-700">{amenityName}</span>
+                </div>
+              );
+            });
+          })() || (
             <div className="col-span-full text-center py-4 text-gray-500">
               No amenities listed
             </div>
