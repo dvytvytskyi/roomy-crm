@@ -4,16 +4,16 @@ import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Apply authentication middleware to all routes
-router.use(authenticateToken);
-
 /**
  * @route GET /api/v2/amenities
  * @desc Get all amenities with pagination and filtering
- * @access Private
+ * @access Public
  * @query page, limit, category, search
  */
 router.get('/', AmenityController.getAllAmenities);
+
+// Apply authentication middleware to all other routes
+router.use(authenticateToken);
 
 /**
  * @route GET /api/v2/amenities/categories

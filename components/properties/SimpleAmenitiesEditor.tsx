@@ -37,11 +37,19 @@ export default function SimpleAmenitiesEditor({
       setIsLoading(true);
       setError(null);
       
-      const response = await amenityApiAdapter.getAll();
+      console.log('Loading amenities...');
+      console.log('Current token:', localStorage.getItem('token'));
+      
+      const response = await amenityApiAdapter.getAll({ limit: 100 }); // Load all amenities
+      console.log('Amenities API response:', response);
       
       if (response.success && response.data) {
-        setAllAmenities(response.data);
+        // response.data is paginated, we need response.data.data for the actual amenities array
+        const amenities = response.data.data || [];
+        console.log('Loaded amenities:', amenities);
+        setAllAmenities(amenities);
       } else {
+        console.error('API response error:', response);
         setError(response.message || 'Failed to load amenities');
       }
     } catch (err) {
