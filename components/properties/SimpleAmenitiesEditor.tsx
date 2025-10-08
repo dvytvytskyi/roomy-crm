@@ -33,22 +33,44 @@ export default function SimpleAmenitiesEditor({
   }, [currentAmenities]);
 
   // Static list of amenities to avoid API issues
+  // Real amenities from database with correct CUIDs
   const staticAmenities: Amenity[] = [
-    { id: 'wifi', name: 'WiFi', icon: '📶', category: 'Internet', description: 'Free WiFi', is_active: true, created_at: '', updated_at: '' },
-    { id: 'parking', name: 'Parking', icon: '🚗', category: 'Parking', description: 'Free parking', is_active: true, created_at: '', updated_at: '' },
-    { id: 'pool', name: 'Swimming Pool', icon: '🏊', category: 'Outdoor', description: 'Swimming pool', is_active: true, created_at: '', updated_at: '' },
-    { id: 'gym', name: 'Gym', icon: '🏋️', category: 'Fitness', description: 'Fitness center', is_active: true, created_at: '', updated_at: '' },
-    { id: 'kitchen', name: 'Kitchen', icon: '🍳', category: 'Kitchen', description: 'Fully equipped kitchen', is_active: true, created_at: '', updated_at: '' },
-    { id: 'ac', name: 'Air Conditioning', icon: '❄️', category: 'Climate', description: 'Air conditioning', is_active: true, created_at: '', updated_at: '' },
-    { id: 'tv', name: 'TV', icon: '📺', category: 'Entertainment', description: 'Smart TV', is_active: true, created_at: '', updated_at: '' },
-    { id: 'washer', name: 'Washing Machine', icon: '🧺', category: 'Laundry', description: 'Washing machine', is_active: true, created_at: '', updated_at: '' },
-    { id: 'balcony', name: 'Balcony', icon: '🏡', category: 'Outdoor', description: 'Private balcony', is_active: true, created_at: '', updated_at: '' },
-    { id: 'elevator', name: 'Elevator', icon: '🛗', category: 'Accessibility', description: 'Elevator access', is_active: true, created_at: '', updated_at: '' },
-    { id: 'security', name: 'Security', icon: '🔒', category: 'Security', description: '24/7 security', is_active: true, created_at: '', updated_at: '' },
-    { id: 'pets', name: 'Pet Friendly', icon: '🐕', category: 'Pets', description: 'Pet friendly', is_active: true, created_at: '', updated_at: '' },
-    { id: 'hot-tub', name: 'Hot Tub', icon: '🛁', category: 'Luxury', description: 'Hot tub/Jacuzzi', is_active: true, created_at: '', updated_at: '' },
-    { id: 'concierge', name: 'Concierge', icon: '🏨', category: 'Luxury', description: 'Concierge service', is_active: true, created_at: '', updated_at: '' },
-    { id: 'sauna', name: 'Sauna', icon: '🧖', category: 'Luxury', description: 'Sauna', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000b9e5ixur6r5qa', name: 'Air Conditioning', icon: '❄️', category: 'Climate', description: 'Air conditioning', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000i9e5ijdhdj5b1', name: 'Balcony', icon: '🌅', category: 'Outdoor', description: 'Balcony or terrace', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00099e5ip5ez6baf', name: 'Bathtub', icon: '🛁', category: 'Bathroom', description: 'Bathtub available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000o9e5iox1emza5', name: 'Carbon Monoxide Alarm', icon: '⚠️', category: 'Safety', description: 'Carbon monoxide alarm', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00049e5imvlk96cy', name: 'Coffee Maker', icon: '☕', category: 'Kitchen', description: 'Coffee maker', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000y9e5iwig1dehx', name: 'Concierge', icon: '🎩', category: 'Luxury', description: 'Concierge service', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00059e5iwqzqvpz6', name: 'Dining Table', icon: '🪑', category: 'Kitchen', description: 'Dining table', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00039e5i649y5oex', name: 'Dishwasher', icon: '🍽️', category: 'Kitchen', description: 'Dishwasher available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000h9e5i8mi105uc', name: 'Dryer', icon: '🌪️', category: 'Laundry', description: 'Clothes dryer', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000t9e5igf4o7n8l', name: 'Elevator', icon: '🛗', category: 'Accessibility', description: 'Elevator access', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000q9e5io5zvjjxa', name: 'Fire Extinguisher', icon: '🧯', category: 'Safety', description: 'Fire extinguisher', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000p9e5iqypmg6w9', name: 'First Aid Kit', icon: '🏥', category: 'Safety', description: 'First aid kit', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000j9e5iu3asc8az', name: 'Garden', icon: '🌿', category: 'Outdoor', description: 'Garden access', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000m9e5immdo3iu5', name: 'Gym', icon: '💪', category: 'Fitness', description: 'Gym or fitness center', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000a9e5ifmaws1ws', name: 'Hair Dryer', icon: '💨', category: 'Bathroom', description: 'Hair dryer', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000c9e5izqpdn71f', name: 'Heating', icon: '🔥', category: 'Climate', description: 'Heating system', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00079e5izmdpng7k', name: 'Hot Water', icon: '♨️', category: 'Bathroom', description: 'Hot water available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000w9e5ippvw2ore', name: 'Jacuzzi', icon: '🛁', category: 'Luxury', description: 'Jacuzzi or hot tub', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3h00009e5iafn33js0', name: 'Kitchen', icon: '🍳', category: 'Kitchen', description: 'Fully equipped kitchen', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00029e5ihkndpyjs', name: 'Microwave', icon: '📡', category: 'Kitchen', description: 'Microwave oven', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000l9e5i1g4r7uha', name: 'Parking', icon: '🅿️', category: 'Parking', description: 'Free parking', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000v9e5ikl2xvx9k', name: 'Pet Bowls', icon: '🥣', category: 'Pets', description: 'Pet bowls provided', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000u9e5ibpuvg2u7', name: 'Pet Friendly', icon: '🐕', category: 'Pets', description: 'Pet friendly', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000k9e5ic4ij01la', name: 'Pool', icon: '🏊', category: 'Outdoor', description: 'Swimming pool', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00069e5iu46xi28t', name: 'Private Bathroom', icon: '🚿', category: 'Bathroom', description: 'Private bathroom', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00019e5ikbjn406m', name: 'Refrigerator', icon: '🧊', category: 'Kitchen', description: 'Refrigerator available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000z9e5iuoqm2ifz', name: 'Room Service', icon: '🍽️', category: 'Luxury', description: 'Room service', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000x9e5i3su05963', name: 'Sauna', icon: '🧖', category: 'Luxury', description: 'Sauna available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000r9e5ispcg7jjy', name: 'Security Cameras', icon: '📹', category: 'Security', description: 'Security cameras', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i00089e5i6mpfc3zj', name: 'Shower', icon: '🚿', category: 'Bathroom', description: 'Shower available', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000n9e5iku8gtxga', name: 'Smoke Alarm', icon: '🚨', category: 'Safety', description: 'Smoke alarm', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000d9e5ikzktibo8', name: 'TV', icon: '📺', category: 'Entertainment', description: 'Television', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000g9e5iczg7c5w3', name: 'Washing Machine', icon: '🧺', category: 'Laundry', description: 'Washing machine', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000s9e5ihp5vbxl7', name: 'Wheelchair Accessible', icon: '♿', category: 'Accessibility', description: 'Wheelchair accessible', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000e9e5ik4foddcq', name: 'WiFi', icon: '📶', category: 'Internet', description: 'Free WiFi', is_active: true, created_at: '', updated_at: '' },
+    { id: 'cmgijzt3i000f9e5ieuh6qgk6', name: 'Workspace', icon: '💻', category: 'Work', description: 'Dedicated workspace', is_active: true, created_at: '', updated_at: '' },
   ];
 
   const loadAmenities = async () => {
@@ -56,28 +78,15 @@ export default function SimpleAmenitiesEditor({
       setIsLoading(true);
       setError(null);
       
-      console.log('Loading amenities...');
+      console.log('[SimpleAmenitiesEditor] Loading amenities from static list (36 amenities)');
       
-      // Try API first, fallback to static list
-      try {
-        const response = await amenityApiAdapter.getAll({ limit: 100 });
-        console.log('Amenities API response:', response);
-        
-        if (response.success && response.data) {
-          const amenities = response.data.data || [];
-          console.log('Loaded amenities from API:', amenities);
-          setAllAmenities(amenities);
-        } else {
-          console.log('API failed, using static amenities');
-          setAllAmenities(staticAmenities);
-        }
-      } catch (apiError) {
-        console.log('API error, using static amenities:', apiError);
-        setAllAmenities(staticAmenities);
-      }
+      // Use static amenities directly - reliable and fast
+      setAllAmenities(staticAmenities);
+      
+      console.log('[SimpleAmenitiesEditor] Loaded amenities successfully:', staticAmenities.length);
     } catch (err) {
-      console.error('Error loading amenities:', err);
-      setAllAmenities(staticAmenities); // Fallback to static list
+      console.error('[SimpleAmenitiesEditor] Error loading amenities:', err);
+      setError('Failed to load amenities');
     } finally {
       setIsLoading(false);
     }
