@@ -37,29 +37,38 @@ export interface PropertyResponseDto {
   agentId?: string;
 }
 
-// Property with related data
+// Property with related data - SUPER ENDPOINT DTO
 export interface PropertyWithDetailsDto extends PropertyResponseDto {
+  // Owner information with extended fields
   owner?: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
+    country?: string;
+    flag?: string;
   };
+  // Agent information with extended fields
   agent?: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
+    country?: string;
+    flag?: string;
   };
+  // Photos with creation date
   photos?: Array<{
     id: string;
     url: string;
     isCover: boolean;
     alt?: string;
     order: number;
+    createdAt: Date;
   }>;
+  // Pricing rules with creation/update dates
   pricingRules?: Array<{
     id: string;
     name: string;
@@ -69,7 +78,10 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     endDate?: Date;
     isActive: boolean;
     conditions?: any;
+    createdAt: Date;
+    updatedAt: Date;
   }>;
+  // Recent transactions (last 20)
   transactions?: Array<{
     id: string;
     transactionId: string;
@@ -83,6 +95,7 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     paymentMethod?: string;
     createdAt: Date;
   }>;
+  // Recent reservations (last 20)
   reservations?: Array<{
     id: string;
     reservationId: string;
@@ -95,16 +108,18 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     guestEmail?: string;
     createdAt: Date;
   }>;
-  documents?: Array<{
+  // Recent expenses (last 20)
+  expenses?: Array<{
     id: string;
-    filename: string;
-    originalName: string;
-    mimeType: string;
-    size: number;
-    url: string;
-    uploadedBy?: string;
+    date: Date;
+    category: string;
+    amount: number;
+    description?: string;
+    receiptUrl?: string;
     createdAt: Date;
+    updatedAt: Date;
   }>;
+  // Recent audit logs (last 10)
   auditLogs?: Array<{
     id: string;
     action: string;
@@ -113,11 +128,14 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     userId?: string;
     createdAt: Date;
   }>;
+  // Extended count statistics
   _count?: {
     reservations?: number;
     photos?: number;
     pricingRules?: number;
     transactions?: number;
+    expenses?: number;
+    auditLogs?: number;
   };
 }
 
@@ -309,7 +327,8 @@ export class PropertyService extends BaseService {
   }
 
   /**
-   * Find property by ID with role-based access control
+   * Find property by ID with role-based access control - SUPER ENDPOINT
+   * Returns ALL related data in one request
    */
   public static async findById(currentUser: CurrentUser, id: string): Promise<ServiceResponse<PropertyWithDetailsDto | null>> {
     try {
@@ -354,38 +373,47 @@ export class PropertyService extends BaseService {
         return PropertyService.prototype.error('Access denied', 'You do not have permission to view this property');
       }
 
-      // Get property with all related data
+      // SUPER ENDPOINT: Get property with ALL related data
       const property = await prisma.properties.findUnique({
         where: { id },
         include: {
+          // Owner information
           users_properties_owner_idTousers: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
               email: true,
-              phone: true
+              phone: true,
+              country: true,
+              flag: true
             }
           },
+          // Agent information
           users_properties_agent_idTousers: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
               email: true,
-              phone: true
+              phone: true,
+              country: true,
+              flag: true
             }
           },
+          // Photos
           property_photos: {
             select: {
               id: true,
               url: true,
               is_cover: true,
               alt: true,
-              order: true
+              order: true,
+              created_at: true
             },
             orderBy: { order: 'asc' }
           },
+          // Pricing rules
           pricing_rules: {
             select: {
               id: true,
@@ -395,11 +423,13 @@ export class PropertyService extends BaseService {
               start_date: true,
               end_date: true,
               is_active: true,
-              conditions: true
+              conditions: true,
+              created_at: true,
+              updated_at: true
             },
-            where: { is_active: true },
             orderBy: { created_at: 'desc' }
           },
+          // Recent transactions (last 20)
           transactions: {
             select: {
               id: true,
@@ -415,8 +445,9 @@ export class PropertyService extends BaseService {
               created_at: true
             },
             orderBy: { created_at: 'desc' },
-            take: 10 // Limit to recent transactions
+            take: 20
           },
+          // Recent reservations (last 20)
           reservations: {
             select: {
               id: true,
@@ -431,8 +462,24 @@ export class PropertyService extends BaseService {
               created_at: true
             },
             orderBy: { created_at: 'desc' },
-            take: 10 // Limit to recent reservations
+            take: 20
           },
+          // Recent expenses (last 20)
+          expenses: {
+            select: {
+              id: true,
+              date: true,
+              category: true,
+              amount: true,
+              description: true,
+              receipt_url: true,
+              created_at: true,
+              updated_at: true
+            },
+            orderBy: { created_at: 'desc' },
+            take: 20
+          },
+          // Recent audit logs (last 10)
           audit_logs: {
             select: {
               id: true,
@@ -444,14 +491,17 @@ export class PropertyService extends BaseService {
             },
             where: { entity_type: 'PROPERTY', entity_id: id },
             orderBy: { created_at: 'desc' },
-            take: 20 // Limit to recent audit logs
+            take: 10
           },
+          // Counts for statistics
           _count: {
             select: {
               reservations: true,
               property_photos: true,
               pricing_rules: true,
-              transactions: true
+              transactions: true,
+              expenses: true,
+              audit_logs: true
             }
           }
         }
@@ -519,27 +569,36 @@ export class PropertyService extends BaseService {
         checkInTime: property.check_in_time || undefined,
         checkOutTime: property.check_out_time || undefined,
         
+        // Owner information with extended fields
         owner: property.users_properties_owner_idTousers ? {
           id: property.users_properties_owner_idTousers.id,
           firstName: property.users_properties_owner_idTousers.firstName,
           lastName: property.users_properties_owner_idTousers.lastName,
           email: property.users_properties_owner_idTousers.email,
-          phone: property.users_properties_owner_idTousers.phone || undefined
+          phone: property.users_properties_owner_idTousers.phone || undefined,
+          country: property.users_properties_owner_idTousers.country || undefined,
+          flag: property.users_properties_owner_idTousers.flag || undefined
         } : undefined,
+        // Agent information with extended fields
         agent: property.users_properties_agent_idTousers ? {
           id: property.users_properties_agent_idTousers.id,
           firstName: property.users_properties_agent_idTousers.firstName,
           lastName: property.users_properties_agent_idTousers.lastName,
           email: property.users_properties_agent_idTousers.email,
-          phone: property.users_properties_agent_idTousers.phone || undefined
+          phone: property.users_properties_agent_idTousers.phone || undefined,
+          country: property.users_properties_agent_idTousers.country || undefined,
+          flag: property.users_properties_agent_idTousers.flag || undefined
         } : undefined,
+        // Photos with creation date
         photos: property.property_photos.map(photo => ({
           id: photo.id,
           url: photo.url,
           isCover: photo.is_cover,
           alt: photo.alt || undefined,
-          order: photo.order
+          order: photo.order,
+          createdAt: photo.created_at
         })),
+        // Pricing rules with creation/update dates
         pricingRules: property.pricing_rules.map(rule => ({
           id: rule.id,
           name: rule.name,
@@ -548,8 +607,11 @@ export class PropertyService extends BaseService {
           startDate: rule.start_date || undefined,
           endDate: rule.end_date || undefined,
           isActive: rule.is_active,
-          conditions: rule.conditions || undefined
+          conditions: rule.conditions || undefined,
+          createdAt: rule.created_at,
+          updatedAt: rule.updated_at
         })),
+        // Recent transactions (last 20)
         transactions: property.transactions.map(transaction => ({
           id: transaction.id,
           transactionId: transaction.transaction_id,
@@ -563,6 +625,7 @@ export class PropertyService extends BaseService {
           paymentMethod: transaction.payment_method || undefined,
           createdAt: transaction.created_at
         })),
+        // Recent reservations (last 20)
         reservations: property.reservations.map(reservation => ({
           id: reservation.id,
           reservationId: reservation.reservation_id,
@@ -575,6 +638,18 @@ export class PropertyService extends BaseService {
           guestEmail: reservation.guest_email || undefined,
           createdAt: reservation.created_at
         })),
+        // Recent expenses (last 20)
+        expenses: property.expenses.map(expense => ({
+          id: expense.id,
+          date: expense.date,
+          category: expense.category,
+          amount: expense.amount,
+          description: expense.description || undefined,
+          receiptUrl: expense.receipt_url || undefined,
+          createdAt: expense.created_at,
+          updatedAt: expense.updated_at
+        })),
+        // Recent audit logs (last 10)
         auditLogs: property.audit_logs.map(log => ({
           id: log.id,
           action: log.action,
@@ -583,11 +658,14 @@ export class PropertyService extends BaseService {
           userId: log.user_id || undefined,
           createdAt: log.created_at
         })),
+        // Extended count statistics
         _count: {
           reservations: property._count.reservations,
           photos: property._count.property_photos,
           pricingRules: property._count.pricing_rules,
-          transactions: property._count.transactions
+          transactions: property._count.transactions,
+          expenses: property._count.expenses,
+          auditLogs: property._count.audit_logs
         }
       };
 
