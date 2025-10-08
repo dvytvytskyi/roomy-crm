@@ -130,22 +130,32 @@ export default function PropertyOverview({
     setOwnersLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2';
-      const authToken = localStorage.getItem('accessToken');
+      const authToken = localStorage.getItem('token');
       
-      const response = await fetch(`${apiUrl}/users/owners`, {
+      console.log('🔄 PropertyOverview: Loading owners from:', `${apiUrl}/users?role=OWNER`);
+      console.log('🔑 PropertyOverview: Using token:', authToken ? 'Present' : 'Missing');
+      
+      const response = await fetch(`${apiUrl}/users?role=OWNER`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
       });
       
+      console.log('📡 PropertyOverview: Response status:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('📋 PropertyOverview: Owners response:', result);
         if (result.success && result.data) {
-          setOwners(Array.isArray(result.data) ? result.data : result.data.data || []);
+          const ownersData = Array.isArray(result.data) ? result.data : result.data.data || [];
+          console.log('👥 PropertyOverview: Processed owners:', ownersData.length, 'owners');
+          setOwners(ownersData);
         }
+      } else {
+        console.error('❌ PropertyOverview: Failed to fetch owners, status:', response.status);
       }
     } catch (error) {
-      console.error('Error loading owners:', error);
+      console.error('❌ PropertyOverview: Error loading owners:', error);
     } finally {
       setOwnersLoading(false);
     }
