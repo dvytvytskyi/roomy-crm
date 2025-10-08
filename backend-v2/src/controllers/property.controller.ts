@@ -432,20 +432,27 @@ export class PropertyController extends BaseController {
       }
 
       const { id } = req.params;
-      const { amenities } = req.body;
+      const { amenityIds } = req.body;
 
       if (!id) {
         PropertyController.validationError(res, [], 'Property ID is required');
         return;
       }
 
-      if (!Array.isArray(amenities)) {
-        PropertyController.validationError(res, [], 'Amenities must be an array');
+      if (!Array.isArray(amenityIds)) {
+        PropertyController.validationError(res, [], 'Amenity IDs must be an array');
+        return;
+      }
+
+      // Validate that all amenity IDs are strings
+      const invalidIds = amenityIds.filter(id => typeof id !== 'string' || id.trim() === '');
+      if (invalidIds.length > 0) {
+        PropertyController.validationError(res, [], 'All amenity IDs must be non-empty strings');
         return;
       }
 
       // Update property amenities
-      const updateResult = await PropertyService.updateAmenities(currentUser, id, amenities);
+      const updateResult = await PropertyService.updateAmenities(currentUser, id, amenityIds);
 
       if (!updateResult.success || !updateResult.data) {
         PropertyController.error(res, updateResult.error || 'Property amenities update failed', 400, updateResult.message);

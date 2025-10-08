@@ -124,6 +124,14 @@ export interface PropertyWithDetailsDto extends PropertyResponseDto {
     userId?: string;
     createdAt: Date;
   }>;
+  // Property amenities
+  amenities?: Array<{
+    id: string;
+    name: string;
+    icon?: string;
+    category?: string;
+    description?: string;
+  }>;
   // Extended count statistics
   _count?: {
     reservations?: number;
@@ -485,6 +493,20 @@ export class PropertyService extends BaseService {
             orderBy: { created_at: 'desc' },
             take: 10
           },
+          // Property amenities
+          property_amenities: {
+            include: {
+              amenity: {
+                select: {
+                  id: true,
+                  name: true,
+                  icon: true,
+                  category: true,
+                  description: true
+                }
+              }
+            }
+          },
           // Counts for statistics
           _count: {
             select: {
@@ -645,6 +667,14 @@ export class PropertyService extends BaseService {
           changes: log.changes || undefined,
           userId: log.user_id || undefined,
           createdAt: log.created_at
+        })),
+        // Property amenities
+        amenities: property.property_amenities.map(pa => ({
+          id: pa.amenity.id,
+          name: pa.amenity.name,
+          icon: pa.amenity.icon || undefined,
+          category: pa.amenity.category || undefined,
+          description: pa.amenity.description || undefined
         })),
         // Extended count statistics
         _count: {
@@ -1507,13 +1537,13 @@ export class PropertyService extends BaseService {
   }
 
   /**
-   * Update property amenities
+   * Update property amenities using many-to-many relationship
    */
-  public static async updateAmenities(currentUser: CurrentUser, id: string, amenities: string[]): Promise<ServiceResponse<PropertyResponseDto>> {
+  public static async updateAmenities(currentUser: CurrentUser, id: string, amenityIds: string[]): Promise<ServiceResponse<PropertyResponseDto>> {
     try {
       const prisma = new PrismaClient();
 
-      logger.info(`[Property Amenities Update] Starting amenities update for property ID: ${id}`);
+      logger.info(`[Property Amenities Update] Starting amenities update for property ID: ${id} with amenity IDs: ${amenityIds.join(', ')}`);
 
       // Check if property exists
       const existingProperty = await prisma.properties.findUnique({
@@ -1536,80 +1566,128 @@ export class PropertyService extends BaseService {
         return PropertyService.prototype.error('Forbidden', 'Insufficient permissions to update property amenities', 403);
       }
 
-      // Update amenities
-      const updatedProperty = await prisma.properties.update({
-        where: { id },
-        data: {
-          amenities: amenities,
-          updated_at: new Date()
-        },
-        include: {
-          users_properties_owner_idTousers: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              email: true,
-              phone: true
-            }
-          },
-          users_properties_agent_idTousers: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              email: true,
-              phone: true
-            }
-          },
-          property_photos: {
-            select: {
-              id: true,
-              url: true,
-              is_cover: true,
-              alt: true,
-              order: true
-            },
-            orderBy: { order: 'asc' }
-          }
+      // Validate that all amenity IDs exist
+      if (amenityIds.length > 0) {
+        const existingAmenities = await prisma.amenities.findMany({
+          where: { id: { in: amenityIds } },
+          select: { id: true }
+        });
+
+        const existingIds = existingAmenities.map(a => a.id);
+        const invalidIds = amenityIds.filter(id => !existingIds.includes(id));
+
+        if (invalidIds.length > 0) {
+          await prisma.$disconnect();
+          return PropertyService.prototype.error('Bad Request', `Invalid amenity IDs: ${invalidIds.join(', ')}`, 400);
         }
+      }
+
+      // Use transaction to update amenities
+      const result = await prisma.$transaction(async (tx) => {
+        // Remove all existing amenities for this property
+        await tx.property_amenities.deleteMany({
+          where: { property_id: id }
+        });
+
+        // Add new amenities if any
+        if (amenityIds.length > 0) {
+          await tx.property_amenities.createMany({
+            data: amenityIds.map(amenityId => ({
+              property_id: id,
+              amenity_id: amenityId
+            }))
+          });
+        }
+
+        // Get updated property with amenities
+        const updatedProperty = await tx.properties.findUnique({
+          where: { id },
+          include: {
+            users_properties_owner_idTousers: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+                phone: true
+              }
+            },
+            users_properties_agent_idTousers: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+                phone: true
+              }
+            },
+            property_photos: {
+              select: {
+                id: true,
+                url: true,
+                is_cover: true,
+                alt: true,
+                order: true
+              },
+              orderBy: { order: 'asc' }
+            },
+            property_amenities: {
+              include: {
+                amenity: {
+                  select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                    category: true
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        return updatedProperty;
       });
 
       await prisma.$disconnect();
 
+      if (!result) {
+        return PropertyService.prototype.error('Not Found', 'Property not found after update', 404);
+      }
+
       // Transform to response DTO
       const propertyResponse: PropertyResponseDto = {
-        id: updatedProperty.id,
-        name: updatedProperty.name,
-        nickname: updatedProperty.nickname,
-        title: updatedProperty.title,
-        type: updatedProperty.type,
-        typeOfUnit: updatedProperty.type_of_unit,
-        address: updatedProperty.address,
-        city: updatedProperty.city,
-        country: updatedProperty.country,
-        latitude: updatedProperty.latitude,
-        longitude: updatedProperty.longitude,
-        capacity: updatedProperty.capacity,
-        bedrooms: updatedProperty.bedrooms,
-        bathrooms: updatedProperty.bathrooms,
-        area: updatedProperty.area,
-        pricePerNight: updatedProperty.price_per_night,
-        description: updatedProperty.description,
-        amenities: updatedProperty.amenities,
-        houseRules: updatedProperty.house_rules,
-        tags: updatedProperty.tags,
-        isActive: updatedProperty.is_active,
-        isPublished: updatedProperty.is_published,
-        primaryImage: updatedProperty.primary_image,
-        pricelabId: updatedProperty.pricelab_id,
-        createdAt: updatedProperty.created_at,
-        updatedAt: updatedProperty.updated_at,
-        ownerId: updatedProperty.owner_id,
-        agentId: updatedProperty.agent_id
+        id: result.id,
+        name: result.name,
+        nickname: result.nickname,
+        title: result.title,
+        type: result.type,
+        typeOfUnit: result.type_of_unit,
+        address: result.address,
+        city: result.city,
+        country: result.country,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        capacity: result.capacity,
+        bedrooms: result.bedrooms,
+        bathrooms: result.bathrooms,
+        area: result.area,
+        pricePerNight: result.price_per_night,
+        description: result.description,
+        amenities: result.amenities, // Keep old format for backward compatibility
+        houseRules: result.house_rules,
+        tags: result.tags,
+        isActive: result.is_active,
+        isPublished: result.is_published,
+        primaryImage: result.primary_image,
+        pricelabId: result.pricelab_id,
+        createdAt: result.created_at,
+        updatedAt: result.updated_at,
+        ownerId: result.owner_id,
+        agentId: result.agent_id
       };
 
-      logger.info(`[Property Amenities Update] Successfully updated amenities for property ID: ${id}`);
+      logger.info(`[Property Amenities Update] Successfully updated amenities for property ID: ${id}. Added ${amenityIds.length} amenities.`);
       return PropertyService.prototype.success(propertyResponse, 'Property amenities updated successfully');
     } catch (error) {
       logger.error('Error updating property amenities:', error);

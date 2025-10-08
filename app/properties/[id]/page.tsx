@@ -8,6 +8,7 @@ import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import PropertyOverview from '../../../components/properties/PropertyOverview'
+import AmenitiesManager from '../../../components/properties/AmenitiesManager'
 import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
 import { priceLabService } from '../../../lib/api/services/pricelabService'
 import { propertyServiceAdapted } from '../../../lib/api/adapters/apiAdapter'
@@ -44,6 +45,7 @@ interface CentralizedPropertyData {
   // Зручності та правила
   amenities: string[]
   selectedAmenities: string[]
+  amenityIds?: string[] // For new amenities system
   rules: string[]
   selectedRules: string[]
   
@@ -80,104 +82,6 @@ interface CentralizedPropertyData {
   error: string | null
 }
 
-interface AmenitiesEditModalProps {
-  initialData: {
-    availableAmenities: string[]
-    selectedAmenities: string[]
-  }
-  onSave: (data: { availableAmenities: string[], selectedAmenities: string[] }) => void
-  onCancel: () => void
-}
-
-function AmenitiesEditModal({ initialData, onSave, onCancel }: AmenitiesEditModalProps) {
-  const [selected, setSelected] = useState<string[]>(initialData.selectedAmenities)
-  const [availableAmenities, setAvailableAmenities] = useState<string[]>(initialData.availableAmenities)
-  const [newAmenity, setNewAmenity] = useState('')
-
-  const handleToggleAmenity = (amenity: string) => {
-    if (selected.includes(amenity)) {
-      setSelected(selected.filter(item => item !== amenity))
-    } else {
-      setSelected([...selected, amenity])
-    }
-  }
-
-  const handleAddNewAmenity = () => {
-    if (newAmenity.trim() && !availableAmenities.includes(newAmenity.trim())) {
-      setAvailableAmenities([...availableAmenities, newAmenity.trim()])
-      setNewAmenity('')
-    }
-  }
-
-  const handleSave = () => {
-    onSave({
-      availableAmenities,
-      selectedAmenities: selected
-    })
-  }
-
-  return (
-    <div>
-      <div className="mb-4">
-        <p className="text-sm text-gray-600 mb-3">Select amenities for this property:</p>
-        
-        {/* Add new amenity */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Add new amenity:</label>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={newAmenity}
-              onChange={(e) => setNewAmenity(e.target.value)}
-              placeholder="Enter new amenity..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddNewAmenity()}
-            />
-            <button
-              onClick={handleAddNewAmenity}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Add
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-2 max-h-60 overflow-y-auto">
-          {availableAmenities.map((amenity, index) => (
-            <label key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selected.includes(amenity)}
-                onChange={() => handleToggleAmenity(amenity)}
-                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-              />
-              <span className="text-sm text-gray-700">{amenity}</span>
-              {selected.includes(amenity) && (
-                <Check size={16} className="text-orange-500 ml-auto" />
-              )}
-            </label>
-          ))}
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
-          data-testid="save-amenities-btn"
-        >
-          Save
-        </button>
-      </div>
-    </div>
-  )
-}
 
 interface RulesEditModalProps {
   initialData: {
@@ -1755,6 +1659,38 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     if (!propertyData) return false
 
     try {
+      // Спеціальна обробка для amenities
+      if (updatedData.amenityIds) {
+        console.log('🏠 Updating amenities for property:', params?.id, 'with IDs:', updatedData.amenityIds);
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/amenities`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ amenityIds: updatedData.amenityIds })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update amenities: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Amenities updated successfully:', result);
+
+        // Оновлюємо локальний стан
+        setPropertyData(prev => prev ? {
+          ...prev,
+          amenities: result.data?.amenities || prev.amenities,
+          isLoading: false,
+          error: null
+        } : null);
+
+        showToast('Amenities updated successfully', 'success');
+        return true;
+      }
+
       // Показуємо стан завантаження
       setPropertyData(prev => prev ? { ...prev, isLoading: true, error: null } : null)
 
@@ -5883,19 +5819,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             </div>
             
             {editModal.type === 'amenities' ? (
-              <AmenitiesEditModal 
-                initialData={{
-                  availableAmenities: amenities,
-                  selectedAmenities: selectedAmenities
+              <AmenitiesManager 
+                propertyId={params?.id || ''}
+                currentAmenities={propertyData?.amenities?.map(amenity => ({
+                  id: amenity.id || amenity,
+                  name: amenity.name || amenity,
+                  icon: amenity.icon,
+                  category: amenity.category,
+                  description: amenity.description,
+                  is_active: true,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })) || []}
+                onAmenitiesUpdate={async (amenityIds) => {
+                  const success = await handlePropertyUpdate({ amenityIds });
+                  if (success) {
+                    handleCloseEdit();
+                  }
+                  return success;
                 }}
-                onSave={async (data) => {
-                  await handlePropertyUpdate({ 
-                    amenities: data.availableAmenities,
-                    selectedAmenities: data.selectedAmenities 
-                  })
-                  handleSaveAmenities(data.selectedAmenities)
-                }}
-                onCancel={handleCloseEdit}
+                isLoading={propertyData?.isLoading || false}
               />
             ) : editModal.type === 'rules' ? (
               <RulesEditModal 

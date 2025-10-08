@@ -160,6 +160,8 @@ model properties {
   manual_blocks                   manual_blocks[]
   // Expense relations
   expenses                        expenses[]
+  // Amenities relations
+  property_amenities              property_amenities[]
 }
 
 model property_photos {
@@ -499,4 +501,34 @@ model activity_log {
   user              User     @relation("UserActivityLog", fields: [user_id], references: [id], onDelete: Cascade)
   
   @@map("activity_log")
+}
+
+model amenities {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  icon        String?  // Icon name or emoji
+  category    String?  // Category like "Kitchen", "Bathroom", "General", etc.
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  // Many-to-many relationship with properties
+  property_amenities property_amenities[]
+  
+  @@map("amenities")
+}
+
+model property_amenities {
+  id          String    @id @default(cuid())
+  property_id String
+  amenity_id  String
+  created_at  DateTime  @default(now())
+  
+  // Relations
+  property    properties @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  amenity     amenities  @relation(fields: [amenity_id], references: [id], onDelete: Cascade)
+  
+  @@unique([property_id, amenity_id])
+  @@map("property_amenities")
 }
