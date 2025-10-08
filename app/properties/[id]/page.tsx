@@ -4071,16 +4071,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 if (propertyData?.currentPrice) {
                   console.log('🎨 Rendering: Success state with price:', propertyData.currentPrice)
                   return (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-orange-700">AED {propertyData.currentPrice}/night</span>
-                      <span className="text-xs text-gray-500">(auto-updates every 5min)</span>
-                      <button 
-                        onClick={loadCurrentPrice}
-                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
-                      >
-                        Refresh
-                      </button>
-                    </div>
+                    <span className="text-sm font-medium text-orange-700">AED {propertyData.currentPrice}/night</span>
                   )
                 }
                 
