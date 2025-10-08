@@ -73,7 +73,11 @@ function OwnerSelectionModal({ isOpen, owners, loading, onSelect, onClose }: Own
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{owner.flag || '🏠'}</span>
-                    <span className="font-medium text-gray-900">{owner.name || 'Unknown Owner'}</span>
+                    <span className="font-medium text-gray-900">
+                      {owner.firstName && owner.lastName 
+                        ? `${owner.firstName} ${owner.lastName}` 
+                        : owner.name || 'Unknown Owner'}
+                    </span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
                     {owner.email || 'No email'} • {owner.phone || 'No phone'}
@@ -437,11 +441,19 @@ export default function PropertyOverview({
         {owner ? (
           <div className="flex items-start space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl font-bold text-orange-600">{owner.name?.charAt(0) || '?'}</span>
+              <span className="text-2xl font-bold text-orange-600">
+                {owner.firstName && owner.lastName 
+                  ? `${owner.firstName.charAt(0)}${owner.lastName.charAt(0)}` 
+                  : owner.name?.charAt(0) || '?'}
+              </span>
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name || 'Unknown Owner'}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {owner.firstName && owner.lastName 
+                  ? `${owner.firstName} ${owner.lastName}` 
+                  : owner.name || 'Unknown Owner'}
+              </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
