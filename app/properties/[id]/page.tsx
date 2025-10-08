@@ -1789,11 +1789,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Simple price loading - always fetch fresh data
   const loadCurrentPrice = async () => {
     // Використовуємо pricelabId з propertyData або fallback на тестовий ID
-    const pricelabId = propertyData?.pricelabId || '67a392b7b8fa25002a065c6c'
+    const pricelabId = propertyData?.pricelabId || '6450176d47bd11002ed0ca2c'
     console.log('🚀 ===== STARTING PRICE LOAD =====')
-    console.log('💰 Loading price for ID:', pricelabId)
+    console.log('💰 Loading price for pricelabId:', pricelabId)
     console.log('💰 Current states - priceLoading:', propertyData?.priceLoading, 'currentPrice:', propertyData?.currentPrice, 'priceError:', propertyData?.priceError)
     
+    // Встановлюємо priceLoading: true якщо він ще не встановлений
     setPropertyData(prev => prev ? { ...prev, priceLoading: true, priceError: null } : null)
     
     try {
@@ -1978,18 +1979,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       if (response.ok) {
         const apiData = await response.json()
         
-        // Оновлюємо стан з даними з API
+        // Оновлюємо стан з даними з API, але зберігаємо priceLoading: true
         setPropertyData(prev => prev ? {
           ...prev,
           ...apiData.data,
           isLoading: false,
-          error: null
+          error: null,
+          priceLoading: true, // Залишаємо завантаження ціни активним
+          currentPrice: null   // Очищаємо стару ціну
         } : null)
       } else {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Завантажуємо ціну
+      // Завантажуємо ціну одразу після основних даних
       await loadCurrentPrice()
 
     } catch (error) {
@@ -4036,10 +4039,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               <span className="text-lg">🏷️</span>
               {(() => {
                 console.log('🎨 RENDERING PRICE - states:', { priceLoading: propertyData?.priceLoading, currentPrice: propertyData?.currentPrice, priceError: propertyData?.priceError })
+                
+                // Якщо завантажується - показуємо індикатор
                 if (propertyData?.priceLoading) {
                   console.log('🎨 Rendering: Loading state')
-                  return <span className="text-sm font-medium text-orange-700">Loading price...</span>
-                } else if (propertyData?.priceError) {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-orange-700">Loading price...</span>
+                      <span className="animate-spin">⏳</span>
+                    </div>
+                  )
+                } 
+                
+                // Якщо є помилка - показуємо кнопку повтору
+                if (propertyData?.priceError) {
                   console.log('🎨 Rendering: Error state')
                   return (
                     <div className="flex items-center space-x-2">
@@ -4052,7 +4065,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </button>
                     </div>
                   )
-                } else if (propertyData?.currentPrice) {
+                } 
+                
+                // Якщо ціна завантажена - показуємо її
+                if (propertyData?.currentPrice) {
                   console.log('🎨 Rendering: Success state with price:', propertyData.currentPrice)
                   return (
                     <div className="flex items-center space-x-2">
@@ -4066,20 +4082,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </button>
                     </div>
                   )
-                } else {
-                  console.log('🎨 Rendering: Fallback state')
-                  return (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-orange-700">AED {propertyData?.currentPrice || 460}/night</span>
-                      <button 
-                        onClick={loadCurrentPrice}
-                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
-                      >
-                        Load PriceLab
-                      </button>
-                    </div>
-                  )
                 }
+                
+                // Якщо немає ціни і не завантажується - показуємо кнопку завантаження
+                console.log('🎨 Rendering: No price state - showing load button')
+                return (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-500">Price not loaded</span>
+                    <button 
+                      onClick={loadCurrentPrice}
+                      className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded"
+                    >
+                      Load Price
+                    </button>
+                  </div>
+                )
               })()}
             </div>
             <button 
