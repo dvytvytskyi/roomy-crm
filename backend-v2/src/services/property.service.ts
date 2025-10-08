@@ -1544,13 +1544,27 @@ export class PropertyService extends BaseService {
       const prisma = new PrismaClient();
 
       logger.info(`[Property Amenities Update] Starting amenities update for property ID: ${id} with amenity IDs: ${amenityIds.join(', ')}`);
+      logger.info(`[Property Amenities Update] Current user:`, { 
+        userId: currentUser.id, 
+        email: currentUser.email, 
+        role: currentUser.role 
+      });
 
       // Check if property exists
+      logger.info(`[Property Amenities Update] Checking if property exists: ${id}`);
       const existingProperty = await prisma.properties.findUnique({
         where: { id },
       });
 
+      logger.info(`[Property Amenities Update] Property lookup result:`, { 
+        found: !!existingProperty, 
+        propertyId: existingProperty?.id,
+        ownerId: existingProperty?.owner_id,
+        agentId: existingProperty?.agent_id
+      });
+
       if (!existingProperty) {
+        logger.error(`[Property Amenities Update] Property not found: ${id}`);
         await prisma.$disconnect();
         return PropertyService.prototype.error('Not Found', 'Property not found', 404);
       }
@@ -1561,42 +1575,74 @@ export class PropertyService extends BaseService {
                      (currentUser.role === 'OWNER' && existingProperty.owner_id === currentUser.id) ||
                      (currentUser.role === 'AGENT' && existingProperty.agent_id === currentUser.id);
 
+      logger.info(`[Property Amenities Update] Permission check:`, { 
+        canEdit, 
+        userRole: currentUser.role,
+        propertyOwnerId: existingProperty.owner_id,
+        propertyAgentId: existingProperty.agent_id,
+        userId: currentUser.id
+      });
+
       if (!canEdit) {
+        logger.error(`[Property Amenities Update] Insufficient permissions for user ${currentUser.id} to edit property ${id}`);
         await prisma.$disconnect();
         return PropertyService.prototype.error('Forbidden', 'Insufficient permissions to update property amenities', 403);
       }
 
       // Validate that all amenity IDs exist
       if (amenityIds.length > 0) {
+        logger.info(`[Property Amenities Update] Validating ${amenityIds.length} amenity IDs:`, amenityIds);
+        
         const existingAmenities = await prisma.amenities.findMany({
           where: { id: { in: amenityIds } },
           select: { id: true }
         });
 
+        logger.info(`[Property Amenities Update] Found ${existingAmenities.length} existing amenities:`, existingAmenities);
+
         const existingIds = existingAmenities.map(a => a.id);
         const invalidIds = amenityIds.filter(id => !existingIds.includes(id));
 
+        logger.info(`[Property Amenities Update] Validation result:`, { 
+          existingIds, 
+          invalidIds, 
+          invalidCount: invalidIds.length 
+        });
+
         if (invalidIds.length > 0) {
+          logger.error(`[Property Amenities Update] Invalid amenity IDs found:`, invalidIds);
           await prisma.$disconnect();
           return PropertyService.prototype.error('Bad Request', `Invalid amenity IDs: ${invalidIds.join(', ')}`, 400);
         }
+      } else {
+        logger.info(`[Property Amenities Update] No amenities to add (empty array)`);
       }
 
       // Use transaction to update amenities
+      logger.info(`[Property Amenities Update] Starting transaction for property ${id}`);
       const result = await prisma.$transaction(async (tx) => {
         // Remove all existing amenities for this property
-        await tx.property_amenities.deleteMany({
+        logger.info(`[Property Amenities Update] Removing existing amenities for property ${id}`);
+        const deleteResult = await tx.property_amenities.deleteMany({
           where: { property_id: id }
         });
+        logger.info(`[Property Amenities Update] Deleted ${deleteResult.count} existing amenities`);
 
         // Add new amenities if any
         if (amenityIds.length > 0) {
-          await tx.property_amenities.createMany({
-            data: amenityIds.map(amenityId => ({
-              property_id: id,
-              amenity_id: amenityId
-            }))
+          logger.info(`[Property Amenities Update] Adding ${amenityIds.length} new amenities:`, amenityIds);
+          const createData = amenityIds.map(amenityId => ({
+            property_id: id,
+            amenity_id: amenityId
+          }));
+          logger.info(`[Property Amenities Update] Create data:`, createData);
+          
+          const createResult = await tx.property_amenities.createMany({
+            data: createData
           });
+          logger.info(`[Property Amenities Update] Created ${createResult.count} new amenities`);
+        } else {
+          logger.info(`[Property Amenities Update] No new amenities to add`);
         }
 
         // Get updated property with amenities
@@ -1651,9 +1697,21 @@ export class PropertyService extends BaseService {
 
       await prisma.$disconnect();
 
+      logger.info(`[Property Amenities Update] Transaction completed, checking result:`, { 
+        hasResult: !!result, 
+        resultId: result?.id 
+      });
+
       if (!result) {
+        logger.error(`[Property Amenities Update] Property not found after update: ${id}`);
         return PropertyService.prototype.error('Not Found', 'Property not found after update', 404);
       }
+
+      logger.info(`[Property Amenities Update] Property found after update:`, {
+        id: result.id,
+        name: result.name,
+        amenitiesCount: result.property_amenities?.length || 0
+      });
 
       // Transform to response DTO
       const propertyResponse: PropertyResponseDto = {
@@ -1688,9 +1746,14 @@ export class PropertyService extends BaseService {
       };
 
       logger.info(`[Property Amenities Update] Successfully updated amenities for property ID: ${id}. Added ${amenityIds.length} amenities.`);
+      logger.info(`[Property Amenities Update] Final response DTO:`, { 
+        id: propertyResponse.id, 
+        name: propertyResponse.name 
+      });
+      
       return PropertyService.prototype.success(propertyResponse, 'Property amenities updated successfully');
     } catch (error) {
-      logger.error('Error updating property amenities:', error);
+      logger.error('[Property Amenities Update] Error updating property amenities:', error);
       return PropertyService.prototype.handleDatabaseError(error);
     }
   }

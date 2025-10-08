@@ -424,22 +424,40 @@ export class PropertyController extends BaseController {
    */
   public static updatePropertyAmenities = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      logger.info('[PropertyController] Starting amenities update request');
+      
       // Get current user from JWT middleware
       const currentUser = req.user;
+      logger.info('[PropertyController] Current user:', { 
+        userId: currentUser?.id, 
+        email: currentUser?.email, 
+        role: currentUser?.role 
+      });
+      
       if (!currentUser) {
+        logger.error('[PropertyController] No current user found');
         PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
         return;
       }
 
       const { id } = req.params;
       const { amenityIds } = req.body;
+      
+      logger.info('[PropertyController] Request data:', { 
+        propertyId: id, 
+        amenityIds, 
+        amenityIdsType: typeof amenityIds,
+        amenityIdsIsArray: Array.isArray(amenityIds)
+      });
 
       if (!id) {
+        logger.error('[PropertyController] Property ID is missing');
         PropertyController.validationError(res, [], 'Property ID is required');
         return;
       }
 
       if (!Array.isArray(amenityIds)) {
+        logger.error('[PropertyController] Amenity IDs is not an array:', { amenityIds });
         PropertyController.validationError(res, [], 'Amenity IDs must be an array');
         return;
       }
@@ -447,25 +465,36 @@ export class PropertyController extends BaseController {
       // Validate that all amenity IDs are strings
       const invalidIds = amenityIds.filter(id => typeof id !== 'string' || id.trim() === '');
       if (invalidIds.length > 0) {
+        logger.error('[PropertyController] Invalid amenity IDs found:', { invalidIds });
         PropertyController.validationError(res, [], 'All amenity IDs must be non-empty strings');
         return;
       }
 
+      logger.info('[PropertyController] Validation passed, calling PropertyService.updateAmenities');
+      
       // Update property amenities
       const updateResult = await PropertyService.updateAmenities(currentUser, id, amenityIds);
+      
+      logger.info('[PropertyController] PropertyService.updateAmenities result:', { 
+        success: updateResult.success, 
+        hasData: !!updateResult.data,
+        error: updateResult.error,
+        message: updateResult.message
+      });
 
       if (!updateResult.success || !updateResult.data) {
+        logger.error('[PropertyController] PropertyService.updateAmenities failed:', updateResult);
         PropertyController.error(res, updateResult.error || 'Property amenities update failed', 400, updateResult.message);
         return;
       }
 
       // Log property amenities update
-      logger.info(`Property amenities updated: ${id}`);
+      logger.info(`[PropertyController] Property amenities updated successfully: ${id}`);
 
       // Return updated property
       PropertyController.success(res, updateResult.data, 'Property amenities updated successfully');
     } catch (error) {
-      logger.error('Update property amenities error:', error);
+      logger.error('[PropertyController] Update property amenities error:', error);
       PropertyController.error(res, error, 500, 'Property amenities update failed');
     }
   };

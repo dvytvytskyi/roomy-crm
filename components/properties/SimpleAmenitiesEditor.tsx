@@ -94,12 +94,20 @@ export default function SimpleAmenitiesEditor({
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      console.log('[SimpleAmenitiesEditor] Starting save with amenity IDs:', selectedAmenityIds);
+      console.log('[SimpleAmenitiesEditor] Property ID:', propertyId);
+      
       const success = await onAmenitiesUpdate(selectedAmenityIds);
+      console.log('[SimpleAmenitiesEditor] Save result:', success);
+      
       if (success) {
+        console.log('[SimpleAmenitiesEditor] Save successful, closing modal');
         onClose();
+      } else {
+        console.error('[SimpleAmenitiesEditor] Save failed');
       }
     } catch (err) {
-      console.error('Error saving amenities:', err);
+      console.error('[SimpleAmenitiesEditor] Error saving amenities:', err);
     } finally {
       setIsSaving(false);
     }

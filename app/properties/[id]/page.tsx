@@ -1661,23 +1661,38 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       // Спеціальна обробка для amenities
       if (updatedData.amenityIds) {
-        console.log('🏠 Updating amenities for property:', params?.id, 'with IDs:', updatedData.amenityIds);
+        console.log('[handlePropertyUpdate] 🏠 Updating amenities for property:', params?.id, 'with IDs:', updatedData.amenityIds);
+        console.log('[handlePropertyUpdate] Amenity IDs type:', typeof updatedData.amenityIds);
+        console.log('[handlePropertyUpdate] Amenity IDs is array:', Array.isArray(updatedData.amenityIds));
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/amenities`, {
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}/amenities`;
+        const token = localStorage.getItem('token');
+        const requestBody = { amenityIds: updatedData.amenityIds };
+        
+        console.log('[handlePropertyUpdate] API URL:', apiUrl);
+        console.log('[handlePropertyUpdate] Token exists:', !!token);
+        console.log('[handlePropertyUpdate] Request body:', requestBody);
+        
+        const response = await fetch(apiUrl, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ amenityIds: updatedData.amenityIds })
+          body: JSON.stringify(requestBody)
         });
 
+        console.log('[handlePropertyUpdate] Response status:', response.status);
+        console.log('[handlePropertyUpdate] Response ok:', response.ok);
+
         if (!response.ok) {
-          throw new Error(`Failed to update amenities: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('[handlePropertyUpdate] Response error:', errorText);
+          throw new Error(`Failed to update amenities: ${response.statusText} - ${errorText}`);
         }
 
         const result = await response.json();
-        console.log('✅ Amenities updated successfully:', result);
+        console.log('[handlePropertyUpdate] ✅ Amenities updated successfully:', result);
 
         // Оновлюємо локальний стан
         setPropertyData(prev => prev ? {
