@@ -21,6 +21,7 @@ export default function AmenitiesManager({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
+  const [showInactive, setShowInactive] = useState(false);
   const [isLoadingAmenities, setIsLoadingAmenities] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,8 +111,13 @@ export default function AmenitiesManager({
     return JSON.stringify(currentIds) !== JSON.stringify(selectedIds);
   };
 
+  // Filter amenities by active status
+  const filteredAmenities = showInactive 
+    ? allAmenities 
+    : allAmenities.filter(amenity => amenity.is_active);
+
   // Group amenities by category
-  const groupedAmenities = allAmenities.reduce((groups, amenity) => {
+  const groupedAmenities = filteredAmenities.reduce((groups, amenity) => {
     const category = amenity.category || 'Other';
     if (!groups[category]) {
       groups[category] = [];
@@ -124,45 +130,70 @@ export default function AmenitiesManager({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Manage Amenities</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Manage Amenities</h3>
+          <p className="text-xs text-gray-500 mt-1">
+            {allAmenities.filter(a => a.is_active).length} active, {allAmenities.filter(a => !a.is_active).length} inactive
+          </p>
+        </div>
         <div className="text-sm text-gray-500">
           {selectedAmenityIds.length} selected
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Category Filter */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Categories</option>
-            {categories.map(category => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Category Filter */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Search */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Search
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search amenities..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Search
+        {/* Show Inactive Toggle */}
+        <div className="flex items-center space-x-2">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Show inactive amenities
+            </span>
           </label>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search amenities..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <span className="text-xs text-gray-500">
+            ({filteredAmenities.length} amenities shown)
+          </span>
         </div>
       </div>
 
@@ -188,21 +219,35 @@ export default function AmenitiesManager({
                   {amenities.map(amenity => (
                     <label
                       key={amenity.id}
-                      className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                      className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors ${
+                        amenity.is_active 
+                          ? 'hover:bg-gray-50' 
+                          : 'bg-gray-50 opacity-60 hover:bg-gray-100'
+                      }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedAmenityIds.includes(amenity.id)}
                         onChange={() => handleAmenityToggle(amenity.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        disabled={!amenity.is_active}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
                       />
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-1">
                         {amenity.icon && (
-                          <span className="text-lg">{amenity.icon}</span>
+                          <span className={`text-lg ${!amenity.is_active ? 'grayscale' : ''}`}>
+                            {amenity.icon}
+                          </span>
                         )}
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium flex items-center gap-2 ${
+                            amenity.is_active ? 'text-gray-900' : 'text-gray-500'
+                          }`}>
                             {amenity.name}
+                            {!amenity.is_active && (
+                              <span className="px-2 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">
+                                Inactive
+                              </span>
+                            )}
                           </div>
                           {amenity.description && (
                             <div className="text-xs text-gray-500">
