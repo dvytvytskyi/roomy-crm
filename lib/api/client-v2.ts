@@ -14,27 +14,27 @@ class TokenManagerV2 {
 
   setToken(token: string) {
     this.accessToken = token;
-    localStorage.setItem('accessToken', token);
+    localStorage.setItem('token', token);
     
     // Also set cookie for middleware compatibility
     if (typeof document !== 'undefined') {
-      document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+      document.cookie = `token=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
     }
   }
 
   getToken(): string | null {
     if (!this.accessToken) {
       // Check localStorage first
-      this.accessToken = localStorage.getItem('accessToken');
+      this.accessToken = localStorage.getItem('token');
       
       // If not in localStorage, check cookies (for middleware compatibility)
       if (!this.accessToken && typeof document !== 'undefined') {
         const cookies = document.cookie.split(';');
-        const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('accessToken='));
+        const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
         if (tokenCookie) {
           this.accessToken = tokenCookie.split('=')[1];
           // Store in localStorage for consistency
-          localStorage.setItem('accessToken', this.accessToken);
+          localStorage.setItem('token', this.accessToken);
         }
       }
     }
@@ -43,11 +43,11 @@ class TokenManagerV2 {
 
   clearToken() {
     this.accessToken = null;
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
     
     // Clear cookie
     if (typeof document !== 'undefined') {
-      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
   }
 

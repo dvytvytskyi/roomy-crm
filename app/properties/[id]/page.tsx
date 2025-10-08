@@ -3795,13 +3795,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     try {
       console.log('Fetching owner data for ID:', ownerId)
       
-      // Use environment variable for API URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      // Use API v2 URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
       
       // Get auth token from localStorage or session
-      const authToken = localStorage.getItem('accessToken') || 'test'
+      const authToken = localStorage.getItem('token') || 'test'
       
-      const response = await fetch(`${apiUrl}/api/users/owners/${ownerId}`, {
+      const response = await fetch(`${apiUrl}/users/${ownerId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
