@@ -400,14 +400,21 @@ export default function PropertyOverview({
 
     const { totalRevenue, totalExpenses, ownerPayout, companyRevenue } = financialData;
     
+    // Ensure all values are numbers and provide defaults
+    const safeTotalRevenue = Number(totalRevenue) || 0;
+    const safeTotalExpenses = Number(totalExpenses) || 0;
+    const safeOwnerPayout = Number(ownerPayout) || 0;
+    const safeCompanyRevenue = Number(companyRevenue) || 0;
+    const safeRoomyAgencyFee = Number(incomeDistribution.roomyAgencyFee) || 0;
+    
     return {
-      totalRevenue,
-      totalExpenses,
-      totalProfit: totalRevenue - totalExpenses,
-      ownerPayout,
-      companyRevenue,
-      agentProfit: companyRevenue - (totalRevenue * incomeDistribution.roomyAgencyFee / 100),
-      roomyAgencyFee: totalRevenue * incomeDistribution.roomyAgencyFee / 100
+      totalRevenue: safeTotalRevenue,
+      totalExpenses: safeTotalExpenses,
+      totalProfit: safeTotalRevenue - safeTotalExpenses,
+      ownerPayout: safeOwnerPayout,
+      companyRevenue: safeCompanyRevenue,
+      agentProfit: safeCompanyRevenue - (safeTotalRevenue * safeRoomyAgencyFee / 100),
+      roomyAgencyFee: safeTotalRevenue * safeRoomyAgencyFee / 100
     };
   };
 
@@ -554,17 +561,17 @@ export default function PropertyOverview({
               <div className="space-y-4">
                 <div className="bg-slate-50 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Total Profit</h4>
-                  <p className="text-lg font-medium text-gray-900">AED {financialSummary.totalProfit.toLocaleString()}</p>
+                  <p className="text-lg font-medium text-gray-900">AED {financialSummary?.totalProfit?.toLocaleString() || '0'}</p>
                   <p className="text-xs text-gray-500 mt-1">Total Revenue - Expenses</p>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Owner Payout</h4>
-                  <p className="text-lg font-medium text-green-600">AED {financialSummary.ownerPayout.toLocaleString()}</p>
+                  <p className="text-lg font-medium text-green-600">AED {financialSummary?.ownerPayout?.toLocaleString() || '0'}</p>
                   <p className="text-xs text-gray-500 mt-1">Revenue - Expenses - Agent Profit - Roomy Fee</p>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Company Revenue</h4>
-                  <p className="text-lg font-medium text-orange-600">AED {financialSummary.companyRevenue.toLocaleString()}</p>
+                  <p className="text-lg font-medium text-orange-600">AED {financialSummary?.companyRevenue?.toLocaleString() || '0'}</p>
                   <p className="text-xs text-gray-500 mt-1">Agent Profit + Roomy Agency Fee</p>
                 </div>
               </div>
@@ -580,15 +587,15 @@ export default function PropertyOverview({
                 </div>
                 <div>
                   <span className="text-gray-600">Total Expenses:</span>
-                  <p className="font-medium">AED {financialSummary.totalExpenses.toLocaleString()}</p>
+                  <p className="font-medium">AED {financialSummary?.totalExpenses?.toLocaleString() || '0'}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Agent Profit ({incomeDistribution.referringAgent}%):</span>
-                  <p className="font-medium">AED {financialSummary.agentProfit.toLocaleString()}</p>
+                  <p className="font-medium">AED {financialSummary?.agentProfit?.toLocaleString() || '0'}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Roomy Fee ({incomeDistribution.roomyAgencyFee}%):</span>
-                  <p className="font-medium">AED {financialSummary.roomyAgencyFee.toLocaleString()}</p>
+                  <p className="font-medium">AED {financialSummary?.roomyAgencyFee?.toLocaleString() || '0'}</p>
                 </div>
               </div>
             </div>
