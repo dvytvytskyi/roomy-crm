@@ -4272,6 +4272,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               <PropertyOverview 
                 propertyId={params?.id || ''}
                 propertyData={propertyData}
+                owner={owner}
                 onPropertyUpdate={handlePropertyUpdate}
                 isLoading={propertyData?.isLoading || false}
                 error={propertyData?.error || null}

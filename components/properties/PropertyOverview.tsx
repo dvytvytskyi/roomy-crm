@@ -8,6 +8,7 @@ import Toast from '../Toast';
 interface PropertyOverviewProps {
   propertyId: string;
   propertyData: any;
+  owner?: any;
   onPropertyUpdate: (updates: any) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
@@ -111,6 +112,7 @@ function OwnerSelectionModal({ isOpen, owners, loading, onSelect, onClose }: Own
 export default function PropertyOverview({ 
   propertyId, 
   propertyData, 
+  owner,
   onPropertyUpdate, 
   isLoading, 
   error 
@@ -119,7 +121,8 @@ export default function PropertyOverview({
   const property = propertyData;
   const propertyLoading = isLoading;
   const propertyError = error;
-  const owner = propertyData?.owner;
+  // Use owner from props (updated via fetchOwnerData) or fallback to propertyData.owner
+  const currentOwner = owner || propertyData?.owner;
   const financialData = propertyData?.financialData;
   const incomeDistribution = propertyData?.incomeDistribution;
   const currentPrice = propertyData?.currentPrice;
@@ -434,58 +437,58 @@ export default function PropertyOverview({
             className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
           >
             <Edit size={14} />
-            <span>{owner ? 'Change Owner' : 'Select Owner'}</span>
+            <span>{currentOwner ? 'Change Owner' : 'Select Owner'}</span>
           </button>
         </div>
         
-        {owner ? (
+        {currentOwner ? (
           <div className="flex items-start space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-2xl font-bold text-orange-600">
-                {owner.firstName && owner.lastName 
-                  ? `${owner.firstName.charAt(0)}${owner.lastName.charAt(0)}` 
-                  : owner.name?.charAt(0) || '?'}
+                {currentOwner.firstName && currentOwner.lastName 
+                  ? `${currentOwner.firstName.charAt(0)}${currentOwner.lastName.charAt(0)}` 
+                  : currentOwner.name?.charAt(0) || '?'}
               </span>
             </div>
             
             <div className="flex-1 min-w-0">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {owner.firstName && owner.lastName 
-                  ? `${owner.firstName} ${owner.lastName}` 
-                  : owner.name || 'Unknown Owner'}
+                {currentOwner.firstName && currentOwner.lastName 
+                  ? `${currentOwner.firstName} ${currentOwner.lastName}` 
+                  : currentOwner.name || 'Unknown Owner'}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xl">{owner.flag || '🏠'}</span>
-                      <span className="text-sm font-medium text-gray-900">{owner.country || 'Unknown Country'}</span>
+                      <span className="text-xl">{currentOwner.flag || '🏠'}</span>
+                      <span className="text-sm font-medium text-gray-900">{currentOwner.country || 'Unknown Country'}</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Mail size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{owner.email || 'No email'}</span>
+                    <span className="text-sm text-gray-600">{currentOwner.email || 'No email'}</span>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Phone size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{owner.phone || 'No phone'}</span>
+                    <span className="text-sm text-gray-600">{currentOwner.phone || 'No phone'}</span>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className={`w-3 h-3 rounded-full ${
-                      owner.status === 'active' ? 'bg-green-500' : 
-                      owner.status === 'vip' ? 'bg-purple-500' : 'bg-gray-400'
+                      currentOwner.status === 'active' ? 'bg-green-500' : 
+                      currentOwner.status === 'vip' ? 'bg-purple-500' : 'bg-gray-400'
                     }`}></div>
                     <span className={`text-sm font-medium capitalize ${
-                      owner.status === 'active' ? 'text-green-600' : 
-                      owner.status === 'vip' ? 'text-purple-600' : 'text-gray-600'
+                      currentOwner.status === 'active' ? 'text-green-600' : 
+                      currentOwner.status === 'vip' ? 'text-purple-600' : 'text-gray-600'
                     }`}>
-                      {owner.status === 'vip' ? 'VIP Owner' : (owner.status || 'Unknown')}
+                      {currentOwner.status === 'vip' ? 'VIP Owner' : (currentOwner.status || 'Unknown')}
                     </span>
                   </div>
                   
