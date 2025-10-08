@@ -7,6 +7,10 @@ import Toast from '../Toast';
 
 interface PropertyOverviewProps {
   propertyId: string;
+  propertyData: any;
+  onPropertyUpdate: (updates: any) => Promise<boolean>;
+  isLoading: boolean;
+  error: string | null;
 }
 
 interface OwnerSelectionModalProps {
@@ -69,10 +73,10 @@ function OwnerSelectionModal({ isOpen, owners, loading, onSelect, onClose }: Own
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{owner.flag || '🏠'}</span>
-                    <span className="font-medium text-gray-900">{owner.name}</span>
+                    <span className="font-medium text-gray-900">{owner.name || 'Unknown Owner'}</span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {owner.email} • {owner.phone}
+                    {owner.email || 'No email'} • {owner.phone || 'No phone'}
                   </div>
                 </div>
               </label>
@@ -100,21 +104,52 @@ function OwnerSelectionModal({ isOpen, owners, loading, onSelect, onClose }: Own
   );
 }
 
-export default function PropertyOverview({ propertyId }: PropertyOverviewProps) {
-  const {
-    property,
-    loading: propertyLoading,
-    error: propertyError,
-    owner,
-    owners,
-    ownersLoading,
-    financialData,
-    incomeDistribution,
-    currentPrice,
-    priceLoading,
-    assignOwner,
-    refreshPrice
-  } = usePropertyDetails(propertyId);
+export default function PropertyOverview({ 
+  propertyId, 
+  propertyData, 
+  onPropertyUpdate, 
+  isLoading, 
+  error 
+}: PropertyOverviewProps) {
+  // Use centralized data from parent component
+  const property = propertyData;
+  const propertyLoading = isLoading;
+  const propertyError = error;
+  const owner = propertyData?.owner;
+  const financialData = propertyData?.financialData;
+  const incomeDistribution = propertyData?.incomeDistribution;
+  const currentPrice = propertyData?.currentPrice;
+  const priceLoading = propertyData?.priceLoading;
+  
+  // Load owners separately (this can be moved to parent later)
+  const [owners, setOwners] = useState<any[]>([]);
+  const [ownersLoading, setOwnersLoading] = useState(false);
+
+  // Load owners when modal opens
+  const loadOwners = async () => {
+    setOwnersLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2';
+      const authToken = localStorage.getItem('accessToken');
+      
+      const response = await fetch(`${apiUrl}/users/owners`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setOwners(Array.isArray(result.data) ? result.data : result.data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading owners:', error);
+    } finally {
+      setOwnersLoading(false);
+    }
+  };
 
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -147,12 +182,13 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
   const [descriptionForm, setDescriptionForm] = useState('');
 
   const handleEditOwner = () => {
+    loadOwners(); // Load owners when opening modal
     setShowOwnerModal(true);
   };
 
   const handleSelectOwner = async (ownerId: string) => {
     try {
-      const success = await assignOwner(ownerId);
+      const success = await onPropertyUpdate({ ownerId });
       
       if (success) {
         setToastMessage('Owner assigned successfully');
@@ -212,7 +248,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
         country: generalInfoForm.country
       };
 
-      const success = await updateProperty(updateData);
+      const success = await onPropertyUpdate(updateData);
       
       if (success) {
         setShowGeneralInfoModal(false);
@@ -237,7 +273,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
 
   const handleSaveDescription = async () => {
     try {
-      const success = await updateProperty({ description: descriptionForm });
+      const success = await onPropertyUpdate({ description: descriptionForm });
       
       if (success) {
         setShowDescriptionModal(false);
@@ -308,29 +344,29 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
         {owner ? (
           <div className="flex items-start space-x-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl font-bold text-orange-600">{owner.name.charAt(0)}</span>
+              <span className="text-2xl font-bold text-orange-600">{owner.name?.charAt(0) || '?'}</span>
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{owner.name || 'Unknown Owner'}</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xl">{owner.flag}</span>
-                      <span className="text-sm font-medium text-gray-900">{owner.country}</span>
+                      <span className="text-xl">{owner.flag || '🏠'}</span>
+                      <span className="text-sm font-medium text-gray-900">{owner.country || 'Unknown Country'}</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Mail size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{owner.email}</span>
+                    <span className="text-sm text-gray-600">{owner.email || 'No email'}</span>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <Phone size={16} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">{owner.phone}</span>
+                    <span className="text-sm text-gray-600">{owner.phone || 'No phone'}</span>
                   </div>
                 </div>
                 
@@ -344,7 +380,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
                       owner.status === 'active' ? 'text-green-600' : 
                       owner.status === 'vip' ? 'text-purple-600' : 'text-gray-600'
                     }`}>
-                      {owner.status === 'vip' ? 'VIP Owner' : owner.status}
+                      {owner.status === 'vip' ? 'VIP Owner' : (owner.status || 'Unknown')}
                     </span>
                   </div>
                   
@@ -503,7 +539,10 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-500">No data</span>
                       <button 
-                        onClick={refreshPrice}
+                        onClick={() => {
+                          // Refresh price functionality will be implemented
+                          console.log('Refresh price clicked');
+                        }}
                         className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
                       >
                         Refresh
@@ -559,7 +598,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {displayProperty?.photos?.map((photo, index) => (
+          {displayProperty?.photos?.map((photo: any, index: number) => (
             <div key={index} className="aspect-square rounded-lg overflow-hidden">
               <img 
                 src={photo.url} 
@@ -588,7 +627,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty?.amenities?.map((amenity, index) => (
+          {displayProperty?.amenities?.map((amenity: any, index: number) => (
             <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-700">{amenity}</span>
@@ -614,7 +653,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty?.utilities?.map((utility, index) => (
+          {displayProperty?.utilities?.map((utility: any, index: number) => (
             <div key={index} className="flex items-center space-x-2 bg-blue-50 rounded-lg px-3 py-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <span className="text-sm text-gray-700">{utility}</span>
@@ -640,7 +679,7 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
           </button>
         </div>
         <div className="space-y-3">
-          {displayProperty?.houseRules?.map((rule, index) => (
+          {displayProperty?.houseRules?.map((rule: any, index: number) => (
             <div key={index} className="flex items-start space-x-3">
               <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
               <span className="text-sm text-gray-700">{rule}</span>
@@ -911,11 +950,12 @@ export default function PropertyOverview({ propertyId }: PropertyOverviewProps) 
       />
 
       {/* Toast */}
-      <Toast
-        show={showToast}
-        message={toastMessage}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }

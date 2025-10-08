@@ -1,5 +1,8 @@
 import { UserRole } from '@prisma/client';
 
+// Define UserStatus locally since it's not exported from @prisma/client
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
+
 // Existing imports and types...
 export interface CreateUserDto {
   email: string;

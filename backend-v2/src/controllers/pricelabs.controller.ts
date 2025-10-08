@@ -1,17 +1,93 @@
 import { Request, Response, NextFunction } from 'express';
 import { PricelabsService } from '../services/pricelabs.service';
-import { logger } from '../utils/logger';
-import { AuthenticatedRequest } from '../types/auth';
+import logger from '../utils/logger';
+import { CurrentUser } from '../types/dto';
 
 export class PricelabsController {
+  /**
+   * Test endpoint to verify service is working
+   * @route GET /api/v2/integrations/pricelabs/test
+   * @access Private (JWT required)
+   */
+  public static test = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        PricelabsController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      console.log('[PricelabsController] Test endpoint called');
+      const testResult = PricelabsService.test();
+      console.log('[PricelabsController] Test result:', testResult);
+
+      // Test getCurrentPrice method
+      console.log('[PricelabsController] Testing getCurrentPrice method...');
+      const priceResult = await PricelabsService.getCurrentPrice('test-id');
+      console.log('[PricelabsController] getCurrentPrice result:', priceResult);
+
+      PricelabsController.success(res, { 
+        result: testResult,
+        priceResult: priceResult
+      }, 'Test completed');
+
+    } catch (error: any) {
+      logger.error('[PricelabsController] Test error:', error);
+      PricelabsController.error(res, error, 500, 'Test failed');
+    }
+  };
+
+  /**
+   * Get all listings from PriceLabs
+   * @route GET /api/v2/integrations/pricelabs/listings
+   * @access Private (JWT required)
+   */
+
+  /**
+   * Diagnostic endpoint to get raw PriceLabs data
+   * @route GET /api/v2/integrations/pricelabs/debug/:id
+   * @access Private (JWT required)
+   */
+
+  /**
+   * Debug endpoint to check API key configuration
+   * @route GET /api/v2/integrations/pricelabs/debug
+   * @access Private (JWT required)
+   */
+  public static debug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        PricelabsController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const apiKey = process.env.PRICELABS_API_KEY;
+      console.log(`[PricelabsController] Debug - API Key configured: ${apiKey ? 'YES' : 'NO'}`);
+      console.log(`[PricelabsController] Debug - API Key length: ${apiKey ? apiKey.length : 0}`);
+      console.log(`[PricelabsController] Debug - API Key preview: ${apiKey ? apiKey.substring(0, 10) + '...' : 'N/A'}`);
+
+      PricelabsController.success(res, {
+        apiKeyConfigured: !!apiKey,
+        apiKeyLength: apiKey ? apiKey.length : 0,
+        apiKeyPreview: apiKey ? apiKey.substring(0, 10) + '...' : 'N/A'
+      }, 'Debug information retrieved');
+
+    } catch (error: any) {
+      logger.error('[PricelabsController] Debug error:', error);
+      PricelabsController.error(res, error, 500, 'Debug failed');
+    }
+  };
+
   /**
    * Get current price for a property from PriceLabs
    * @route GET /api/v2/integrations/pricelabs/prices/:id
    * @access Private (JWT required)
+   * @param id - PriceLabs listing ID (pricelabId)
    */
-  public static getCurrentPrice = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  public static getCurrentPrice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const currentUser = req.user;
+      const currentUser = (req as any).user;
       if (!currentUser) {
         PricelabsController.error(res, 'Unauthorized', 401, 'Authentication required');
         return;
@@ -19,20 +95,34 @@ export class PricelabsController {
 
       const { id } = req.params;
       if (!id) {
-        PricelabsController.validationError(res, [], 'Property ID is required');
+        PricelabsController.validationError(res, [], 'PriceLabs ID is required');
         return;
       }
 
-      logger.info(`[PricelabsController] Getting price for property: ${id}, user: ${currentUser.email}`);
+      console.log(`[PricelabsController] Getting price for PriceLabs ID: ${id}, user: ${currentUser.email}`);
+      logger.info(`[PricelabsController] Getting price for PriceLabs ID: ${id}, user: ${currentUser.email}`);
 
-      // Try to get price from PriceLabs
-      const priceResponse = await PricelabsService.getCurrentPrice(id);
+      // Try to get price from PriceLabs using the pricelabId
+      let priceResponse;
+      try {
+        console.log(`[PricelabsController] Calling PricelabsService.getCurrentPrice with ID: ${id}`);
+        logger.info(`[PricelabsController] Calling PricelabsService.getCurrentPrice with ID: ${id}`);
+        priceResponse = await PricelabsService.getCurrentPrice(id);
+        console.log(`[PricelabsController] Price response type:`, typeof priceResponse);
+        console.log(`[PricelabsController] Price response:`, priceResponse);
+        logger.info(`[PricelabsController] Price response:`, priceResponse);
+      } catch (serviceError: any) {
+        console.log(`[PricelabsController] Service error caught:`, serviceError);
+        logger.error(`[PricelabsController] Service error:`, serviceError);
+        priceResponse = { success: false, error: serviceError.message };
+      }
 
-      if (priceResponse.success) {
-        logger.info(`[PricelabsController] Successfully retrieved price for property: ${id}`);
+      if (priceResponse && priceResponse.success) {
+        console.log(`[PricelabsController] Successfully retrieved price for property: ${id}`);
         PricelabsController.success(res, priceResponse.data, 'Price retrieved successfully');
       } else {
-        logger.warn(`[PricelabsController] PriceLabs failed for property: ${id}, using fallback. Error: ${priceResponse.error}`);
+        const errorMessage = priceResponse?.error || 'Unknown error';
+        console.log(`[PricelabsController] PriceLabs failed for property: ${id}, using fallback. Error: ${errorMessage}`);
         
         // Use fallback price if PriceLabs fails
         const fallbackResponse = PricelabsService.getFallbackPrice(id);

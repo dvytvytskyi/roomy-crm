@@ -121,7 +121,7 @@ export default function LoginPage() {
 
           <div className="text-center">
                 <p className="text-sm text-slate-600">
-                  Admin credentials: admin2@roomy.com / admin123
+                  Admin credentials: admin@roomy.com / admin123
                 </p>
             <div className="mt-2">
               <span className={`text-xs px-2 py-1 rounded-full ${

@@ -11,17 +11,69 @@ import PropertyOverview from '../../../components/properties/PropertyOverview'
 import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
 import { priceLabService } from '../../../lib/api/services/pricelabService'
 import { propertyServiceAdapted } from '../../../lib/api/adapters/apiAdapter'
-import { usePropertyEvents } from '../../../hooks/usePropertyEvents'
 
-interface AmenitiesEditModalProps {
+// Централізований інтерфейс для всіх даних про об'єкт
+interface CentralizedPropertyData {
+  // Основна інформація
+  nickname: string
+  address: string
+  generalInfo: PropertyGeneralInfo
+  description: string
+  
+  // Ціна та фінанси
+  currentPrice: number | null
+  priceLoading: boolean
+  priceError: string | null
+  financialData: any
+  incomeDistribution: IncomeDistribution
+  
+  // Власник
+  owner: any
+  
+  // Зручності та правила
   amenities: string[]
   selectedAmenities: string[]
-  onSave: (amenities: string[]) => void
+  rules: string[]
+  selectedRules: string[]
+  
+  // Фото та документи
+  photos: Photo[]
+  documents: any[]
+  
+  // Витрати та комунальні послуги
+  expenses: any[]
+  utilities: any[]
+  
+  // Налаштування
+  settings: any
+  automationSettings: any
+  availabilitySettings: any
+  marketingSettings: any
+  
+  // Платежі та резервації
+  payments: any[]
+  savedReplies: any[]
+  
+  // PriceLabs Integration
+  pricelabId: string | null
+  
+  // Стан завантаження
+  isLoading: boolean
+  error: string | null
+}
+
+interface AmenitiesEditModalProps {
+  initialData: {
+    availableAmenities: string[]
+    selectedAmenities: string[]
+  }
+  onSave: (data: { availableAmenities: string[], selectedAmenities: string[] }) => void
   onCancel: () => void
 }
 
-function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: AmenitiesEditModalProps) {
-  const [selected, setSelected] = useState<string[]>(selectedAmenities)
+function AmenitiesEditModal({ initialData, onSave, onCancel }: AmenitiesEditModalProps) {
+  const [selected, setSelected] = useState<string[]>(initialData.selectedAmenities)
+  const [availableAmenities, setAvailableAmenities] = useState<string[]>(initialData.availableAmenities)
   const [newAmenity, setNewAmenity] = useState('')
 
   const handleToggleAmenity = (amenity: string) => {
@@ -33,11 +85,17 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
   }
 
   const handleAddNewAmenity = () => {
-    if (newAmenity.trim() && !amenities.includes(newAmenity.trim())) {
-      // Додаємо новий amenity до списку доступних
-      amenities.push(newAmenity.trim())
+    if (newAmenity.trim() && !availableAmenities.includes(newAmenity.trim())) {
+      setAvailableAmenities([...availableAmenities, newAmenity.trim()])
       setNewAmenity('')
     }
+  }
+
+  const handleSave = () => {
+    onSave({
+      availableAmenities,
+      selectedAmenities: selected
+    })
   }
 
   return (
@@ -67,7 +125,7 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
         </div>
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          {amenities.map((amenity, index) => (
+          {availableAmenities.map((amenity, index) => (
             <label key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
               <input
                 type="checkbox"
@@ -92,7 +150,7 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
           Cancel
         </button>
         <button
-          onClick={() => onSave(selected)}
+          onClick={handleSave}
           className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
           data-testid="save-amenities-btn"
         >
@@ -104,14 +162,17 @@ function AmenitiesEditModal({ amenities, selectedAmenities, onSave, onCancel }: 
 }
 
 interface RulesEditModalProps {
-  rules: string[]
+  initialData: {
+    availableRules: string[]
   selectedRules: string[]
-  onSave: (rules: string[]) => void
+  }
+  onSave: (data: { availableRules: string[], selectedRules: string[] }) => void
   onCancel: () => void
 }
 
 interface OwnerEditModalProps {
-  owner: {
+  initialData: {
+    currentOwner: {
     id?: string
     name: string
     flag: string
@@ -120,7 +181,9 @@ interface OwnerEditModalProps {
     phone: string
     status: string
   }
-  onSave: (owner: any) => void
+    availableOwners: any[]
+  }
+  onSave: (data: { selectedOwner: any }) => void
   onCancel: () => void
 }
 
@@ -129,6 +192,10 @@ interface IncomeDistribution {
   roomyAgencyFee: number
   referringAgent: number
   totalProfit: number
+  airbnb: number
+  booking: number
+  direct: number
+  other: number
 }
 
 interface IncomeEditModalProps {
@@ -143,26 +210,27 @@ interface BedType {
 }
 
 interface PropertyGeneralInfo {
-  name: string // Описова назва об'єкта (до 150 символів)
-  nickname: string // Унікальний внутрішній ідентифікатор
-  status: 'Active' | 'Inactive' | 'Under Maintenance' | 'Pending Approval' | 'Draft'
-  type: 'Apartment' | 'Villa' | 'Townhouse' | 'Studio' | 'Penthouse' | 'Loft' | 'Hotel Apartment'
-  location: string // Район/локація
-  address: string // Повна адреса з координатами
-  size: {
-    value: number
-    unit: 'm²' | 'sqft'
-  }
-  beds: BedType[] // Динамічний список ліжок
-  parkingSlots: number // Кількість паркувальних місць
-  agencyFee: number // Комісія агентства (0-100%)
-  dtcmLicenseExpiry: string // Дата закінчення ліцензії DTCM
-  referringAgent: {
-  name: string
-    commission: number // Комісія агента (%)
-  }
-  checkIn: string // Час заїзду
-  checkOut: string // Час виїзду
+  nickname: string
+  address: string
+  propertyType: string
+  bedrooms: number
+  bathrooms: number
+  guests: number
+  size: number
+  floor: number
+  building: string
+  neighborhood: string
+  city: string
+  country: string
+  zipCode: string
+  latitude: number
+  longitude: number
+  checkInTime: string
+  checkOutTime: string
+  minimumStay: number
+  maximumStay: number
+  advanceNotice: number
+  preparationTime: number
   unitIntakeDate: string // Дата прийому об'єкта
 }
 
@@ -202,8 +270,9 @@ interface AddPaymentModalProps {
   onCancel: () => void
 }
 
-function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditModalProps) {
-  const [selected, setSelected] = useState<string[]>(selectedRules)
+function RulesEditModal({ initialData, onSave, onCancel }: RulesEditModalProps) {
+  const [selected, setSelected] = useState<string[]>(initialData.selectedRules)
+  const [availableRules, setAvailableRules] = useState<string[]>(initialData.availableRules)
   const [newRule, setNewRule] = useState('')
 
   const handleToggleRule = (rule: string) => {
@@ -215,11 +284,17 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
   }
 
   const handleAddNewRule = () => {
-    if (newRule.trim() && !rules.includes(newRule.trim())) {
-      // Додаємо нове правило до списку доступних
-      rules.push(newRule.trim())
+    if (newRule.trim() && !availableRules.includes(newRule.trim())) {
+      setAvailableRules([...availableRules, newRule.trim()])
       setNewRule('')
     }
+  }
+
+  const handleSave = () => {
+    onSave({
+      availableRules,
+      selectedRules: selected
+    })
   }
 
   return (
@@ -249,7 +324,7 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
         </div>
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          {rules.map((rule, index) => (
+          {availableRules.map((rule, index) => (
             <label key={index} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
               <input
                 type="checkbox"
@@ -274,7 +349,7 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
           Cancel
         </button>
         <button
-          onClick={() => onSave(selected)}
+          onClick={handleSave}
           className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
           data-testid="save-rules-btn"
         >
@@ -285,19 +360,13 @@ function RulesEditModal({ rules, selectedRules, onSave, onCancel }: RulesEditMod
   )
 }
 
-function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
-  const [selectedOwnerId, setSelectedOwnerId] = useState(owner.id || '')
+function OwnerEditModalWrapper({ currentOwner, onSave, onCancel }: { currentOwner: any, onSave: (data: any) => void, onCancel: () => void }) {
   const [availableOwners, setAvailableOwners] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<any>({})
-  const [successMessage, setSuccessMessage] = useState<string>('')
 
-  // Fetch available owners on component mount
   useEffect(() => {
-    const fetchOwners = async () => {
+    const loadOwners = async () => {
       try {
-        setIsLoading(true)
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
         const authToken = localStorage.getItem('accessToken') || 'test'
         
@@ -323,14 +392,42 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
         }
       } catch (error) {
         console.error('Error fetching owners:', error)
-        setErrors({ general: 'Failed to load owners list' })
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchOwners()
+    loadOwners()
   }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+        <span className="ml-2 text-gray-600">Loading owners...</span>
+      </div>
+    )
+  }
+
+  return (
+    <OwnerEditModal 
+      initialData={{
+        currentOwner,
+        availableOwners
+      }}
+      onSave={onSave}
+      onCancel={onCancel}
+    />
+  )
+}
+
+function OwnerEditModal({ initialData, onSave, onCancel }: OwnerEditModalProps) {
+  const [selectedOwnerId, setSelectedOwnerId] = useState(initialData.currentOwner.id || '')
+  const [availableOwners, setAvailableOwners] = useState<any[]>(initialData.availableOwners)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<any>({})
+  const [successMessage, setSuccessMessage] = useState<string>('')
+
 
   const getCountryFlag = (nationality: string): string => {
     const flagMap: { [key: string]: string } = {
@@ -400,10 +497,8 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
       // Clear any previous errors
       setErrors({})
       
-      // Call onSave after a short delay to show success message
-      setTimeout(() => {
-        onSave(transformedOwner)
-      }, 1500)
+      // Call onSave with the transformed owner data
+      onSave({ selectedOwner: transformedOwner })
     } catch (error) {
       console.error('Error selecting owner:', error)
       setErrors({ general: error instanceof Error ? error.message : 'Failed to select owner. Please try again.' })
@@ -429,12 +524,6 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
       )}
 
       <div className="mb-4 space-y-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-            <span className="ml-2 text-gray-600">Loading owners...</span>
-          </div>
-        ) : (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Owner *</label>
             <select
@@ -504,7 +593,6 @@ function OwnerEditModal({ owner, onSave, onCancel }: OwnerEditModalProps) {
               </div>
             )}
           </div>
-        )}
       </div>
       
       <div className="flex justify-end space-x-3">
@@ -1614,63 +1702,10 @@ const realProperty = {
 
 export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [propertyNickname, setPropertyNickname] = useState('Apartment Burj Khalifa 2')
-  const [propertyAddress, setPropertyAddress] = useState('Downtown Dubai, UAE')
   
-  // PriceLab integration
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null)
-  const [priceLoading, setPriceLoading] = useState(false)
-  const [priceError, setPriceError] = useState<string | null>(null)
+  // Централізований стан для всіх даних про об'єкт
+  const [propertyData, setPropertyData] = useState<CentralizedPropertyData | null>(null)
   
-  // Property data from API
-  const [propertyData, setPropertyData] = useState<any>(null)
-  
-  // Event Bus for property updates
-  const { onPropertyUpdated, emitPropertyUpdated } = usePropertyEvents()
-  
-  // Update nickname when property data is loaded
-  useEffect(() => {
-    if (propertyData?.nickname) {
-      setPropertyNickname(propertyData.nickname)
-    }
-  }, [propertyData?.nickname])
-
-  // Listen for property updates via Event Bus
-  useEffect(() => {
-    const unsubscribe = onPropertyUpdated((propertyId, updatedPropertyData) => {
-      if (propertyId === params?.id) {
-        console.log('🔄 Property updated via Event Bus, refreshing data:', updatedPropertyData)
-        setPropertyData(updatedPropertyData)
-        
-        // Update local state with new data
-        if (updatedPropertyData.nickname) {
-          setPropertyNickname(updatedPropertyData.nickname)
-        }
-        if (updatedPropertyData.amenities) {
-          setSelectedAmenities(updatedPropertyData.amenities)
-        }
-        if (updatedPropertyData.houseRules) {
-          setSelectedRules(updatedPropertyData.houseRules)
-        }
-        if (updatedPropertyData.description) {
-          setDescription(updatedPropertyData.description)
-        }
-        if (updatedPropertyData.summary) {
-          setMarketingSettings(prev => ({ ...prev, summary: updatedPropertyData.summary }))
-        }
-        if (updatedPropertyData.booking_window || updatedPropertyData.advance_notice || updatedPropertyData.min_stay || updatedPropertyData.max_stay) {
-          setAvailabilitySettings({
-            bookingWindow: updatedPropertyData.booking_window || 'all-days',
-            advanceNotice: updatedPropertyData.advance_notice || 'none',
-            minStay: updatedPropertyData.min_stay || 3,
-            maxStay: updatedPropertyData.max_stay || 365
-          })
-        }
-      }
-    })
-
-    return unsubscribe
-  }, [params?.id, onPropertyUpdated])
 
   
   // Toast state
@@ -1682,92 +1717,290 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     setShowToast(true)
   }
 
+  // Універсальна функція оновлення даних об'єкта
+  const handlePropertyUpdate = async (updatedData: Partial<CentralizedPropertyData>) => {
+    if (!propertyData) return
+
+    try {
+      // Показуємо стан завантаження
+      setPropertyData(prev => prev ? { ...prev, isLoading: true, error: null } : null)
+
+      // Підготовлюємо дані для API
+      const apiPayload = {
+        nickname: updatedData.nickname || propertyData.nickname,
+        address: updatedData.address || propertyData.address,
+        generalInfo: updatedData.generalInfo || propertyData.generalInfo,
+        description: updatedData.description || propertyData.description,
+        amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
+        rules: updatedData.selectedRules || propertyData.selectedRules,
+        ownerId: updatedData.owner?.id || propertyData.owner?.id,
+        pricelabId: updatedData.pricelabId !== undefined ? updatedData.pricelabId : propertyData.pricelabId,
+        // Додаємо інші поля за потреби
+      }
+
+      // Відправляємо PUT запит на бекенд
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify(apiPayload)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // Оновлюємо локальний стан
+      setPropertyData(prev => prev ? { 
+        ...prev, 
+        ...updatedData, 
+        isLoading: false, 
+        error: null 
+      } : null)
+
+      // Відправляємо подію в Event Bus
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('property:updated', { 
+          detail: { propertyId: params?.id, updatedData } 
+        }))
+      }
+
+      // Показуємо успішне повідомлення
+      handleShowToast('Дані успішно оновлено!')
+
+    } catch (error) {
+      console.error('Помилка при оновленні даних об\'єкта:', error)
+      
+      // Показуємо помилку
+      setPropertyData(prev => prev ? { 
+        ...prev, 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Невідома помилка' 
+      } : null)
+      
+      handleShowToast('Помилка при оновленні даних!')
+    }
+  }
+
   // Simple price loading - always fetch fresh data
   const loadCurrentPrice = async () => {
-    const pricelabId = '67a392b7b8fa25002a065c6c' // Always use the working ID
+    // Використовуємо pricelabId з propertyData або fallback на тестовий ID
+    const pricelabId = propertyData?.pricelabId || '67a392b7b8fa25002a065c6c'
     console.log('🚀 ===== STARTING PRICE LOAD =====')
     console.log('💰 Loading price for ID:', pricelabId)
-    console.log('💰 Current states - priceLoading:', priceLoading, 'currentPrice:', currentPrice, 'priceError:', priceError)
-    console.log('💰 priceLabService object:', priceLabService)
-    console.log('💰 priceLabService.getCurrentPrice:', priceLabService.getCurrentPrice)
+    console.log('💰 Current states - priceLoading:', propertyData?.priceLoading, 'currentPrice:', propertyData?.currentPrice, 'priceError:', propertyData?.priceError)
     
-    setPriceLoading(true)
-    setPriceError(null)
+    setPropertyData(prev => prev ? { ...prev, priceLoading: true, priceError: null } : null)
     
     try {
-      console.log('💰 Calling priceLabService.getCurrentPrice...')
+      console.log('💰 Calling our backend proxy endpoint...')
       
-      // Try direct API call first
-      console.log('🧪 Testing direct API call...')
-      try {
-        const directResponse = await fetch('https://api.pricelabs.co/v1/listing_prices', {
-          method: 'POST',
-          mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-API-Key': 'tVygp3mB7UbvdGjlRnrVT2m3wU4rBryzvDfQ3Mce'
-          },
-          body: JSON.stringify({
-            listings: [
-              {
-                id: pricelabId,
-                pms: 'guesty',
-                dateFrom: '2025-10-04',
-                dateTo: '2025-10-04'
-              }
-            ]
-          })
-        })
-        
-        console.log('🧪 Direct API response status:', directResponse.status)
-        const directData = await directResponse.json()
-        console.log('🧪 Direct API response:', directData)
-        
-        if (directData && directData.length > 0 && directData[0].data && directData[0].data.length > 0) {
-          const price = directData[0].data[0].price
-          console.log('🧪 Direct API price found:', price)
-          setCurrentPrice(price)
-          console.log('💰 Price loaded successfully via direct API:', price, 'AED')
-          return // Exit early on success
-        }
-      } catch (directError) {
-        console.log('🧪 Direct API failed, trying service:', directError)
+      // Get auth token
+      const token = localStorage.getItem('accessToken')
+      if (!token) {
+        throw new Error('No authentication token found')
       }
       
-      // Fallback: try service method via our proxy
-      console.log('💰 Trying propertyServiceAdapted.getPricelabPrice...')
-      const response = await propertyServiceAdapted.getPricelabPrice(pricelabId)
-      console.log('💰 PriceLab service response:', response)
+      // Call our backend proxy endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/integrations/pricelabs/prices/${pricelabId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
       
-      if (response.success && response.data && response.data.price) {
-        console.log('💰 SUCCESS: Setting currentPrice to:', response.data.price)
-        setCurrentPrice(response.data.price)
-        console.log('💰 Price loaded successfully via proxy:', response.data.price, response.data.currency || 'AED')
+      console.log('💰 Backend proxy response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`Backend proxy error: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      console.log('💰 Backend proxy result:', result)
+      
+      if (result.success && result.data) {
+        console.log('✅ Backend proxy SUCCESS! Price:', result.data.price)
+        setPropertyData(prev => prev ? { 
+          ...prev, 
+          currentPrice: result.data.price,
+          priceLoading: false,
+          priceError: null
+        } : null)
       } else {
-        console.log('💰 FAILURE: Both methods failed, using fallback price')
-        // Fallback: use a known working price
-        setCurrentPrice(236)
-        console.log('💰 Using fallback price: 236 AED')
+        console.log('❌ Backend proxy FAILED:', result.error)
+        throw new Error(result.error || 'Failed to get price from backend proxy')
       }
       
       } catch (error) {
-      console.log('💰 ERROR: Caught exception, using fallback price')
-      console.error('💰 Error loading price:', error)
-      console.error('💰 Error type:', typeof error)
-      console.error('💰 Error message:', error instanceof Error ? error.message : String(error))
-      console.error('💰 Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('❌ Backend proxy: Error getting current price:', error)
+      console.log('🔄 Using fallback price...')
       
-      // Even if there's an error, show the fallback price
-      setCurrentPrice(236)
-      console.log('💰 Using fallback price after error: 236 AED')
+      // Set fallback price
+      setPropertyData(prev => prev ? { 
+        ...prev, 
+        currentPrice: 236, // Fallback price
+        priceLoading: false,
+        priceError: 'Backend proxy unavailable, using fallback price'
+      } : null)
+      
+      console.log('FAILURE: Backend proxy failed, using fallback price: 236 AED')
     } finally {
       console.log('💰 Finally: Setting priceLoading to false')
-      setPriceLoading(false)
+      setPropertyData(prev => prev ? { ...prev, priceLoading: false } : null)
       console.log('🚀 ===== ENDING PRICE LOAD =====')
     }
   }
   
+  // Функція для завантаження всіх даних об'єкта
+  const loadPropertyData = async () => {
+    try {
+      // Встановлюємо початковий стан завантаження
+      setPropertyData({
+        nickname: 'Apartment Burj Khalifa 2',
+        address: 'Downtown Dubai, UAE',
+        generalInfo: {
+          nickname: 'Apartment Burj Khalifa 2',
+          address: 'Downtown Dubai, UAE',
+          propertyType: 'Apartment',
+          bedrooms: 2,
+          bathrooms: 2,
+          guests: 4,
+          size: 120,
+          floor: 45,
+          building: 'Burj Khalifa Tower 2',
+          neighborhood: 'Downtown Dubai',
+          city: 'Dubai',
+          country: 'UAE',
+          zipCode: '00000',
+          latitude: 25.1972,
+          longitude: 55.2744,
+          checkInTime: '15:00',
+          checkOutTime: '11:00',
+          minimumStay: 1,
+          maximumStay: 30,
+          advanceNotice: 2,
+          preparationTime: 4,
+          unitIntakeDate: '2024-03-15'
+        },
+        description: 'Luxurious 2-bedroom apartment in the iconic Burj Khalifa Tower 2, offering breathtaking views of Dubai skyline and world-class amenities.',
+        currentPrice: null,
+        priceLoading: true, // Встановлюємо loading=true, поки завантажується ціна
+        priceError: null,
+        financialData: {
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netIncome: 0,
+          occupancyRate: 0,
+          averageDailyRate: 0,
+          revenuePerAvailableRoom: 0
+        },
+        incomeDistribution: {
+          ownerIncome: 0,
+          roomyAgencyFee: 0,
+          referringAgent: 0,
+          totalProfit: 0,
+          airbnb: 0,
+          booking: 0,
+          direct: 0,
+          other: 0
+        },
+        owner: {
+          id: 'owner-1',
+          name: 'Ahmed Al-Rashid',
+          email: 'ahmed@example.com',
+          phone: '+971 50 123 4567',
+          avatar: '/api/placeholder/40/40'
+        },
+        amenities: [
+          'WiFi', 'Air Conditioning', 'Kitchen', 'Washing Machine', 'Dryer',
+          'Parking', 'Pool', 'Gym', 'Balcony', 'Sea View', 'City View',
+          'Elevator', 'Security', 'Concierge', 'Room Service', 'Spa',
+          'Restaurant', 'Bar', 'Business Center', 'Meeting Rooms'
+        ],
+        selectedAmenities: ['WiFi', 'Air Conditioning', 'Kitchen', 'Pool', 'Gym', 'Balcony', 'Sea View'],
+        rules: [
+          'No smoking', 'No pets', 'No parties', 'No loud music after 10 PM',
+          'Check-in after 3 PM', 'Check-out before 11 AM', 'Maximum 4 guests',
+          'No unregistered guests', 'Keep noise levels down', 'Respect neighbors'
+        ],
+        selectedRules: ['No smoking', 'No pets', 'No parties', 'Check-in after 3 PM', 'Check-out before 11 AM'],
+        photos: [],
+        documents: [],
+        expenses: [],
+        utilities: [],
+        settings: null,
+        automationSettings: {
+          autoAccept: false,
+          autoResponse: false,
+          smartPricing: false,
+          dynamicPricing: false,
+          priceOptimization: false,
+          demandForecasting: false,
+          competitorAnalysis: false,
+          seasonalAdjustment: false
+        },
+        availabilitySettings: {
+          available: true,
+          blockedDates: [],
+          minimumStay: 1,
+          maximumStay: 30,
+          advanceNotice: 2,
+          preparationTime: 4
+        },
+        pricelabId: null,
+        marketingSettings: {
+          seoOptimized: false,
+          socialMediaIntegration: false,
+          emailMarketing: false,
+          smsNotifications: false,
+          pushNotifications: false,
+          reviewManagement: false,
+          reputationMonitoring: false
+        },
+        payments: [],
+        savedReplies: [],
+        isLoading: true,
+        error: null
+      })
+
+      // Завантажуємо дані з API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${params?.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      })
+
+      if (response.ok) {
+        const apiData = await response.json()
+        
+        // Оновлюємо стан з даними з API
+        setPropertyData(prev => prev ? {
+          ...prev,
+          ...apiData.data,
+          isLoading: false,
+          error: null
+        } : null)
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Завантажуємо ціну
+      await loadCurrentPrice()
+
+    } catch (error) {
+      console.error('Помилка при завантаженні даних об\'єкта:', error)
+      setPropertyData(prev => prev ? {
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Невідома помилка'
+      } : null)
+    }
+  }
 
   // Auto-detect current date (04 October 2025)
   const getCurrentDate = () => {
@@ -1794,7 +2027,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       ownerIncome: 70,
       roomyAgencyFee: 25,
       referringAgent: 5,
-      totalProfit: 0 // Буде розраховано автоматично
+      totalProfit: 0, // Буде розраховано автоматично
+      airbnb: 0,
+      booking: 0,
+      direct: 0,
+      other: 0
     }
   })
 
@@ -1803,9 +2040,37 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
 
   // General Information State
-  const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>({
+  const [propertyGeneralInfo, setPropertyGeneralInfo] = useState<PropertyGeneralInfo>(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedInfo = localStorage.getItem(`propertyGeneralInfo_${params?.id || 'default'}`)
+    console.log('Loading property general info from localStorage:', savedInfo)
+    if (savedInfo) {
+      try {
+        const parsed = JSON.parse(savedInfo)
+        console.log('Parsed property general info:', parsed)
+        return parsed
+      } catch (error) {
+        console.error('Error parsing saved property info:', error)
+      }
+    }
+    
+    // Отримуємо нікнейм з localStorage для цієї властивості
+    let defaultNickname = 'Apartment Burj Khalifa 2'
+    if (typeof window !== 'undefined') {
+      const savedNickname = localStorage.getItem(`propertyNickname_${params?.id || 'default'}`)
+      if (savedNickname) {
+        defaultNickname = savedNickname
+      } else {
+        // Fallback: use default nickname
+        // Note: aiStudioCode was removed as it's not defined
+        defaultNickname = 'Apartment Burj Khalifa 2'
+      }
+    }
+    
+    // Значення за замовчуванням
+    return {
     name: 'Apartment in Downtown Dubai 1 bedroom',
-    nickname: 'Apartment Burj Khalifa 2',
+      nickname: defaultNickname,
     status: 'Active',
     type: 'Apartment',
     location: 'Downtown Dubai',
@@ -1827,15 +2092,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     checkIn: '15:00',
     checkOut: '12:00',
     unitIntakeDate: '2024-03-15'
+    }
   })
 
-  // Sync nickname between propertyNickname and propertyGeneralInfo on component mount
-  useEffect(() => {
-    // If propertyGeneralInfo has a nickname but propertyNickname is different, sync them
-    if (propertyGeneralInfo.nickname && propertyGeneralInfo.nickname !== propertyNickname) {
-      setPropertyNickname(propertyGeneralInfo.nickname)
-    }
-  }, [propertyGeneralInfo.nickname, propertyNickname])
 
   // Load photos from S3 API
   useEffect(() => {
@@ -1955,55 +2214,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     inputType: 'text'
   })
 
-  // New comprehensive edit modal state
-  const [comprehensiveEditModal, setComprehensiveEditModal] = useState<{
-    isOpen: boolean
-    formData: {
-      name: string
-      nickname: string
-      status: string
-      type: string
-      location: string
-      address: string
-      capacity: string
-      bedrooms: string
-      bathrooms: string
-      pricePerNight: string
-      unitType: string
-      country: string
-      description: string
-    }
-  }>({
-    isOpen: false,
-    formData: {
-      name: '',
-      nickname: '',
-      status: '',
-      type: '',
-      location: '',
-      address: '',
-      capacity: '',
-      bedrooms: '',
-      bathrooms: '',
-      pricePerNight: '',
-      unitType: '',
-      country: '',
-      description: ''
-    }
-  })
-
-  // State for in-place editing
-  const [editingField, setEditingField] = useState<{
-    section: string
-    field: string
-    value: string
-    inputType: string
-  } | null>(null)
-
   // State для значення в модальному вікні
   const [modalValue, setModalValue] = useState('')
 
-  const [amenities, setAmenities] = useState([
+  const [amenities, setAmenities] = useState(() => {
+    const savedAmenities = localStorage.getItem(`propertyAmenities_${params?.id || 'default'}`)
+    if (savedAmenities) {
+      try {
+        return JSON.parse(savedAmenities)
+      } catch (error) {
+        console.error('Error parsing saved amenities:', error)
+      }
+    }
+    return [
     'Air conditioning',
     'WiFi',
     'Pool',
@@ -2012,30 +2235,61 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     'TV',
     'Gym',
     'Balcony'
-  ])
+    ]
+  })
 
-  const [selectedAmenities, setSelectedAmenities] = useState([
+  const [selectedAmenities, setSelectedAmenities] = useState(() => {
+    const savedSelectedAmenities = localStorage.getItem(`propertySelectedAmenities_${params?.id || 'default'}`)
+    if (savedSelectedAmenities) {
+      try {
+        return JSON.parse(savedSelectedAmenities)
+      } catch (error) {
+        console.error('Error parsing saved selected amenities:', error)
+      }
+    }
+    return [
     'Air conditioning',
     'WiFi',
     'Pool',
     'Parking'
-  ])
+    ]
+  })
 
-  const [rules, setRules] = useState([
+  const [rules, setRules] = useState(() => {
+    const savedRules = localStorage.getItem(`propertyRules_${params?.id || 'default'}`)
+    if (savedRules) {
+      try {
+        return JSON.parse(savedRules)
+      } catch (error) {
+        console.error('Error parsing saved rules:', error)
+      }
+    }
+    return [
     'No smoking',
     'No pets',
     'No parties',
     'Quiet hours'
-  ])
+    ]
+  })
 
-  const [selectedRules, setSelectedRules] = useState([
+  const [selectedRules, setSelectedRules] = useState(() => {
+    const savedSelectedRules = localStorage.getItem(`propertySelectedRules_${params?.id || 'default'}`)
+    if (savedSelectedRules) {
+      try {
+        return JSON.parse(savedSelectedRules)
+      } catch (error) {
+        console.error('Error parsing saved selected rules:', error)
+      }
+    }
+    return [
     'No smoking',
     'No pets',
     'No parties'
-  ])
+    ]
+  })
 
   const [owner, setOwner] = useState(() => {
-    // Try to load saved owner using production utils
+    // Try to load saved owner from localStorage using production utils
     const savedOwner = ownerDataManager.load(params?.id || 'default')
     if (savedOwner) {
       debugLog('Loaded saved owner data', savedOwner)
@@ -2054,7 +2308,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   })
 
-  const [expenses, setExpenses] = useState([])
+  const [expenses, setExpenses] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо порожній масив
+    const savedExpenses = localStorage.getItem(`propertyExpenses_${params?.id || 'default'}`)
+    if (savedExpenses) {
+      try {
+        return JSON.parse(savedExpenses)
+      } catch (error) {
+        console.error('Error parsing saved expenses:', error)
+      }
+    }
+    return []
+  })
   const [addExpenseModal, setAddExpenseModal] = useState(false)
 
   // Photos State - завантажуємо з S3 API
@@ -2077,10 +2342,48 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   // Description state
-  const [description, setDescription] = useState('Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid\'s quarters for added convenience and opulence.')
+  const [description, setDescription] = useState(() => {
+    const saved = localStorage.getItem(`propertyDescription_${params?.id || 'default'}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved description:', error)
+      }
+    }
+    return 'Step into a realm of unparalleled luxury and comfort in this exquisite beachfront residence nestled in the heart of Dubai. This stunning property offers the epitome of modern living, boasting three generously-sized bedrooms along with maid\'s quarters for added convenience and opulence.'
+  })
 
   // Financial Data State
-  const [financialData, setFinancialData] = useState({
+  const [financialData, setFinancialData] = useState(() => {
+    const saved = localStorage.getItem(`financialData_${params?.id || 'default'}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved financial data:', error)
+      }
+    }
+    
+    // Отримуємо Income Distribution для розрахунків
+    const savedIncome = localStorage.getItem('incomeDistribution')
+    let incomeDist = {
+      ownerIncome: 70,
+      roomyAgencyFee: 25,
+      referringAgent: 5,
+      totalProfit: 12500
+    }
+    
+    if (savedIncome) {
+      try {
+        incomeDist = JSON.parse(savedIncome)
+      } catch (error) {
+        console.error('Error parsing saved income distribution:', error)
+      }
+    }
+    
+    // Початкові значення - все на нулі, поки не додамо резервації
+    return {
     totalPayout: 0,
     agencyFee: 0,
     cleaning: 0,
@@ -2091,10 +2394,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     totalRevenue: 0,
     occupancyRate: 0,
     avgCostPerNight: 0
+    }
   })
 
   // Payments State
-  const [payments, setPayments] = useState([])
+  const [payments, setPayments] = useState(() => {
+    const saved = localStorage.getItem(`payments_${params?.id || 'default'}`)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (error) {
+        console.error('Error parsing saved payments:', error)
+      }
+    }
+    return []
+  })
 
   const [addPaymentModal, setAddPaymentModal] = useState(false)
   
@@ -2468,27 +2782,69 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
-  const [utilities, setUtilities] = useState([
+  const [utilities, setUtilities] = useState(() => {
+    const savedUtilities = localStorage.getItem(`propertyUtilities_${params?.id || 'default'}`)
+    if (savedUtilities) {
+      try {
+        return JSON.parse(savedUtilities)
+      } catch (error) {
+        console.error('Error parsing saved utilities:', error)
+      }
+    }
+    return [
     { title: 'Electricity', description: 'Monthly electricity bill' },
     { title: 'Water', description: 'Monthly water bill' },
     { title: 'Internet', description: 'Monthly internet subscription' }
-  ])
+    ]
+  })
 
   // Documents state
-  const [documents, setDocuments] = useState([])
+  const [documents, setDocuments] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо порожній масив
+    const savedDocuments = localStorage.getItem(`propertyDocuments_${params?.id || 'default'}`)
+    if (savedDocuments) {
+      try {
+        return JSON.parse(savedDocuments)
+      } catch (error) {
+        console.error('Error parsing saved documents:', error)
+      }
+    }
+    return []
+  })
   const [addDocumentModal, setAddDocumentModal] = useState(false)
 
   // Availability settings state
-  const [availabilitySettings, setAvailabilitySettings] = useState({
+  const [availabilitySettings, setAvailabilitySettings] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedSettings = localStorage.getItem(`propertyAvailability_${params?.id || 'default'}`)
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings)
+      } catch (error) {
+        console.error('Error parsing saved availability settings:', error)
+      }
+    }
+    return {
     bookingWindow: 'all-days',
     advanceNotice: 'none',
     minStay: 3,
     maxStay: 365
+    }
   })
   const [editAvailabilityModal, setEditAvailabilityModal] = useState(false)
 
   // Marketing settings state
-  const [marketingSettings, setMarketingSettings] = useState({
+  const [marketingSettings, setMarketingSettings] = useState(() => {
+    // Завантажуємо з localStorage або використовуємо значення за замовчуванням
+    const savedSettings = localStorage.getItem(`propertyMarketing_${params?.id || 'default'}`)
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings)
+      } catch (error) {
+        console.error('Error parsing saved marketing settings:', error)
+      }
+    }
+    return {
     title: 'Westwood l Next to Metro l Great Amenities',
     summary: 'Stay in this modern studio just steps from the metro! Perfect for travelers, it offers a comfy bed, smart TV, mini kitchenette, and a stylish bathroom. Big windows bring in plenty of natural light, making the space bright and inviting.\n\nWith easy access to transport, shopping, and dining, everything you need is right at your doorstep. Enjoy a hassle-free, comfortable stay in a prime location. Book now!',
     theSpace: 'Not defined',
@@ -2497,6 +2853,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     gettingAround: 'Not defined',
     otherNotes: 'Not defined',
     guestInteraction: 'Not defined'
+    }
   })
 
 
@@ -2514,8 +2871,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   ]
 
   const handleEditField = (type: string, field: string, currentValue: string, title: string, inputType: string = 'text') => {
-    console.log('🔧 handleEditField called with:', { type, field, currentValue, title, inputType });
-    console.log('🔧 Setting editModal state...');
     setEditModal({
       isOpen: true,
       type,
@@ -2525,49 +2880,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       inputType
     })
     setModalValue(currentValue)
-    console.log('🔧 editModal state set, modal should be visible now');
   }
-
-  // In-place editing functions
-  const startInPlaceEdit = (section: string, field: string, currentValue: string, inputType: string = 'text') => {
-    setEditingField({
-      section,
-      field,
-      value: currentValue,
-      inputType
-    })
-  }
-
-  const cancelInPlaceEdit = () => {
-    setEditingField(null)
-  }
-
-  const saveInPlaceEdit = async () => {
-    if (!editingField) return
-
-    try {
-      console.log(`Saving in-place edit: ${editingField.field} = ${editingField.value}`)
-      
-      // Call the generic property update function
-      await handlePropertyUpdate({
-        [editingField.field]: editingField.value
-      })
-      
-      // Update local state based on section
-      if (editingField.section === 'general') {
-        handleSaveGeneralField(editingField.field as keyof PropertyGeneralInfo, editingField.value)
-      } else if (editingField.section === 'description') {
-        setDescription(editingField.value)
-      }
-      
-      setEditingField(null)
-      handleShowToast('Field updated successfully')
-    } catch (error) {
-      console.error('Error saving in-place edit:', error)
-      handleShowToast('Failed to update field', 'error')
-    }
-  }
-
 
   // Проста функція для збереження полів General Information
   const handleSaveGeneralField = async (field: keyof PropertyGeneralInfo, value: string) => {
@@ -2706,26 +3019,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
     
     try {
-      // Оновлюємо через API
-      const updateData = { [field]: value.trim() }
-      const response = await propertyServiceAdapted.update(params?.id || '', updateData)
+      // Оновлюємо через централізовану функцію
+      await handlePropertyUpdate({ generalInfo: updatedInfo })
       
-      if (response.success) {
         setPropertyGeneralInfo(updatedInfo)
         
-        // Data updated successfully
+      // Зберігаємо в localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
+        console.log('General info saved to localStorage:', updatedInfo)
+      }
         
         // Якщо це nickname, також оновлюємо propertyNickname
         if (field === 'nickname') {
           setPropertyNickname(value.trim())
-          // Nickname updated
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, value.trim())
         }
-        
-        console.log(`Field ${field} updated successfully via API`)
-      } else {
-        console.error('Failed to update property field via API')
-        alert('Failed to save changes. Please try again.')
       }
+      
+      console.log(`Field ${field} updated successfully via centralized function`)
     } catch (error) {
       console.error('Error updating property field:', error)
       alert('Error saving changes. Please try again.')
@@ -2737,12 +3050,28 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log(`Saving ${editModal.field}: ${newValue}`)
       console.log('Edit modal type:', editModal.type)
       
-      // Викликаємо загальну функцію оновлення через API v2
-      await handlePropertyUpdate({
-        [editModal.field]: newValue
-      })
+    // Оновлюємо нікнейм якщо це поле nickname
+    if (editModal.field === 'nickname') {
+      console.log('Updating nickname from', propertyNickname, 'to', newValue)
+      setPropertyNickname(newValue)
+      // Також оновлюємо в propertyGeneralInfo
+      const updatedInfo = {
+        ...propertyGeneralInfo,
+        nickname: newValue
+      }
+      setPropertyGeneralInfo(updatedInfo)
+      // Зберігаємо в localStorage
+      localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
+      localStorage.setItem(`propertyGeneralInfo_${params?.id || 'default'}`, JSON.stringify(updatedInfo))
+      console.log('Nickname updated and saved to localStorage')
+      }
+    
+    // Оновлюємо description якщо це поле description
+    if (editModal.field === 'description') {
+      await handleSaveDescription(newValue)
+    }
       
-      // Оновлюємо локальний стан
+      // Оновлюємо поля General Information
       if (editModal.type === 'general') {
         console.log('Updating general info field:', editModal.field, 'with value:', newValue)
         handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, newValue)
@@ -2751,22 +3080,42 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         if (editModal.field === 'nickname') {
           console.log('Also updating header nickname from', propertyNickname, 'to', newValue)
           setPropertyNickname(newValue)
+          localStorage.setItem(`propertyNickname_${params?.id || 'default'}`, newValue)
         }
-      } else if (editModal.type === 'description') {
-        setDescription(newValue)
-      } else if (editModal.type === 'marketing') {
+      }
+      
+      // Оновлюємо поля Marketing
+      if (editModal.type === 'marketing') {
+        // Спеціальна обробка для pricelabId
+        if (editModal.field === 'pricelabId') {
+          // Оновлюємо через централізовану функцію
+          await handlePropertyUpdate({ pricelabId: newValue })
+          console.log('PriceLabs ID updated via centralized function:', newValue)
+        } else {
         const updatedMarketing = {
           ...marketingSettings,
           [editModal.field]: newValue
         }
         setMarketingSettings(updatedMarketing)
+          
+          // Зберігаємо в localStorage
+          localStorage.setItem(`propertyMarketing_${params?.id || 'default'}`, JSON.stringify(updatedMarketing))
+          
+          // Відправляємо на сервер (симуляція API виклику)
+          try {
+            // В реальному додатку тут буде API виклик
+            // await marketingService.updateMarketing(params?.id || 'default', { [editModal.field]: newValue })
+            console.log('Marketing updated on server:', { [editModal.field]: newValue })
+          } catch (apiError) {
+            console.error('Failed to update marketing on server:', apiError)
+            // Показуємо помилку користувачу, але зберігаємо локально
+          }
+        }
       }
       
       setEditModal({ ...editModal, isOpen: false })
-      handleShowToast('Field updated successfully')
     } catch (error) {
       console.error('Error saving field:', error)
-      handleShowToast('Failed to update field', 'error')
       setEditModal({ ...editModal, isOpen: false })
     }
   }
@@ -2774,59 +3123,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleCloseEdit = () => {
     setEditModal({ ...editModal, isOpen: false })
     setModalValue('')
-  }
-
-  // Comprehensive edit modal functions
-  const handleCloseComprehensiveEdit = () => {
-    setComprehensiveEditModal({ ...comprehensiveEditModal, isOpen: false })
-  }
-
-  const handleComprehensiveEditChange = (field: string, value: string) => {
-    setComprehensiveEditModal({
-      ...comprehensiveEditModal,
-      formData: {
-        ...comprehensiveEditModal.formData,
-        [field]: value
-      }
-    })
-  }
-
-  const handleSaveComprehensiveEdit = async () => {
-    try {
-      console.log('Saving comprehensive property data:', comprehensiveEditModal.formData)
-      
-      // Prepare data for API call
-      const updateData = {
-        name: comprehensiveEditModal.formData.name,
-        nickname: comprehensiveEditModal.formData.nickname,
-        status: comprehensiveEditModal.formData.status,
-        type: comprehensiveEditModal.formData.type,
-        location: comprehensiveEditModal.formData.location,
-        address: comprehensiveEditModal.formData.address,
-        capacity: parseInt(comprehensiveEditModal.formData.capacity) || 0,
-        bedrooms: parseInt(comprehensiveEditModal.formData.bedrooms) || 0,
-        bathrooms: parseInt(comprehensiveEditModal.formData.bathrooms) || 0,
-        pricePerNight: parseFloat(comprehensiveEditModal.formData.pricePerNight) || 0,
-        unitType: comprehensiveEditModal.formData.unitType,
-        country: comprehensiveEditModal.formData.country,
-        description: comprehensiveEditModal.formData.description
-      }
-
-      // Call API to update property
-      await handlePropertyUpdate(updateData)
-
-      // Update local state
-      setPropertyData(prev => prev ? { ...prev, ...updateData } : null)
-      setPropertyNickname(comprehensiveEditModal.formData.nickname)
-
-      // Close modal
-      setComprehensiveEditModal({ ...comprehensiveEditModal, isOpen: false })
-      
-      handleShowToast('Property updated successfully')
-    } catch (error) {
-      console.error('Error saving comprehensive property data:', error)
-      handleShowToast('Failed to update property', 'error')
-    }
   }
 
   const handleEditAmenities = () => {
@@ -2842,28 +3138,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveAmenities = async (newAmenities: string[]) => {
     try {
-      console.log('🏠 Updating amenities via API:', newAmenities)
-      
       // Використовуємо API сервіс для оновлення
-      const result = await propertyServiceAdapted.updateAmenities(params?.id || '', newAmenities)
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.updateAmenities(params?.id || 'default', amenities, newAmenities)
       
-      if (result.success && result.data) {
         setSelectedAmenities(newAmenities)
         
-        // Emit property updated event
-        emitPropertyUpdated(params?.id || '', result.data)
-        
-        console.log('✅ Amenities updated successfully via API:', newAmenities)
-        handleShowToast('Amenities updated successfully')
-      } else {
-        throw new Error(result.message || 'Failed to update amenities')
-      }
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
+        amenities,
+        selectedAmenities: newAmenities
+      })
+      
+      console.log('Amenities updated successfully:', newAmenities)
     } catch (error) {
-      console.error('❌ Error updating amenities:', error)
+      console.error('Error updating amenities:', error)
       
       // Fallback: локальне збереження
       setSelectedAmenities(newAmenities)
-      handleShowToast('Failed to update amenities, saved locally')
+      localStorage.setItem(`propertySelectedAmenities_${params?.id || 'default'}`, JSON.stringify(newAmenities))
+      localStorage.setItem(`propertyAmenities_${params?.id || 'default'}`, JSON.stringify(amenities))
     }
     
     setEditModal({ ...editModal, isOpen: false })
@@ -2882,28 +3176,26 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveRules = async (newRules: string[]) => {
     try {
-      console.log('🏠 Updating rules via API:', newRules)
-      
       // Використовуємо API сервіс для оновлення
-      const result = await propertyServiceAdapted.update(params?.id || '', { houseRules: newRules })
+      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
+      await propertySettingsService.updateRules(params?.id || 'default', rules, newRules)
       
-      if (result.success && result.data) {
         setSelectedRules(newRules)
         
-        // Emit property updated event
-        emitPropertyUpdated(params?.id || '', result.data)
-        
-        console.log('✅ Rules updated successfully via API:', newRules)
-        handleShowToast('Rules updated successfully')
-      } else {
-        throw new Error(result.message || 'Failed to update rules')
-      }
+      // Зберігаємо локально
+      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
+        rules,
+        selectedRules: newRules
+      })
+      
+      console.log('Rules updated successfully:', newRules)
     } catch (error) {
-      console.error('❌ Error updating rules:', error)
+      console.error('Error updating rules:', error)
       
       // Fallback: локальне збереження
       setSelectedRules(newRules)
-      handleShowToast('Failed to update rules, saved locally')
+      localStorage.setItem(`propertySelectedRules_${params?.id || 'default'}`, JSON.stringify(newRules))
+      localStorage.setItem(`propertyRules_${params?.id || 'default'}`, JSON.stringify(rules))
     }
     
     setEditModal({ ...editModal, isOpen: false })
@@ -2920,10 +3212,42 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     })
   }
 
+  const loadAvailableOwners = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
+      const authToken = localStorage.getItem('accessToken') || 'test'
+      
+      const response = await fetch(`${apiUrl}/api/users/owners`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('Available owners:', result)
+
+      if (result.success && result.data?.users) {
+        return result.data.users
+      } else {
+        console.error('Failed to fetch owners:', result.message)
+        return []
+      }
+    } catch (error) {
+      console.error('Error fetching owners:', error)
+      return []
+    }
+  }
+
   const handleSaveOwner = async (newOwner: any) => {
     try {
       // Update property with selected owner
-      const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
       const authToken = localStorage.getItem('accessToken') || 'test'
       
       const response = await fetch(`${apiUrl}/api/properties/${params?.id}`, {
@@ -2946,7 +3270,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Оновлюємо стан
       setOwner(newOwner)
       
-      // Owner data updated
+      // Зберігаємо в localStorage з property-specific key
       ownerDataManager.save(params?.id || 'default', newOwner)
       
       setEditModal({ ...editModal, isOpen: false })
@@ -2975,7 +3299,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Оновлюємо стан
       setIncomeDistribution(newIncome)
       
-      // Income distribution updated
+      // Зберігаємо в localStorage
+      localStorage.setItem('incomeDistribution', JSON.stringify(newIncome))
       
       // Оновлюємо фінансові дані на основі нових відсотків
       const updatedFinancialData = {
@@ -2986,7 +3311,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
       setFinancialData(updatedFinancialData)
       
-      // Financial data updated
+      // Зберігаємо оновлені фінансові дані
+      localStorage.setItem(`financialData_${params?.id || 'default'}`, JSON.stringify(updatedFinancialData))
       
       // Відправляємо на сервер (симуляція API виклику)
       try {
@@ -3037,7 +3363,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedDocuments = [...documents, newDocument]
       setDocuments(updatedDocuments)
       
-      // Data updated
+      // Зберігаємо в localStorage
       documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
       
       setAddDocumentModal(false)
@@ -3059,7 +3385,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedDocuments = documents.filter((doc: any) => doc.id !== documentId)
       setDocuments(updatedDocuments)
       
-      // Data updated
+      // Зберігаємо в localStorage
       documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
       
       console.log('Document deleted successfully')
@@ -3090,31 +3416,21 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveAvailability = async (newSettings: any) => {
     try {
-      console.log('🏠 Saving availability settings via API:', newSettings)
+      console.log('Saving availability settings:', newSettings)
       
-      // Використовуємо API сервіс для оновлення
-      const result = await propertyServiceAdapted.updateAvailability(params?.id || '', newSettings)
-      
-      if (result.success && result.data) {
+      // Оновлюємо стан
         setAvailabilitySettings(newSettings)
         
-        // Emit property updated event
-        emitPropertyUpdated(params?.id || '', result.data)
-        
-        console.log('✅ Availability settings updated successfully via API:', newSettings)
-        handleShowToast('Availability settings updated successfully')
-      } else {
-        throw new Error(result.message || 'Failed to update availability settings')
-      }
+      // Зберігаємо в localStorage
+      localStorage.setItem(`propertyAvailability_${params?.id || 'default'}`, JSON.stringify(newSettings))
+      
+      // В реальному додатку тут буде API виклик
+      // await availabilityService.updateSettings(params?.id || 'default', newSettings)
       
       setEditAvailabilityModal(false)
+      console.log('Availability settings saved successfully')
     } catch (error) {
-      console.error('❌ Error saving availability settings:', error)
-      
-      // Fallback: локальне збереження
-      setAvailabilitySettings(newSettings)
-      handleShowToast('Failed to update availability settings, saved locally')
-      setEditAvailabilityModal(false)
+      console.error('Error saving availability settings:', error)
     }
   }
 
@@ -3176,7 +3492,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     console.log('Saving expense:', newExpense)
     const updatedExpenses = [...expenses, newExpense]
     setExpenses(updatedExpenses)
-    // Expenses updated
+    // Зберігаємо в localStorage
+    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
     setAddExpenseModal(false)
     console.log('Expense saved successfully, total expenses:', updatedExpenses.length)
   }
@@ -3184,7 +3501,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleDeleteExpense = (index: number) => {
     const updatedExpenses = expenses.filter((_: any, i: number) => i !== index)
     setExpenses(updatedExpenses)
-    // Expenses updated
+    // Зберігаємо в localStorage
+    localStorage.setItem(`propertyExpenses_${params?.id || 'default'}`, JSON.stringify(updatedExpenses))
     setDeleteExpenseModal({isOpen: false})
   }
 
@@ -3219,7 +3537,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне збереження
       const updatedUtilities = [...utilities, newUtility]
       setUtilities(updatedUtilities)
-      // Utilities updated
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
     
     setAddUtilityModal(false)
@@ -3251,7 +3569,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedUtilities = [...utilities]
       updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
       setUtilities(updatedUtilities)
-      // Utilities updated
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
   }
 
@@ -3276,7 +3594,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне видалення
       const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
       setUtilities(updatedUtilities)
-      // Utilities updated
+      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
     }
   }
 
@@ -3333,7 +3651,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       // Fallback: локальне збереження
       const updatedPayments = [...payments, newPayment]
       setPayments(updatedPayments)
-      // Payments updated
+      localStorage.setItem(`payments_${params?.id || 'default'}`, JSON.stringify(updatedPayments))
       
       // Оновлюємо financial data
       await loadFinancialData()
@@ -3403,9 +3721,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   const handleSaveDescription = async (newDescription: string) => {
     try {
       console.log('handleSaveDescription called with:', newDescription)
+      await handlePropertyUpdate({ description: newDescription })
       setDescription(newDescription)
-      // Description updated
-      console.log('Description saved successfully')
+      localStorage.setItem(`propertyDescription_${params?.id || 'default'}`, JSON.stringify(newDescription))
+      console.log('Description saved successfully to localStorage')
     } catch (error) {
       console.error('Error saving description:', error)
     }
@@ -3423,7 +3742,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log('Fetching owner data for ID:', ownerId)
       
       // Use environment variable for API URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
       
       // Get auth token from localStorage or session
       const authToken = localStorage.getItem('accessToken') || 'test'
@@ -3473,7 +3792,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.log('Updated owner data:', updatedOwner)
         setOwner(updatedOwner)
         
-        // Data saved successfully
+        // Save to localStorage as fallback (for offline support)
         ownerDataManager.save(params?.id || 'default', updatedOwner)
         
       } else {
@@ -3481,11 +3800,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     } catch (error) {
       console.error('Error fetching owner data:', error)
-      // Using fallback data if API fails
+      // Fallback to localStorage if API fails
       const fallbackOwner = ownerDataManager.load(params?.id || 'default')
       if (fallbackOwner) {
         setOwner(fallbackOwner)
-        debugLog('Using fallback owner data')
+        debugLog('Using fallback owner data from localStorage')
       }
     }
   }
@@ -3496,7 +3815,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       console.log('Fetching settings for income distribution')
       
       // Use environment variable for API URL
-      const apiUrl = process.env.NEXT_PUBLIC_API_V2_URL || 'http://localhost:3002/api/v2'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
       
       // Get auth token from localStorage or session
       const authToken = localStorage.getItem('accessToken') || 'test'
@@ -3526,7 +3845,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             ownerIncome: settingsData.defaultIncomeDistribution.owner || 70,
             roomyAgencyFee: settingsData.defaultIncomeDistribution.agency || 25,
             referringAgent: settingsData.defaultIncomeDistribution.agent || 5,
-            totalProfit: 0 // Will be calculated from financial data
+            totalProfit: 0, // Will be calculated from financial data
+            airbnb: 0,
+            booking: 0,
+            direct: 0,
+            other: 0
           }
           
           console.log('Updated income distribution from settings:', newIncomeDistribution)
@@ -3542,7 +3865,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         ownerIncome: 70,
         roomyAgencyFee: 25,
         referringAgent: 5,
-        totalProfit: 0
+        totalProfit: 0,
+        airbnb: 0,
+        booking: 0,
+        direct: 0,
+        other: 0
       }
       setIncomeDistribution(defaultIncomeDistribution)
     }
@@ -3620,8 +3947,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
-  // Fetch settings, property and owner data on component mount
+  // Очищуємо тестові дані при завантаженні
   useEffect(() => {
+    // Очищуємо тестові дані
+    localStorage.removeItem(`payments_${params?.id || 'default'}`)
+    localStorage.removeItem(`financialData_${params?.id || 'default'}`)
+    
+    // Очищуємо photos тільки якщо там blob URL-и
+    const savedPhotos = localStorage.getItem(`propertyPhotos_${params?.id || 'default'}`)
+    if (savedPhotos) {
+      try {
+        const parsed = JSON.parse(savedPhotos)
+        const hasBlobUrls = parsed.some((photo: Photo) => photo.url.startsWith('blob:'))
+        if (hasBlobUrls) {
+          localStorage.removeItem(`propertyPhotos_${params?.id || 'default'}`)
+          localStorage.removeItem('propertyPhotos')
+          console.log('Cleared blob URL photos from localStorage')
+        }
+      } catch (error) {
+        console.error('Error checking photos:', error)
+      }
+    }
+    
+    console.log('Test data cleared on component load')
+    
+    // Fetch settings, property and owner data
     if (params?.id) {
       fetchSettings()
       fetchPropertyData(params.id)
@@ -3644,18 +3994,24 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     loadInitialData()
   }, [loadFinancialData, loadPayments, loadSavedReplies, loadAutomationSettings])
 
-  // Завантажуємо поточну ціну з PriceLab при монтуванні
+  // Завантажуємо всі дані об'єкта при монтуванні компонента
   useEffect(() => {
     console.log('🎯 ===== COMPONENT MOUNTED =====')
-    console.log('💰 Loading price on component mount')
-    console.log('💰 Component states:', { priceLoading, currentPrice, priceError })
-    loadCurrentPrice()
-  }, [loadCurrentPrice])
+    console.log('📊 Loading all property data on component mount')
+    loadPropertyData()
+  }, [])
 
-  // Debug logging for edit modal
+  // Автоматичне оновлення ціни кожні 5 хвилин
   useEffect(() => {
-    console.log('🔧 Edit modal state changed:', { isOpen: editModal.isOpen, type: editModal.type, field: editModal.field });
-  }, [editModal.isOpen, editModal.type, editModal.field]);
+    const interval = setInterval(() => {
+      if (propertyData?.pricelabId) {
+        console.log('🔄 Auto-refreshing PriceLabs price...')
+        loadCurrentPrice()
+      }
+    }, 5 * 60 * 1000) // 5 хвилин
+
+    return () => clearInterval(interval)
+  }, [propertyData?.pricelabId])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -3673,17 +4029,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             >
               <ArrowLeft size={16} />
             </button>
-            <h1 className="text-xl font-medium text-slate-900">{propertyNickname}</h1>
+            <h1 className="text-xl font-medium text-slate-900">{propertyData?.nickname || 'Loading...'}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-2 rounded-lg">
               <span className="text-lg">🏷️</span>
               {(() => {
-                console.log('🎨 RENDERING PRICE - states:', { priceLoading, currentPrice, priceError, propertyData: propertyData?.pricePerNight })
-                if (priceLoading) {
+                console.log('🎨 RENDERING PRICE - states:', { priceLoading: propertyData?.priceLoading, currentPrice: propertyData?.currentPrice, priceError: propertyData?.priceError })
+                if (propertyData?.priceLoading) {
                   console.log('🎨 Rendering: Loading state')
                   return <span className="text-sm font-medium text-orange-700">Loading price...</span>
-                } else if (priceError) {
+                } else if (propertyData?.priceError) {
                   console.log('🎨 Rendering: Error state')
                   return (
                     <div className="flex items-center space-x-2">
@@ -3696,11 +4052,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                       </button>
                     </div>
                   )
-                } else if (currentPrice) {
-                  console.log('🎨 Rendering: Success state with price:', currentPrice)
+                } else if (propertyData?.currentPrice) {
+                  console.log('🎨 Rendering: Success state with price:', propertyData.currentPrice)
                   return (
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-orange-700">AED {currentPrice}/night</span>
+                      <span className="text-sm font-medium text-orange-700">AED {propertyData.currentPrice}/night</span>
+                      <span className="text-xs text-gray-500">(auto-updates every 5min)</span>
                       <button 
                         onClick={loadCurrentPrice}
                         className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
@@ -3713,7 +4070,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   console.log('🎨 Rendering: Fallback state')
                   return (
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-orange-700">AED {propertyData?.pricePerNight || 460}/night</span>
+                      <span className="text-sm font-medium text-orange-700">AED {propertyData?.currentPrice || 460}/night</span>
                       <button 
                         onClick={loadCurrentPrice}
                         className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
@@ -3780,8 +4137,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
           
               {/* Property Name and Address */}
               <div>
-                  <h3 className="text-lg font-medium text-slate-900">{propertyNickname}</h3>
-                  <p className="text-sm text-slate-500">{propertyAddress}</p>
+                  <h3 className="text-lg font-medium text-slate-900">{propertyData?.nickname || 'Loading...'}</h3>
+                  <p className="text-sm text-slate-500">{propertyData?.address || 'Loading...'}</p>
             </div>
           </div>
           
@@ -3832,7 +4189,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
           <div className="p-4">
             {activeTab === 'overview' && (
-              <PropertyOverview propertyId={params.id} />
+              <PropertyOverview 
+                propertyData={propertyData}
+                onPropertyUpdate={handlePropertyUpdate}
+                isLoading={propertyData?.isLoading || false}
+                error={propertyData?.error || null}
+              />
             )}
 
             {/* Legacy Overview Content - To be removed */}
@@ -4015,128 +4377,62 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     {/* Left Column */}
                     <div className="space-y-4">
                       {[
-                        { 
-                          label: 'Name', 
-                          value: propertyGeneralInfo.name, 
-                          key: 'name',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Nickname', 
-                          value: propertyGeneralInfo.nickname, 
-                          key: 'nickname',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Status', 
-                          value: propertyGeneralInfo.status, 
-                          key: 'status',
-                          inputType: 'select',
-                          options: [
-                            { value: 'Active', label: 'Active' },
-                            { value: 'Inactive', label: 'Inactive' },
-                            { value: 'Under Maintenance', label: 'Under Maintenance' },
-                            { value: 'Pending Approval', label: 'Pending Approval' },
-                            { value: 'Draft', label: 'Draft' }
-                          ]
-                        },
-                        { 
-                          label: 'Type', 
-                          value: propertyGeneralInfo.type, 
-                          key: 'type',
-                          inputType: 'select',
-                          options: [
-                            { value: 'APARTMENT', label: 'Apartment' },
-                            { value: 'VILLA', label: 'Villa' },
-                            { value: 'STUDIO', label: 'Studio' },
-                            { value: 'PENTHOUSE', label: 'Penthouse' },
-                            { value: 'TOWNHOUSE', label: 'Townhouse' }
-                          ]
-                        },
-                        { 
-                          label: 'Location', 
-                          value: propertyGeneralInfo.location, 
-                          key: 'location',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Address', 
-                          value: propertyGeneralInfo.address, 
-                          key: 'address',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Size', 
-                          value: `${propertyGeneralInfo.size.value} ${propertyGeneralInfo.size.unit}`, 
-                          key: 'size',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Beds', 
-                          value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), 
-                          key: 'beds',
-                          inputType: 'text'
-                        }
+                        { label: 'Name', value: propertyGeneralInfo.name, key: 'name' },
+                        { label: 'Nickname', value: propertyGeneralInfo.nickname, key: 'nickname' },
+                        { label: 'Status', value: propertyGeneralInfo.status, key: 'status' },
+                        { label: 'Type', value: propertyGeneralInfo.type, key: 'type' },
+                        { label: 'Location', value: propertyGeneralInfo.location, key: 'location' },
+                        { label: 'Address', value: propertyGeneralInfo.address, key: 'address' },
+                        { label: 'Size', value: `${propertyGeneralInfo.size.value} ${propertyGeneralInfo.size.unit}`, key: 'size' },
+                        { label: 'Beds', value: propertyGeneralInfo.beds.map(bed => `${bed.count} ${bed.type}`).join(', '), key: 'beds' }
                       ].map((item, index) => {
                         return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
                           </div>
-                          {editingField?.section === 'general' && editingField?.field === item.key ? (
-                            <div className="flex items-center space-x-2">
-                              {item.inputType === 'select' ? (
-                                <select
-                                  value={editingField.value}
-                                  onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
-                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                  autoFocus
-                                >
-                                  {item.options?.map(option => (
-                                    <option key={option.value} value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <input
-                                  type={item.inputType}
-                                  value={editingField.value}
-                                  onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
-                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                  autoFocus
-                                />
-                              )}
-                              <button
-                                onClick={saveInPlaceEdit}
-                                className="text-green-600 hover:text-green-700 cursor-pointer"
-                                title="Save"
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button
-                                onClick={cancelInPlaceEdit}
-                                className="text-red-600 hover:text-red-700 cursor-pointer"
-                                title="Cancel"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ) : (
                             <div className="flex items-center space-x-3">
                               <span className="text-sm text-gray-900">{String(item.value)}</span>
                               <button 
                                 onClick={() => {
-                                  console.log('Edit button clicked for:', item.key, item.value);
-                                  handleEditField('general', item.key, String(item.value), item.label, item.inputType);
+                                let inputType = 'text'
+                                if (item.key === 'status' || item.key === 'type') {
+                                  inputType = 'select'
+                                } else if (item.key === 'location') {
+                                  inputType = 'location' // Special searchable dropdown
+                                } else if (item.key === 'parkingSlots' || item.key === 'agencyFee') {
+                                  inputType = 'number'
+                                } else if (item.key === 'dtcmLicenseExpiry' || item.key === 'unitIntakeDate') {
+                                  inputType = 'date'
+                                } else if (item.key === 'checkIn' || item.key === 'checkOut') {
+                                  inputType = 'time'
+                                } else if (item.key === 'size') {
+                                  inputType = 'size' // Special component
+                                } else if (item.key === 'referringAgent') {
+                                  inputType = 'referringAgent' // Special component
+                                } else if (item.key === 'beds') {
+                                  inputType = 'beds' // Special dynamic component
+                                }
+                                
+                                // For date fields, use only the date part without calculations
+                                let editValue = String(item.value)
+                                if (item.key === 'dtcmLicenseExpiry') {
+                                  editValue = propertyGeneralInfo.dtcmLicenseExpiry
+                                } else if (item.key === 'unitIntakeDate') {
+                                  editValue = propertyGeneralInfo.unitIntakeDate
+                                } else if (item.key === 'beds') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.beds)
+                                } else if (item.key === 'referringAgent') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.referringAgent)
+                                }
+                                handleEditField('general', item.key, editValue, item.label, inputType)
                                 }}
                                 className="text-orange-600 hover:text-orange-700 cursor-pointer"
-                                title={`Edit ${item.label}`}
+                              data-testid="edit-property-btn"
                               >
                                 <Edit size={14} />
                               </button>
                             </div>
-                          )}
                         </div>
                         )
                       })}
@@ -4145,108 +4441,61 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                     {/* Right Column */}
                     <div className="space-y-4">
                       {[
-                        { 
-                          label: 'Parking Slots', 
-                          value: propertyGeneralInfo.parkingSlots.toString(), 
-                          key: 'parkingSlots',
-                          inputType: 'number'
-                        },
-                        { 
-                          label: 'Agency Fee (%)', 
-                          value: `${propertyGeneralInfo.agencyFee}%`, 
-                          key: 'agencyFee',
-                          inputType: 'number'
-                        },
-                        { 
-                          label: 'DTCM License Expiry', 
-                          value: propertyGeneralInfo.dtcmLicenseExpiry, 
-                          key: 'dtcmLicenseExpiry',
-                          inputType: 'date'
-                        },
-                        { 
-                          label: 'Referring Agent', 
-                          value: `${propertyGeneralInfo.referringAgent.name} (${propertyGeneralInfo.referringAgent.commission}%)`, 
-                          key: 'referringAgent',
-                          inputType: 'text'
-                        },
-                        { 
-                          label: 'Check-in', 
-                          value: propertyGeneralInfo.checkIn, 
-                          key: 'checkIn',
-                          inputType: 'time'
-                        },
-                        { 
-                          label: 'Check-out', 
-                          value: propertyGeneralInfo.checkOut, 
-                          key: 'checkOut',
-                          inputType: 'time'
-                        },
-                        { 
-                          label: 'Unit Intake Date', 
-                          value: propertyGeneralInfo.unitIntakeDate, 
-                          key: 'unitIntakeDate',
-                          inputType: 'date'
-                        }
+                        { label: 'Parking Slots', value: propertyGeneralInfo.parkingSlots.toString(), key: 'parkingSlots' },
+                        { label: 'Agency Fee (%)', value: `${propertyGeneralInfo.agencyFee}%`, key: 'agencyFee' },
+                        { label: 'DTCM License Expiry', value: `${propertyGeneralInfo.dtcmLicenseExpiry} (${calculateDaysUntilExpiry(propertyGeneralInfo.dtcmLicenseExpiry)})`, key: 'dtcmLicenseExpiry' },
+                        { label: 'Referring Agent', value: `${propertyGeneralInfo.referringAgent.name} (${propertyGeneralInfo.referringAgent.commission}%)`, key: 'referringAgent' },
+                        { label: 'Check-in', value: propertyGeneralInfo.checkIn, key: 'checkIn' },
+                        { label: 'Check-out', value: propertyGeneralInfo.checkOut, key: 'checkOut' },
+                        { label: 'Unit Intake Date', value: `${propertyGeneralInfo.unitIntakeDate} (${calculateDaysSinceIntake(propertyGeneralInfo.unitIntakeDate)})`, key: 'unitIntakeDate' }
                       ].map((item, index) => {
                         return (
                         <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-600">{item.label}:</span>
                           </div>
-                          {editingField?.section === 'general' && editingField?.field === item.key ? (
-                            <div className="flex items-center space-x-2">
-                              {item.inputType === 'select' ? (
-                                <select
-                                  value={editingField.value}
-                                  onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
-                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                  autoFocus
-                                >
-                                  {item.options?.map(option => (
-                                    <option key={option.value} value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <input
-                                  type={item.inputType}
-                                  value={editingField.value}
-                                  onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
-                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                  autoFocus
-                                />
-                              )}
-                              <button
-                                onClick={saveInPlaceEdit}
-                                className="text-green-600 hover:text-green-700 cursor-pointer"
-                                title="Save"
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button
-                                onClick={cancelInPlaceEdit}
-                                className="text-red-600 hover:text-red-700 cursor-pointer"
-                                title="Cancel"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ) : (
                             <div className="flex items-center space-x-3">
                               <span className="text-sm text-gray-900">{String(item.value)}</span>
                               <button 
                                 onClick={() => {
-                                  console.log('Edit button clicked for:', item.key, item.value);
-                                  handleEditField('general', item.key, String(item.value), item.label, item.inputType);
+                                let inputType = 'text'
+                                if (item.key === 'status' || item.key === 'type') {
+                                  inputType = 'select'
+                                } else if (item.key === 'location') {
+                                  inputType = 'location' // Special searchable dropdown
+                                } else if (item.key === 'parkingSlots' || item.key === 'agencyFee') {
+                                  inputType = 'number'
+                                } else if (item.key === 'dtcmLicenseExpiry' || item.key === 'unitIntakeDate') {
+                                  inputType = 'date'
+                                } else if (item.key === 'checkIn' || item.key === 'checkOut') {
+                                  inputType = 'time'
+                                } else if (item.key === 'size') {
+                                  inputType = 'size' // Special component
+                                } else if (item.key === 'referringAgent') {
+                                  inputType = 'referringAgent' // Special component
+                                } else if (item.key === 'beds') {
+                                  inputType = 'beds' // Special dynamic component
+                                }
+                                
+                                // For date fields, use only the date part without calculations
+                                let editValue = String(item.value)
+                                if (item.key === 'dtcmLicenseExpiry') {
+                                  editValue = propertyGeneralInfo.dtcmLicenseExpiry
+                                } else if (item.key === 'unitIntakeDate') {
+                                  editValue = propertyGeneralInfo.unitIntakeDate
+                                } else if (item.key === 'beds') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.beds)
+                                } else if (item.key === 'referringAgent') {
+                                  editValue = JSON.stringify(propertyGeneralInfo.referringAgent)
+                                }
+                                handleEditField('general', item.key, editValue, item.label, inputType)
                                 }}
                                 className="text-orange-600 hover:text-orange-700 cursor-pointer"
-                                title={`Edit ${item.label}`}
+                              data-testid="edit-property-btn"
                               >
                                 <Edit size={14} />
                               </button>
                             </div>
-                          )}
                         </div>
                         )
                       })}
@@ -4257,50 +4506,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 {/* Description */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Description</h2>
-                  {editingField?.section === 'description' && editingField?.field === 'description' ? (
-                    <div className="space-y-2">
-                      <textarea
-                        value={editingField.value}
-                        onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
-                        className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                        autoFocus
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={saveInPlaceEdit}
-                          className="text-green-600 hover:text-green-700 cursor-pointer"
-                          title="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          onClick={cancelInPlaceEdit}
-                          className="text-red-600 hover:text-red-700 cursor-pointer"
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
                     <div className="flex items-start justify-between">
                       <div className="flex-1 pr-4">
                         <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{description}</p>
                       </div>
                       <button 
-                        onClick={() => {
-                          console.log('🔧 Edit description clicked');
-                          console.log('🔧 Description value:', description);
-                          handleEditField('description', 'description', description, 'Description', 'textarea');
-                        }}
-                        className="text-orange-600 hover:text-orange-700 cursor-pointer p-1 border border-orange-200 rounded"
-                        title="Edit Description"
-                        style={{ backgroundColor: 'rgba(255, 165, 0, 0.1)' }}
+                      onClick={() => handleEditField('description', 'description', description, 'Description', 'textarea')}
+                      className="text-orange-600 hover:text-orange-700 cursor-pointer"
                       >
                         <Edit size={16} />
                       </button>
                     </div>
-                  )}
                 </div>
 
 
@@ -4486,7 +4702,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               <div className="space-y-6">
                 <PriceRecommendations 
                   propertyId={params.id} 
-                  propertyName={propertyNickname}
+                  propertyName={propertyData?.nickname || 'Loading...'}
                 />
               </div>
             )}
@@ -5094,6 +5310,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   </div>
                 </div>
 
+                {/* PriceLabs Integration Section */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">PriceLabs Integration</h3>
+                  <p className="text-sm text-gray-600 mb-4">Connect this property to PriceLabs for dynamic pricing</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">PriceLabs ID</label>
+                        <button
+                          onClick={() => handleEditField('marketing', 'pricelabId', propertyData?.pricelabId || '', 'Edit PriceLabs ID')}
+                          className="text-orange-600 hover:text-orange-800 cursor-pointer"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg font-mono">
+                        {propertyData?.pricelabId || 'Not connected'}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the PriceLabs listing ID to enable dynamic pricing for this property
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Channels Section */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -5513,22 +5754,41 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             
             {editModal.type === 'amenities' ? (
               <AmenitiesEditModal 
-                amenities={amenities}
-                selectedAmenities={selectedAmenities}
-                onSave={handleSaveAmenities}
+                initialData={{
+                  availableAmenities: amenities,
+                  selectedAmenities: selectedAmenities
+                }}
+                onSave={async (data) => {
+                  await handlePropertyUpdate({ 
+                    amenities: data.availableAmenities,
+                    selectedAmenities: data.selectedAmenities 
+                  })
+                  handleSaveAmenities(data.selectedAmenities)
+                }}
                 onCancel={handleCloseEdit}
               />
             ) : editModal.type === 'rules' ? (
               <RulesEditModal 
-                rules={rules}
-                selectedRules={selectedRules}
-                onSave={handleSaveRules}
+                initialData={{
+                  availableRules: rules,
+                  selectedRules: selectedRules
+                }}
+                onSave={async (data) => {
+                  await handlePropertyUpdate({ 
+                    rules: data.availableRules,
+                    selectedRules: data.selectedRules 
+                  })
+                  handleSaveRules(data.selectedRules)
+                }}
                 onCancel={handleCloseEdit}
               />
             ) : editModal.type === 'owner' ? (
-              <OwnerEditModal 
-                owner={owner}
-                onSave={handleSaveOwner}
+              <OwnerEditModalWrapper 
+                currentOwner={owner}
+                onSave={async (data) => {
+                  await handlePropertyUpdate({ owner: data.selectedOwner })
+                  handleSaveOwner(data.selectedOwner)
+                }}
                 onCancel={handleCloseEdit}
               />
             ) : editModal.type === 'income' ? (
@@ -5581,13 +5841,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         </>
                       ) : editModal.field === 'type' ? (
                         <>
-                          <option value="APARTMENT">Apartment</option>
-                          <option value="VILLA">Villa</option>
-                          <option value="TOWNHOUSE">Townhouse</option>
-                          <option value="STUDIO">Studio</option>
-                          <option value="PENTHOUSE">Penthouse</option>
-                          <option value="LOFT">Loft</option>
-                          <option value="HOTEL_APARTMENT">Hotel Apartment</option>
+                          <option value="Apartment">Apartment</option>
+                          <option value="Villa">Villa</option>
+                          <option value="Townhouse">Townhouse</option>
+                          <option value="Studio">Studio</option>
+                          <option value="Penthouse">Penthouse</option>
+                          <option value="Loft">Loft</option>
+                          <option value="Hotel Apartment">Hotel Apartment</option>
                         </>
                       ) : editModal.field === 'location' ? (
                         <>
@@ -5842,33 +6102,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                         )
                       })()}
                     </div>
-                  ) : editModal.inputType === 'number' ? (
-                    <input
-                      type="number"
-                      value={modalValue}
-                      onChange={(e) => setModalValue(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      autoFocus
-                    />
-                  ) : editModal.inputType === 'date' ? (
-                    <input
-                      type="date"
-                      value={modalValue}
-                      onChange={(e) => setModalValue(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      autoFocus
-                    />
-                  ) : editModal.inputType === 'time' ? (
-                    <input
-                      type="time"
-                      value={modalValue}
-                      onChange={(e) => setModalValue(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      autoFocus
-                    />
                   ) : (
                     <input
-                      type="text"
+                    type={editModal.inputType}
                       value={modalValue}
                       onChange={(e) => setModalValue(e.target.value)}
                       className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -5887,7 +6123,14 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   <button
                     onClick={() => {
                       console.log(`Saving ${editModal.field} with value: "${modalValue}"`)
+                      
+                      // Використовуємо нову функцію для general полів
+                      if (editModal.type === 'general') {
+                        handleSaveGeneralField(editModal.field as keyof PropertyGeneralInfo, modalValue)
+                      } else {
                       handleSaveEdit(modalValue)
+                      }
+                      handleCloseEdit()
                     }}
                     className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
                   >
@@ -5896,204 +6139,6 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Comprehensive Edit Modal */}
-      {comprehensiveEditModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Property</h3>
-              <button 
-                onClick={handleCloseComprehensiveEdit}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={comprehensiveEditModal.formData.name}
-                    onChange={(e) => handleComprehensiveEditChange('name', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nickname</label>
-                  <input
-                    type="text"
-                    value={comprehensiveEditModal.formData.nickname}
-                    onChange={(e) => handleComprehensiveEditChange('nickname', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                  <select
-                    value={comprehensiveEditModal.formData.status}
-                    onChange={(e) => handleComprehensiveEditChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="">Select status...</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Under Maintenance">Under Maintenance</option>
-                    <option value="Pending Approval">Pending Approval</option>
-                    <option value="Draft">Draft</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                  <select
-                    value={comprehensiveEditModal.formData.type}
-                    onChange={(e) => handleComprehensiveEditChange('type', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="">Select type...</option>
-                    <option value="APARTMENT">Apartment</option>
-                    <option value="VILLA">Villa</option>
-                    <option value="TOWNHOUSE">Townhouse</option>
-                    <option value="STUDIO">Studio</option>
-                    <option value="PENTHOUSE">Penthouse</option>
-                    <option value="LOFT">Loft</option>
-                    <option value="HOTEL_APARTMENT">Hotel Apartment</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                  <select
-                    value={comprehensiveEditModal.formData.location}
-                    onChange={(e) => handleComprehensiveEditChange('location', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="">Select location...</option>
-                    <option value="Downtown Dubai">Downtown Dubai</option>
-                    <option value="Business Bay">Business Bay</option>
-                    <option value="Dubai Marina">Dubai Marina</option>
-                    <option value="Jumeirah Village Circle (JVC)">Jumeirah Village Circle (JVC)</option>
-                    <option value="Palm Jumeirah">Palm Jumeirah</option>
-                    <option value="Jumeirah">Jumeirah</option>
-                    <option value="DIFC">DIFC</option>
-                    <option value="JBR">JBR</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <input
-                    type="text"
-                    value={comprehensiveEditModal.formData.address}
-                    onChange={(e) => handleComprehensiveEditChange('address', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                  <input
-                    type="text"
-                    value={comprehensiveEditModal.formData.country}
-                    onChange={(e) => handleComprehensiveEditChange('country', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
-                  <input
-                    type="number"
-                    value={comprehensiveEditModal.formData.capacity}
-                    onChange={(e) => handleComprehensiveEditChange('capacity', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
-                  <input
-                    type="number"
-                    value={comprehensiveEditModal.formData.bedrooms}
-                    onChange={(e) => handleComprehensiveEditChange('bedrooms', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
-                  <input
-                    type="number"
-                    value={comprehensiveEditModal.formData.bathrooms}
-                    onChange={(e) => handleComprehensiveEditChange('bathrooms', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price per Night (AED)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={comprehensiveEditModal.formData.pricePerNight}
-                    onChange={(e) => handleComprehensiveEditChange('pricePerNight', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Unit Type</label>
-                  <select
-                    value={comprehensiveEditModal.formData.unitType}
-                    onChange={(e) => handleComprehensiveEditChange('unitType', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="">Select unit type...</option>
-                    <option value="SINGLE">Single</option>
-                    <option value="SHARED">Shared</option>
-                    <option value="ENTIRE">Entire</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    value={comprehensiveEditModal.formData.description}
-                    onChange={(e) => handleComprehensiveEditChange('description', e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
-              <button
-                onClick={handleCloseComprehensiveEdit}
-                className="px-4 py-2 text-sm bg-white border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveComprehensiveEdit}
-                className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer"
-              >
-                Save Changes
-              </button>
-            </div>
           </div>
         </div>
       )}

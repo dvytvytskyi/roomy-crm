@@ -176,7 +176,6 @@ export class UserService extends BaseService {
       logger.info(`User deactivated successfully: ${result.email} by ${currentUser.email}`);
       return UserService.prototype.success(userResponse, 'User deactivated successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error deleting user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -202,7 +201,7 @@ export class UserService extends BaseService {
 
       await prisma.user.update({
         where: { id },
-        data: { passwordHash },
+        data: { password: passwordHash },
       });
 
       await prisma.$disconnect();
@@ -254,8 +253,8 @@ export class UserService extends BaseService {
             password: hashedPassword,
             firstName: data.firstName,
             lastName: data.lastName,
-            phone: data.phone,
-            description: data.description,
+            phone: data.phone || null,
+            description: data.description || null,
             role: data.role || 'GUEST',
             is_active: data.status === 'ACTIVE' || data.status === undefined,
             isVerified: false,
@@ -302,7 +301,6 @@ export class UserService extends BaseService {
       logger.info(`User created successfully: ${result.email} by ${currentUser.email}`);
       return UserService.prototype.success(userResponse, 'User created successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error creating user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -354,8 +352,6 @@ export class UserService extends BaseService {
       if (data.email !== undefined) updateData.email = data.email;
       if (data.phone !== undefined) updateData.phone = data.phone;
       if (data.description !== undefined) updateData.description = data.description;
-      if (data.avatar !== undefined) updateData.avatar = data.avatar;
-      if (data.isVerified !== undefined) updateData.isVerified = data.isVerified;
 
       // Only ADMIN can change role and status
       if (currentUser.role === 'ADMIN') {
@@ -496,15 +492,17 @@ export class UserService extends BaseService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          _count: {
-            select: {
-              properties_properties_owner_idTousers: true,
-              properties_properties_agent_idTousers: true,
-              reservations_reservations_guest_idTousers: true,
-              reservations_reservations_agent_idTousers: true,
-              transactions: true
-            }
+        _count: {
+          select: {
+            properties_properties_owner_idTousers: true,
+            properties_properties_agent_idTousers: true,
+            reservations_reservations_guest_idTousers: true,
+            reservations_reservations_agent_idTousers: true,
+            transactions: true,
+            documents: true,
+            activity_log: true
           }
+        }
         }
       });
 
@@ -516,7 +514,9 @@ export class UserService extends BaseService {
         _count: {
           properties: user._count.properties_properties_owner_idTousers + user._count.properties_properties_agent_idTousers,
           reservations: user._count.reservations_reservations_guest_idTousers + user._count.reservations_reservations_agent_idTousers,
-          transactions: user._count.transactions
+          transactions: user._count.transactions,
+          documents: user._count.documents,
+          activity_log: user._count.activity_log
         }
       }));
 
@@ -815,7 +815,6 @@ export class UserService extends BaseService {
       logger.info(`[User Properties] Found ${properties.length} properties for user ${userId}`);
       return UserService.prototype.success(properties, 'Properties retrieved successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error getting user properties:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -880,7 +879,6 @@ export class UserService extends BaseService {
       logger.info(`[Link Property] Property ${propertyId} linked to user ${userId} successfully`);
       return UserService.prototype.success(updatedProperty, 'Property linked to user successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error linking property to user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -944,7 +942,6 @@ export class UserService extends BaseService {
       logger.info(`[Unlink Property] Property ${propertyId} unlinked from user ${userId} successfully`);
       return UserService.prototype.success(updatedProperty, 'Property unlinked from user successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error unlinking property from user:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -993,7 +990,6 @@ export class UserService extends BaseService {
       logger.info(`[User Bank Accounts] Found ${bankAccounts.length} bank accounts for user ${userId}`);
       return UserService.prototype.success(bankAccounts, 'Bank accounts retrieved successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error getting user bank accounts:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -1043,9 +1039,9 @@ export class UserService extends BaseService {
           bank_name: data.bank_name,
           account_holder: data.account_holder,
           account_number: data.account_number,
-          iban: data.iban,
-          swift_code: data.swift_code,
-          routing_number: data.routing_number,
+          iban: data.iban || null,
+          swift_code: data.swift_code || null,
+          routing_number: data.routing_number || null,
           account_type: data.account_type || 'CHECKING',
           currency: data.currency || 'USD',
           is_primary: data.is_primary || false,
@@ -1058,7 +1054,6 @@ export class UserService extends BaseService {
       logger.info(`[Create Bank Account] Bank account created for user ${userId} successfully`);
       return UserService.prototype.success(bankAccount, 'Bank account created successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error creating user bank account:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -1138,7 +1133,6 @@ export class UserService extends BaseService {
       logger.info(`[Update Bank Account] Bank account ${accountId} updated for user ${userId} successfully`);
       return UserService.prototype.success(bankAccount, 'Bank account updated successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error updating user bank account:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -1194,7 +1188,6 @@ export class UserService extends BaseService {
       logger.info(`[Delete Bank Account] Bank account ${accountId} deleted for user ${userId} successfully`);
       return UserService.prototype.success(bankAccount, 'Bank account deleted successfully');
     } catch (error) {
-      await prisma.$disconnect();
       logger.error('Error deleting user bank account:', error);
       return UserService.prototype.handleDatabaseError(error);
     }
@@ -1284,10 +1277,10 @@ export class UserService extends BaseService {
         data: {
           id: transactionId,
           transaction_id: transactionId,
-          property_id: data.property_id,
-          reservation_id: data.reservation_id,
+          property_id: data.property_id || null,
+          reservation_id: data.reservation_id || null,
           user_id: userId,
-          type: data.type,
+          type: data.type as any,
           category: data.category,
           amount: data.amount,
           currency: data.currency || 'AED',
@@ -1395,8 +1388,8 @@ export class UserService extends BaseService {
           type: data.type,
           filename: data.filename || data.name || 'unknown',
           size: data.size,
-          s3_key: data.s3_key,
-          s3_url: data.s3_url,
+          s3_key: data.s3_key || null,
+          s3_url: data.s3_url || null,
           uploaded_by: data.uploaded_by || currentUser.email,
           updated_at: new Date()
         }
@@ -1581,7 +1574,7 @@ export class UserService extends BaseService {
           action: data.action,
           description: data.description,
           type: data.type,
-          performed_by: data.performed_by || currentUser.email,
+          performed_by: data.performed_by || currentUser.email || null,
           metadata: data.metadata
         }
       });

@@ -185,56 +185,46 @@ class PriceLabService {
     }
   }
 
-  // Get current price for a property using real PriceLab API
+  // Get current price for a property using our backend proxy
   async getCurrentPrice(pricelabId: string): Promise<{ success: boolean; data: { currentPrice: number }; error?: string }> {
     try {
-      console.log('💰 PriceLab: Getting current price for property:', pricelabId)
+      console.log('💰 PriceLab: Getting current price for property via backend proxy:', pricelabId)
       
-      // Use real PriceLab API
-      const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
-      const requestBody = {
-        listings: [
-          {
-            id: pricelabId,
-            pms: "guesty",
-            dateFrom: today,
-            dateTo: today
-          }
-        ]
+      // Get auth token
+      const token = localStorage.getItem('accessToken')
+      if (!token) {
+        throw new Error('No authentication token found')
       }
-
-      const response = await fetch('https://api.pricelabs.co/v1/listing_prices', {
-        method: 'POST',
+      
+      // Call our backend proxy endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/integrations/pricelabs/prices/${pricelabId}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'tVygp3mB7UbvdGjlRnrVT2m3wU4rBryzvDfQ3Mce'
-        },
-        body: JSON.stringify(requestBody)
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       })
 
       if (!response.ok) {
-        throw new Error(`PriceLab API error: ${response.status} ${response.statusText}`)
+        throw new Error(`Backend proxy error: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('💰 PriceLab: Raw API response:', data)
+      console.log('💰 PriceLab: Backend proxy response:', data)
 
-      // Extract price from response
-      if (data && data.length > 0 && data[0].data && data[0].data.length > 0) {
-        const priceData = data[0].data[0]
-        if (priceData.price) {
-          console.log('💰 PriceLab: Price found:', priceData.price, 'AED')
-          return {
-            success: true,
-            data: { currentPrice: priceData.price }
-          }
+      // Extract price from our backend proxy response
+      if (data.success && data.data && data.data.price) {
+        console.log('💰 PriceLab: Price found via backend proxy:', data.data.price, 'AED')
+        return {
+          success: true,
+          data: { currentPrice: data.data.price }
         }
       }
 
       return {
         success: false,
         data: { currentPrice: 0 },
-        error: 'No price data found in response'
+        error: data.error || 'No price data found in response'
       }
     } catch (error) {
       console.error('❌ PriceLab: Error getting current price:', error)

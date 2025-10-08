@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { BaseService } from './BaseService';
 import { ServiceResponse } from '../types';
 import { CurrentUser, PropertyQueryParams, PaginatedResponse, CreatePropertyDto, UpdatePropertyDto } from '../types/dto';
+import { PricelabsService, PropertyData, PropertyUpdateData } from './pricelabs.service';
 import logger from '../utils/logger';
 
 // Property Response DTO
@@ -732,6 +733,54 @@ export class PropertyService extends BaseService {
 
       await prisma.$disconnect();
 
+      // Step 3: Create listing in PriceLabs (outside transaction)
+      logger.info(`[Property Creation Step 3/3] Creating PriceLabs listing for property: ${result.id}`);
+      
+      try {
+        // Prepare property data for PriceLabs
+        const propertyDataForPricelabs: PropertyData = {
+          id: result.id,
+          name: result.name,
+          address: result.address,
+          city: result.city,
+          country: result.country,
+          latitude: result.latitude,
+          longitude: result.longitude,
+          capacity: result.capacity,
+          bedrooms: result.bedrooms,
+          bathrooms: result.bathrooms,
+          area: result.area,
+          price_per_night: result.price_per_night,
+          description: result.description,
+          amenities: result.amenities,
+          house_rules: result.house_rules
+        };
+
+        // Create listing in PriceLabs
+        const pricelabsResult = await PricelabsService.createListing(propertyDataForPricelabs);
+        
+        if (pricelabsResult.success && pricelabsResult.data?.listing_id) {
+          logger.info(`[Property Creation Step 3/3] PriceLabs listing created successfully: ${pricelabsResult.data.listing_id}`);
+          
+          // Update property with PriceLabs ID
+          const updatedProperty = await prisma.properties.update({
+            where: { id: result.id },
+            data: { 
+              pricelab_id: pricelabsResult.data.listing_id,
+              updated_at: new Date()
+            }
+          });
+          
+          logger.info(`[Property Creation COMPLETE] Property ${result.name} created with PriceLabs ID: ${pricelabsResult.data.listing_id}`);
+        } else {
+          logger.warn(`[Property Creation Step 3/3] Failed to create PriceLabs listing: ${pricelabsResult.error}`);
+          logger.warn(`[Property Creation COMPLETE] Property ${result.name} created without PriceLabs integration`);
+        }
+      } catch (pricelabsError) {
+        logger.error(`[Property Creation Step 3/3] Error creating PriceLabs listing:`, pricelabsError);
+        logger.warn(`[Property Creation COMPLETE] Property ${result.name} created without PriceLabs integration due to error`);
+      }
+
       // Return the created property with full details
       const propertyResult = await PropertyService.findById(currentUser, result.id);
       if (!propertyResult.success || !propertyResult.data) {
@@ -854,6 +903,7 @@ export class PropertyService extends BaseService {
       if (data.parkingSlots !== undefined) updateData.parking_slots = data.parkingSlots;
       if (data.checkInTime !== undefined) updateData.check_in_time = data.checkInTime;
       if (data.checkOutTime !== undefined) updateData.check_out_time = data.checkOutTime;
+      if (data.pricelabId !== undefined) updateData.pricelab_id = data.pricelabId;
 
       // Only ADMIN can change owner
       if (currentUser.role === 'ADMIN' && data.ownerId !== undefined) {
@@ -903,6 +953,66 @@ export class PropertyService extends BaseService {
       });
 
       await prisma.$disconnect();
+
+      // Step 3: Sync with PriceLabs if critical fields changed
+      if (existingProperty.pricelab_id) {
+        logger.info(`[Property Update Step 3/3] Syncing changes with PriceLabs for listing: ${existingProperty.pricelab_id}`);
+        
+        try {
+          // Check if critical fields that affect pricing have changed
+          const criticalFieldsChanged = 
+            data.name !== undefined ||
+            data.address !== undefined ||
+            data.city !== undefined ||
+            data.country !== undefined ||
+            data.latitude !== undefined ||
+            data.longitude !== undefined ||
+            data.capacity !== undefined ||
+            data.bedrooms !== undefined ||
+            data.bathrooms !== undefined ||
+            data.area !== undefined ||
+            data.pricePerNight !== undefined ||
+            data.description !== undefined ||
+            data.amenities !== undefined ||
+            data.houseRules !== undefined;
+
+          if (criticalFieldsChanged) {
+            // Prepare update data for PriceLabs
+            const pricelabsUpdateData: PropertyUpdateData = {};
+            
+            if (data.name !== undefined) pricelabsUpdateData.name = data.name;
+            if (data.address !== undefined) pricelabsUpdateData.address = data.address;
+            if (data.city !== undefined) pricelabsUpdateData.city = data.city;
+            if (data.country !== undefined) pricelabsUpdateData.country = data.country;
+            if (data.latitude !== undefined) pricelabsUpdateData.latitude = data.latitude;
+            if (data.longitude !== undefined) pricelabsUpdateData.longitude = data.longitude;
+            if (data.capacity !== undefined) pricelabsUpdateData.capacity = data.capacity;
+            if (data.bedrooms !== undefined) pricelabsUpdateData.bedrooms = data.bedrooms;
+            if (data.bathrooms !== undefined) pricelabsUpdateData.bathrooms = data.bathrooms;
+            if (data.area !== undefined) pricelabsUpdateData.area = data.area;
+            if (data.pricePerNight !== undefined) pricelabsUpdateData.price_per_night = data.pricePerNight;
+            if (data.description !== undefined) pricelabsUpdateData.description = data.description;
+            if (data.amenities !== undefined) pricelabsUpdateData.amenities = data.amenities;
+            if (data.houseRules !== undefined) pricelabsUpdateData.house_rules = data.houseRules;
+
+            // Update listing in PriceLabs
+            const pricelabsResult = await PricelabsService.updateListing(existingProperty.pricelab_id, pricelabsUpdateData);
+            
+            if (pricelabsResult.success) {
+              logger.info(`[Property Update Step 3/3] PriceLabs listing updated successfully: ${existingProperty.pricelab_id}`);
+            } else {
+              logger.warn(`[Property Update Step 3/3] Failed to update PriceLabs listing: ${pricelabsResult.error}`);
+            }
+          } else {
+            logger.info(`[Property Update Step 3/3] No critical fields changed, skipping PriceLabs sync`);
+          }
+        } catch (pricelabsError) {
+          logger.error(`[Property Update Step 3/3] Error syncing with PriceLabs:`, pricelabsError);
+          // Don't fail the property update if PriceLabs sync fails
+        }
+      } else {
+        logger.info(`[Property Update Step 3/3] Property not linked to PriceLabs, skipping sync`);
+      }
 
       // Return the updated property with full details
       const propertyResult = await PropertyService.findById(currentUser, id);
@@ -989,6 +1099,27 @@ export class PropertyService extends BaseService {
       });
 
       await prisma.$disconnect();
+
+      // Step 3: Delete/Archive listing in PriceLabs
+      if (existingProperty.pricelab_id) {
+        logger.info(`[Property Deactivation Step 3/3] Deleting PriceLabs listing: ${existingProperty.pricelab_id}`);
+        
+        try {
+          // Delete listing in PriceLabs
+          const pricelabsResult = await PricelabsService.deleteListing(existingProperty.pricelab_id);
+          
+          if (pricelabsResult.success) {
+            logger.info(`[Property Deactivation Step 3/3] PriceLabs listing deleted successfully: ${existingProperty.pricelab_id}`);
+          } else {
+            logger.warn(`[Property Deactivation Step 3/3] Failed to delete PriceLabs listing: ${pricelabsResult.error}`);
+          }
+        } catch (pricelabsError) {
+          logger.error(`[Property Deactivation Step 3/3] Error deleting PriceLabs listing:`, pricelabsError);
+          // Don't fail the property deactivation if PriceLabs deletion fails
+        }
+      } else {
+        logger.info(`[Property Deactivation Step 3/3] Property not linked to PriceLabs, skipping deletion`);
+      }
 
       // Return the updated property with full details
       const propertyResult = await PropertyService.findById(currentUser, id);

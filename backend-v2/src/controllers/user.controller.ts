@@ -41,7 +41,6 @@ export class UserController extends BaseController {
         phone,
         role,
         status,
-        avatar,
         country,
         flag
       } = req.body;
@@ -61,7 +60,6 @@ export class UserController extends BaseController {
         phone,
         role,
         status,
-        avatar,
         country,
         flag
       };
@@ -781,7 +779,7 @@ export class UserController extends BaseController {
       const { role } = req.query;
       logger.info(`Getting user statistics for role: ${role} by ${currentUser.email}`);
       
-      const result = await UserService.getUserStats(currentUser, role as string);
+      const result = await UserService.getUserStats(currentUser, role as any);
       
       if (!result.success) {
         UserController.error(res, result.error || 'Failed to get user statistics', result.statusCode || 500, result.message);

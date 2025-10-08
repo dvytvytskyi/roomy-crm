@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { TaskService } from '../services/task.service';
 import { TaskStateMachineService } from '../services/task-state-machine.service';
 import { FileService } from '../services/file.service';
-import { AuthenticatedRequest, CurrentUser } from '../types';
+import { CurrentUser } from '../types/dto';
 import { TaskQueryParams, CreateTaskDto, UpdateTaskDto, UpdateTaskStatusDto, CreateTaskCommentDto, UpdateTaskChecklistItemDto, CreateTaskChecklistItemDto } from '../types/dto';
 import logger from '../utils/logger';
 

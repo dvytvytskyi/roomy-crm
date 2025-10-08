@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SchedulerService } from '../services/scheduler.service';
-import { AuthenticatedRequest, CurrentUser } from '../types';
+import { CurrentUser } from '../types/dto';
 import { CreateManualBlockDto } from '../types/dto';
 import logger from '../utils/logger';
 
