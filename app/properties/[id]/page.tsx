@@ -1759,14 +1759,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         typeOfUnit: updatedData.typeOfUnit || propertyData.typeOfUnit,
         isActive: updatedData.isActive !== undefined ? updatedData.isActive : propertyData.isActive,
         
-        // Other fields
-        generalInfo: updatedData.generalInfo || propertyData.generalInfo,
-        description: updatedData.description || propertyData.description,
-        amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
-        houseRules: updatedData.selectedRules || propertyData.selectedRules,
-        ownerId: updatedData.owner?.id || propertyData.owner?.id,
-        pricelabId: updatedData.pricelabId !== undefined ? updatedData.pricelabId : propertyData.pricelabId,
-      }
+      // Other fields
+      generalInfo: updatedData.generalInfo || propertyData.generalInfo,
+      description: updatedData.description || propertyData.description,
+      amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
+      houseRules: updatedData.selectedRules || propertyData.selectedRules,
+      utilities: updatedData.utilities || propertyData.utilities,
+      ownerId: updatedData.owner?.id || propertyData.owner?.id,
+      pricelabId: updatedData.pricelabId !== undefined ? updatedData.pricelabId : propertyData.pricelabId,
+    }
 
       // Додаємо availability поля якщо вони передані
       if (updatedData.bookingWindow !== undefined) apiPayload.bookingWindow = updatedData.bookingWindow
@@ -2833,18 +2834,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   })
 
   // Documents state
-  const [documents, setDocuments] = useState(() => {
-    // Завантажуємо з localStorage або використовуємо порожній масив
-    const savedDocuments = localStorage.getItem(`propertyDocuments_${params?.id || 'default'}`)
-    if (savedDocuments) {
-      try {
-        return JSON.parse(savedDocuments)
-      } catch (error) {
-        console.error('Error parsing saved documents:', error)
-      }
-    }
-    return []
-  })
+  const [documents, setDocuments] = useState<any[]>([])
   const [addDocumentModal, setAddDocumentModal] = useState(false)
 
   // Availability settings state
@@ -3148,26 +3138,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveAmenities = async (newAmenities: string[]) => {
     try {
-      // Використовуємо API сервіс для оновлення
-      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateAmenities(params?.id || 'default', amenities, newAmenities)
+      // Використовуємо централізовану функцію оновлення
+      const success = await handlePropertyUpdate({ selectedAmenities: newAmenities })
       
+      if (success) {
         setSelectedAmenities(newAmenities)
-        
-      // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
-        amenities,
-        selectedAmenities: newAmenities
-      })
-      
-      console.log('Amenities updated successfully:', newAmenities)
+        console.log('Amenities updated successfully:', newAmenities)
+      } else {
+        throw new Error('Failed to update amenities')
+      }
     } catch (error) {
       console.error('Error updating amenities:', error)
-      
-      // Fallback: локальне збереження
-      setSelectedAmenities(newAmenities)
-      localStorage.setItem(`propertySelectedAmenities_${params?.id || 'default'}`, JSON.stringify(newAmenities))
-      localStorage.setItem(`propertyAmenities_${params?.id || 'default'}`, JSON.stringify(amenities))
+      alert('Failed to update amenities. Please try again.')
     }
     
     setEditModal({ ...editModal, isOpen: false })
@@ -3186,21 +3168,18 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveRules = async (newRules: string[]) => {
     try {
-      // Використовуємо API сервіс для оновлення
-      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateRules(params?.id || 'default', rules, newRules)
+      // Використовуємо централізовану функцію оновлення
+      const success = await handlePropertyUpdate({ selectedRules: newRules })
       
+      if (success) {
         setSelectedRules(newRules)
-        
-      // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
-        rules,
-        selectedRules: newRules
-      })
-      
-      console.log('Rules updated successfully:', newRules)
+        console.log('Rules updated successfully:', newRules)
+      } else {
+        throw new Error('Failed to update rules')
+      }
     } catch (error) {
       console.error('Error updating rules:', error)
+      alert('Failed to update rules. Please try again.')
       
       // Fallback: локальне збереження
       setSelectedRules(newRules)
@@ -3379,21 +3358,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       
       const newDocument = await documentService.uploadDocument(params?.id || 'default', documentData.file, {
         title: documentData.title,
-        type: documentData.type,
-        uploadedBy: documentData.uploadedBy,
-        uploadedByEmail: documentData.uploadedByEmail
+        documentType: documentData.type
       })
       
       const updatedDocuments = [...documents, newDocument]
       setDocuments(updatedDocuments)
       
-      // Зберігаємо в localStorage
-      documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
-      
       setAddDocumentModal(false)
       console.log('Document saved successfully, total documents:', updatedDocuments.length)
     } catch (error) {
       console.error('Error saving document:', error)
+      alert('Failed to upload document. Please try again.')
     }
   }
 
@@ -3409,12 +3384,10 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       const updatedDocuments = documents.filter((doc: any) => doc.id !== documentId)
       setDocuments(updatedDocuments)
       
-      // Зберігаємо в localStorage
-      documentService.saveToLocalStorage(params?.id || 'default', updatedDocuments)
-      
       console.log('Document deleted successfully')
     } catch (error) {
       console.error('Error deleting document:', error)
+      alert('Failed to delete document. Please try again.')
     }
   }
 
@@ -3598,26 +3571,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleSaveUtility = async (newUtility: { title: string; description: string }) => {
     try {
-      // Використовуємо API сервіс для додавання
-      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.addUtility(params?.id || 'default', newUtility)
-      
       const updatedUtilities = [...utilities, newUtility]
-      setUtilities(updatedUtilities)
       
-      // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
-        utilities: updatedUtilities
-      })
+      // Використовуємо централізовану функцію оновлення
+      const success = await handlePropertyUpdate({ utilities: updatedUtilities })
       
-      console.log('Utility added successfully:', newUtility)
+      if (success) {
+        setUtilities(updatedUtilities)
+        console.log('Utility added successfully:', newUtility)
+      } else {
+        throw new Error('Failed to add utility')
+      }
     } catch (error) {
       console.error('Error adding utility:', error)
-      
-      // Fallback: локальне збереження
-      const updatedUtilities = [...utilities, newUtility]
-      setUtilities(updatedUtilities)
-      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
+      alert('Failed to add utility. Please try again.')
     }
     
     setAddUtilityModal(false)
@@ -3630,18 +3597,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     const updatedUtilities = [...utilities]
     updatedUtilities[index] = { ...updatedUtilities[index], [field]: value }
       
-      // Використовуємо API сервіс для оновлення
-      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.updateUtilities(params?.id || 'default', updatedUtilities)
+      // Використовуємо централізовану функцію оновлення
+      const success = await handlePropertyUpdate({ utilities: updatedUtilities })
       
-    setUtilities(updatedUtilities)
-      
-      // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
-        utilities: updatedUtilities
-      })
-      
-      console.log('Utility updated successfully:', updatedUtilities[index])
+      if (success) {
+        setUtilities(updatedUtilities)
+        console.log('Utility updated successfully:', updatedUtilities[index])
+      } else {
+        throw new Error('Failed to update utility')
+      }
     } catch (error) {
       console.error('Error updating utility:', error)
       
@@ -3655,26 +3619,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   const handleDeleteUtility = async (index: number) => {
     try {
-      // Використовуємо API сервіс для видалення
-      const { propertySettingsService } = await import('@/lib/api/services/propertySettingsService')
-      await propertySettingsService.deleteUtility(params?.id || 'default', index)
-      
       const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
-      setUtilities(updatedUtilities)
       
-      // Зберігаємо локально
-      propertySettingsService.saveToLocalStorage(params?.id || 'default', {
-        utilities: updatedUtilities
-      })
+      // Використовуємо централізовану функцію оновлення
+      const success = await handlePropertyUpdate({ utilities: updatedUtilities })
       
-      console.log('Utility deleted successfully:', index)
+      if (success) {
+        setUtilities(updatedUtilities)
+        console.log('Utility deleted successfully:', index)
+      } else {
+        throw new Error('Failed to delete utility')
+      }
     } catch (error) {
       console.error('Error deleting utility:', error)
-      
-      // Fallback: локальне видалення
-      const updatedUtilities = utilities.filter((_: any, i: number) => i !== index)
-      setUtilities(updatedUtilities)
-      localStorage.setItem(`propertyUtilities_${params?.id || 'default'}`, JSON.stringify(updatedUtilities))
+      alert('Failed to delete utility. Please try again.')
     }
   }
 
@@ -4028,6 +3986,20 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     }
   }
 
+  // Function to fetch documents from API
+  const fetchDocuments = async (propertyId: string) => {
+    try {
+      console.log('Fetching documents for property:', propertyId)
+      const { documentService } = await import('@/lib/api/services/documentService')
+      const docs = await documentService.getDocuments(propertyId)
+      setDocuments(docs)
+      console.log('Documents loaded:', docs.length)
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+      setDocuments([])
+    }
+  }
+
   // Очищуємо тестові дані при завантаженні
   useEffect(() => {
     // Очищуємо тестові дані
@@ -4056,6 +4028,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     if (params?.id) {
       fetchSettings()
       fetchPropertyData(params.id)
+      fetchDocuments(params.id)
     }
   }, [params?.id || 'default'])
 

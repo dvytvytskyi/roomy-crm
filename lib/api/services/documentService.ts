@@ -10,104 +10,179 @@ export interface Document {
   uploadedBy: string
   uploadedByEmail: string
   url?: string
+  key?: string
+  mimeType?: string
+}
+
+interface UploadDocumentMetadata {
+  title: string
+  documentType: string
 }
 
 export const documentService = {
-  // Отримати документи для властивості
+  /**
+   * Get all documents for a property
+   */
   getDocuments: async (propertyId: string): Promise<Document[]> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log(`API: Fetching documents for property ${propertyId}`)
-      
-      // Повертаємо дані з localStorage або значення за замовчуванням
-      return documentService.loadFromLocalStorage(propertyId)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/documents`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to fetch documents')
+      }
+
+      const result = await response.json()
+      return result.data || []
     } catch (error) {
       console.error('Error fetching documents:', error)
-      // Повертаємо з localStorage як fallback
-      return documentService.loadFromLocalStorage(propertyId)
+      throw error
     }
   },
 
-  // Завантажити новий документ
-  uploadDocument: async (propertyId: string, file: File, metadata: {
-    title: string
-    type: string
-    uploadedBy: string
-    uploadedByEmail: string
-  }): Promise<Document> => {
+  /**
+   * Upload a new document
+   */
+  uploadDocument: async (
+    propertyId: string,
+    file: File,
+    metadata: UploadDocumentMetadata
+  ): Promise<Document> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      console.log(`API: Uploading document for property ${propertyId}:`, metadata)
-      
-      // В реальному додатку тут буде завантаження файлу на сервер
-      const newDocument: Document = {
-        id: `doc_${Date.now()}_${propertyId}`,
-        title: metadata.title,
-        fileName: file.name,
-        uploadDate: new Date().toISOString(),
-        fileSize: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-        type: metadata.type,
-        uploadedBy: metadata.uploadedBy,
-        uploadedByEmail: metadata.uploadedByEmail,
-        url: URL.createObjectURL(file) // Для демонстрації
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token found')
       }
+
+      // Create FormData for multipart/form-data upload
+      const formData = new FormData()
+      formData.append('document', file)
+      formData.append('title', metadata.title)
+      formData.append('documentType', metadata.documentType)
+
+      console.log(`[DocumentService] Uploading document for property ${propertyId}:`, {
+        fileName: file.name,
+        fileSize: file.size,
+        title: metadata.title,
+        documentType: metadata.documentType
+      })
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/documents`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Note: Don't set Content-Type header - browser will set it automatically with boundary
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to upload document')
+      }
+
+      const result = await response.json()
+      console.log('[DocumentService] Document uploaded successfully:', result.data)
       
-      return newDocument
+      return result.data
     } catch (error) {
       console.error('Error uploading document:', error)
       throw error
     }
   },
 
-  // Видалити документ
+  /**
+   * Delete a document
+   */
   deleteDocument: async (propertyId: string, documentId: string): Promise<void> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log(`API: Deleting document ${documentId} for property ${propertyId}`)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/documents/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete document')
+      }
+
+      console.log(`[DocumentService] Document ${documentId} deleted successfully`)
     } catch (error) {
       console.error('Error deleting document:', error)
       throw error
     }
   },
 
-  // Завантажити документ
-  downloadDocument: async (propertyId: string, documentId: string): Promise<void> => {
+  /**
+   * Get download URL for a document
+   */
+  getDownloadUrl: async (propertyId: string, documentId: string): Promise<string> => {
     try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/documents/${documentId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to get download URL')
+      }
+
+      const result = await response.json()
+      return result.data.url
+    } catch (error) {
+      console.error('Error getting download URL:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Download a document
+   */
+  downloadDocument: async (propertyId: string, documentId: string, fileName: string): Promise<void> => {
+    try {
+      const url = await documentService.getDownloadUrl(propertyId, documentId)
       
-      console.log(`API: Downloading document ${documentId} for property ${propertyId}`)
-      
-      // В реальному додатку тут буде завантаження файлу
+      // Create a temporary link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      console.log(`[DocumentService] Document ${fileName} download started`)
     } catch (error) {
       console.error('Error downloading document:', error)
       throw error
     }
   },
-
-  // Зберегти документи в localStorage
-  saveToLocalStorage: (propertyId: string, documents: Document[]) => {
-    localStorage.setItem(`propertyDocuments_${propertyId}`, JSON.stringify(documents))
-  },
-
-  // Завантажити документи з localStorage
-  loadFromLocalStorage: (propertyId: string): Document[] => {
-    const saved = localStorage.getItem(`propertyDocuments_${propertyId}`)
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (error) {
-        console.error('Error parsing saved documents:', error)
-      }
-    }
-    
-    // Повертаємо порожній масив за замовчуванням
-    return []
-  }
 }

@@ -96,6 +96,7 @@ import healthRoutes from './routes/health.routes';
 import pricelabsRoutes from './routes/pricelabs.routes';
 import expenseRoutes from './routes/expense.routes';
 import photoRoutes from './routes/photo.routes';
+import documentRoutes from './routes/document.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -128,6 +129,7 @@ app.use('/api/v2/users', userRoutes);
 app.use('/api/v2/properties', propertyRoutes);
 app.use('/api/v2/properties', expenseRoutes); // Expense routes nested under properties
 app.use('/api/v2/properties', photoRoutes); // Photo routes nested under properties
+app.use('/api/v2/properties', documentRoutes); // Document routes nested under properties
 app.use('/api/v2/reservations', reservationRoutes);
 app.use('/api/v2/orchestrator', orchestratorRoutes);
 app.use('/api/v2/tasks', taskRoutes);
