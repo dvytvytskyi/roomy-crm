@@ -10,8 +10,6 @@ interface Owner {
   lastName: string;
   email: string;
   phone?: string;
-  country?: string;
-  flag?: string;
 }
 
 interface OwnerSelectionModalProps {
@@ -186,16 +184,9 @@ export default function OwnerSelectionModal({
                         </span>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <p className="font-semibold text-gray-900">
-                            {owner.firstName} {owner.lastName}
-                          </p>
-                          {owner.flag && (
-                            <span className="text-lg" title={owner.country}>
-                              {owner.flag}
-                            </span>
-                          )}
-                        </div>
+                        <p className="font-semibold text-gray-900">
+                          {owner.firstName} {owner.lastName}
+                        </p>
                         <div className="flex items-center space-x-3 mt-1">
                           <p className="text-sm text-gray-600">{owner.email}</p>
                           {owner.phone && (
@@ -205,9 +196,6 @@ export default function OwnerSelectionModal({
                             </>
                           )}
                         </div>
-                        {owner.country && (
-                          <p className="text-xs text-gray-500 mt-1">{owner.country}</p>
-                        )}
                       </div>
                     </div>
                   </div>

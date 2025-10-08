@@ -66,8 +66,6 @@ export interface PropertyDetailed {
     lastName: string;
     email: string;
     phone?: string;
-    country?: string;
-    flag?: string;
   };
   agent?: {
     id: string;
@@ -75,8 +73,6 @@ export interface PropertyDetailed {
     lastName: string;
     email: string;
     phone?: string;
-    country?: string;
-    flag?: string;
   };
   photos?: Array<{
     id: string;

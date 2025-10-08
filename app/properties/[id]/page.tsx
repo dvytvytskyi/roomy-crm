@@ -224,19 +224,12 @@ export default function PropertyDetailsPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">
                       {propertyData.owner.firstName[0]}{propertyData.owner.lastName[0]}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                      <p className="font-medium text-gray-900">
-                        {propertyData.owner.firstName} {propertyData.owner.lastName}
-                      </p>
-                      {propertyData.owner.flag && (
-                        <span className="text-lg" title={propertyData.owner.country}>
-                          {propertyData.owner.flag}
                             </span>
-                      )}
                           </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {propertyData.owner.firstName} {propertyData.owner.lastName}
+                    </p>
                     <p className="text-sm text-gray-600">{propertyData.owner.email}</p>
                     {propertyData.owner.phone && (
                       <p className="text-sm text-gray-600">{propertyData.owner.phone}</p>
@@ -462,9 +455,9 @@ export default function PropertyDetailsPage() {
               </button>
         </div>
       )}
-        </div>
-      </div>
-
+            </div>
+              </div>
+              
       {/* Modals */}
       <OwnerSelectionModal
         isOpen={isOwnerModalOpen}
@@ -493,7 +486,7 @@ export default function PropertyDetailsPage() {
           return await handlePropertyUpdate({ amenityIds } as any);
         }}
         onClose={() => setIsAmenitiesModalOpen(false)}
-      />
-    </div>
+                />
+              </div>
   );
 }

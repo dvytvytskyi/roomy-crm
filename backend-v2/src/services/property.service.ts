@@ -39,25 +39,21 @@ export interface PropertyResponseDto {
 
 // Property with related data - SUPER ENDPOINT DTO
 export interface PropertyWithDetailsDto extends PropertyResponseDto {
-  // Owner information with extended fields
+  // Owner information
   owner?: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
-    country?: string;
-    flag?: string;
   };
-  // Agent information with extended fields
+  // Agent information
   agent?: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
-    country?: string;
-    flag?: string;
   };
   // Photos with creation date
   photos?: Array<{
@@ -384,9 +380,7 @@ export class PropertyService extends BaseService {
               firstName: true,
               lastName: true,
               email: true,
-              phone: true,
-              country: true,
-              flag: true
+              phone: true
             }
           },
           // Agent information
@@ -396,9 +390,7 @@ export class PropertyService extends BaseService {
               firstName: true,
               lastName: true,
               email: true,
-              phone: true,
-              country: true,
-              flag: true
+              phone: true
             }
           },
           // Photos
@@ -569,25 +561,21 @@ export class PropertyService extends BaseService {
         checkInTime: property.check_in_time || undefined,
         checkOutTime: property.check_out_time || undefined,
         
-        // Owner information with extended fields
+        // Owner information
         owner: property.users_properties_owner_idTousers ? {
           id: property.users_properties_owner_idTousers.id,
           firstName: property.users_properties_owner_idTousers.firstName,
           lastName: property.users_properties_owner_idTousers.lastName,
           email: property.users_properties_owner_idTousers.email,
-          phone: property.users_properties_owner_idTousers.phone || undefined,
-          country: property.users_properties_owner_idTousers.country || undefined,
-          flag: property.users_properties_owner_idTousers.flag || undefined
+          phone: property.users_properties_owner_idTousers.phone || undefined
         } : undefined,
-        // Agent information with extended fields
+        // Agent information
         agent: property.users_properties_agent_idTousers ? {
           id: property.users_properties_agent_idTousers.id,
           firstName: property.users_properties_agent_idTousers.firstName,
           lastName: property.users_properties_agent_idTousers.lastName,
           email: property.users_properties_agent_idTousers.email,
-          phone: property.users_properties_agent_idTousers.phone || undefined,
-          country: property.users_properties_agent_idTousers.country || undefined,
-          flag: property.users_properties_agent_idTousers.flag || undefined
+          phone: property.users_properties_agent_idTousers.phone || undefined
         } : undefined,
         // Photos with creation date
         photos: property.property_photos.map(photo => ({
