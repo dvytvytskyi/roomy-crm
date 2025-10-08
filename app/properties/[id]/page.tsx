@@ -1780,7 +1780,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       amenities: updatedData.selectedAmenities || propertyData.selectedAmenities,
       houseRules: updatedData.selectedRules || propertyData.selectedRules,
       utilities: updatedData.utilities || propertyData.utilities,
-      ownerId: updatedData.owner?.id || propertyData.owner?.id,
+      ownerId: updatedData.ownerId || updatedData.owner?.id || propertyData.owner?.id,
       pricelabId: updatedData.pricelabId !== undefined ? updatedData.pricelabId : propertyData.pricelabId,
     }
 
@@ -1817,6 +1817,12 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         isLoading: false, 
         error: null 
       } : null)
+
+      // Якщо оновлювався owner, завантажуємо нові дані owner
+      if (updatedData.ownerId) {
+        console.log('🔄 Owner updated, fetching new owner data for ID:', updatedData.ownerId)
+        await fetchOwnerData(updatedData.ownerId)
+      }
 
       // Відправляємо подію в Event Bus
       if (typeof window !== 'undefined') {

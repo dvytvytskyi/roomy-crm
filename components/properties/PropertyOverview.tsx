@@ -210,12 +210,15 @@ export default function PropertyOverview({
 
   const handleSelectOwner = async (ownerId: string) => {
     try {
+      console.log('🔄 PropertyOverview: Attempting to assign owner ID:', ownerId);
       const success = await onPropertyUpdate({ ownerId });
       
       if (success) {
+        console.log('✅ PropertyOverview: Owner assigned successfully');
         setToastMessage('Owner assigned successfully');
         setShowToast(true);
       } else {
+        console.log('❌ PropertyOverview: Failed to assign owner');
         setToastMessage('Failed to assign owner');
         setShowToast(true);
       }
