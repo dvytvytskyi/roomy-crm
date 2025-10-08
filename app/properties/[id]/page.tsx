@@ -4260,6 +4260,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                 onPropertyUpdate={handlePropertyUpdate}
                 isLoading={propertyData?.isLoading || false}
                 error={propertyData?.error || null}
+                onEditAmenities={handleEditAmenities}
               />
             )}
 

@@ -12,6 +12,7 @@ interface PropertyOverviewProps {
   onPropertyUpdate: (updates: any) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
+  onEditAmenities?: () => void; // Callback for amenities edit
 }
 
 interface OwnerSelectionModalProps {
@@ -115,7 +116,8 @@ export default function PropertyOverview({
   owner,
   onPropertyUpdate, 
   isLoading, 
-  error 
+  error,
+  onEditAmenities
 }: PropertyOverviewProps) {
   // Use centralized data from parent component
   const property = propertyData;
@@ -730,7 +732,7 @@ export default function PropertyOverview({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Amenities</h2>
           <button 
-            onClick={() => setShowAmenitiesModal(true)}
+            onClick={onEditAmenities || (() => setShowAmenitiesModal(true))}
             className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
           >
             <Edit size={14} />
