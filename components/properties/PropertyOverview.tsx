@@ -10,6 +10,7 @@ interface PropertyOverviewProps {
   propertyData: any;
   owner?: any;
   onPropertyUpdate: (updates: any) => Promise<boolean>;
+  onRefreshPrice?: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -113,7 +114,8 @@ export default function PropertyOverview({
   propertyId, 
   propertyData, 
   owner,
-  onPropertyUpdate, 
+  onPropertyUpdate,
+  onRefreshPrice,
   isLoading, 
   error
 }: PropertyOverviewProps) {
@@ -644,6 +646,39 @@ export default function PropertyOverview({
             {[
               { label: 'Bathrooms', value: displayProperty?.bathrooms || 0, key: 'bathrooms' },
               { label: 'Price per Night', value: `AED ${displayProperty?.pricePerNight || 0}`, key: 'pricePerNight' },
+              { 
+                label: 'Current Price (PriceLabs)', 
+                value: (
+                  <div className="flex items-center space-x-2">
+                    {priceLoading ? (
+                      <span className="text-sm text-gray-500">Loading...</span>
+                    ) : currentPrice ? (
+                      <span className="text-sm font-medium text-green-600">AED {currentPrice}</span>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">No data</span>
+                        {onRefreshPrice && (
+                          <button 
+                            onClick={() => onRefreshPrice()}
+                            className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded transition-colors"
+                          >
+                            Load Price
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {currentPrice && onRefreshPrice && (
+                      <button 
+                        onClick={() => onRefreshPrice()}
+                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded transition-colors"
+                      >
+                        Refresh
+                      </button>
+                    )}
+                  </div>
+                ), 
+                key: 'currentPrice' 
+              },
               { label: 'Type of Unit', value: displayProperty?.typeOfUnit || 'Not specified', key: 'typeOfUnit' },
               { label: 'Country', value: displayProperty?.country || 'Not set', key: 'country' },
               { label: 'Created', value: displayProperty ? new Date(displayProperty.createdAt).toLocaleDateString() : 'Not set', key: 'createdAt' },

@@ -32,7 +32,8 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     isLoading,
     error,
     updateProperty,
-    refreshData
+    refreshData,
+    loadCurrentPrice
   } = usePropertyData(params.id)
 
   // Handle property updates
@@ -158,14 +159,15 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         <div className="mt-6">
           {activeTab === 'overview' && (
             <PropertyOverview
-                  propertyId={params.id} 
+              propertyId={params.id}
               propertyData={propertyData}
               owner={owner}
               onPropertyUpdate={handlePropertyUpdate}
+              onRefreshPrice={loadCurrentPrice}
               isLoading={isLoading}
               error={error}
             />
-            )}
+          )}
 
             {activeTab === 'financial' && (
             <FinancialTab

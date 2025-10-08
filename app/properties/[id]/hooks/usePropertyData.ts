@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { propertyServiceAdapted } from '../../../../lib/api/adapters/apiAdapter'
 import { ownerDataManager, debugLog } from '../../../../lib/api/production-utils'
+import { priceLabService } from '../../../../lib/api/services/pricelabService'
 
 export interface PropertyData {
   id: string
@@ -24,6 +25,9 @@ export interface PropertyData {
   agent?: any
   financialData?: any
   incomeDistribution?: any
+  pricelabId?: string | null
+  currentPrice?: number | null
+  priceLoading?: boolean
   createdAt: string
   updatedAt: string
   isLoading: boolean
@@ -165,10 +169,48 @@ export function usePropertyData(propertyId: string) {
     }
   }, [propertyId, fetchOwnerData])
 
+  // Load current price from PriceLabs
+  const loadCurrentPrice = useCallback(async () => {
+    if (!propertyData?.pricelabId) {
+      console.log('[usePropertyData] No PriceLabs ID found')
+      return
+    }
+
+    try {
+      console.log('[usePropertyData] Loading current price from PriceLabs:', propertyData.pricelabId)
+      
+      setPropertyData(prev => prev ? { ...prev, priceLoading: true } : null)
+
+      const priceData = await priceLabService.getCurrentPrice(propertyData.pricelabId)
+      
+      if (priceData && priceData.price) {
+        console.log('[usePropertyData] Current price loaded:', priceData.price)
+        setPropertyData(prev => prev ? {
+          ...prev,
+          currentPrice: priceData.price,
+          priceLoading: false
+        } : null)
+      } else {
+        console.log('[usePropertyData] No price data returned')
+        setPropertyData(prev => prev ? { ...prev, priceLoading: false } : null)
+      }
+    } catch (err: any) {
+      console.error('[usePropertyData] Error loading current price:', err)
+      setPropertyData(prev => prev ? { ...prev, priceLoading: false } : null)
+    }
+  }, [propertyData?.pricelabId])
+
   // Load data on mount
   useEffect(() => {
     fetchPropertyData()
   }, [fetchPropertyData])
+
+  // Load current price when property data is loaded
+  useEffect(() => {
+    if (propertyData && propertyData.pricelabId && !propertyData.currentPrice) {
+      loadCurrentPrice()
+    }
+  }, [propertyData?.pricelabId, loadCurrentPrice])
 
   return {
     propertyData,
@@ -176,7 +218,8 @@ export function usePropertyData(propertyId: string) {
     isLoading,
     error,
     updateProperty,
-    refreshData: fetchPropertyData
+    refreshData: fetchPropertyData,
+    loadCurrentPrice
   }
 }
 
