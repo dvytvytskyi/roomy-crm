@@ -10,6 +10,9 @@ import Toast from '@/components/Toast';
 import OwnerSelectionModal from '../property-modals/OwnerSelectionModal';
 import GeneralInfoEditModal from '../property-modals/GeneralInfoEditModal';
 import AmenitiesEditModal from '../property-modals/AmenitiesEditModal';
+import RulesEditModal from '../property-modals/RulesEditModal';
+import DescriptionEditModal from '../property-modals/DescriptionEditModal';
+import AddExpenseModal from '../property-modals/AddExpenseModal';
 
 export default function PropertyDetailsPage() {
   const params = useParams();
@@ -32,6 +35,9 @@ export default function PropertyDetailsPage() {
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [isGeneralInfoModalOpen, setIsGeneralInfoModalOpen] = useState(false);
   const [isAmenitiesModalOpen, setIsAmenitiesModalOpen] = useState(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
 
   /**
    * Show toast notification
@@ -391,7 +397,10 @@ export default function PropertyDetailsPage() {
               ) : (
                 <p className="text-gray-500">No expenses yet</p>
               )}
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                            <button
+                onClick={() => setIsAddExpenseModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
                 Add Expense
                             </button>
                         </div>
@@ -432,7 +441,10 @@ export default function PropertyDetailsPage() {
               <div className="prose max-w-none">
                 <p className="text-gray-700">{propertyData.description}</p>
             </div>
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+              <button 
+                onClick={() => setIsDescriptionModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
                 Edit Description
               </button>
         </div>
@@ -450,7 +462,10 @@ export default function PropertyDetailsPage() {
                   </li>
                 ))}
               </ul>
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+              <button 
+                onClick={() => setIsRulesModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
                 Edit Rules
               </button>
         </div>
@@ -486,7 +501,34 @@ export default function PropertyDetailsPage() {
           return await handlePropertyUpdate({ amenityIds } as any);
         }}
         onClose={() => setIsAmenitiesModalOpen(false)}
-                />
-              </div>
+      />
+
+      <RulesEditModal
+        isOpen={isRulesModalOpen}
+        currentRules={propertyData.houseRules || []}
+        onSave={async (houseRules) => {
+          return await handlePropertyUpdate({ houseRules });
+        }}
+        onClose={() => setIsRulesModalOpen(false)}
+      />
+
+      <DescriptionEditModal
+        isOpen={isDescriptionModalOpen}
+        initialDescription={propertyData.description || ''}
+        onSave={async (description) => {
+          return await handlePropertyUpdate({ description });
+        }}
+        onClose={() => setIsDescriptionModalOpen(false)}
+      />
+
+      <AddExpenseModal
+        isOpen={isAddExpenseModalOpen}
+        propertyId={propertyId}
+        onSave={async () => {
+          await loadPropertyData(); // Reload property data to get updated expenses
+        }}
+        onClose={() => setIsAddExpenseModalOpen(false)}
+      />
+    </div>
   );
 }
