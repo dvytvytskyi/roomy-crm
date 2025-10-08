@@ -8,7 +8,7 @@ import RatingStars from '../../../components/RatingStars'
 import Toast from '../../../components/Toast'
 import PriceRecommendations from '../../../components/pricing/PriceRecommendations'
 import PropertyOverview from '../../../components/properties/PropertyOverview'
-import AmenitiesManager from '../../../components/properties/AmenitiesManager'
+import SimpleAmenitiesEditor from '../../../components/properties/SimpleAmenitiesEditor'
 import { ownerDataManager, debugLog } from '../../../lib/api/production-utils'
 import { priceLabService } from '../../../lib/api/services/pricelabService'
 import { propertyServiceAdapted } from '../../../lib/api/adapters/apiAdapter'
@@ -5820,7 +5820,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             </div>
             
             {editModal.type === 'amenities' ? (
-              <AmenitiesManager 
+              <SimpleAmenitiesEditor 
                 propertyId={params?.id || ''}
                 currentAmenities={propertyData?.amenities?.map(amenity => ({
                   id: amenity.id || amenity,
@@ -5839,7 +5839,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
                   }
                   return success;
                 }}
-                isLoading={propertyData?.isLoading || false}
+                onClose={handleCloseEdit}
               />
             ) : editModal.type === 'rules' ? (
               <RulesEditModal 
