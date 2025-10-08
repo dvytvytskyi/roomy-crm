@@ -3855,13 +3855,19 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         console.error('Failed to fetch owner data:', result.message)
       }
     } catch (error) {
-      console.error('Error fetching owner data:', error)
-      // Fallback to localStorage if API fails
-      const fallbackOwner = ownerDataManager.load(params?.id || 'default')
-      if (fallbackOwner) {
-        setOwner(fallbackOwner)
-        debugLog('Using fallback owner data from localStorage')
-      }
+      console.error('❌ Error fetching owner data:', error)
+      // Don't use fallback data - it might be old/mock data
+      console.log('🚫 Skipping fallback owner data to avoid showing mock data')
+      // Reset to empty state instead
+      setOwner({
+        id: '',
+        name: '',
+        flag: '',
+        country: '',
+        email: '',
+        phone: '',
+        status: ''
+      })
     }
   }
 
@@ -3984,7 +3990,9 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         
         // Always fetch owner data from API if we have an owner ID
         if (ownerId) {
-          console.log('Fetching owner data from API for ID:', ownerId)
+          console.log('🔄 Fetching owner data from API for ID:', ownerId)
+          // Clear any cached owner data first
+          ownerDataManager.clear(params?.id || 'default')
           await fetchOwnerData(ownerId)
         } else {
           debugLog('No owner ID found in property data - no owner assigned')
