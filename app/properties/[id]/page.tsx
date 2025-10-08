@@ -43,11 +43,11 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       if (success) {
         showToastMessage('Property updated successfully', 'success')
         await refreshData() // Refresh data after update
-        return true
+      return true
       } else {
         showToastMessage('Failed to update property', 'error')
-        return false
-      }
+      return false
+    }
     } catch (error: any) {
       console.error('[PropertyDetailsPage] Update error:', error)
       showToastMessage(error.message || 'An error occurred', 'error')
@@ -73,35 +73,35 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
 
   // Loading state
   if (isLoading) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50">
-        <TopNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <TopNavigation />
+        <div className="max-w-full px-8 py-8 mt-6">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
         </div>
-      </div>
-    )
-  }
-
+                    </div>
+                  )
+                } 
+                
   // Error state
   if (error) {
-    return (
+                  return (
       <div className="min-h-screen bg-gray-50">
         <TopNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-full px-8 py-8 mt-6">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-600">{error}</p>
-            <button
+                      <button 
               onClick={() => refreshData()}
               className="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+            </div>
     )
   }
 
@@ -109,39 +109,44 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     <div className="min-h-screen bg-gray-50">
       <TopNavigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push('/properties')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} className="text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {propertyData?.name || 'Property Details'}
-              </h1>
-              <p className="text-sm text-gray-500">
-                {propertyData?.nickname || 'Loading...'}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <span className={`
-              px-3 py-1 rounded-full text-xs font-medium
-              ${propertyData?.isActive 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-gray-100 text-gray-700'
-              }
-            `}>
-              {propertyData?.isActive ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-        </div>
+      {/* Property Header with Background */}
+      <div className="bg-white border-b border-gray-200 shadow-sm mt-6">
+        <div className="max-w-full px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+                <button
+                onClick={() => router.push('/properties')}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+                </button>
+                          <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {propertyData?.name || 'Property Details'}
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  {propertyData?.nickname || 'Loading...'}
+                </p>
+                          </div>
+                          </div>
+            
+                          <div className="flex items-center space-x-2">
+              <span className={`
+                px-4 py-2 rounded-lg text-sm font-medium
+                ${propertyData?.isActive 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-gray-100 text-gray-700'
+                }
+              `}>
+                {propertyData?.isActive ? 'Active' : 'Inactive'}
+              </span>
+                            </div>
+                        </div>
+                    </div>
+                          </div>
 
+      {/* Main Content Area */}
+      <div className="max-w-full px-8 py-6">
         {/* Tabs Navigation */}
         <PropertyTabs
           tabs={tabs}
@@ -153,23 +158,23 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         <div className="mt-6">
           {activeTab === 'overview' && (
             <PropertyOverview
-              propertyId={params.id}
+                  propertyId={params.id} 
               propertyData={propertyData}
               owner={owner}
               onPropertyUpdate={handlePropertyUpdate}
               isLoading={isLoading}
               error={error}
             />
-          )}
+            )}
 
-          {activeTab === 'financial' && (
+            {activeTab === 'financial' && (
             <FinancialTab
               propertyData={propertyData}
               onUpdate={handlePropertyUpdate}
             />
           )}
 
-          {activeTab === 'documents' && (
+            {activeTab === 'documents' && (
             <DocumentsTab
               propertyData={propertyData}
               onUpdate={handlePropertyUpdate}
@@ -182,17 +187,17 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               onUpdate={handlePropertyUpdate}
             />
           )}
-        </div>
-      </div>
-
-      {/* Toast Notification */}
-      {showToast && (
-        <Toast
-          message={toastMessage}
+                      </div>
+                    </div>
+    
+    {/* Toast Notification */}
+    {showToast && (
+      <Toast
+        message={toastMessage}
           type={toastType}
-          onClose={() => setShowToast(false)}
-        />
-      )}
+        onClose={() => setShowToast(false)}
+      />
+    )}
     </div>
   )
 }
