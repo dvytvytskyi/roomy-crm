@@ -145,14 +145,19 @@ export default function PropertyOverview({
       
       if (response.ok) {
         const result = await response.json();
-        console.log('📋 PropertyOverview: Owners response:', result);
+        console.log('📋 PropertyOverview: Full owners response:', JSON.stringify(result, null, 2));
         if (result.success && result.data) {
           const ownersData = Array.isArray(result.data) ? result.data : result.data.data || [];
-          console.log('👥 PropertyOverview: Processed owners:', ownersData.length, 'owners');
+          console.log('👥 PropertyOverview: Processed owners count:', ownersData.length);
+          console.log('👥 PropertyOverview: First owner (if exists):', ownersData[0]);
           setOwners(ownersData);
+        } else {
+          console.error('❌ PropertyOverview: Response not successful or no data:', result);
         }
       } else {
+        const errorText = await response.text();
         console.error('❌ PropertyOverview: Failed to fetch owners, status:', response.status);
+        console.error('❌ PropertyOverview: Error response:', errorText);
       }
     } catch (error) {
       console.error('❌ PropertyOverview: Error loading owners:', error);
