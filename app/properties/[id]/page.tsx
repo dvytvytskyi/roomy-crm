@@ -5837,16 +5837,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
             {editModal.type === 'amenities' ? (
               <SimpleAmenitiesEditor 
                 propertyId={params?.id || ''}
-                currentAmenities={propertyData?.amenities?.map(amenity => ({
-                  id: amenity.id || amenity,
-                  name: amenity.name || amenity,
-                  icon: amenity.icon,
-                  category: amenity.category,
-                  description: amenity.description,
-                  is_active: true,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })) || []}
+                currentAmenities={propertyData?.amenities?.map(amenity => {
+                  // Handle both object and string formats
+                  if (typeof amenity === 'string') {
+                    return {
+                      id: amenity,
+                      name: amenity,
+                      icon: '',
+                      category: '',
+                      description: '',
+                      is_active: true,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    };
+                  }
+                  return {
+                    id: amenity.id || '',
+                    name: amenity.name || '',
+                    icon: amenity.icon || '',
+                    category: amenity.category || '',
+                    description: amenity.description || '',
+                    is_active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  };
+                }) || []}
                 onAmenitiesUpdate={async (amenityIds) => {
                   const success = await handlePropertyUpdate({ amenityIds });
                   if (success) {

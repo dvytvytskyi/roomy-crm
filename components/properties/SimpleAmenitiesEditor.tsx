@@ -29,7 +29,22 @@ export default function SimpleAmenitiesEditor({
 
   // Update selected amenities when currentAmenities change
   useEffect(() => {
-    setSelectedAmenityIds(currentAmenities.map(amenity => amenity.id));
+    console.log('[SimpleAmenitiesEditor] currentAmenities received:', currentAmenities);
+    console.log('[SimpleAmenitiesEditor] currentAmenities type:', typeof currentAmenities);
+    console.log('[SimpleAmenitiesEditor] currentAmenities length:', currentAmenities?.length);
+    
+    if (currentAmenities && Array.isArray(currentAmenities)) {
+      const ids = currentAmenities.map(amenity => {
+        console.log('[SimpleAmenitiesEditor] Processing amenity:', amenity, 'type:', typeof amenity);
+        return amenity.id;
+      }).filter(Boolean); // Filter out any undefined/null IDs
+      
+      console.log('[SimpleAmenitiesEditor] Setting selected amenity IDs:', ids);
+      setSelectedAmenityIds(ids);
+    } else {
+      console.log('[SimpleAmenitiesEditor] No current amenities or not an array');
+      setSelectedAmenityIds([]);
+    }
   }, [currentAmenities]);
 
   // Static list of amenities to avoid API issues
