@@ -41,15 +41,26 @@ interface CentralizedPropertyData {
   // Власник
   owner: any
   
+  // Зручності та правила
+  amenities: string[]
+  selectedAmenities: string[]
+  amenityIds?: string[] // For new amenities system
+  rules: string[]
+  selectedRules: string[]
+  
   // Фото та документи
   photos: Photo[]
   documents: any[]
   
-  // Витрати
+  // Витрати та комунальні послуги
   expenses: any[]
+  utilities: any[]
   
   // Налаштування
+  settings: any
+  automationSettings: any
   availabilitySettings: any
+  marketingSettings: any
   
   // Availability fields
   bookingWindow?: string
@@ -58,8 +69,9 @@ interface CentralizedPropertyData {
   checkInTime?: string
   checkOutTime?: string
   
-  // Платежі
+  // Платежі та резервації
   payments: any[]
+  savedReplies: any[]
   
   // PriceLabs Integration
   pricelabId: string | null
@@ -70,6 +82,14 @@ interface CentralizedPropertyData {
 }
 
 
+interface RulesEditModalProps {
+  initialData: {
+    availableRules: string[]
+  selectedRules: string[]
+  }
+  onSave: (data: { availableRules: string[], selectedRules: string[] }) => void
+  onCancel: () => void
+}
 
 interface OwnerEditModalProps {
   initialData: {

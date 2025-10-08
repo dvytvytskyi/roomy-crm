@@ -12,7 +12,6 @@ interface PropertyOverviewProps {
   onPropertyUpdate: (updates: any) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
-  onEditAmenities?: () => void; // Callback for amenities edit
 }
 
 interface OwnerSelectionModalProps {
@@ -116,8 +115,7 @@ export default function PropertyOverview({
   owner,
   onPropertyUpdate, 
   isLoading, 
-  error,
-  onEditAmenities
+  error
 }: PropertyOverviewProps) {
   // Use centralized data from parent component
   const property = propertyData;
@@ -183,9 +181,6 @@ export default function PropertyOverview({
   const [showGeneralInfoModal, setShowGeneralInfoModal] = useState(false);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [showPhotosModal, setShowPhotosModal] = useState(false);
-  const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
-  const [showUtilitiesModal, setShowUtilitiesModal] = useState(false);
-  const [showRulesModal, setShowRulesModal] = useState(false);
 
   // Form states
   const [generalInfoForm, setGeneralInfoForm] = useState({
@@ -649,28 +644,6 @@ export default function PropertyOverview({
             {[
               { label: 'Bathrooms', value: displayProperty?.bathrooms || 0, key: 'bathrooms' },
               { label: 'Price per Night', value: `AED ${displayProperty?.pricePerNight || 0}`, key: 'pricePerNight' },
-              { label: 'Current Price', value: (
-                <div className="flex items-center space-x-2">
-                  {priceLoading ? (
-                    <span className="text-sm text-gray-500">Loading...</span>
-                  ) : currentPrice ? (
-                    <span className="text-sm font-medium text-green-600">AED {currentPrice}</span>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">No data</span>
-                      <button 
-                        onClick={() => {
-                          // Refresh price functionality will be implemented
-                          console.log('Refresh price clicked');
-                        }}
-                        className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded"
-                      >
-                        Refresh
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ), key: 'currentPrice' },
               { label: 'Type of Unit', value: displayProperty?.typeOfUnit || 'Not specified', key: 'typeOfUnit' },
               { label: 'Country', value: displayProperty?.country || 'Not set', key: 'country' },
               { label: 'Created', value: displayProperty ? new Date(displayProperty.createdAt).toLocaleDateString() : 'Not set', key: 'createdAt' },
@@ -734,100 +707,8 @@ export default function PropertyOverview({
         </div>
       </div>
 
-      {/* Amenities */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Amenities</h2>
-          <button 
-            onClick={onEditAmenities || (() => setShowAmenitiesModal(true))}
-            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
-          >
-            <Edit size={14} />
-            <span>Edit</span>
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {(() => {
-            console.log('[PropertyOverview] displayProperty?.amenities:', displayProperty?.amenities);
-            console.log('[PropertyOverview] amenities type:', typeof displayProperty?.amenities);
-            console.log('[PropertyOverview] amenities is array:', Array.isArray(displayProperty?.amenities));
-            
-            return displayProperty?.amenities?.map((amenity: any, index: number) => {
-              console.log('[PropertyOverview] Processing amenity:', amenity, 'type:', typeof amenity);
-              
-              // Handle both string and object amenity formats
-              const amenityName = typeof amenity === 'string' ? amenity : (amenity?.name || 'Unknown');
-              const amenityIcon = typeof amenity === 'object' ? amenity?.icon || '' : '';
-              
-              console.log('[PropertyOverview] Rendered amenity name:', amenityName);
-              
-              return (
-                <div key={index} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  {amenityIcon && <span className="text-sm">{amenityIcon}</span>}
-                  <span className="text-sm text-gray-700">{amenityName}</span>
-                </div>
-              );
-            });
-          })() || (
-            <div className="col-span-full text-center py-4 text-gray-500">
-              No amenities listed
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Utilities */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Utilities</h2>
-          <button 
-            onClick={() => setShowUtilitiesModal(true)}
-            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
-          >
-            <Edit size={14} />
-            <span>Edit</span>
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {displayProperty?.utilities?.map((utility: any, index: number) => (
-            <div key={index} className="flex items-center space-x-2 bg-blue-50 rounded-lg px-3 py-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-700">{utility}</span>
-            </div>
-          )) || (
-            <div className="col-span-full text-center py-4 text-gray-500">
-              No utilities listed
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Rules */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Rules & Policies</h2>
-          <button 
-            onClick={() => setShowRulesModal(true)}
-            className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
-          >
-            <Edit size={14} />
-            <span>Edit</span>
-          </button>
-        </div>
-        <div className="space-y-3">
-          {displayProperty?.houseRules?.map((rule: any, index: number) => (
-            <div key={index} className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span className="text-sm text-gray-700">{rule}</span>
-            </div>
-          )) || (
-            <div className="text-center py-4 text-gray-500">
-              No rules specified
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* General Information Edit Modal */}
       {showGeneralInfoModal && (
@@ -1162,68 +1043,6 @@ export default function PropertyOverview({
         </div>
       )}
 
-      {/* Amenities Edit Modal */}
-      {showAmenitiesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Amenities</h3>
-              <button 
-                onClick={() => setShowAmenitiesModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Amenities editing functionality coming soon!</p>
-              <p className="text-sm text-gray-400">This will connect to API v2</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Utilities Edit Modal */}
-      {showUtilitiesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Utilities</h3>
-              <button 
-                onClick={() => setShowUtilitiesModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Utilities editing functionality coming soon!</p>
-              <p className="text-sm text-gray-400">This will connect to Property API v2</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rules Edit Modal */}
-      {showRulesModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Rules & Policies</h3>
-              <button 
-                onClick={() => setShowRulesModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Rules editing functionality coming soon!</p>
-              <p className="text-sm text-gray-400">This will connect to Property API v2</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast */}
       {showToast && (
