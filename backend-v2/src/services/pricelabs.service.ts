@@ -39,6 +39,29 @@ export interface PricelabsDeleteListingResponse {
   error?: string;
 }
 
+export interface PricelabsListing {
+  id: string;
+  pms: string;
+  name: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  base_price?: number;
+  min_price?: number;
+  max_price?: number;
+  status?: string;
+}
+
+export interface PricelabsListingsResponse {
+  success: boolean;
+  data?: {
+    listings: PricelabsListing[];
+  };
+  error?: string;
+}
+
 export interface PropertyData {
   id: string;
   name: string;
@@ -503,6 +526,87 @@ export class PricelabsService {
           error: `Unexpected error: ${error.message}`
         };
       }
+    }
+  }
+
+  /**
+   * Get all listings from PriceLabs
+   * @param skipHidden - Optional parameter to filter out hidden listings
+   * @param onlySyncing - Optional parameter to return only syncing listings
+   * @returns Promise with all listings data
+   */
+  public static async getAllListings(skipHidden: boolean = false, onlySyncing: boolean = false): Promise<PricelabsListingsResponse> {
+    console.log(`[PricelabsService] ===== GET ALL LISTINGS START =====`);
+    logger.info(`[PricelabsService] Getting all listings from PriceLabs`);
+    
+    try {
+      if (!this.API_KEY) {
+        console.log('[PricelabsService] PRICELABS_API_KEY is not configured');
+        logger.error('[PricelabsService] PRICELABS_API_KEY is not configured');
+        return {
+          success: false,
+          error: 'PriceLabs API key not configured'
+        };
+      }
+
+      console.log(`[PricelabsService] Fetching all listings from PriceLabs`);
+      console.log(`[PricelabsService] skip_hidden: ${skipHidden}`);
+      console.log(`[PricelabsService] only_syncing_listings: ${onlySyncing}`);
+
+      // Додаємо query параметри до URL
+      const params = new URLSearchParams();
+      if (skipHidden) params.append('skip_hidden', 'true');
+      if (onlySyncing) params.append('only_syncing_listings', 'true');
+      
+      const url = `${this.PRICELABS_API_URL}/listings${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log(`[PricelabsService] Request URL: ${url}`);
+
+      const response = await axios.get(url, {
+        headers: {
+          'X-API-Key': this.API_KEY,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000 // 15 seconds timeout
+      });
+
+      console.log(`[PricelabsService] ===== SUCCESS RESPONSE =====`);
+      console.log(`[PricelabsService] Response status: ${response.status}`);
+      console.log(`[PricelabsService] Found ${response.data.listings?.length || 0} listings`);
+      
+      logger.info(`[PricelabsService] Successfully fetched ${response.data.listings?.length || 0} listings from PriceLabs`);
+
+      return {
+        success: true,
+        data: {
+          listings: response.data.listings || []
+        }
+      };
+
+    } catch (error: any) {
+      console.log(`[PricelabsService] ===== ERROR FETCHING LISTINGS =====`);
+      logger.error(`[PricelabsService] Error fetching listings:`, error.message);
+
+      if (error.response) {
+        console.log(`[PricelabsService] API Error Response:`, error.response.status, error.response.data);
+        return {
+          success: false,
+          error: `PriceLabs API error: ${error.response.status} - ${error.response.data?.error?.message || error.response.data?.message || 'Unknown error'}`
+        };
+      } else if (error.request) {
+        console.log(`[PricelabsService] Network Error - No response received`);
+        return {
+          success: false,
+          error: 'Network error: Unable to reach PriceLabs API'
+        };
+      } else {
+        console.log(`[PricelabsService] Unexpected Error:`, error.message);
+        return {
+          success: false,
+          error: `Unexpected error: ${error.message}`
+        };
+      }
+    } finally {
+      console.log(`[PricelabsService] ===== GET ALL LISTINGS END =====`);
     }
   }
 }

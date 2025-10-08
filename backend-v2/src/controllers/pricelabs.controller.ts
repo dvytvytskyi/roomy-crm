@@ -42,12 +42,41 @@ export class PricelabsController {
    * @route GET /api/v2/integrations/pricelabs/listings
    * @access Private (JWT required)
    */
+  public static getAllListings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        PricelabsController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
 
-  /**
-   * Diagnostic endpoint to get raw PriceLabs data
-   * @route GET /api/v2/integrations/pricelabs/debug/:id
-   * @access Private (JWT required)
-   */
+      console.log(`[PricelabsController] Getting all PriceLabs listings, user: ${currentUser.email}`);
+      logger.info(`[PricelabsController] Getting all PriceLabs listings, user: ${currentUser.email}`);
+
+      // Отримуємо optional query параметри
+      const skipHidden = req.query.skip_hidden === 'true';
+      const onlySyncing = req.query.only_syncing_listings === 'true';
+
+      console.log(`[PricelabsController] Query params - skipHidden: ${skipHidden}, onlySyncing: ${onlySyncing}`);
+
+      // Викликаємо service method
+      const result = await PricelabsService.getAllListings(skipHidden, onlySyncing);
+
+      if (!result.success) {
+        PricelabsController.error(res, result.error, 500, result.error || 'Failed to fetch listings from PriceLabs');
+        return;
+      }
+
+      console.log(`[PricelabsController] Successfully retrieved ${result.data?.listings.length || 0} listings`);
+      logger.info(`[PricelabsController] Successfully retrieved ${result.data?.listings.length || 0} listings`);
+
+      PricelabsController.success(res, result.data, 'Listings retrieved successfully');
+
+    } catch (error: any) {
+      logger.error('[PricelabsController] Error getting listings:', error);
+      PricelabsController.error(res, error, 500, 'Failed to get listings from PriceLabs');
+    }
+  };
 
   /**
    * Debug endpoint to check API key configuration

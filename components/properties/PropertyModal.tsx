@@ -35,7 +35,8 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
     bedrooms: 1,
     selectedOwnerId: '',
     price_per_night: DEFAULT_PROPERTY_VALUES.pricePerNight,
-    status: 'active' as PropertyStatus
+    status: 'active' as PropertyStatus,
+    pricelabId: '' // Додали PriceLabs ID
   })
 
   // Owner selection states
@@ -43,6 +44,13 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   const [ownersLoading, setOwnersLoading] = useState(false)
   const [isOwnerDropdownOpen, setIsOwnerDropdownOpen] = useState(false)
   const [selectedOwner, setSelectedOwner] = useState<any | null>(null)
+
+  // PriceLabs listings states
+  const [pricelabsListings, setPricelabsListings] = useState<any[]>([])
+  const [pricelabsLoading, setPricelabsLoading] = useState(false)
+  const [isPricelabsDropdownOpen, setIsPricelabsDropdownOpen] = useState(false)
+  const [selectedPricelabsListing, setSelectedPricelabsListing] = useState<any | null>(null)
+  const [pricelabsSearchTerm, setPricelabsSearchTerm] = useState('')
 
   // Use centralized configuration
   const propertyTypes = PROPERTY_TYPES
@@ -93,6 +101,51 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
     setIsOwnerDropdownOpen(false)
   }
 
+  // Load PriceLabs listings
+  const loadPricelabsListings = async () => {
+    setPricelabsLoading(true)
+    try {
+      console.log('🔄 Loading PriceLabs listings from API...')
+      const token = localStorage.getItem('accessToken')
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/integrations/pricelabs/listings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('📋 PriceLabs Listings API Response:', result)
+        
+        if (result.success && result.data?.listings) {
+          console.log(`✅ Loaded ${result.data.listings.length} PriceLabs listings`)
+          setPricelabsListings(result.data.listings)
+        } else {
+          console.log('❌ No listings data in response')
+          setPricelabsListings([])
+        }
+      } else {
+        throw new Error(`Failed to load PriceLabs listings: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('❌ Error loading PriceLabs listings:', error)
+      showToast.error('Failed to load PriceLabs listings')
+      setPricelabsListings([])
+    } finally {
+      setPricelabsLoading(false)
+    }
+  }
+
+  // Handle PriceLabs listing selection
+  const handlePricelabsListingSelect = (listing: any) => {
+    setSelectedPricelabsListing(listing)
+    setFormData(prev => ({ ...prev, pricelabId: listing.id }))
+    setIsPricelabsDropdownOpen(false)
+    setPricelabsSearchTerm('')
+  }
+
   // Auto-generate property name
   const selectedLocation = dubaiAreas.find(area => area.id === formData.locationId)
   const locationName = selectedLocation ? selectedLocation.name : 'Unknown Location'
@@ -101,8 +154,9 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
   useEffect(() => {
     console.log('🔄 PropertyModal useEffect - isOpen:', isOpen, 'property:', property)
     if (isOpen) {
-      // Load owners when modal opens
+      // Load owners and PriceLabs listings when modal opens
       loadOwners()
+      loadPricelabsListings()
       
       if (property) {
         // Editing existing property
@@ -115,7 +169,8 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
           bedrooms: property.bedrooms || 1,
           selectedOwnerId: property.ownerId || property.selectedOwnerId || '',
           price_per_night: property.price_per_night || 100,
-          status: property.status || 'active'
+          status: property.status || 'active',
+          pricelabId: property.pricelabId || ''
         })
         
         // Set selected owner if ownerId exists
@@ -133,9 +188,11 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
           bedrooms: 1,
           selectedOwnerId: '',
           price_per_night: 100,
-          status: 'active'
+          status: 'active',
+          pricelabId: ''
         })
         setSelectedOwner(null)
+        setSelectedPricelabsListing(null)
       }
     }
   }, [isOpen, property]) // Added isOpen to dependencies
@@ -150,6 +207,17 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
       }
     }
   }, [owners, property])
+
+  // Set selected PriceLabs listing when listings are loaded and property has pricelabId
+  useEffect(() => {
+    if (pricelabsListings && pricelabsListings.length > 0 && property && property.pricelabId) {
+      const listing = pricelabsListings.find(l => l.id === property.pricelabId)
+      if (listing) {
+        console.log('✅ Found matching PriceLabs listing:', listing.name)
+        setSelectedPricelabsListing(listing)
+      }
+    }
+  }, [pricelabsListings, property])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -212,6 +280,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         tags: [],
         locationId: formData.locationId, // Send location ID instead of name
         ownerId: formData.selectedOwnerId, // Send single owner ID, not array
+        pricelabId: formData.pricelabId || undefined, // Додали PriceLabs ID
         isActive: formData.status === 'active',
         isPublished: false
       }
@@ -468,6 +537,148 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
                         <div>
                           <span className="text-gray-600">Nationality:</span>
                           <span className="ml-2 font-medium">{selectedOwner.nationality || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* PriceLabs Integration */}
+              <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg p-4 border border-orange-200">
+                <h3 className="text-lg font-medium text-slate-900 flex items-center mb-4">
+                  <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  PriceLabs Integration
+                  <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Optional</span>
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Link to PriceLabs Listing
+                    </label>
+                    <p className="text-xs text-gray-600 mb-2">
+                      Select a PriceLabs listing to enable automatic pricing updates
+                    </p>
+                    <div className="relative pricelabs-dropdown-container">
+                      <button
+                        type="button"
+                        onClick={() => setIsPricelabsDropdownOpen(!isPricelabsDropdownOpen)}
+                        disabled={pricelabsLoading}
+                        className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className={selectedPricelabsListing ? 'text-slate-900' : 'text-gray-500'}>
+                          {pricelabsLoading 
+                            ? 'Loading listings...'
+                            : selectedPricelabsListing 
+                              ? `${selectedPricelabsListing.name} (${selectedPricelabsListing.city_name || 'Dubai'})`
+                              : 'Select PriceLabs listing (optional)...'
+                          }
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isPricelabsDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {isPricelabsDropdownOpen && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-96 overflow-hidden flex flex-col">
+                          {/* Search input */}
+                          <div className="p-2 border-b border-gray-200 sticky top-0 bg-white">
+                            <input
+                              type="text"
+                              value={pricelabsSearchTerm}
+                              onChange={(e) => setPricelabsSearchTerm(e.target.value)}
+                              placeholder="Search by name, city, or bedrooms..."
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          
+                          {/* Listings dropdown */}
+                          <div className="overflow-y-auto max-h-80">
+                            {pricelabsLoading ? (
+                              <div className="px-3 py-2 text-sm text-gray-500">Loading PriceLabs listings...</div>
+                            ) : !pricelabsListings || pricelabsListings.length === 0 ? (
+                              <div className="px-3 py-2 text-sm text-gray-500">No PriceLabs listings found</div>
+                            ) : (
+                              (() => {
+                                // Filter listings based on search term
+                                const filteredListings = pricelabsListings.filter(listing => {
+                                  const searchLower = pricelabsSearchTerm.toLowerCase()
+                                  return (
+                                    listing.name?.toLowerCase().includes(searchLower) ||
+                                    listing.city_name?.toLowerCase().includes(searchLower) ||
+                                    listing.no_of_bedrooms?.toString().includes(searchLower)
+                                  )
+                                })
+
+                                if (filteredListings.length === 0) {
+                                  return <div className="px-3 py-2 text-sm text-gray-500">No matching listings found</div>
+                                }
+
+                                return filteredListings.map((listing) => (
+                                  <button
+                                    key={listing.id}
+                                    type="button"
+                                    onClick={() => handlePricelabsListingSelect(listing)}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-orange-50 focus:bg-orange-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                                  >
+                                    <div className="font-medium text-slate-900">
+                                      {listing.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1 flex items-center space-x-3">
+                                      <span>🏙️ {listing.city_name || 'Dubai'}</span>
+                                      <span>🛏️ {listing.no_of_bedrooms || 0} bed{listing.no_of_bedrooms !== 1 ? 's' : ''}</span>
+                                      {listing.base_price && <span>💰 {listing.base_price} AED</span>}
+                                      {listing.push_enabled && <span className="text-green-600">✓ Syncing</span>}
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-0.5">
+                                      ID: {listing.id}
+                                    </div>
+                                  </button>
+                                ))
+                              })()
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedPricelabsListing && (
+                    <div className="bg-white rounded-lg p-3 border border-orange-200">
+                      <h4 className="font-medium text-slate-900 mb-2 flex items-center">
+                        <span className="text-green-600 mr-2">✓</span>
+                        Linked PriceLabs Listing
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">Name:</span>
+                          <span className="ml-2 font-medium">{selectedPricelabsListing.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">City:</span>
+                          <span className="ml-2 font-medium">{selectedPricelabsListing.city_name || 'Dubai'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Bedrooms:</span>
+                          <span className="ml-2 font-medium">{selectedPricelabsListing.no_of_bedrooms || 0}</span>
+                        </div>
+                        {selectedPricelabsListing.base_price && (
+                          <div>
+                            <span className="text-gray-600">Base Price:</span>
+                            <span className="ml-2 font-medium">{selectedPricelabsListing.base_price} AED</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-gray-600">Sync Status:</span>
+                          <span className={`ml-2 font-medium ${selectedPricelabsListing.push_enabled ? 'text-green-600' : 'text-gray-500'}`}>
+                            {selectedPricelabsListing.push_enabled ? '✓ Active' : '✗ Inactive'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">ID:</span>
+                          <span className="ml-2 font-mono text-xs">{selectedPricelabsListing.id}</span>
                         </div>
                       </div>
                     </div>

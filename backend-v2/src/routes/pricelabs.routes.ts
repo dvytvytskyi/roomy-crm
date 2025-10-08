@@ -18,6 +18,14 @@ router.get('/test', authenticateToken, PricelabsController.test);
  */
 router.get('/debug', authenticateToken, PricelabsController.debug);
 
+/**
+ * @route   GET /api/v2/integrations/pricelabs/listings
+ * @desc    Get all listings from PriceLabs
+ * @access  Private (JWT required)
+ * @query   skip_hidden - Optional: filter out hidden listings (default: false)
+ * @query   only_syncing_listings - Optional: return only syncing listings (default: false)
+ */
+router.get('/listings', authenticateToken, PricelabsController.getAllListings);
 
 /**
  * @route   GET /api/v2/integrations/pricelabs/prices/:id
