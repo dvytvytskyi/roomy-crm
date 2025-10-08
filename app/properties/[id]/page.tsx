@@ -2134,31 +2134,31 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       }
     }
     
-    // Значення за замовчуванням
+    // Empty default values - will be populated from API
     return {
-    name: 'Apartment in Downtown Dubai 1 bedroom',
-      nickname: defaultNickname,
-    status: 'Active',
-    type: 'Apartment',
-    location: 'Downtown Dubai',
-    address: '57QG+GF9 - Burj Khalifa Blvd',
-    size: {
-      value: 53,
-      unit: 'm²'
-    },
-    beds: [
-      { type: 'Double Bed', count: 1 }
-    ],
-    parkingSlots: 2,
-    agencyFee: 18,
-    dtcmLicenseExpiry: '2024-12-15',
-    referringAgent: {
-      name: 'Ahmed Al Mansouri',
-      commission: 12
-    },
-    checkIn: '15:00',
-    checkOut: '12:00',
-    unitIntakeDate: '2024-03-15'
+      name: '',
+      nickname: '',
+      status: 'Active',
+      type: '',
+      location: '',
+      address: '',
+      size: {
+        value: 0,
+        unit: 'm²'
+      },
+      beds: [
+        { type: 'Bed', count: 0 }
+      ],
+      parkingSlots: 0,
+      agencyFee: 0,
+      dtcmLicenseExpiry: '',
+      referringAgent: {
+        name: 'Not assigned',
+        commission: 0
+      },
+      checkIn: '15:00',
+      checkOut: '12:00',
+      unitIntakeDate: ''
     }
   })
 
@@ -3989,6 +3989,39 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
         
         // Set property data state
         setPropertyData(propertyData)
+        
+        // Clear any cached mock data from localStorage
+        localStorage.removeItem(`propertyGeneralInfo_${params?.id || 'default'}`)
+        
+        // Update propertyGeneralInfo with real data from API
+        console.log('🔄 Updating propertyGeneralInfo with API data')
+        setPropertyGeneralInfo({
+          name: propertyData.name || '',
+          nickname: propertyData.nickname || '',
+          status: propertyData.isActive ? 'Active' : 'Inactive',
+          type: propertyData.type || '',
+          location: propertyData.city || '',
+          address: propertyData.address || '',
+          size: {
+            value: propertyData.area || 0,
+            unit: 'm²'
+          },
+          beds: [
+            { type: 'Bed', count: propertyData.bedrooms || 0 }
+          ],
+          parkingSlots: 0, // Not available in API
+          agencyFee: 0, // Not available in API
+          dtcmLicenseExpiry: '', // Not available in API
+          referringAgent: {
+            name: propertyData.agent?.firstName && propertyData.agent?.lastName 
+              ? `${propertyData.agent.firstName} ${propertyData.agent.lastName}` 
+              : 'Not assigned',
+            commission: 0
+          },
+          checkIn: '15:00', // Default
+          checkOut: '12:00', // Default
+          unitIntakeDate: propertyData.createdAt ? new Date(propertyData.createdAt).toISOString().split('T')[0] : ''
+        })
         
         // Extract owner ID from property data
         const ownerId = propertyData.owner?.id || propertyData.ownerId || propertyData.selectedOwnerId || propertyData.agentId || ''
