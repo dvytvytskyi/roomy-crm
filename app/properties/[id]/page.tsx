@@ -16,6 +16,8 @@ import AddExpenseModal from '../property-modals/AddExpenseModal';
 import PhotosManagerModal from '../property-modals/PhotosManagerModal';
 import DocumentUploadModal from '../property-modals/DocumentUploadModal';
 import AvailabilityEditModal from '../property-modals/AvailabilityEditModal';
+import PriceEditModal from '../property-modals/PriceEditModal';
+import MarketingEditModal from '../property-modals/MarketingEditModal';
 
 export default function PropertyDetailsPage() {
   const params = useParams();
@@ -44,6 +46,8 @@ export default function PropertyDetailsPage() {
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false);
 
   /**
    * Show toast notification
@@ -296,6 +300,35 @@ export default function PropertyDetailsPage() {
                               </button>
                     </div>
 
+            {/* Pricing Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Pricing</h2>
+                    <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+                  <div>
+                    <p className="text-sm text-gray-600">Base Price per Night</p>
+                    <p className="text-3xl font-bold text-gray-900">AED {propertyData.pricePerNight}</p>
+                          </div>
+                              <button 
+                    onClick={() => setIsPriceModalOpen(true)}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Edit Price
+                              </button>
+                            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">Monthly Est.</p>
+                    <p className="font-semibold text-gray-900">AED {(propertyData.pricePerNight * 30).toLocaleString()}</p>
+                        </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500">Yearly Est.</p>
+                    <p className="font-semibold text-gray-900">AED {(propertyData.pricePerNight * 365).toLocaleString()}</p>
+                    </div>
+                  </div>
+                    </div>
+                </div>
+
             {/* Photos Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Photos</h2>
@@ -371,18 +404,18 @@ export default function PropertyDetailsPage() {
                         <p className="text-sm text-gray-500">
                           {new Date(transaction.createdAt).toLocaleDateString()}
                       </p>
-                    </div>
-                  </div>
+                      </div>
+                      </div>
                           ))}
-                </div>
+                        </div>
                       ) : (
                 <p className="text-gray-500">No transactions yet</p>
               )}
               <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
                 Add Payment
-                      </button>
+                          </button>
                     </div>
-
+                      
             {/* Recent Expenses */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Expenses</h2>
@@ -390,30 +423,30 @@ export default function PropertyDetailsPage() {
                   <div className="space-y-3">
                   {propertyData.expenses.slice(0, 5).map((expense) => (
                     <div key={expense.id} className="flex justify-between items-center py-2 border-b border-gray-100">
-                          <div>
+                      <div>
                         <p className="font-medium">{expense.category}</p>
                         <p className="text-sm text-gray-500">{expense.description}</p>
-                            </div>
+                        </div>
                       <div className="text-right">
                         <p className="font-medium text-red-600">AED {expense.amount}</p>
                         <p className="text-sm text-gray-500">
                           {new Date(expense.date).toLocaleDateString()}
-                        </p>
-                        </div>
-                      </div>
-                    ))}
+                      </p>
+                    </div>
                   </div>
+                    ))}
+                </div>
               ) : (
                 <p className="text-gray-500">No expenses yet</p>
               )}
-                            <button
+                      <button 
                 onClick={() => setIsAddExpenseModalOpen(true)}
                 className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
+                      >
                 Add Expense
-                            </button>
-                        </div>
-
+                      </button>
+                  </div>
+                  
             {/* Amenities */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Amenities</h2>
@@ -426,20 +459,20 @@ export default function PropertyDetailsPage() {
                     >
                       {amenity}
                     </span>
-                  ))}
-                    </div>
-                  ) : (
+                          ))}
+                </div>
+                      ) : (
                 <p className="text-gray-500">No amenities added</p>
               )}
-                  <button
+                            <button 
                 onClick={() => setIsAmenitiesModalOpen(true)}
                 className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
+                            >
                 Manage Amenities
-                  </button>
+                      </button>
+                    </div>
                 </div>
-          </div>
-        </div>
+              </div>
 
         {/* Full Width Sections */}
         <div className="mt-6 space-y-6">
@@ -450,13 +483,13 @@ export default function PropertyDetailsPage() {
               <div className="prose max-w-none">
                 <p className="text-gray-700">{propertyData.description}</p>
             </div>
-              <button 
+                    <button 
                 onClick={() => setIsDescriptionModalOpen(true)}
                 className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
+                    >
                 Edit Description
-              </button>
-        </div>
+                    </button>
+                  </div>
       )}
 
           {/* House Rules */}
@@ -471,17 +504,51 @@ export default function PropertyDetailsPage() {
                   </li>
                 ))}
               </ul>
-              <button 
+                          <button 
                 onClick={() => setIsRulesModalOpen(true)}
                 className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
               >
                 Edit Rules
-              </button>
-        </div>
-      )}
-            </div>
+                          </button>
               </div>
-              
+            )}
+
+          {/* Marketing Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Marketing Content</h2>
+                  <div className="space-y-4">
+              {propertyData.summary && (
+                    <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Summary</h3>
+                  <p className="text-gray-600 text-sm">{propertyData.summary}</p>
+                        </div>
+              )}
+              {propertyData.theSpace && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">The Space</h3>
+                  <p className="text-gray-600 text-sm">{propertyData.theSpace}</p>
+                        </div>
+              )}
+              {propertyData.guestAccess && (
+                    <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Guest Access</h3>
+                  <p className="text-gray-600 text-sm">{propertyData.guestAccess}</p>
+                        </div>
+              )}
+              {!propertyData.summary && !propertyData.theSpace && !propertyData.guestAccess && (
+                <p className="text-gray-500">No marketing content added yet</p>
+              )}
+                        </div>
+                          <button 
+              onClick={() => setIsMarketingModalOpen(true)}
+              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+              Edit Marketing Content
+                          </button>
+                        </div>
+                    </div>
+                  </div>
+
       {/* Modals */}
       <OwnerSelectionModal
         isOpen={isOwnerModalOpen}
@@ -503,7 +570,7 @@ export default function PropertyDetailsPage() {
         onClose={() => setIsGeneralInfoModalOpen(false)}
       />
 
-      <AmenitiesEditModal
+              <AmenitiesEditModal 
         isOpen={isAmenitiesModalOpen}
         selectedAmenityIds={propertyData.amenities || []}
         onSave={async (amenityIds) => {
@@ -512,7 +579,7 @@ export default function PropertyDetailsPage() {
         onClose={() => setIsAmenitiesModalOpen(false)}
       />
 
-      <RulesEditModal
+              <RulesEditModal 
         isOpen={isRulesModalOpen}
         currentRules={propertyData.houseRules || []}
         onSave={async (houseRules) => {
@@ -563,7 +630,23 @@ export default function PropertyDetailsPage() {
         initialSettings={propertyData}
         onSave={handlePropertyUpdate}
         onClose={() => setIsAvailabilityModalOpen(false)}
-            />
-          </div>
+      />
+
+      <PriceEditModal
+        isOpen={isPriceModalOpen}
+        initialPrice={propertyData.pricePerNight || 0}
+        onSave={async (pricePerNight) => {
+          return await handlePropertyUpdate({ pricePerNight });
+        }}
+        onClose={() => setIsPriceModalOpen(false)}
+      />
+
+      <MarketingEditModal
+        isOpen={isMarketingModalOpen}
+        initialData={propertyData}
+        onSave={handlePropertyUpdate}
+        onClose={() => setIsMarketingModalOpen(false)}
+                />
+              </div>
   );
 }
