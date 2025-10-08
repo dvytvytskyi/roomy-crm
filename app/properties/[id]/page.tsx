@@ -13,6 +13,9 @@ import AmenitiesEditModal from '../property-modals/AmenitiesEditModal';
 import RulesEditModal from '../property-modals/RulesEditModal';
 import DescriptionEditModal from '../property-modals/DescriptionEditModal';
 import AddExpenseModal from '../property-modals/AddExpenseModal';
+import PhotosManagerModal from '../property-modals/PhotosManagerModal';
+import DocumentUploadModal from '../property-modals/DocumentUploadModal';
+import AvailabilityEditModal from '../property-modals/AvailabilityEditModal';
 
 export default function PropertyDetailsPage() {
   const params = useParams();
@@ -38,6 +41,9 @@ export default function PropertyDetailsPage() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+  const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
 
   /**
    * Show toast notification
@@ -315,7 +321,10 @@ export default function PropertyDetailsPage() {
                   ) : (
                 <p className="text-gray-500">No photos uploaded</p>
               )}
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                    <button 
+                onClick={() => setIsPhotosModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
                 Manage Photos
                     </button>
                     </div>
@@ -529,6 +538,32 @@ export default function PropertyDetailsPage() {
         }}
         onClose={() => setIsAddExpenseModalOpen(false)}
       />
-    </div>
+
+      <PhotosManagerModal
+        isOpen={isPhotosModalOpen}
+        propertyId={propertyId}
+        initialPhotos={propertyData.photos || []}
+        onUpdate={async () => {
+          await loadPropertyData(); // Reload property data to get updated photos
+        }}
+        onClose={() => setIsPhotosModalOpen(false)}
+      />
+
+      <DocumentUploadModal
+        isOpen={isDocumentModalOpen}
+        propertyId={propertyId}
+        onUpload={async () => {
+          await loadPropertyData(); // Reload property data to get updated documents
+        }}
+        onClose={() => setIsDocumentModalOpen(false)}
+      />
+
+      <AvailabilityEditModal
+        isOpen={isAvailabilityModalOpen}
+        initialSettings={propertyData}
+        onSave={handlePropertyUpdate}
+        onClose={() => setIsAvailabilityModalOpen(false)}
+            />
+          </div>
   );
 }
