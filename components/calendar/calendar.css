@@ -1,0 +1,383 @@
+/* ============================================ */
+/* ROOMY CRM - Property Calendar Styles */
+/* DHTMLX Gantt Open Source Edition */
+/* ============================================ */
+
+.property-calendar {
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* ============================================ */
+/* GRID CUSTOMIZATION */
+/* ============================================ */
+
+.gantt_grid_scale,
+.gantt_task_scale {
+  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+  border-color: #e5e7eb;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.gantt_grid_head_cell {
+  border-right: 1px solid #e5e7eb;
+  padding: 12px 8px;
+}
+
+.gantt_grid_data .gantt_row {
+  border-bottom: 1px solid #f3f4f6;
+  background: white;
+}
+
+.gantt_grid_data .gantt_row:nth-child(even) {
+  background: #fafafa;
+}
+
+.gantt_grid_data .gantt_row:hover {
+  background-color: #f0f9ff !important;
+}
+
+.gantt_grid_data .gantt_cell {
+  padding: 8px;
+  color: #374151;
+  border-right: 1px solid #f3f4f6;
+}
+
+/* ============================================ */
+/* TIMELINE CUSTOMIZATION */
+/* ============================================ */
+
+.gantt_scale_cell.weekend-scale {
+  background: #fef3c7 !important;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.gantt_task_cell.weekend-cell {
+  background: #fffbeb !important;
+}
+
+/* ============================================ */
+/* TASK BARS - Reservations */
+/* ============================================ */
+
+.gantt_task_line {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  height: 38px !important;
+  margin-top: 6px;
+}
+
+.gantt_task_line:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+  z-index: 100;
+}
+
+/* Property background bars */
+.gantt_task_line.property-bar {
+  background: #e0e7ff !important;
+  border: 1px dashed #a5b4fc;
+  height: 12px !important;
+  margin-top: 19px;
+  opacity: 0.4;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Reservation bars by status */
+.gantt_task_line.status-pending {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.gantt_task_line.status-confirmed {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+.gantt_task_line.status-checked_in {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+}
+
+.gantt_task_line.status-checked_out {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.gantt_task_line.status-cancelled {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* Task content */
+.gantt_task_content {
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 0 12px;
+  line-height: 38px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.gantt_task_line.property-bar .gantt_task_content {
+  display: none;
+}
+
+/* Task progress */
+.gantt_task_progress {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+/* ============================================ */
+/* TODAY MARKER */
+/* ============================================ */
+
+.gantt_marker.today-marker {
+  background: rgba(239, 68, 68, 0.12);
+  border-left: 3px solid #ef4444;
+  z-index: 1;
+}
+
+.gantt_marker_content {
+  background: #ef4444;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================ */
+/* TOOLTIP */
+/* ============================================ */
+
+.gantt_tooltip {
+  background: #1f2937;
+  color: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  border: none;
+  font-size: 13px;
+  max-width: 350px;
+}
+
+/* ============================================ */
+/* LIGHTBOX MODAL */
+/* ============================================ */
+
+.gantt_cal_light {
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: none;
+  overflow: hidden;
+}
+
+.gantt_cal_lheader {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  padding: 24px;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+}
+
+.gantt_cal_larea {
+  padding: 24px;
+  background: white;
+}
+
+.gantt_cal_lsection {
+  margin-bottom: 20px;
+}
+
+.gantt_cal_ltext label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
+  font-size: 13px;
+}
+
+.gantt_cal_ltext input,
+.gantt_cal_ltext select,
+.gantt_cal_ltext textarea {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.2s;
+  color: #1f2937;
+}
+
+.gantt_cal_ltext input:focus,
+.gantt_cal_ltext select:focus,
+.gantt_cal_ltext textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Buttons */
+.gantt_btn_set {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #f3f4f6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.gantt_save_btn,
+.gantt_cancel_btn,
+.gantt_delete_btn {
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gantt_save_btn {
+  background: linear-gradient(to bottom, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
+}
+
+.gantt_save_btn:hover {
+  background: linear-gradient(to bottom, #2563eb, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.gantt_cancel_btn {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.gantt_cancel_btn:hover {
+  background-color: #e5e7eb;
+}
+
+.gantt_delete_btn {
+  background: linear-gradient(to bottom, #ef4444, #dc2626);
+  color: white;
+}
+
+.gantt_delete_btn:hover {
+  background: linear-gradient(to bottom, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+}
+
+/* ============================================ */
+/* SCROLLBARS */
+/* ============================================ */
+
+.gantt_layout_cell::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #94a3b8, #64748b);
+  border-radius: 6px;
+  border: 2px solid #f8fafc;
+}
+
+.gantt_layout_cell::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #64748b, #475569);
+}
+
+/* ============================================ */
+/* SELECTION */
+/* ============================================ */
+
+.gantt_selected .gantt_task_line {
+  box-shadow: 0 0 0 3px #3b82f6, 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+  z-index: 200;
+}
+
+/* ============================================ */
+/* TREE ICONS */
+/* ============================================ */
+
+.gantt_tree_icon {
+  width: 24px;
+  height: 24px;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.gantt_tree_icon:hover {
+  background: #f3f4f6;
+}
+
+.gantt_tree_icon.gantt_open:before {
+  content: '▼';
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.gantt_tree_icon.gantt_close:before {
+  content: '▶';
+  color: #6b7280;
+  font-size: 10px;
+}
+
+/* ============================================ */
+/* QUICK INFO POPUP */
+/* ============================================ */
+
+.gantt_cal_quick_info {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.gantt_qi_title {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  font-weight: 700;
+  padding: 14px 18px;
+}
+
+.gantt_qi_content {
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .gantt_task_line {
+    height: 32px !important;
+  }
+  
+  .gantt_task_content {
+    font-size: 11px;
+  }
+}
+
