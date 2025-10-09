@@ -114,6 +114,32 @@ export class PhotoController {
           return;
         }
 
+        // 4. Add photo to property_photos table
+        logger.info('[PhotoController] Adding photo to property_photos table...');
+        const { PrismaClient } = require('@prisma/client');
+        const prisma = new PrismaClient();
+        
+        try {
+          const photoId = `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const propertyPhoto = await prisma.property_photos.create({
+            data: {
+              id: photoId,
+              property_id: propertyId,
+              url: s3Result.url,
+              s3_key: key,
+              is_cover: false,
+              created_at: new Date()
+            }
+          });
+          
+          await prisma.$disconnect();
+          logger.info('[PhotoController] Photo added to property_photos:', propertyPhoto.id);
+        } catch (dbError: any) {
+          logger.error('[PhotoController] Error adding photo to property_photos:', dbError);
+          await prisma.$disconnect();
+          // Don't fail the request - photo is already in S3 and file_uploads
+        }
+
         logger.info(`[PhotoController] === PHOTO UPLOAD END for property ${propertyId} ===`);
         res.status(201).json({
           success: true,

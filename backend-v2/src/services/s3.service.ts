@@ -93,7 +93,8 @@ export class S3Service {
         Key: key,
         Body: file,
         ContentType: options.contentType || 'application/octet-stream',
-        ACL: options.isPublic ? 'public-read' : 'private',
+        // Removed ACL - modern S3 buckets use bucket policies instead
+        // ACL: options.isPublic ? 'public-read' : 'private',
       });
 
       logger.info('[S3Service] Sending PutObjectCommand...');

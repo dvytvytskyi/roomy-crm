@@ -11,20 +11,14 @@ export class AmenityController extends BaseController {
    */
   public static getAllAmenities = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const currentUser = req.user;
-      if (!currentUser) {
-        AmenityController.error(res, 'Unauthorized', 401, 'Authentication required');
-        return;
-      }
-
       // Parse query parameters
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       const category = req.query.category as string;
       const search = req.query.search as string;
 
-      // Get amenities
-      const result = await AmenityService.findAll(currentUser, page, limit, category, search);
+      // Get amenities (public endpoint - no user required)
+      const result = await AmenityService.findAllPublic(page, limit, category, search);
 
       if (!result.success || !result.data) {
         AmenityController.error(res, result.error || 'Failed to retrieve amenities', 500, result.message);

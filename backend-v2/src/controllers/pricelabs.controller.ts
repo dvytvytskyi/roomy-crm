@@ -151,11 +151,10 @@ export class PricelabsController {
         PricelabsController.success(res, priceResponse.data, 'Price retrieved successfully');
       } else {
         const errorMessage = priceResponse?.error || 'Unknown error';
-        console.log(`[PricelabsController] PriceLabs failed for property: ${id}, using fallback. Error: ${errorMessage}`);
+        console.log(`[PricelabsController] PriceLabs failed for property: ${id}. Error: ${errorMessage}`);
         
-        // Use fallback price if PriceLabs fails
-        const fallbackResponse = PricelabsService.getFallbackPrice(id);
-        PricelabsController.success(res, fallbackResponse.data, 'Fallback price retrieved');
+        // Return error instead of fallback price
+        PricelabsController.error(res, errorMessage, 404, 'Price data not available from PriceLabs');
       }
 
     } catch (error) {

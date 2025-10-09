@@ -31,7 +31,97 @@ export interface UpdateAmenityDto {
 
 export class AmenityService {
   /**
-   * Get all amenities with pagination and filtering
+   * Get all amenities with pagination and filtering (public endpoint)
+   */
+  public static async findAllPublic(
+    page: number = 1,
+    limit: number = 50,
+    category?: string,
+    search?: string
+  ): Promise<ServiceResponse<PaginatedResponse<AmenityDto>>> {
+    try {
+      const prisma = new PrismaClient();
+      const offset = (page - 1) * limit;
+
+      // Build where clause
+      let where: any = {
+        is_active: true // Only active amenities for public endpoint
+      };
+
+      if (category) {
+        where.category = category;
+      }
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } }
+        ];
+      }
+
+      // Get total count
+      const totalCount = await prisma.amenities.count({ where });
+
+      // Get amenities
+      const amenities = await prisma.amenities.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: [
+          { category: 'asc' },
+          { name: 'asc' }
+        ]
+      });
+
+      // Transform to DTO
+      const amenityDtos: AmenityDto[] = amenities.map(amenity => ({
+        id: amenity.id,
+        name: amenity.name,
+        icon: amenity.icon || undefined,
+        category: amenity.category || undefined,
+        description: amenity.description || undefined,
+        is_active: amenity.is_active,
+        created_at: amenity.created_at.toISOString(),
+        updated_at: amenity.updated_at.toISOString()
+      }));
+
+      // Calculate pagination
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      const pagination = {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      };
+
+      logger.info(`Public amenities retrieved: ${amenityDtos.length} amenities, page ${page}`);
+
+      return {
+        success: true,
+        data: {
+          data: amenityDtos,
+          pagination
+        }
+      };
+    } catch (error) {
+      logger.error('Public amenities retrieval error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to retrieve amenities'
+      };
+    } finally {
+      // prisma will be disconnected automatically
+    }
+  }
+
+  /**
+   * Get all amenities with pagination and filtering (authenticated)
    */
   public static async findAll(
     currentUser: CurrentUser,
