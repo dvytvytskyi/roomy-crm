@@ -467,12 +467,11 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       // ============================================
       // TODAY MARKER
       // ============================================
-      const today = new Date()
       gantt.addMarker({
-        start_date: today,
+        start_date: new Date(),
         css: 'today-marker',
         text: 'Today',
-        title: `Today: ${today.toLocaleDateString()}`
+        title: `Today: ${new Date().toLocaleDateString()}`
       })
 
       // ============================================
