@@ -95,6 +95,12 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         
         script.onerror = () => {
           console.error('❌ Failed to load DHTMLX Gantt from /dhtmlxGantt/codebase/dhtmlxgantt.js')
+          console.log('📁 Please copy your DHTMLX Gantt files to public/dhtmlxGantt/codebase/')
+          // Initialize with placeholder anyway after a delay
+          setTimeout(() => {
+            console.log('🔄 Initializing with placeholder...')
+            initializeGantt()
+          }, 100)
         }
         
         document.body.appendChild(script)
@@ -104,8 +110,38 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     }
 
     const initializeGantt = () => {
-      if (!ganttContainer.current || !window.gantt) {
-        console.error('Gantt container or window.gantt not available')
+      if (!ganttContainer.current) {
+        console.error('Gantt container not available')
+        return
+      }
+      
+      if (!window.gantt) {
+        console.warn('⚠️ DHTMLX Gantt not loaded - using placeholder')
+        // Create a simple placeholder display
+        if (ganttContainer.current) {
+          ganttContainer.current.innerHTML = `
+            <div style="
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              height: 400px; 
+              background: #f8fafc; 
+              border: 2px dashed #cbd5e1; 
+              border-radius: 8px;
+              flex-direction: column;
+              gap: 16px;
+            ">
+              <div style="font-size: 48px;">📅</div>
+              <div style="text-align: center;">
+                <h3 style="color: #374151; margin: 0 0 8px 0;">DHTMLX Gantt Calendar</h3>
+                <p style="color: #6b7280; margin: 0 0 16px 0;">Please copy your DHTMLX Gantt files to:</p>
+                <code style="background: #e5e7eb; padding: 8px 12px; border-radius: 4px; font-family: monospace;">
+                  public/dhtmlxGantt/codebase/
+                </code>
+              </div>
+            </div>
+          `
+        }
         return
       }
 
