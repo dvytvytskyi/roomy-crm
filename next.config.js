@@ -12,30 +12,25 @@ const nextConfig = {
       os: false,
     };
 
-    // Fix for mime-db vendor chunk issue
+    // Fix for CommonJS/ESM compatibility issues
     config.resolve.alias = {
       ...config.resolve.alias,
       'mime-db': require.resolve('mime-db'),
     };
 
-    // Disable problematic optimizations
+    // Disable problematic optimizations and fix vendor chunks
     config.optimization = {
       ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          default: false,
-          vendors: false,
-          // Keep vendor chunks but don't split mime-db
-          vendor: {
-            test: /[\\/]node_modules[\\/](?!mime-db)/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
-        },
-      },
+      splitChunks: false, // Disable splitChunks to avoid vendor issues
     };
+
+    // Fix for server-side rendering issues
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'mime-db': 'commonjs mime-db',
+      });
+    }
     
     return config;
   },
