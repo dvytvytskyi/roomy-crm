@@ -147,6 +147,15 @@
   display: none !important;
 }
 
+/* Hide property task bars completely */
+.gantt_task_line[data-type="property"] {
+  display: none !important;
+}
+
+.gantt_task_line.property-bar {
+  display: none !important;
+}
+
 /* Multiple reservations on same row will stack */
 .gantt_task_line.reservation-bar {
   position: relative;

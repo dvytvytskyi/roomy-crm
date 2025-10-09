@@ -356,19 +356,9 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       }
 
       gantt.templates.tooltip_text = function(start: Date, end: Date, task: any) {
+        // Don't show tooltip for property rows
         if (task.type === 'property') {
-          let html = `<div style="min-width: 220px;">`
-          html += `<div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: #1f2937;">🏠 ${task.text}</div>`
-          html += `<div style="font-size: 12px; color: #6b7280; line-height: 1.8;">`
-          
-          if (task.address) html += `📍 ${task.address}<br/>`
-          if (task.city) html += `🏙️ ${task.city}<br/>`
-          if (task.capacity) html += `👥 Capacity: ${task.capacity}<br/>`
-          if (task.bedrooms) html += `🛏️ Bedrooms: ${task.bedrooms}<br/>`
-          if (task.pricePerNight) html += `💰 Price: AED ${task.pricePerNight}/night`
-          
-          html += `</div></div>`
-          return html
+          return ''
         } else {
           const checkIn = gantt.date.date_to_str('%d %M %Y')(start)
           const checkOut = gantt.date.date_to_str('%d %M %Y')(end)
@@ -417,7 +407,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
 
       gantt.templates.task_style = function(start: Date, end: Date, task: any) {
         if (task.type === 'property') {
-          return 'opacity: 0.2; height: 10px; margin-top: 20px;'
+          return 'display: none !important;'
         }
         
         const statusColors: any = {
