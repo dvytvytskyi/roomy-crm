@@ -258,12 +258,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           template: function(task: any) {
             let html = '<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; min-height: 44px;">'
             
-            // Property icon/image
-            if (task.image) {
-              html += `<img src="${task.image}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0;" onerror="this.style.display='none'" />`
-            } else {
-              html += '<div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: white;">🏠</div>'
-            }
+            // Simple property icon (no photo)
+            html += '<div style="width: 32px; height: 32px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; color: white;">🏠</div>'
             
             html += '<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">'
             
