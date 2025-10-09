@@ -115,8 +115,11 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         return
       }
       
-      if (!window.gantt) {
-        console.warn('⚠️ DHTMLX Gantt not loaded - using placeholder')
+      // Check if we have a real DHTMLX Gantt or just placeholder
+      const isPlaceholder = !window.gantt.init || window.gantt.init.toString().includes('placeholder')
+      
+      if (!window.gantt || isPlaceholder) {
+        console.warn('⚠️ DHTMLX Gantt placeholder detected')
         // Create a simple placeholder display
         if (ganttContainer.current) {
           ganttContainer.current.innerHTML = `
@@ -138,6 +141,14 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
                 <code style="background: #e5e7eb; padding: 8px 12px; border-radius: 4px; font-family: monospace;">
                   public/dhtmlxGantt/codebase/
                 </code>
+                <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 6px; border-left: 4px solid #f59e0b;">
+                  <p style="margin: 0; font-size: 14px; color: #92400e;">
+                    <strong>Files needed:</strong><br/>
+                    • dhtmlxgantt.css<br/>
+                    • dhtmlxgantt.js<br/>
+                    • dhtmlxgantt.d.ts (optional)
+                  </p>
+                </div>
               </div>
             </div>
           `
@@ -148,10 +159,14 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       const gantt = window.gantt
 
       console.log('🎯 Initializing DHTMLX Gantt...')
+      
+      // Set container reference for placeholder
+      gantt.config.container = ganttContainer.current
 
-      // ============================================
-      // BASIC CONFIGURATION - Classic Gantt Model
-      // ============================================
+      try {
+        // ============================================
+        // BASIC CONFIGURATION - Classic Gantt Model
+        // ============================================
       gantt.config.date_format = '%Y-%m-%d'
       gantt.config.xml_date = '%Y-%m-%d'
       gantt.config.scale_height = 90
@@ -510,15 +525,46 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         title: `Today: ${new Date().toLocaleDateString()}`
       })
 
-      // ============================================
-      // INITIALIZE
-      // ============================================
-      gantt.init(ganttContainer.current)
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        gantt.init(ganttContainer.current)
 
-      ganttInstanceRef.current = gantt
-      setGanttReady(true)
+        ganttInstanceRef.current = gantt
+        setGanttReady(true)
 
-      console.log('✅ DHTMLX Gantt initialized successfully')
+        console.log('✅ DHTMLX Gantt initialized successfully')
+        
+      } catch (error) {
+        console.error('❌ Error initializing DHTMLX Gantt:', error)
+        
+        // Show error message in container
+        if (ganttContainer.current) {
+          ganttContainer.current.innerHTML = `
+            <div style="
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              height: 400px; 
+              background: #fef2f2; 
+              border: 2px dashed #fca5a5; 
+              border-radius: 8px;
+              flex-direction: column;
+              gap: 16px;
+            ">
+              <div style="font-size: 48px;">⚠️</div>
+              <div style="text-align: center;">
+                <h3 style="color: #dc2626; margin: 0 0 8px 0;">DHTMLX Gantt Error</h3>
+                <p style="color: #991b1b; margin: 0 0 16px 0;">Failed to initialize calendar</p>
+                <details style="text-align: left; max-width: 400px;">
+                  <summary style="cursor: pointer; color: #dc2626; font-weight: 600;">Show Error Details</summary>
+                  <pre style="background: #fee2e2; padding: 12px; border-radius: 4px; font-size: 12px; color: #991b1b; margin-top: 8px; overflow: auto;">${error.message}</pre>
+                </details>
+              </div>
+            </div>
+          `
+        }
+      }
     }
 
     loadGantt()
