@@ -15,16 +15,18 @@
 
 .gantt_grid_scale,
 .gantt_task_scale {
-  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
-  border-color: #e5e7eb;
+  background: linear-gradient(to bottom, #f1f5f9, #ffffff);
+  border-color: #cbd5e1;
   font-weight: 700;
-  color: #1f2937;
+  color: #1e293b;
   font-size: 13px;
+  border-bottom: 2px solid #cbd5e1;
 }
 
 .gantt_grid_head_cell {
   border-right: 1px solid #e5e7eb;
-  padding: 12px 8px;
+  padding: 14px 12px;
+  background: linear-gradient(to bottom, #f8fafc, #ffffff);
 }
 
 .gantt_grid_data .gantt_row {
@@ -50,10 +52,34 @@
 /* TIMELINE CUSTOMIZATION */
 /* ============================================ */
 
-.gantt_scale_cell.weekend-scale {
-  background: #fef3c7 !important;
-  color: #92400e;
+/* Month scale (top row) */
+.gantt_scale_cell.month-scale {
+  background: linear-gradient(to bottom, #e0e7ff, #f0f4ff);
+  color: #1e40af;
+  font-weight: 700;
+  font-size: 14px;
+  border-right: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  text-align: center;
+  padding: 12px 8px;
+}
+
+/* Day scale (bottom row) */
+.gantt_scale_cell.day-scale {
+  background: linear-gradient(to bottom, #f8fafc, #ffffff);
+  color: #475569;
   font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  border-right: 1px solid #e5e7eb;
+  padding: 8px 4px;
+}
+
+/* Weekend highlighting */
+.gantt_scale_cell.weekend-scale {
+  background: linear-gradient(to bottom, #fef3c7, #fef9e7) !important;
+  color: #92400e;
+  font-weight: 700;
 }
 
 .gantt_task_cell.weekend-cell {
@@ -65,29 +91,29 @@
 /* ============================================ */
 
 .gantt_task_line {
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
-  height: 38px !important;
+  height: 32px !important;
   margin-top: 6px;
 }
 
 .gantt_task_line:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px) scale(1.02);
   z-index: 100;
+  cursor: pointer;
 }
 
-/* Property background bars */
-.gantt_task_line.property-bar {
-  background: #e0e7ff !important;
-  border: 1px dashed #a5b4fc;
-  height: 12px !important;
-  margin-top: 19px;
-  opacity: 0.4;
-  box-shadow: none;
-  pointer-events: none;
+/* Hide property project bars - show only reservations */
+.gantt_task_line.gantt_project {
+  display: none !important;
+}
+
+/* Multiple reservations on same row will stack */
+.gantt_task_line.reservation-bar {
+  position: relative;
 }
 
 /* Reservation bars by status */
@@ -279,27 +305,44 @@
 }
 
 /* ============================================ */
-/* SCROLLBARS */
+/* SCROLLBARS - Enhanced for horizontal scroll */
 /* ============================================ */
 
 .gantt_layout_cell::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 .gantt_layout_cell::-webkit-scrollbar-track {
-  background: #f8fafc;
-  border-radius: 6px;
+  background: #f1f5f9;
+  border-radius: 0;
 }
 
 .gantt_layout_cell::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, #94a3b8, #64748b);
-  border-radius: 6px;
-  border: 2px solid #f8fafc;
+  border-radius: 7px;
+  border: 3px solid #f1f5f9;
 }
 
 .gantt_layout_cell::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, #64748b, #475569);
+}
+
+/* Horizontal scrollbar styling */
+.gantt_hor_scroll {
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  height: 20px !important;
+}
+
+.gantt_hor_scroll .gantt_scroll_holder {
+  background: #cbd5e1;
+  border-radius: 10px;
+  margin: 5px;
+}
+
+.gantt_hor_scroll .gantt_scroll_holder:hover {
+  background: #94a3b8;
 }
 
 /* ============================================ */

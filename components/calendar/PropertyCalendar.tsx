@@ -114,19 +114,36 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       console.log('🎯 Initializing DHTMLX Gantt...')
 
       // ============================================
-      // BASIC CONFIGURATION
+      // BASIC CONFIGURATION - Classic Gantt Model
       // ============================================
       gantt.config.date_format = '%Y-%m-%d'
       gantt.config.xml_date = '%Y-%m-%d'
-      gantt.config.scale_height = 80
-      gantt.config.row_height = 50
-      gantt.config.min_column_width = 40
-      gantt.config.autosize = 'y'
+      gantt.config.scale_height = 90
+      gantt.config.row_height = 44
+      gantt.config.min_column_width = 60
+      gantt.config.grid_width = 350
+      gantt.config.autosize = false
       gantt.config.fit_tasks = false
+      
+      // Enable horizontal scroll for dates
+      gantt.config.layout = {
+        css: "gantt_container",
+        rows: [
+          {
+            cols: [
+              { view: "grid", scrollX: "gridScroll", scrollable: true, scrollY: "scrollVer" },
+              { resizer: true, width: 1 },
+              { view: "timeline", scrollX: "scrollHor", scrollY: "scrollVer" },
+              { view: "scrollbar", id: "scrollVer" }
+            ]
+          },
+          { view: "scrollbar", id: "scrollHor", height: 20 }
+        ]
+      }
       
       // Enable features
       gantt.config.drag_links = false
-      gantt.config.drag_progress = false
+      gantt.config.drag_progress = true
       gantt.config.drag_resize = true
       gantt.config.drag_move = true
       gantt.config.details_on_dblclick = true
@@ -139,13 +156,16 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.config.skip_off_time = false
       
       // ============================================
-      // TIMELINE SCALES
+      // TIMELINE SCALES - Classic Gantt: Month + Day
       // ============================================
       gantt.config.scales = [
         { 
           unit: 'month', 
           step: 1, 
-          format: '%F %Y'
+          format: '%F %Y',
+          css: function(date: Date) {
+            return 'month-scale'
+          }
         },
         { 
           unit: 'day', 
@@ -153,81 +173,52 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           format: '%d',
           css: function(date: Date) {
             const day = date.getDay()
-            return (day === 0 || day === 6) ? 'weekend-scale' : ''
+            if (day === 0 || day === 6) {
+              return 'weekend-scale'
+            }
+            return 'day-scale'
           }
         }
       ]
+      
+      // Set date range for horizontal scroll
+      const today = new Date()
+      const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0)
+      
+      gantt.config.start_date = startDate
+      gantt.config.end_date = endDate
 
       // ============================================
-      // GRID COLUMNS
+      // GRID COLUMNS - Only Property Names
       // ============================================
       gantt.config.columns = [
         {
           name: 'text',
-          label: 'Property',
-          width: 280,
-          tree: true,
+          label: 'Property Name',
+          width: '*',
+          min_width: 200,
+          tree: false,
+          resize: true,
           template: function(task: any) {
-            if (task.type === 'property') {
-              let html = '<div style="display: flex; align-items: center; gap: 10px; padding: 4px 0;">'
-              
-              if (task.image) {
-                html += `<img src="${task.image}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb;" onerror="this.style.display='none'" />`
-              } else {
-                html += '<div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 18px;">🏠</div>'
-              }
-              
-              html += '<div style="flex: 1; min-width: 0;">'
-              html += `<div style="font-weight: 700; color: #1f2937; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${task.text}">${task.text}</div>`
-              
-              if (task.city) {
-                html += `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">📍 ${task.city} • 👥 ${task.capacity || 'N/A'} • 🛏️ ${task.bedrooms || 'N/A'}</div>`
-              }
-              
-              html += '</div></div>'
-              return html
+            let html = '<div style="display: flex; align-items: center; gap: 10px; padding: 6px 0;">'
+            
+            // Property icon/image
+            if (task.image) {
+              html += `<img src="${task.image}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 2px solid #e5e7eb;" onerror="this.style.display='none'" />`
             } else {
-              // Reservation
-              let html = '<div style="padding-left: 24px; display: flex; align-items: center; gap: 8px;">'
-              
-              // Source icon
-              const sourceIcons: any = {
-                'AIRBNB': '<span style="font-size: 16px;">🏠</span>',
-                'BOOKING_COM': '<span style="font-size: 16px;">🅱️</span>',
-                'VRBO': '<span style="font-size: 16px;">🏡</span>',
-                'DIRECT': '<span style="font-size: 16px;">👤</span>',
-                'MANUAL': '<span style="font-size: 16px;">✏️</span>'
-              }
-              
-              html += sourceIcons[task.source] || '<span style="font-size: 16px;">📅</span>'
-              html += `<span style="font-size: 13px; color: #374151; font-weight: 500;">${task.text}</span>`
-              html += '</div>'
-              return html
+              html += '<div style="width: 32px; height: 32px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏠</div>'
             }
-          }
-        },
-        {
-          name: 'duration',
-          label: 'Nights',
-          width: 70,
-          align: 'center',
-          template: function(task: any) {
-            if (task.type !== 'property' && task.duration) {
-              return `<span style="color: #3b82f6; font-weight: 600; font-size: 13px;">${task.duration}</span>`
+            
+            html += '<div style="flex: 1; min-width: 0;">'
+            html += `<div style="font-weight: 600; color: #1f2937; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${task.text}">${task.text}</div>`
+            
+            if (task.city) {
+              html += `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">📍 ${task.city}</div>`
             }
-            return ''
-          }
-        },
-        {
-          name: 'amount',
-          label: 'Amount',
-          width: 110,
-          align: 'right',
-          template: function(task: any) {
-            if (task.totalAmount) {
-              return `<span style="color: #059669; font-weight: 700; font-size: 13px;">AED ${task.totalAmount.toLocaleString()}</span>`
-            }
-            return ''
+            
+            html += '</div></div>'
+            return html
           }
         }
       ]
@@ -515,41 +506,36 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
 
     const ganttTasks: any[] = []
 
-    properties.forEach((property: any) => {
+    // Add each property as a separate row
+    properties.forEach((property: any, index: number) => {
       const propertyReservations = reservations.filter(
         (res: any) => res.propertyId === property.id && res.status !== 'CANCELLED'
       )
 
-      let minDate = new Date()
-      let maxDate = new Date(minDate.getTime() + 90 * 24 * 60 * 60 * 1000)
-
-      if (propertyReservations.length > 0) {
-        const dates = propertyReservations.flatMap((res: any) => [
-          new Date(res.checkIn),
-          new Date(res.checkOut)
-        ])
-        minDate = new Date(Math.min(...dates.map(d => d.getTime())))
-        const maxReservationDate = new Date(Math.max(...dates.map(d => d.getTime())))
-        maxDate = new Date(Math.max(maxReservationDate.getTime(), maxDate.getTime()))
-      }
-
-      ganttTasks.push({
+      // Each property is a standalone row (not a project with children)
+      const propertyTask = {
         id: `property-${property.id}`,
-        text: property.name || property.nickname || 'Unnamed Property',
-        start_date: gantt.date.date_to_str('%Y-%m-%d')(minDate),
-        end_date: gantt.date.date_to_str('%Y-%m-%d')(maxDate),
-        type: 'property',
-        open: true,
+        text: property.name || property.nickname || `Property ${index + 1}`,
+        start_date: gantt.date.date_to_str('%Y-%m-%d')(new Date()),
+        duration: 1,
+        type: 'project', // Use project type for visual styling
+        open: false,
         readonly: true,
+        // Custom property data
+        propertyId: property.id,
         image: property.primaryImage || (property.photos && property.photos[0]?.url),
         address: property.address,
         city: property.city,
         capacity: property.capacity,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
-        pricePerNight: property.pricePerNight
-      })
+        pricePerNight: property.pricePerNight,
+        propertyType: property.type
+      }
 
+      ganttTasks.push(propertyTask)
+
+      // Add all reservations for this property as child tasks on the same row
       propertyReservations.forEach((reservation: any) => {
         const checkIn = new Date(reservation.checkIn)
         const checkOut = new Date(reservation.checkOut)
@@ -570,6 +556,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           duration: nights || 1,
           parent: `property-${property.id}`,
           progress: progress,
+          type: 'task',
+          // Reservation data
           reservationId: reservation.reservationId || reservation.id,
           guestName: reservation.guestName,
           guestEmail: reservation.guestEmail,
