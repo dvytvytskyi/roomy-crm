@@ -249,7 +249,7 @@ const ProductionPropertyOverview: React.FC<ProductionPropertyOverviewProps> = ({
             <div className="text-center">
               <User size={48} className="mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Owner Assigned</h3>
-              <p className="text-gray-500 mb-4">This property doesn't have an owner assigned yet.</p>
+              <p className="text-gray-500 mb-4">This property doesn&apos;t have an owner assigned yet.</p>
               <button
                 onClick={() => handleEditClick('ownerId', 'property', property.ownerId, 'Owner')}
                 className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2 mx-auto"

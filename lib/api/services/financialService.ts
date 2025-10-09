@@ -1,4 +1,5 @@
-import { useAuth } from '@/hooks/useAuth';
+import { apiClientV2 } from '../client-v2';
+import { API_V2_ENDPOINTS } from '../config-v2';
 
 export interface PropertyFinancialData {
   // Revenue
@@ -64,13 +65,6 @@ export interface FinancialFilters {
 }
 
 export class FinancialService {
-  private static getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  }
 
   /**
    * Get property-specific financial data
@@ -79,37 +73,32 @@ export class FinancialService {
     propertyId: string, 
     filters: FinancialFilters = {}
   ): Promise<PropertyFinancialData> {
-    const queryParams = new URLSearchParams();
+    const params: Record<string, any> = {};
     
-    if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
-    if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
     if (filters.transactionType) {
-      filters.transactionType.forEach(type => queryParams.append('transactionType', type));
+      params.transactionType = filters.transactionType;
     }
     if (filters.paymentMethod) {
-      filters.paymentMethod.forEach(method => queryParams.append('paymentMethod', method));
+      params.paymentMethod = filters.paymentMethod;
     }
     if (filters.status) {
-      filters.status.forEach(status => queryParams.append('status', status));
+      params.status = filters.status;
     }
     if (filters.platform) {
-      filters.platform.forEach(platform => queryParams.append('platform', platform));
+      params.platform = filters.platform;
     }
 
-    const url = `/api/v2/financials/property/${propertyId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const endpoint = `/financials/property/${propertyId}`;
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: this.getAuthHeaders()
-    });
+    const response = await apiClientV2.get<PropertyFinancialData>(endpoint, params);
 
-      if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch property financial data');
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch property financial data');
     }
-
-    const result = await response.json();
-    return result.data;
+    
+    return response.data!;
   }
 
   /**
