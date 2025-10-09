@@ -286,6 +286,73 @@ export class FileService extends BaseService {
   }
 
   /**
+   * Get single file by ID
+   */
+  public static async getFile(
+    currentUser: CurrentUser,
+    fileId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Get File] Getting file ${fileId} for user ${currentUser.email}`);
+
+      // Build where clause based on user role
+      let where: any = {
+        id: fileId
+      };
+
+      // Add RBAC checks
+      if (currentUser.role === 'GUEST') {
+        where.uploaded_by = currentUser.id;
+      } else if (currentUser.role === 'AGENT') {
+        // Agents can see files they uploaded or files for properties they manage
+        where.OR = [
+          { uploaded_by: currentUser.id },
+          { entity_type: 'PROPERTY', entity: { agent_id: currentUser.id } }
+        ];
+      } else if (currentUser.role === 'OWNER') {
+        // Owners can see files they uploaded or files for their properties
+        where.OR = [
+          { uploaded_by: currentUser.id },
+          { entity_type: 'PROPERTY', entity: { owner_id: currentUser.id } }
+        ];
+      }
+      // ADMIN and MANAGER can see all files
+
+      const file = await prisma.file_uploads.findFirst({
+        where
+      });
+
+      await prisma.$disconnect();
+
+      if (!file) {
+        return FileService.prototype.notFound('File not found');
+      }
+
+      const result = {
+        id: file.id,
+        filename: file.filename,
+        originalName: file.original_name,
+        mimeType: file.mime_type,
+        size: file.size,
+        filePath: file.url,
+        entityType: file.entity_type,
+        entityId: file.entity_id,
+        uploadedBy: file.uploaded_by,
+        uploadDate: file.created_at,
+        isPublic: file.is_public
+      };
+
+      logger.info(`[Get File END] Retrieved file ${fileId} for user ${currentUser.email}`);
+      return FileService.prototype.success(result, 'File retrieved successfully');
+    } catch (error) {
+      logger.error('Error retrieving file:', error);
+      return FileService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
    * Delete a file upload
    */
   public static async deleteFile(

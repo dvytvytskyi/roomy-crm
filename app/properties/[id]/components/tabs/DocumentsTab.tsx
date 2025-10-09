@@ -238,7 +238,7 @@ export default function DocumentsTab({ propertyData, onUpdate }: DocumentsTabPro
                 <div key={index} className="relative group">
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                     <Image
-                      src={photo.filePath || '/placeholder-image.jpg'}
+                      src={photo.filePath || '/placeholder-image.svg'}
                       alt={photo.title || `Photo ${index + 1}`}
                       width={300}
                       height={300}
@@ -271,7 +271,7 @@ export default function DocumentsTab({ propertyData, onUpdate }: DocumentsTabPro
                         }
                         
                         // Final fallback
-                        target.src = '/placeholder-image.jpg'
+                        target.src = '/placeholder-image.svg'
                       }}
                     />
                   </div>
