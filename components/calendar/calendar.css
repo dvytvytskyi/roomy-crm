@@ -225,18 +225,22 @@
 }
 
 /* ============================================ */
-/* TOOLTIP */
+/* TOOLTIP - DISABLED */
 /* ============================================ */
 
 .gantt_tooltip {
-  background: #1f2937;
-  color: white;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-  border: none;
-  font-size: 13px;
-  max-width: 350px;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide all tooltip related elements */
+.gantt_tooltip_area {
+  display: none !important;
+}
+
+.gantt_quick_info {
+  display: none !important;
 }
 
 /* ============================================ */

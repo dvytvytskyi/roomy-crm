@@ -206,6 +206,10 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.config.work_time = true
       gantt.config.skip_off_time = false
       
+      // Disable tooltips completely
+      gantt.config.tooltip_timeout = 0
+      gantt.config.tooltip_hide_timeout = 0
+      
       // ============================================
       // TIMELINE SCALES - Classic Gantt: Month + Day
       // ============================================
@@ -356,53 +360,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       }
 
       gantt.templates.tooltip_text = function(start: Date, end: Date, task: any) {
-        // Don't show tooltip for property rows
-        if (task.type === 'property') {
-          return ''
-        } else {
-          const checkIn = gantt.date.date_to_str('%d %M %Y')(start)
-          const checkOut = gantt.date.date_to_str('%d %M %Y')(end)
-          
-          let html = `<div style="min-width: 280px;">`
-          html += `<div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: #1f2937;">`
-          
-          const sourceLabels: any = {
-            'AIRBNB': '🏠 Airbnb Booking',
-            'BOOKING_COM': '🅱️ Booking.com',
-            'VRBO': '🏡 Vrbo',
-            'DIRECT': '👤 Direct Booking',
-            'MANUAL': '✏️ Manual Entry'
-          }
-          
-          html += sourceLabels[task.source] || '📅 Reservation'
-          html += `</div>`
-          
-          html += `<div style="font-size: 13px; color: #374151; line-height: 2;">`
-          html += `<strong>Guest:</strong> ${task.guestName || 'N/A'}<br/>`
-          html += `<strong>Email:</strong> ${task.guestEmail || 'N/A'}<br/>`
-          if (task.guestPhone) html += `<strong>Phone:</strong> ${task.guestPhone}<br/>`
-          html += `<strong>Check-in:</strong> ${checkIn}<br/>`
-          html += `<strong>Check-out:</strong> ${checkOut}<br/>`
-          html += `<strong>Duration:</strong> ${task.duration} nights<br/>`
-          if (task.guests) html += `<strong>Guests:</strong> ${task.guests}<br/>`
-          
-          const statusColors: any = {
-            'PENDING': '#f59e0b',
-            'CONFIRMED': '#10b981',
-            'CHECKED_IN': '#3b82f6',
-            'CHECKED_OUT': '#6b7280',
-            'CANCELLED': '#ef4444'
-          }
-          
-          const statusColor = statusColors[task.status] || '#6b7280'
-          html += `<div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">`
-          html += `<span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">${task.status}</span>`
-          html += `<span style="color: #059669; font-weight: 700; font-size: 14px;">AED ${task.totalAmount?.toLocaleString() || 0}</span>`
-          html += `</div>`
-          
-          html += `</div></div>`
-          return html
-        }
+        // Disable all tooltips completely
+        return ''
       }
 
       gantt.templates.task_style = function(start: Date, end: Date, task: any) {
