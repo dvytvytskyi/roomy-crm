@@ -1,258 +1,304 @@
-import { API_CONFIG } from '../config'
+import { useAuth } from '@/hooks/useAuth';
 
-export interface FinancialData {
-  totalPayout: number
-  agencyFee: number
-  cleaning: number
-  ownersPayout: number
-  referralAgentsFee: number
-  vat: number
-  dtcm: number
-  totalRevenue: number
-  occupancyRate: number
-  avgCostPerNight: number
+export interface PropertyFinancialData {
+  // Revenue
+  totalRevenue: number;
+  grossRevenue: number;
+  netRevenue: number;
+  
+  // Expenses
+  totalExpenses: number;
+  expensesByCategory: Record<string, number>;
+  
+  // Profit
+  grossProfit: number;
+  netProfit: number;
+  profitMargin: number;
+  
+  // Distribution
+  ownerPayout: number;
+  agencyFee: number;
+  platformFees: number;
+  
+  // Metrics
+  occupancyRate: number;
+  adr: number;
+  revpar: number;
+  totalBookings: number;
+  cancellationRate: number;
+  
+  // Period
+  period: {
+    from: string;
+    to: string;
+    type: 'month' | 'quarter' | 'year' | 'custom';
+  };
+  
+  // Recent data
+  recentReservations: Array<{
+    id: string;
+    checkIn: string;
+    checkOut: string;
+    totalAmount: number;
+    status: string;
+    guestName?: string;
+  }>;
+  
+  recentTransactions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    description?: string;
+    createdAt: string;
+  }>;
 }
 
-export interface Payment {
-  id: string
-  guestName: string
-  checkIn: string
-  checkOut: string
-  nights: number
-  totalAmount: number
-  status: 'completed' | 'pending' | 'cancelled'
-  channel: string
-  method: string
-  date: string
+export interface FinancialFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  propertyId?: string;
+  transactionType?: string[];
+  paymentMethod?: string[];
+  status?: string[];
+  platform?: string[];
 }
 
-export interface DateRange {
-  from: string
-  to: string
-}
-
-export const financialService = {
-  // Отримати фінансові дані для властивості
-  getFinancialData: async (propertyId: string, dateRange?: DateRange): Promise<FinancialData> => {
-    try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log(`API: Fetching financial data for property ${propertyId}`, dateRange)
-      
-      // Повертаємо дані з localStorage або значення за замовчуванням
-      return financialService.loadFromLocalStorage(propertyId)
-    } catch (error) {
-      console.error('Error fetching financial data:', error)
-      // Повертаємо з localStorage як fallback
-      return financialService.loadFromLocalStorage(propertyId)
-    }
-  },
-
-  // Отримати список платежів
-  getPayments: async (propertyId: string, dateRange?: DateRange): Promise<Payment[]> => {
-    try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log(`API: Fetching payments for property ${propertyId}`, dateRange)
-      
-      // Повертаємо дані з localStorage або значення за замовчуванням
-      return financialService.loadPaymentsFromLocalStorage(propertyId)
-    } catch (error) {
-      console.error('Error fetching payments:', error)
-      // Повертаємо з localStorage як fallback
-      return financialService.loadPaymentsFromLocalStorage(propertyId)
-    }
-  },
-
-  // Додати новий платіж
-  addPayment: async (propertyId: string, payment: Omit<Payment, 'id'>): Promise<Payment> => {
-    try {
-      // Симуляція API виклику
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      console.log(`API: Adding payment for property ${propertyId}:`, payment)
-      
-      // Повертаємо платіж з ID
-      const newPayment: Payment = {
-        ...payment,
-        id: `payment_${Date.now()}`
-      }
-      
-      return newPayment
-    } catch (error) {
-      console.error('Error adding payment:', error)
-      throw error
-    }
-  },
-
-  // Оновити платіж
-  updatePayment: async (propertyId: string, paymentId: string, payment: Partial<Payment>): Promise<Payment> => {
-    try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/payments/${paymentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payment)
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.payment
-    } catch (error) {
-      console.error('Error updating payment:', error)
-      throw error
-    }
-  },
-
-  // Видалити платіж
-  deletePayment: async (propertyId: string, paymentId: string): Promise<void> => {
-    try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/properties/${propertyId}/payments/${paymentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-    } catch (error) {
-      console.error('Error deleting payment:', error)
-      throw error
-    }
-  },
-
-  // Зберегти фінансові дані в localStorage
-  saveToLocalStorage: (propertyId: string, financialData: FinancialData) => {
-    localStorage.setItem(`financialData_${propertyId}`, JSON.stringify(financialData))
-  },
-
-  // Завантажити фінансові дані з localStorage
-  loadFromLocalStorage: (propertyId: string): FinancialData => {
-    const saved = localStorage.getItem(`financialData_${propertyId}`)
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (error) {
-        console.error('Error parsing saved financial data:', error)
-      }
-    }
-    
-    // Розраховуємо дані на основі payments
-    const payments = financialService.loadPaymentsFromLocalStorage(propertyId)
-    const totalRevenue = payments.reduce((sum, payment) => sum + payment.totalAmount, 0)
-    
-    // Отримуємо Income Distribution
-    const savedIncome = localStorage.getItem('incomeDistribution')
-    let incomeDist = {
-      ownerIncome: 70,
-      roomyAgencyFee: 25,
-      referringAgent: 5
-    }
-    
-    if (savedIncome) {
-      try {
-        const parsed = JSON.parse(savedIncome)
-        incomeDist = {
-          ownerIncome: parsed.ownerIncome || 70,
-          roomyAgencyFee: parsed.roomyAgencyFee || 25,
-          referringAgent: parsed.referringAgent || 5
-        }
-      } catch (error) {
-        console.error('Error parsing income distribution:', error)
-      }
-    }
-    
-    // Розраховуємо дані
-    const agencyFee = (totalRevenue * incomeDist.roomyAgencyFee) / 100
-    const ownersPayout = (totalRevenue * incomeDist.ownerIncome) / 100
-    const referralAgentsFee = (totalRevenue * incomeDist.referringAgent) / 100
-    const vat = totalRevenue * 0.05 // 5% VAT
-    const dtcm = totalRevenue * 0.02 // 2% DTCM
-    const cleaning = payments.length * 50 // 50 AED per booking for cleaning
-    const totalPayout = ownersPayout + referralAgentsFee + vat + dtcm + cleaning
-    
-    // Розраховуємо occupancy rate та avg cost per night
-    const totalNights = payments.reduce((sum, payment) => sum + payment.nights, 0)
-    const avgCostPerNight = totalNights > 0 ? totalRevenue / totalNights : 0
-    const occupancyRate = totalNights > 0 ? Math.min((totalNights / 365) * 100, 100) : 0
-    
+export class FinancialService {
+  private static getAuthHeaders() {
+    const token = localStorage.getItem('token');
     return {
-      totalPayout,
-      agencyFee,
-      cleaning,
-      ownersPayout,
-      referralAgentsFee,
-      vat,
-      dtcm,
-      totalRevenue,
-      occupancyRate,
-      avgCostPerNight
-    }
-  },
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
 
-  // Зберегти платежі в localStorage
-  savePaymentsToLocalStorage: (propertyId: string, payments: Payment[]) => {
-    localStorage.setItem(`payments_${propertyId}`, JSON.stringify(payments))
-  },
-
-  // Завантажити платежі з localStorage
-  loadPaymentsFromLocalStorage: (propertyId: string): Payment[] => {
-    const saved = localStorage.getItem(`payments_${propertyId}`)
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (error) {
-        console.error('Error parsing saved payments:', error)
-      }
-    }
+  /**
+   * Get property-specific financial data
+   */
+  static async getPropertyFinancialData(
+    propertyId: string, 
+    filters: FinancialFilters = {}
+  ): Promise<PropertyFinancialData> {
+    const queryParams = new URLSearchParams();
     
-    // Повертаємо порожній масив - тільки нові платежі
-    return []
-  },
+    if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+    if (filters.transactionType) {
+      filters.transactionType.forEach(type => queryParams.append('transactionType', type));
+    }
+    if (filters.paymentMethod) {
+      filters.paymentMethod.forEach(method => queryParams.append('paymentMethod', method));
+    }
+    if (filters.status) {
+      filters.status.forEach(status => queryParams.append('status', status));
+    }
+    if (filters.platform) {
+      filters.platform.forEach(platform => queryParams.append('platform', platform));
+    }
 
-  // Обчислити дати для різних періодів
-  calculateDateRange: (range: string): DateRange => {
-    const today = new Date()
-    let fromDate = new Date()
-    let toDate = new Date()
+    const url = `/api/v2/financials/property/${propertyId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    });
 
-    switch (range) {
-      case 'lastweek':
-        fromDate.setDate(today.getDate() - 7)
-        break
-      case 'lastmonth':
-        fromDate.setMonth(today.getMonth() - 1)
-        break
-      case 'last3month':
-        fromDate.setMonth(today.getMonth() - 3)
-        break
-      case 'last6month':
-        fromDate.setMonth(today.getMonth() - 6)
-        break
-      case 'lastyear':
-        fromDate.setFullYear(today.getFullYear() - 1)
-        break
-      default:
-        // Custom range - повертаємо поточні дати
+      if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch property financial data');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  /**
+   * Get financial overview (all properties)
+   */
+  static async getFinancialOverview(filters: FinancialFilters = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+    if (filters.propertyId) queryParams.append('propertyId', filters.propertyId);
+    if (filters.transactionType) {
+      filters.transactionType.forEach(type => queryParams.append('transactionType', type));
+    }
+    if (filters.paymentMethod) {
+      filters.paymentMethod.forEach(method => queryParams.append('paymentMethod', method));
+    }
+    if (filters.status) {
+      filters.status.forEach(status => queryParams.append('status', status));
+    }
+    if (filters.platform) {
+      filters.platform.forEach(platform => queryParams.append('platform', platform));
+    }
+
+    const url = `/api/v2/financials/overview${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch financial overview');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  /**
+   * Get KPI overview
+   */
+  static async getKPIOverview(filters: FinancialFilters = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+    if (filters.propertyId) queryParams.append('propertyId', filters.propertyId);
+
+    const url = `/api/v2/financials/analytics/kpi-overview${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch KPI overview');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  /**
+   * Get units analytics
+   */
+  static async getUnitsAnalytics(filters: FinancialFilters = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    
+    if (filters.dateFrom) queryParams.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) queryParams.append('dateTo', filters.dateTo);
+    if (filters.propertyId) queryParams.append('propertyId', filters.propertyId);
+
+    const url = `/api/v2/financials/analytics/units${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch units analytics');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  /**
+   * Helper function to get date range for different periods
+   */
+  static getDateRange(period: 'current-month' | 'last-month' | 'current-quarter' | 'last-quarter' | 'current-year' | 'last-year' | 'custom', customFrom?: string, customTo?: string) {
+    const now = new Date();
+    
+    switch (period) {
+      case 'current-month':
         return {
-          from: fromDate.toISOString().split('T')[0],
-          to: toDate.toISOString().split('T')[0]
-        }
+          from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+          to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+        };
+      
+      case 'last-month':
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return {
+          from: lastMonth.toISOString(),
+          to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString()
+        };
+      
+      case 'current-quarter':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        return {
+          from: new Date(now.getFullYear(), currentQuarter * 3, 1).toISOString(),
+          to: new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59).toISOString()
+        };
+      
+      case 'last-quarter':
+        const lastQuarter = Math.floor(now.getMonth() / 3) - 1;
+        const lastQuarterYear = lastQuarter < 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const lastQuarterMonth = lastQuarter < 0 ? 9 : lastQuarter * 3;
+        return {
+          from: new Date(lastQuarterYear, lastQuarterMonth, 1).toISOString(),
+          to: new Date(lastQuarterYear, lastQuarterMonth + 3, 0, 23, 59, 59).toISOString()
+        };
+      
+      case 'current-year':
+        return {
+          from: new Date(now.getFullYear(), 0, 1).toISOString(),
+          to: new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString()
+        };
+      
+      case 'last-year':
+        return {
+          from: new Date(now.getFullYear() - 1, 0, 1).toISOString(),
+          to: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59).toISOString()
+        };
+      
+      case 'custom':
+        return {
+          from: customFrom || new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+          to: customTo || new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+        };
+      
+      default:
+        return {
+          from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+          to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+        };
     }
+  }
 
-    return {
-      from: fromDate.toISOString().split('T')[0],
-      to: toDate.toISOString().split('T')[0]
-    }
+  /**
+   * Format currency for display
+   */
+  static formatCurrency(amount: number, currency: string = 'AED'): string {
+    return new Intl.NumberFormat('en-AE', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+
+  /**
+   * Format percentage for display
+   */
+  static formatPercentage(value: number, decimals: number = 1): string {
+    return `${value.toFixed(decimals)}%`;
+  }
+
+  /**
+   * Get category color for expenses
+   */
+  static getCategoryColor(category: string): string {
+    const colors: Record<string, string> = {
+      'Utilities': 'bg-blue-100 text-blue-800',
+      'Maintenance': 'bg-yellow-100 text-yellow-800',
+      'Cleaning': 'bg-green-100 text-green-800',
+      'Repairs': 'bg-red-100 text-red-800',
+      'Supplies': 'bg-purple-100 text-purple-800',
+      'Marketing': 'bg-pink-100 text-pink-800',
+      'Insurance': 'bg-indigo-100 text-indigo-800',
+      'Taxes': 'bg-gray-100 text-gray-800',
+      'Other': 'bg-gray-100 text-gray-800'
+    };
+    
+    return colors[category] || 'bg-gray-100 text-gray-800';
   }
 }

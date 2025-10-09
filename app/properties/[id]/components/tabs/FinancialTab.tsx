@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, Plus, Calendar, Tag, FileText, Trash2, Edit } from 'lucide-react'
+import { DollarSign, TrendingUp, Plus, Calendar, Tag, FileText, Trash2, Edit, RefreshCw, Filter } from 'lucide-react'
+import { FinancialService, PropertyFinancialData, FinancialFilters } from '@/lib/api/services/financialService'
 
 interface FinancialTabProps {
   propertyData: any
@@ -26,6 +27,15 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   
+  // New financial data state
+  const [financialData, setFinancialData] = useState<PropertyFinancialData | null>(null)
+  const [financialLoading, setFinancialLoading] = useState(true)
+  const [selectedPeriod, setSelectedPeriod] = useState<'current-month' | 'last-month' | 'current-quarter' | 'last-quarter' | 'current-year' | 'last-year' | 'custom'>('current-month')
+  const [customDateRange, setCustomDateRange] = useState({
+    from: '',
+    to: ''
+  })
+  
   // Expense form state
   const [expenseForm, setExpenseForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -33,6 +43,31 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
     amount: '',
     description: ''
   })
+
+  // Load financial data from API
+  const loadFinancialData = async () => {
+    if (!propertyData?.id) return
+    
+    try {
+      setFinancialLoading(true)
+      setError(null)
+      
+      const dateRange = FinancialService.getDateRange(selectedPeriod, customDateRange.from, customDateRange.to)
+      const filters: FinancialFilters = {
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        propertyId: propertyData.id
+      }
+      
+      const data = await FinancialService.getPropertyFinancialData(propertyData.id, filters)
+      setFinancialData(data)
+    } catch (err) {
+      console.error('Error loading financial data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load financial data')
+    } finally {
+      setFinancialLoading(false)
+    }
+  }
 
   // Load expenses from API
   const loadExpenses = async () => {
@@ -70,8 +105,16 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
   useEffect(() => {
     if (propertyData?.id) {
       loadExpenses()
+      loadFinancialData()
     }
   }, [propertyData?.id])
+
+  // Reload financial data when period changes
+  useEffect(() => {
+    if (propertyData?.id) {
+      loadFinancialData()
+    }
+  }, [selectedPeriod, customDateRange])
 
   // Handle expense form changes
   const handleExpenseFormChange = (field: string, value: string) => {
@@ -132,15 +175,17 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
     }
   }
 
-  // Calculate financial summary from real data
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const totalRevenue = propertyData?.financialData?.totalRevenue || 0 // Will be calculated from reservations later
-  const totalProfit = totalRevenue - totalExpenses
-  const ownerPayout = totalRevenue * 0.7 // 70% to owner (example)
-  const companyRevenue = totalRevenue * 0.3 // 30% to company (example)
+  // Calculate financial summary using real data from API
+  const totalExpenses = financialData?.totalExpenses || expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const totalRevenue = financialData?.totalRevenue || 0
+  const totalProfit = financialData?.netProfit || 0
+  const ownerPayout = financialData?.ownerPayout || 0
+  const companyRevenue = financialData?.agencyFee || 0
+  const platformFees = financialData?.platformFees || 0
+  const profitMargin = financialData?.profitMargin || 0
 
-  // Calculate expenses by category
-  const expensesByCategory = expenses.reduce((acc, expense) => {
+  // Use expenses by category from financial data or calculate from local expenses
+  const expensesByCategory = financialData?.expensesByCategory || expenses.reduce((acc, expense) => {
     acc[expense.category] = (acc[expense.category] || 0) + expense.amount
     return acc
   }, {} as Record<string, number>)
@@ -160,16 +205,92 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
 
   return (
     <div className="space-y-6">
+      {/* Period Selector */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Financial Period</h3>
+          <button
+            onClick={() => {
+              loadExpenses()
+              loadFinancialData()
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: 'current-month', label: 'Current Month' },
+            { value: 'last-month', label: 'Last Month' },
+            { value: 'current-quarter', label: 'Current Quarter' },
+            { value: 'last-quarter', label: 'Last Quarter' },
+            { value: 'current-year', label: 'Current Year' },
+            { value: 'last-year', label: 'Last Year' },
+            { value: 'custom', label: 'Custom Range' }
+          ].map(period => (
+            <button
+              key={period.value}
+              onClick={() => setSelectedPeriod(period.value as any)}
+              className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                selectedPeriod === period.value
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {period.label}
+            </button>
+          ))}
+        </div>
+        
+        {selectedPeriod === 'custom' && (
+          <div className="mt-4 flex gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+              <input
+                type="date"
+                value={customDateRange.from}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+              <input
+                type="date"
+                value={customDateRange.to}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        )}
+        
+        {financialData && (
+          <div className="mt-4 text-sm text-gray-600">
+            Showing data for: <span className="font-medium">{financialData.period.type}</span> 
+            {' '}({new Date(financialData.period.from).toLocaleDateString()} - {new Date(financialData.period.to).toLocaleDateString()})
+          </div>
+        )}
+      </div>
+
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-500">Total Revenue</h3>
             <DollarSign className="w-5 h-5 text-green-500" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            AED {financialSummary.totalRevenue.toLocaleString()}
+            {FinancialService.formatCurrency(financialSummary.totalRevenue)}
           </p>
+          {financialData && (
+            <p className="text-xs text-gray-500 mt-1">
+              {financialData.totalBookings} bookings • ADR: {FinancialService.formatCurrency(financialData.adr)}
+            </p>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -178,57 +299,137 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
             <TrendingUp className="w-5 h-5 text-red-500" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            AED {financialSummary.totalExpenses.toLocaleString()}
+            {FinancialService.formatCurrency(financialSummary.totalExpenses)}
           </p>
+          {financialData && (
+            <p className="text-xs text-gray-500 mt-1">
+              {Object.keys(expensesByCategory).length} categories
+            </p>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-500">Total Profit</h3>
+            <h3 className="text-sm font-medium text-gray-500">Net Profit</h3>
             <TrendingUp className="w-5 h-5 text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            AED {financialSummary.totalProfit.toLocaleString()}
+            {FinancialService.formatCurrency(financialSummary.totalProfit)}
           </p>
+          {financialData && (
+            <p className="text-xs text-gray-500 mt-1">
+              Margin: {FinancialService.formatPercentage(profitMargin)}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-500">Owner Payout</h3>
+            <DollarSign className="w-5 h-5 text-purple-500" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900">
+            {FinancialService.formatCurrency(financialSummary.ownerPayout)}
+          </p>
+          {financialData && (
+            <p className="text-xs text-gray-500 mt-1">
+              Agency Fee: {FinancialService.formatCurrency(financialSummary.companyRevenue)}
+            </p>
+          )}
         </div>
       </div>
+
+      {/* Advanced Metrics */}
+      {financialData && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{FinancialService.formatPercentage(financialData.occupancyRate)}</div>
+              <div className="text-sm text-gray-600">Occupancy Rate</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{FinancialService.formatCurrency(financialData.adr)}</div>
+              <div className="text-sm text-gray-600">Average Daily Rate</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{FinancialService.formatCurrency(financialData.revpar)}</div>
+              <div className="text-sm text-gray-600">RevPAR</div>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{FinancialService.formatPercentage(financialData.cancellationRate)}</div>
+              <div className="text-sm text-gray-600">Cancellation Rate</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Income Distribution */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Income Distribution</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <span className="text-sm font-medium text-gray-700">Owner Payout</span>
-            <span className="text-lg font-bold text-blue-600">
-              AED {financialSummary.ownerPayout.toLocaleString()}
-            </span>
+            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(financialSummary.ownerPayout)}</span>
           </div>
-          <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">Company Revenue</span>
-            <span className="text-lg font-bold text-orange-600">
-              AED {financialSummary.companyRevenue.toLocaleString()}
-            </span>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Agency Fee</span>
+            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(financialSummary.companyRevenue)}</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Platform Fees</span>
+            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(platformFees)}</span>
           </div>
         </div>
       </div>
 
       {/* Expenses by Category */}
-      {expenses.length > 0 && (
+      {Object.keys(expensesByCategory).length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topCategories.map(([category, amount], index) => (
               <div key={category} className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{category}</span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${FinancialService.getCategoryColor(category)}`}>
+                    {category}
+                  </span>
                   <span className="text-xs text-gray-500">#{index + 1}</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">
-                  AED {amount.toLocaleString()}
+                  {FinancialService.formatCurrency(amount)}
                 </p>
                 <p className="text-xs text-gray-500">
                   {((amount / totalExpenses) * 100).toFixed(1)}% of total
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Reservations */}
+      {financialData && financialData.recentReservations.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Reservations</h2>
+          <div className="space-y-3">
+            {financialData.recentReservations.map((reservation) => (
+              <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {reservation.guestName || 'Guest'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(reservation.checkIn).toLocaleDateString()} - {new Date(reservation.checkOut).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-gray-900">{FinancialService.formatCurrency(reservation.totalAmount)}</p>
+                  <p className="text-xs text-gray-500 capitalize">{reservation.status.toLowerCase()}</p>
+                </div>
               </div>
             ))}
           </div>

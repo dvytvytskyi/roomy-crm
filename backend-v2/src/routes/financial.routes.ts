@@ -14,4 +14,7 @@ router.get('/overview', FinancialController.getFinancialOverview);
 router.get('/analytics/kpi-overview', FinancialController.getKPIOverview);
 router.get('/analytics/units', FinancialController.getUnitsAnalytics);
 
+// Property-specific financial data
+router.get('/property/:propertyId', FinancialController.getPropertyFinancialData);
+
 export default router;

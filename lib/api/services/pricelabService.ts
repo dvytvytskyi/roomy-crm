@@ -186,7 +186,7 @@ class PriceLabService {
   }
 
   // Get current price for a property using our backend proxy
-  async getCurrentPrice(pricelabId: string): Promise<{ success: boolean; data: { currentPrice: number }; error?: string }> {
+  async getCurrentPrice(pricelabId: string): Promise<{ success: boolean; data: { currentPrice: number; currency?: string; date?: string }; error?: string }> {
     try {
       console.log('💰 PriceLab: Getting current price for property via backend proxy:', pricelabId)
       
@@ -206,6 +206,8 @@ class PriceLabService {
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ PriceLab: Backend error response:', errorText)
         throw new Error(`Backend proxy error: ${response.status} ${response.statusText}`)
       }
 
@@ -213,18 +215,23 @@ class PriceLabService {
       console.log('💰 PriceLab: Backend proxy response:', data)
 
       // Extract price from our backend proxy response
+      // Backend returns: { success: true, data: { price, currency, date } }
       if (data.success && data.data && data.data.price) {
-        console.log('💰 PriceLab: Price found via backend proxy:', data.data.price, 'AED')
+        console.log('💰 PriceLab: Price found via backend proxy:', data.data.price, data.data.currency || 'AED')
         return {
           success: true,
-          data: { currentPrice: data.data.price }
+          data: { 
+            currentPrice: data.data.price,
+            currency: data.data.currency,
+            date: data.data.date
+          }
         }
       }
 
       return {
         success: false,
         data: { currentPrice: 0 },
-        error: data.error || 'No price data found in response'
+        error: data.error || data.message || 'No price data found in response'
       }
     } catch (error) {
       console.error('❌ PriceLab: Error getting current price:', error)

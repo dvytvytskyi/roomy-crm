@@ -188,7 +188,9 @@ export default function PropertyOverview({
   // Edit modals state
   const [showGeneralInfoModal, setShowGeneralInfoModal] = useState(false);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
-  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
+  const [amenities, setAmenities] = useState<any[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   // Form states
   const [generalInfoForm, setGeneralInfoForm] = useState({
@@ -295,88 +297,86 @@ export default function PropertyOverview({
     }
   };
 
-  // Photo upload handler
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setToastMessage('Authentication required');
-      setShowToast(true);
-      return;
-    }
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append('photo', file);
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyId}/photos`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload photo: ${response.status}`);
-        }
-      }
-
-      setToastMessage('Photos uploaded successfully!');
-      setShowToast(true);
-      
-      // Refresh property data to show new photos
-      window.location.reload(); // Simple refresh for now
-      
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-      setToastMessage('Failed to upload photos');
-      setShowToast(true);
-    }
-  };
-
-  // Photo delete handler
-  const handleDeletePhoto = async (photoId: string) => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setToastMessage('Authentication required');
-      setShowToast(true);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyId}/photos/${photoId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete photo: ${response.status}`);
-      }
-
-      setToastMessage('Photo deleted successfully!');
-      setShowToast(true);
-      
-      // Refresh property data to remove deleted photo
-      window.location.reload(); // Simple refresh for now
-      
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      setToastMessage('Failed to delete photo');
-      setShowToast(true);
-    }
-  };
-
   // Description form handlers
   const handleOpenDescriptionModal = () => {
     setDescriptionForm(property?.description || '');
     setShowDescriptionModal(true);
+  };
+
+  // Amenities handlers
+  const loadAmenities = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_V2_URL}/amenities?limit=100`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // API returns data directly, not wrapped in data.data
+          setAmenities(result.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading amenities:', error);
+    }
+  };
+
+  const handleOpenAmenitiesModal = () => {
+    loadAmenities();
+    // Set currently selected amenities from property data
+    const currentAmenities = propertyData?.amenities?.map((a: any) => a.id) || [];
+    setSelectedAmenities(currentAmenities);
+    setShowAmenitiesModal(true);
+  };
+
+  const toggleAmenity = (amenityId: string) => {
+    setSelectedAmenities(prev => {
+      if (prev.includes(amenityId)) {
+        return prev.filter(id => id !== amenityId);
+      } else {
+        return [...prev, amenityId];
+      }
+    });
+  };
+
+  const handleSaveAmenities = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyId}/amenities`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ amenityIds: selectedAmenities })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update amenities: ${response.status}`);
+      }
+
+      setToastMessage('Amenities updated successfully!');
+      setShowToast(true);
+      setShowAmenitiesModal(false);
+      
+      // Trigger property data refresh
+      window.dispatchEvent(new CustomEvent('property:updated', { 
+        detail: { propertyId } 
+      }));
+      
+    } catch (error) {
+      console.error('Error updating amenities:', error);
+      setToastMessage('Failed to update amenities');
+      setShowToast(true);
+    }
   };
 
   const handleSaveDescription = async () => {
@@ -722,37 +722,33 @@ export default function PropertyOverview({
         <p className="text-gray-700 leading-relaxed">{displayProperty?.description || 'No description available'}</p>
       </div>
 
-      {/* Photos */}
+      {/* Amenities */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Amenities</h2>
           <button 
-            onClick={() => setShowPhotosModal(true)}
+            onClick={handleOpenAmenitiesModal}
             className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center space-x-2"
           >
             <Edit size={14} />
             <span>Edit</span>
           </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {displayProperty?.photos?.map((photo: any, index: number) => (
-            <div key={index} className="aspect-square rounded-lg overflow-hidden">
-              <img 
-                src={photo.url} 
-                alt={photo.alt || `Property photo ${index + 1}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-              />
-            </div>
-          )) || (
-            <div className="col-span-4 text-center py-8 text-gray-500">
-              No photos available
-            </div>
+        <div className="flex flex-wrap gap-2">
+          {displayProperty?.amenities && displayProperty.amenities.length > 0 ? (
+            displayProperty.amenities.map((amenity: any) => (
+              <span
+                key={amenity.id}
+                className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium border border-orange-200"
+              >
+                {amenity.name}
+              </span>
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">No amenities selected</p>
           )}
         </div>
       </div>
-
-
-
 
       {/* General Information Edit Modal */}
       {showGeneralInfoModal && (
@@ -1011,82 +1007,81 @@ export default function PropertyOverview({
         onClose={() => setShowOwnerModal(false)}
       />
 
-      {/* Photos Edit Modal */}
-      {showPhotosModal && (
+      {/* Amenities Edit Modal */}
+      {showAmenitiesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Photos</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Edit Amenities</h3>
               <button 
-                onClick={() => setShowPhotosModal(false)}
+                onClick={() => setShowAmenitiesModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
             
-            <div className="space-y-6">
-              {/* Upload Section */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <div className="space-y-4">
-                  <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900">Upload Photos</h4>
-                    <p className="text-gray-500">Drag and drop images here, or click to select</p>
-                  </div>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="hidden"
-                    id="photo-upload"
-                    onChange={handlePhotoUpload}
-                  />
-                  <label
-                    htmlFor="photo-upload"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600 cursor-pointer"
-                  >
-                    Select Photos
-                  </label>
-                </div>
-              </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Select amenities available at this property ({selectedAmenities.length} selected)
+              </p>
+            </div>
 
-              {/* Current Photos */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Current Photos</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {displayProperty?.photos?.map((photo: any, index: number) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                        <img 
-                          src={photo.url || '/placeholder-image.jpg'} 
-                          alt={`Property photo ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        onClick={() => handleDeletePhoto(photo.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            {/* Amenities Grid by Category */}
+            <div className="space-y-6">
+              {Object.entries(
+                amenities.reduce((acc: any, amenity: any) => {
+                  const cat = amenity.category || 'Other';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(amenity);
+                  return acc;
+                }, {})
+              ).map(([category, categoryAmenities]: [string, any]) => (
+                <div key={category}>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">{category}</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {categoryAmenities.map((amenity: any) => (
+                      <label
+                        key={amenity.id}
+                        className={`
+                          flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-all
+                          ${selectedAmenities.includes(amenity.id)
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }
+                        `}
                       >
-                        ✕
-                      </button>
-                    </div>
-                  )) || (
-                    <div className="col-span-full text-center py-8 text-gray-500">
-                      No photos uploaded yet
-                    </div>
-                  )}
+                        <input
+                          type="checkbox"
+                          checked={selectedAmenities.includes(amenity.id)}
+                          onChange={() => toggleAmenity(amenity.id)}
+                          className="text-orange-500 focus:ring-orange-500 rounded"
+                        />
+                        <span className="text-sm text-gray-900">{amenity.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowAmenitiesModal(false)}
+                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAmenities}
+                className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
       )}
-
 
       {/* Toast */}
       {showToast && (

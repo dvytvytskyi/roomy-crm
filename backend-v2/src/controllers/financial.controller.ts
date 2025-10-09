@@ -133,4 +133,51 @@ export class FinancialController {
       });
     }
   }
+
+  /**
+   * Get property-specific financial data
+   */
+  public static async getPropertyFinancialData(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const currentUser: CurrentUser = req.user!;
+      const propertyId = req.params.propertyId;
+      const filters: FinancialFilters = {
+        dateFrom: req.query.dateFrom as string,
+        dateTo: req.query.dateTo as string,
+        propertyId: propertyId,
+        transactionType: req.query.transactionType ? (Array.isArray(req.query.transactionType) ? req.query.transactionType as string[] : [req.query.transactionType as string]) : undefined,
+        paymentMethod: req.query.paymentMethod ? (Array.isArray(req.query.paymentMethod) ? req.query.paymentMethod as string[] : [req.query.paymentMethod as string]) : undefined,
+        status: req.query.status ? (Array.isArray(req.query.status) ? req.query.status as string[] : [req.query.status as string]) : undefined,
+        platform: req.query.platform ? (Array.isArray(req.query.platform) ? req.query.platform as string[] : [req.query.platform as string]) : undefined,
+      };
+
+      logger.info(`Getting property financial data for property ${propertyId} and user ${currentUser.email} with filters:`, filters);
+
+      const result = await FinancialService.getPropertyFinancialData(currentUser, propertyId, filters);
+
+      if (!result.success) {
+        res.status(result.statusCode || 500).json({
+          success: false,
+          error: result.error,
+          message: result.message,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: result.data,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error in getPropertyFinancialData controller:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'An error occurred while retrieving property financial data',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
 }

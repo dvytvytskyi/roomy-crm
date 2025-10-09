@@ -58,6 +58,59 @@ export interface UnitsAnalyticsDto {
   averageDailyRate: number;
 }
 
+export interface PropertyFinancialDataDto {
+  // Revenue
+  totalRevenue: number;
+  grossRevenue: number;
+  netRevenue: number;
+  
+  // Expenses
+  totalExpenses: number;
+  expensesByCategory: Record<string, number>;
+  
+  // Profit
+  grossProfit: number;
+  netProfit: number;
+  profitMargin: number;
+  
+  // Distribution
+  ownerPayout: number;
+  agencyFee: number;
+  platformFees: number;
+  
+  // Metrics
+  occupancyRate: number;
+  adr: number;
+  revpar: number;
+  totalBookings: number;
+  cancellationRate: number;
+  
+  // Period
+  period: {
+    from: string;
+    to: string;
+    type: 'month' | 'quarter' | 'year' | 'custom';
+  };
+  
+  // Recent data
+  recentReservations: Array<{
+    id: string;
+    checkIn: string;
+    checkOut: string;
+    totalAmount: number;
+    status: string;
+    guestName?: string;
+  }>;
+  
+  recentTransactions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    description?: string;
+    createdAt: string;
+  }>;
+}
+
 export interface FinancialFilters {
   dateFrom?: string;
   dateTo?: string;
@@ -531,6 +584,271 @@ export class FinancialService extends BaseService {
       return FinancialService.prototype.success(unitsAnalytics, 'Units analytics retrieved successfully');
     } catch (error) {
       logger.error('Error retrieving units analytics:', error);
+      return FinancialService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Get property-specific financial data with comprehensive calculations
+   */
+  public static async getPropertyFinancialData(
+    currentUser: CurrentUser,
+    propertyId: string,
+    filters: FinancialFilters = {}
+  ): Promise<ServiceResponse<PropertyFinancialDataDto>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Financial Data] Starting calculation for property ${propertyId} and user ${currentUser.email}`);
+
+      // Verify property access
+      const property = await prisma.properties.findUnique({
+        where: { id: propertyId },
+        select: {
+          id: true,
+          name: true,
+          agency_fee_percentage: true,
+          income_distribution: true,
+          owner_id: true,
+          agent_id: true
+        }
+      });
+
+      if (!property) {
+        await prisma.$disconnect();
+        return FinancialService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check access permissions
+      const hasAccess = currentUser.role === 'ADMIN' || 
+                       currentUser.role === 'MANAGER' ||
+                       property.owner_id === currentUser.id ||
+                       property.agent_id === currentUser.id;
+
+      if (!hasAccess) {
+        await prisma.$disconnect();
+        return FinancialService.prototype.error('Forbidden', 'Access denied to this property', 403);
+      }
+
+      // Set default date range (current month)
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      
+      const dateFrom = filters.dateFrom ? new Date(filters.dateFrom) : startOfMonth;
+      const dateTo = filters.dateTo ? new Date(filters.dateTo) : endOfMonth;
+
+      // Execute parallel queries
+      const [
+        reservationsData,
+        transactionsData,
+        expensesData,
+        recentReservations,
+        recentTransactions
+      ] = await Promise.all([
+        // Reservations aggregation
+        prisma.reservations.aggregate({
+          where: {
+            property_id: propertyId,
+            status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] },
+            check_in: { gte: dateFrom, lte: dateTo }
+          },
+          _sum: { total_amount: true },
+          _avg: { total_amount: true },
+          _count: true
+        }),
+
+        // Transactions aggregation
+        prisma.transactions.aggregate({
+          where: {
+            property_id: propertyId,
+            type: { in: ['PAYMENT', 'REVENUE'] },
+            status: 'COMPLETED',
+            created_at: { gte: dateFrom, lte: dateTo }
+          },
+          _sum: { amount: true },
+          _count: true
+        }),
+
+        // Expenses aggregation
+        prisma.expenses.aggregate({
+          where: {
+            property_id: propertyId,
+            date: { gte: dateFrom, lte: dateTo }
+          },
+          _sum: { amount: true }
+        }),
+
+        // Recent reservations
+        prisma.reservations.findMany({
+          where: {
+            property_id: propertyId,
+            status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] }
+          },
+          select: {
+            id: true,
+            check_in: true,
+            check_out: true,
+            total_amount: true,
+            status: true,
+            guest_name: true
+          },
+          orderBy: { check_in: 'desc' },
+          take: 5
+        }),
+
+        // Recent transactions
+        prisma.transactions.findMany({
+          where: {
+            property_id: propertyId,
+            type: { in: ['PAYMENT', 'REVENUE', 'EXPENSE', 'FEE'] }
+          },
+          select: {
+            id: true,
+            type: true,
+            amount: true,
+            description: true,
+            created_at: true
+          },
+          orderBy: { created_at: 'desc' },
+          take: 5
+        })
+      ]);
+
+      // Get expenses by category
+      const expensesByCategory = await prisma.expenses.groupBy({
+        by: ['category'],
+        where: {
+          property_id: propertyId,
+          date: { gte: dateFrom, lte: dateTo }
+        },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } }
+      });
+
+      // Get total bookings and cancellations for metrics
+      const [totalBookings, cancelledBookings] = await Promise.all([
+        prisma.reservations.count({
+          where: {
+            property_id: propertyId,
+            status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] },
+            check_in: { gte: dateFrom, lte: dateTo }
+          }
+        }),
+        prisma.reservations.count({
+          where: {
+            property_id: propertyId,
+            status: 'CANCELLED',
+            check_in: { gte: dateFrom, lte: dateTo }
+          }
+        })
+      ]);
+
+      await prisma.$disconnect();
+
+      // Calculate financial metrics
+      const totalRevenue = Number(reservationsData._sum.total_amount) || 0;
+      const grossRevenue = Number(transactionsData._sum.amount) || 0;
+      const totalExpenses = Number(expensesData._sum.amount) || 0;
+      
+      // Calculate fees and distribution
+      const agencyFeePercentage = property.agency_fee_percentage || 25.0;
+      const agencyFee = totalRevenue * (agencyFeePercentage / 100);
+      const platformFees = totalRevenue * 0.03; // 3% platform fee
+      const netRevenue = grossRevenue - platformFees;
+      
+      // Calculate profits
+      const grossProfit = totalRevenue - totalExpenses;
+      const netProfit = netRevenue - totalExpenses;
+      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+      
+      // Calculate owner payout
+      const ownerPayout = totalRevenue - agencyFee - platformFees;
+      
+      // Calculate metrics
+      const totalBookingsCount = totalBookings;
+      const cancelledBookingsCount = cancelledBookings;
+      const totalBookingsWithCancelled = totalBookingsCount + cancelledBookingsCount;
+      const cancellationRate = totalBookingsWithCancelled > 0 ? (cancelledBookingsCount / totalBookingsWithCancelled) * 100 : 0;
+      
+      const adr = Number(reservationsData._avg.total_amount) || 0;
+      const occupancyRate = 75; // Placeholder - would need complex calculation based on available nights
+      const revpar = (totalRevenue / 30) || 0; // Revenue per available room per day (simplified)
+
+      // Format expenses by category
+      const expensesByCategoryMap: Record<string, number> = {};
+      expensesByCategory.forEach(expense => {
+        expensesByCategoryMap[expense.category] = Number(expense._sum.amount) || 0;
+      });
+
+      // Format recent data
+      const recentReservationsFormatted = recentReservations.map(res => ({
+        id: res.id,
+        checkIn: res.check_in.toISOString(),
+        checkOut: res.check_out.toISOString(),
+        totalAmount: res.total_amount,
+        status: res.status,
+        guestName: res.guest_name || undefined
+      }));
+
+      const recentTransactionsFormatted = recentTransactions.map(trans => ({
+        id: trans.id,
+        type: trans.type,
+        amount: trans.amount,
+        description: trans.description || undefined,
+        createdAt: trans.created_at.toISOString()
+      }));
+
+      // Determine period type
+      let periodType: 'month' | 'quarter' | 'year' | 'custom' = 'custom';
+      const daysDiff = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff <= 31) periodType = 'month';
+      else if (daysDiff <= 93) periodType = 'quarter';
+      else if (daysDiff <= 366) periodType = 'year';
+
+      const propertyFinancialData: PropertyFinancialDataDto = {
+        // Revenue
+        totalRevenue,
+        grossRevenue,
+        netRevenue,
+        
+        // Expenses
+        totalExpenses,
+        expensesByCategory: expensesByCategoryMap,
+        
+        // Profit
+        grossProfit,
+        netProfit,
+        profitMargin: Math.round(profitMargin * 100) / 100,
+        
+        // Distribution
+        ownerPayout: Math.round(ownerPayout * 100) / 100,
+        agencyFee: Math.round(agencyFee * 100) / 100,
+        platformFees: Math.round(platformFees * 100) / 100,
+        
+        // Metrics
+        occupancyRate: Math.round(occupancyRate * 100) / 100,
+        adr: Math.round(adr * 100) / 100,
+        revpar: Math.round(revpar * 100) / 100,
+        totalBookings: totalBookingsCount,
+        cancellationRate: Math.round(cancellationRate * 100) / 100,
+        
+        // Period
+        period: {
+          from: dateFrom.toISOString(),
+          to: dateTo.toISOString(),
+          type: periodType
+        },
+        
+        // Recent data
+        recentReservations: recentReservationsFormatted,
+        recentTransactions: recentTransactionsFormatted
+      };
+
+      logger.info(`[Property Financial Data END] Calculation completed for property ${propertyId}`);
+      return FinancialService.prototype.success(propertyFinancialData, 'Property financial data retrieved successfully');
+    } catch (error) {
+      logger.error('Error retrieving property financial data:', error);
       return FinancialService.prototype.handleDatabaseError(error);
     }
   }

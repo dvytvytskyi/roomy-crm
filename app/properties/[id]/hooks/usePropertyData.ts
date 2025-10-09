@@ -190,15 +190,15 @@ export function usePropertyData(propertyId: string) {
       const priceData = await priceLabService.getCurrentPrice(propertyData.pricelabId)
       console.log('[usePropertyData] PriceLabs response:', priceData)
       
-      if (priceData && priceData.price) {
-        console.log('[usePropertyData] Current price loaded:', priceData.price)
+      if (priceData && priceData.success && priceData.data && priceData.data.currentPrice) {
+        console.log('[usePropertyData] Current price loaded:', priceData.data.currentPrice)
         setPropertyData(prev => prev ? {
           ...prev,
-          currentPrice: priceData.price,
+          currentPrice: priceData.data.currentPrice,
           priceLoading: false
         } : null)
       } else {
-        console.log('[usePropertyData] No price data returned from PriceLabs')
+        console.log('[usePropertyData] No price data returned from PriceLabs:', priceData?.error)
         setPropertyData(prev => prev ? { ...prev, priceLoading: false } : null)
       }
     } catch (err: any) {
@@ -218,6 +218,23 @@ export function usePropertyData(propertyId: string) {
       loadCurrentPrice()
     }
   }, [propertyData?.pricelabId, loadCurrentPrice])
+
+  // Listen for property updates (e.g., after photo upload)
+  useEffect(() => {
+    const handlePropertyUpdate = (event: CustomEvent) => {
+      console.log('[usePropertyData] Property update event received:', event.detail)
+      if (event.detail?.propertyId === propertyId) {
+        console.log('[usePropertyData] Refreshing property data after update')
+        fetchPropertyData()
+      }
+    }
+
+    window.addEventListener('property:updated', handlePropertyUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('property:updated', handlePropertyUpdate as EventListener)
+    }
+  }, [propertyId, fetchPropertyData])
 
   return {
     propertyData,
