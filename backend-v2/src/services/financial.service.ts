@@ -590,6 +590,32 @@ export class FinancialService extends BaseService {
 
   /**
    * Get property-specific financial data with comprehensive calculations
+   * 
+   * Data Sources & Calculations:
+   * 1. Reservations (reservations table):
+   *    - Total Revenue: sum of total_amount where status IN (CONFIRMED, CHECKED_IN, CHECKED_OUT)
+   *    - ADR (Average Daily Rate): average of total_amount
+   *    - RevPAR: total revenue / available days
+   *    - Total Bookings: count of reservations
+   *    - Cancellation Rate: cancelled / (confirmed + cancelled)
+   * 
+   * 2. Expenses (expenses table):
+   *    - Total Expenses: sum of amount
+   *    - Expenses by Category: grouped by category
+   * 
+   * 3. Transactions (transactions table):
+   *    - Gross Revenue: sum where type IN (PAYMENT, REVENUE) and status = COMPLETED
+   *    - Platform Fees: calculated from transactions
+   * 
+   * 4. Financial Distribution:
+   *    - Agency Fee: revenue * (property.agency_fee_percentage / 100)
+   *    - Platform Fees: revenue * 0.03 (3%)
+   *    - Owner Payout: revenue - agency_fee - platform_fees
+   * 
+   * 5. Profit Calculations:
+   *    - Gross Profit: revenue - expenses
+   *    - Net Profit: net_revenue - expenses
+   *    - Profit Margin: (net_profit / revenue) * 100
    */
   public static async getPropertyFinancialData(
     currentUser: CurrentUser,

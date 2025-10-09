@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, Plus, Calendar, Tag, FileText, Trash2, Edit, RefreshCw, Filter } from 'lucide-react'
+import { DollarSign, TrendingUp, Plus, Calendar, Tag, FileText, Trash2, Edit, RefreshCw } from 'lucide-react'
 import { FinancialService, PropertyFinancialData, FinancialFilters } from '@/lib/api/services/financialService'
 
 interface FinancialTabProps {
@@ -30,11 +30,6 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
   // New financial data state
   const [financialData, setFinancialData] = useState<PropertyFinancialData | null>(null)
   const [financialLoading, setFinancialLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState<'current-month' | 'last-month' | 'current-quarter' | 'last-quarter' | 'current-year' | 'last-year' | 'custom'>('current-month')
-  const [customDateRange, setCustomDateRange] = useState({
-    from: '',
-    to: ''
-  })
   
   // Expense form state
   const [expenseForm, setExpenseForm] = useState({
@@ -44,7 +39,7 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
     description: ''
   })
 
-  // Load financial data from API
+  // Load financial data from API (current month by default)
   const loadFinancialData = async () => {
     if (!propertyData?.id) return
     
@@ -52,7 +47,8 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
       setFinancialLoading(true)
       setError(null)
       
-      const dateRange = FinancialService.getDateRange(selectedPeriod, customDateRange.from, customDateRange.to)
+      // Get current month date range
+      const dateRange = FinancialService.getDateRange('current-month')
       const filters: FinancialFilters = {
         dateFrom: dateRange.from,
         dateTo: dateRange.to,
@@ -108,13 +104,6 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
       loadFinancialData()
     }
   }, [propertyData?.id])
-
-  // Reload financial data when period changes
-  useEffect(() => {
-    if (propertyData?.id) {
-      loadFinancialData()
-    }
-  }, [selectedPeriod, customDateRange])
 
   // Handle expense form changes
   const handleExpenseFormChange = (field: string, value: string) => {
@@ -175,7 +164,17 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
     }
   }
 
-  // Calculate financial summary using real data from API
+  /**
+   * Financial Summary Calculations
+   * 
+   * Data Sources:
+   * 1. Revenue: from `reservations` table (status: CONFIRMED, CHECKED_IN, CHECKED_OUT)
+   * 2. Expenses: from `expenses` table (filtered by property_id)
+   * 3. Agency Fee: calculated using `properties.agency_fee_percentage` (default: 25%)
+   * 4. Platform Fees: calculated as 3% of revenue
+   * 5. Owner Payout: revenue - agency_fee - platform_fees
+   * 6. Metrics: ADR, RevPAR, Occupancy Rate from reservations data
+   */
   const totalExpenses = financialData?.totalExpenses || expenses.reduce((sum, expense) => sum + expense.amount, 0)
   const totalRevenue = financialData?.totalRevenue || 0
   const totalProfit = financialData?.netProfit || 0
@@ -205,77 +204,6 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Financial Period</h3>
-          <button
-            onClick={() => {
-              loadExpenses()
-              loadFinancialData()
-            }}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          {[
-            { value: 'current-month', label: 'Current Month' },
-            { value: 'last-month', label: 'Last Month' },
-            { value: 'current-quarter', label: 'Current Quarter' },
-            { value: 'last-quarter', label: 'Last Quarter' },
-            { value: 'current-year', label: 'Current Year' },
-            { value: 'last-year', label: 'Last Year' },
-            { value: 'custom', label: 'Custom Range' }
-          ].map(period => (
-            <button
-              key={period.value}
-              onClick={() => setSelectedPeriod(period.value as any)}
-              className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                selectedPeriod === period.value
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {period.label}
-            </button>
-          ))}
-        </div>
-        
-        {selectedPeriod === 'custom' && (
-          <div className="mt-4 flex gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-              <input
-                type="date"
-                value={customDateRange.from}
-                onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-              <input
-                type="date"
-                value={customDateRange.to}
-                onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-        )}
-        
-        {financialData && (
-          <div className="mt-4 text-sm text-gray-600">
-            Showing data for: <span className="font-medium">{financialData.period.type}</span> 
-            {' '}({new Date(financialData.period.from).toLocaleDateString()} - {new Date(financialData.period.to).toLocaleDateString()})
-          </div>
-        )}
-      </div>
-
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
