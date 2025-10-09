@@ -191,7 +191,7 @@ class PriceLabService {
       console.log('💰 PriceLab: Getting current price for property via backend proxy:', pricelabId)
       
       // Get auth token
-      const token = localStorage.getItem('accessToken')
+      const token = localStorage.getItem('token')
       if (!token) {
         throw new Error('No authentication token found')
       }

@@ -130,6 +130,12 @@ export default function PropertyOverview({
   const currentPrice = propertyData?.currentPrice;
   const priceLoading = propertyData?.priceLoading;
   
+  // Debug logging
+  console.log('[PropertyOverview] propertyData:', propertyData);
+  console.log('[PropertyOverview] currentPrice:', currentPrice);
+  console.log('[PropertyOverview] priceLoading:', priceLoading);
+  console.log('[PropertyOverview] pricelabId:', propertyData?.pricelabId);
+  
   // Load owners separately (this can be moved to parent later)
   const [owners, setOwners] = useState<any[]>([]);
   const [ownersLoading, setOwnersLoading] = useState(false);
@@ -659,7 +665,10 @@ export default function PropertyOverview({
                         <span className="text-sm text-gray-500">No data</span>
                         {onRefreshPrice && (
                           <button 
-                            onClick={() => onRefreshPrice()}
+                            onClick={() => {
+                              console.log('[PropertyOverview] Load Price button clicked');
+                              onRefreshPrice();
+                            }}
                             className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded transition-colors"
                           >
                             Load Price

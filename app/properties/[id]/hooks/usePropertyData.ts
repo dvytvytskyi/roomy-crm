@@ -54,6 +54,8 @@ export function usePropertyData(propertyId: string) {
       
       if (response && response.data) {
         console.log('[usePropertyData] Property data loaded:', response.data)
+        console.log('[usePropertyData] Property pricelabId:', response.data.pricelabId)
+        console.log('[usePropertyData] Property currentPrice:', response.data.currentPrice)
         
         setPropertyData({
           ...response.data,
@@ -171,8 +173,12 @@ export function usePropertyData(propertyId: string) {
 
   // Load current price from PriceLabs
   const loadCurrentPrice = useCallback(async () => {
+    console.log('[usePropertyData] loadCurrentPrice called')
+    console.log('[usePropertyData] propertyData:', propertyData)
+    console.log('[usePropertyData] pricelabId:', propertyData?.pricelabId)
+    
     if (!propertyData?.pricelabId) {
-      console.log('[usePropertyData] No PriceLabs ID found')
+      console.log('[usePropertyData] No PriceLabs ID found - property might not have pricelabId set')
       return
     }
 
@@ -182,6 +188,7 @@ export function usePropertyData(propertyId: string) {
       setPropertyData(prev => prev ? { ...prev, priceLoading: true } : null)
 
       const priceData = await priceLabService.getCurrentPrice(propertyData.pricelabId)
+      console.log('[usePropertyData] PriceLabs response:', priceData)
       
       if (priceData && priceData.price) {
         console.log('[usePropertyData] Current price loaded:', priceData.price)
@@ -191,7 +198,7 @@ export function usePropertyData(propertyId: string) {
           priceLoading: false
         } : null)
       } else {
-        console.log('[usePropertyData] No price data returned')
+        console.log('[usePropertyData] No price data returned from PriceLabs')
         setPropertyData(prev => prev ? { ...prev, priceLoading: false } : null)
       }
     } catch (err: any) {
