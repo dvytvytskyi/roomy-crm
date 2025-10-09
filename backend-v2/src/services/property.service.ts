@@ -1652,8 +1652,8 @@ export class PropertyService extends BaseService {
             users_properties_owner_idTousers: {
               select: {
                 id: true,
-                first_name: true,
-                last_name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
                 phone: true
               }
@@ -1661,8 +1661,8 @@ export class PropertyService extends BaseService {
             users_properties_agent_idTousers: {
               select: {
                 id: true,
-                first_name: true,
-                last_name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
                 phone: true
               }
