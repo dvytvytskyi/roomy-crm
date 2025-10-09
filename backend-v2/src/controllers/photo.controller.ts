@@ -81,7 +81,7 @@ export class PhotoController {
           key,
           {
             contentType: file.mimetype,
-            isPublic: true,
+            isPublic: false, // Make files private and use signed URLs
           }
         );
         logger.info('[PhotoController] S3Service returned successfully:', s3Result);
@@ -293,6 +293,72 @@ export class PhotoController {
         success: false,
         error: 'Internal Server Error',
         message: 'An unexpected error occurred while deleting the photo',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  /**
+   * Get signed URL for photo access
+   * @route GET /api/v2/properties/:propertyId/photos/:photoId/url
+   * @access Private (JWT required)
+   */
+  public static getPhotoUrl = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const propertyId = req.params.propertyId;
+      const photoId = req.params.photoId;
+      const currentUser = req.user!;
+
+      logger.info(`[PhotoController] Getting signed URL for photo ${photoId} in property ${propertyId}`);
+
+      // Get file from database
+      const file = await FileService.getFile(currentUser, photoId);
+      if (!file.success || !file.data) {
+        res.status(404).json({
+          success: false,
+          error: 'Not Found',
+          message: 'Photo not found',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Generate signed URL
+      const s3Service = new S3Service();
+      if (s3Service.isConfigured()) {
+        try {
+          const signedUrl = await s3Service.getSignedUrl(file.data.filename, 3600); // 1 hour
+          res.status(200).json({
+            success: true,
+            data: { url: signedUrl },
+            message: 'Signed URL generated successfully',
+            timestamp: new Date().toISOString()
+          });
+        } catch (error) {
+          logger.error('[PhotoController] Error generating signed URL:', error);
+          res.status(500).json({
+            success: false,
+            error: 'Internal Server Error',
+            message: 'Failed to generate signed URL',
+            timestamp: new Date().toISOString()
+          });
+        }
+      } else {
+        // Fallback to direct URL if S3 not configured
+        res.status(200).json({
+          success: true,
+          data: { url: file.data.filePath },
+          message: 'Direct URL returned',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+    } catch (error) {
+      logger.error('[PhotoController] Error getting photo URL:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred while getting photo URL',
         timestamp: new Date().toISOString()
       });
     }

@@ -46,6 +46,56 @@ export default function DocumentsTab({ propertyData, onUpdate }: DocumentsTabPro
     }
   }
   
+  // Handle photo upload
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+    
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      alert('Authentication required')
+      return
+    }
+    
+    setIsUploading(true)
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const formData = new FormData()
+        formData.append('photo', file)
+        
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyData.id}/photos`,
+          {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+          }
+        )
+        
+        if (!response.ok) {
+          throw new Error(`Failed to upload photo: ${response.status}`)
+        }
+      }
+      
+      alert('Photos uploaded successfully!')
+      setShowUploadModal(false)
+      loadDocuments() // Reload documents
+      
+      // Trigger property data refresh
+      window.dispatchEvent(new CustomEvent('property:updated', { 
+        detail: { propertyId: propertyData.id } 
+      }))
+      
+    } catch (error) {
+      console.error('Error uploading photos:', error)
+      alert('Failed to upload photos')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   // Handle document upload
   const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -181,28 +231,66 @@ export default function DocumentsTab({ propertyData, onUpdate }: DocumentsTabPro
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {propertyData?.photos && propertyData.photos.length > 0 ? (
-            propertyData.photos.map((photo: any, index: number) => (
-              <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <Image
-                    src={photo.url || '/placeholder-image.jpg'}
-                    alt={photo.caption || `Photo ${index + 1}`}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover"
-                  />
+          {documents && documents.length > 0 ? (
+            documents
+              .filter((doc: any) => doc.mimeType && doc.mimeType.startsWith('image/'))
+              .map((photo: any, index: number) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <Image
+                      src={photo.filePath || '/placeholder-image.jpg'}
+                      alt={photo.title || `Photo ${index + 1}`}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover"
+                      onError={async (e) => {
+                        // Try to get signed URL if direct URL fails
+                        console.log('Image failed to load, trying signed URL...')
+                        const target = e.target as HTMLImageElement
+                        
+                        try {
+                          const token = localStorage.getItem('accessToken')
+                          if (token) {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyData.id}/photos/${photo.id}/url`,
+                              {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                              }
+                            )
+                            
+                            if (response.ok) {
+                              const result = await response.json()
+                              if (result.success && result.data.url) {
+                                target.src = result.data.url
+                                return
+                              }
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Failed to get signed URL:', error)
+                        }
+                        
+                        // Final fallback
+                        target.src = '/placeholder-image.jpg'
+                      }}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <button 
+                      onClick={() => handleDownloadDocument(photo.id)}
+                      className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors mr-2"
+                    >
+                      <Download size={16} className="text-gray-700" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteDocument(photo.id)}
+                      className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 size={16} className="text-white" />
+                    </button>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors mr-2">
-                    <Download size={16} className="text-gray-700" />
-                  </button>
-                  <button className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
-                    <Trash2 size={16} className="text-white" />
-                  </button>
-                </div>
-              </div>
-            ))
+              ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
               <ImageIcon size={48} className="mx-auto mb-4 text-gray-300" />
@@ -273,6 +361,53 @@ export default function DocumentsTab({ propertyData, onUpdate }: DocumentsTabPro
           )}
         </div>
       </div>
+
+      {/* Photo Upload Modal */}
+      {showUploadModal && uploadType === 'photo' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Upload Photo
+              </h3>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* File Upload */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <Upload size={48} className="mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 mb-2">
+                Click to select photos
+              </p>
+              <p className="text-xs text-gray-500">
+                JPG, PNG, GIF up to 10MB each
+              </p>
+              <input
+                id="photo-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="photo-upload"
+                className="inline-block mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg cursor-pointer transition-colors"
+              >
+                {isUploading ? 'Uploading...' : 'Select Photos'}
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload Modal */}
       {showUploadModal && uploadType === 'document' && (

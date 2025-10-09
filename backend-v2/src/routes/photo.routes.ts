@@ -36,4 +36,11 @@ router.post('/:propertyId/photos',
  */
 router.delete('/:propertyId/photos/:photoId', authenticateToken, PhotoController.deletePhoto);
 
+/**
+ * @route GET /api/v2/properties/:propertyId/photos/:photoId/url
+ * @desc Get signed URL for photo access
+ * @access Private (JWT required)
+ */
+router.get('/:propertyId/photos/:photoId/url', authenticateToken, PhotoController.getPhotoUrl);
+
 export default router;
