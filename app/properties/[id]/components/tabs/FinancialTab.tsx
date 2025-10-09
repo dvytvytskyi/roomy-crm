@@ -1,22 +1,161 @@
 'use client'
 
-import { useState } from 'react'
-import { DollarSign, TrendingUp, Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { DollarSign, TrendingUp, Plus, Calendar, Tag, FileText, Trash2, Edit } from 'lucide-react'
 
 interface FinancialTabProps {
   propertyData: any
   onUpdate: (updates: any) => Promise<boolean>
 }
 
+interface Expense {
+  id: string
+  date: string
+  category: string
+  amount: number
+  description?: string
+  receipt_url?: string
+  created_at: string
+  updated_at: string
+}
+
 export default function FinancialTab({ propertyData, onUpdate }: FinancialTabProps) {
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false)
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  
+  // Expense form state
+  const [expenseForm, setExpenseForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    category: '',
+    amount: '',
+    description: ''
+  })
+
+  // Load expenses from API
+  const loadExpenses = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyData?.id}/expenses`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      )
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setExpenses(result.data || [])
+        } else {
+          setError(result.message || 'Failed to load expenses')
+        }
+      } else {
+        setError(`Failed to load expenses: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Error loading expenses:', error)
+      setError('Failed to load expenses')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load expenses on component mount
+  useEffect(() => {
+    if (propertyData?.id) {
+      loadExpenses()
+    }
+  }, [propertyData?.id])
+
+  // Handle expense form changes
+  const handleExpenseFormChange = (field: string, value: string) => {
+    setExpenseForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // Submit expense form
+  const handleSubmitExpense = async () => {
+    try {
+      setSubmitting(true)
+      setError(null)
+
+      const token = localStorage.getItem('accessToken')
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_V2_URL}/properties/${propertyData?.id}/expenses`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            date: expenseForm.date,
+            category: expenseForm.category,
+            amount: parseFloat(expenseForm.amount),
+            description: expenseForm.description || undefined
+          })
+        }
+      )
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          // Reset form
+          setExpenseForm({
+            date: new Date().toISOString().split('T')[0],
+            category: '',
+            amount: '',
+            description: ''
+          })
+          setShowAddExpenseModal(false)
+          // Reload expenses
+          loadExpenses()
+        } else {
+          setError(result.message || 'Failed to create expense')
+        }
+      } else {
+        setError(`Failed to create expense: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Error creating expense:', error)
+      setError('Failed to create expense')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Calculate financial summary from real data
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const totalRevenue = propertyData?.financialData?.totalRevenue || 0 // Will be calculated from reservations later
+  const totalProfit = totalRevenue - totalExpenses
+  const ownerPayout = totalRevenue * 0.7 // 70% to owner (example)
+  const companyRevenue = totalRevenue * 0.3 // 30% to company (example)
+
+  // Calculate expenses by category
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount
+    return acc
+  }, {} as Record<string, number>)
+
+  // Get top expense categories
+  const topCategories = Object.entries(expensesByCategory)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
 
   const financialSummary = {
-    totalRevenue: propertyData?.financialData?.totalRevenue || 0,
-    totalExpenses: propertyData?.financialData?.totalExpenses || 0,
-    totalProfit: (propertyData?.financialData?.totalRevenue || 0) - (propertyData?.financialData?.totalExpenses || 0),
-    ownerPayout: propertyData?.financialData?.ownerPayout || 0,
-    companyRevenue: propertyData?.financialData?.companyRevenue || 0,
+    totalRevenue,
+    totalExpenses,
+    totalProfit,
+    ownerPayout,
+    companyRevenue,
   }
 
   return (
@@ -73,17 +212,50 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
         </div>
       </div>
 
+      {/* Expenses by Category */}
+      {expenses.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {topCategories.map(([category, amount], index) => (
+              <div key={category} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">{category}</span>
+                  <span className="text-xs text-gray-500">#{index + 1}</span>
+                </div>
+                <p className="text-xl font-bold text-gray-900">
+                  AED {amount.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {((amount / totalExpenses) * 100).toFixed(1)}% of total
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Expenses List */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Recent Expenses</h2>
-          <button
-            onClick={() => setShowAddExpenseModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
-          >
-            <Plus size={16} />
-            <span>Add Expense</span>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={loadExpenses}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <TrendingUp size={16} />
+              <span>{loading ? 'Loading...' : 'Refresh'}</span>
+            </button>
+            <button
+              onClick={() => setShowAddExpenseModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+            >
+              <Plus size={16} />
+              <span>Add Expense</span>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -97,14 +269,30 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
               </tr>
             </thead>
             <tbody>
-              {propertyData?.expenses && propertyData.expenses.length > 0 ? (
-                propertyData.expenses.map((expense: any, index: number) => (
-                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-gray-500">
+                    Loading expenses...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-red-500">
+                    {error}
+                  </td>
+                </tr>
+              ) : expenses.length > 0 ? (
+                expenses.map((expense) => (
+                  <tr key={expense.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm text-gray-900">
                       {new Date(expense.date).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{expense.category}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{expense.description}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {expense.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{expense.description || 'No description'}</td>
                     <td className="py-3 px-4 text-sm text-right font-medium text-gray-900">
                       AED {expense.amount.toLocaleString()}
                     </td>
@@ -136,8 +324,101 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
               </button>
             </div>
             
-            <div className="text-center py-8">
-              <p className="text-gray-500">Expense form coming soon...</p>
+            <div className="space-y-4">
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={expenseForm.date}
+                  onChange={(e) => handleExpenseFormChange('date', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Tag className="w-4 h-4 inline mr-1" />
+                  Category
+                </label>
+                <select
+                  value={expenseForm.category}
+                  onChange={(e) => handleExpenseFormChange('category', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">Select category...</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Cleaning">Cleaning</option>
+                  <option value="Repairs">Repairs</option>
+                  <option value="Supplies">Supplies</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Insurance">Insurance</option>
+                  <option value="Taxes">Taxes</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <DollarSign className="w-4 h-4 inline mr-1" />
+                  Amount (AED)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={expenseForm.amount}
+                  onChange={(e) => handleExpenseFormChange('amount', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FileText className="w-4 h-4 inline mr-1" />
+                  Description
+                </label>
+                <textarea
+                  value={expenseForm.description}
+                  onChange={(e) => handleExpenseFormChange('description', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Optional description..."
+                />
+              </div>
+
+              {/* Error message */}
+              {error && (
+                <div className="text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowAddExpenseModal(false)}
+                  className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitExpense}
+                  disabled={submitting || !expenseForm.category || !expenseForm.amount}
+                  className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Adding...' : 'Add Expense'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
