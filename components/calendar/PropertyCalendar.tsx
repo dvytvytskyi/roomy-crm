@@ -252,23 +252,41 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           tree: false,
           resize: true,
           template: function(task: any) {
-            let html = '<div style="display: flex; align-items: center; gap: 10px; padding: 6px 0;">'
+            let html = '<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; min-height: 44px;">'
             
             // Property icon/image
             if (task.image) {
-              html += `<img src="${task.image}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 2px solid #e5e7eb;" onerror="this.style.display='none'" />`
+              html += `<img src="${task.image}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0;" onerror="this.style.display='none'" />`
             } else {
-              html += '<div style="width: 32px; height: 32px; border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏠</div>'
+              html += '<div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: white;">🏠</div>'
             }
             
-            html += '<div style="flex: 1; min-width: 0;">'
-            html += `<div style="font-weight: 600; color: #1f2937; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${task.text}">${task.text}</div>`
+            html += '<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">'
+            
+            // Property name with better truncation
+            const displayName = task.text || 'Unnamed Property'
+            html += `<div style="font-weight: 600; color: #1f2937; font-size: 14px; line-height: 1.3; word-break: break-word;" title="${displayName}">${displayName}</div>`
+            
+            // Property details row
+            html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">'
             
             if (task.city) {
-              html += `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">📍 ${task.city}</div>`
+              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">📍 ${task.city}</span>`
             }
             
-            html += '</div></div>'
+            if (task.capacity) {
+              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">👥 ${task.capacity}</span>`
+            }
+            
+            if (task.bedrooms) {
+              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">🛏️ ${task.bedrooms}</span>`
+            }
+            
+            if (task.pricePerNight) {
+              html += `<span style="font-size: 11px; color: #059669; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-weight: 600;">AED ${task.pricePerNight}</span>`
+            }
+            
+            html += '</div></div></div>'
             return html
           }
         }
@@ -587,16 +605,21 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
 
     const ganttTasks: any[] = []
 
-    // Add each property as a separate row
-    properties.forEach((property: any, index: number) => {
+    // Remove duplicates and add each unique property as a separate row
+    const uniqueProperties = properties.filter((property: any, index: number, self: any[]) => 
+      index === self.findIndex(p => p.id === property.id)
+    )
+    
+    uniqueProperties.forEach((property: any, index: number) => {
       const propertyReservations = reservations.filter(
         (res: any) => res.propertyId === property.id && res.status !== 'CANCELLED'
       )
 
       // Each property is a standalone row (not a project with children)
+      const propertyName = property.name || property.nickname || `Property ${property.id}`
       const propertyTask = {
         id: `property-${property.id}`,
-        text: property.name || property.nickname || `Property ${index + 1}`,
+        text: propertyName,
         start_date: gantt.date.date_to_str('%Y-%m-%d')(new Date()),
         duration: 1,
         type: 'project', // Use project type for visual styling
@@ -611,7 +634,9 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
         pricePerNight: property.pricePerNight,
-        propertyType: property.type
+        propertyType: property.type,
+        // Add unique identifier to prevent duplicates
+        uniqueId: `${property.id}-${index}`
       }
 
       ganttTasks.push(propertyTask)
@@ -653,6 +678,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     })
 
     console.log('📊 Parsing Gantt data:', ganttTasks.length, 'tasks')
+    console.log('🏠 Properties processed:', uniqueProperties.length)
+    console.log('📅 Reservations processed:', reservations.length)
 
     gantt.parse({ data: ganttTasks, links: [] })
 

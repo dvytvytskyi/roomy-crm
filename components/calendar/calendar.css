@@ -48,6 +48,42 @@
   border-right: 1px solid #f3f4f6;
 }
 
+/* Property name column specific styling */
+.gantt_grid_data .gantt_cell[data-column="text"] {
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  border-right: 2px solid #e5e7eb;
+  padding: 12px;
+  vertical-align: top;
+}
+
+.gantt_grid_data .gantt_cell[data-column="text"]:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Property info badges */
+.property-info-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 1px;
+  white-space: nowrap;
+}
+
+.property-price-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 1px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
 /* ============================================ */
 /* TIMELINE CUSTOMIZATION */
 /* ============================================ */
