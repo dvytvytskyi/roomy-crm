@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import logger from '../utils/logger';
+import axios from 'axios';
 
 export interface S3UploadResult {
   key: string;
@@ -115,6 +116,85 @@ export class S3Service {
     } catch (error) {
       logger.error(`[S3Service] Error uploading file ${key}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Upload file from URL to S3
+   * Downloads image from external URL and uploads to S3
+   */
+  public async uploadFromUrl(
+    imageUrl: string,
+    propertyId: string,
+    index: number = 0,
+    options: S3UploadOptions = {}
+  ): Promise<S3UploadResult> {
+    try {
+      logger.info(`[S3Service] Downloading image from URL: ${imageUrl}`);
+      
+      // Download image from URL
+      const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 second timeout
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; RoomyCRM/1.0)',
+        }
+      });
+
+      const imageBuffer = Buffer.from(response.data);
+      logger.info(`[S3Service] Downloaded image, size: ${imageBuffer.length} bytes`);
+
+      // Determine content type from response or URL
+      const contentType = response.headers['content-type'] || this.getContentTypeFromUrl(imageUrl);
+      
+      // Generate S3 key
+      const extension = this.getExtensionFromUrl(imageUrl) || 'jpg';
+      const key = `properties/${propertyId}/photos/${Date.now()}-${index}.${extension}`;
+      
+      logger.info(`[S3Service] Uploading to S3 with key: ${key}`);
+
+      // Upload to S3
+      const result = await this.uploadFile(imageBuffer, key, {
+        ...options,
+        contentType,
+        isPublic: true, // Property photos should be public
+      });
+
+      logger.info(`[S3Service] Successfully uploaded image from URL to S3: ${key}`);
+      
+      return result;
+    } catch (error: any) {
+      logger.error(`[S3Service] Error uploading from URL ${imageUrl}:`, error.message);
+      throw new Error(`Failed to upload image from URL: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get content type from URL
+   */
+  private getContentTypeFromUrl(url: string): string {
+    const extension = this.getExtensionFromUrl(url);
+    const contentTypes: { [key: string]: string } = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+    };
+    return contentTypes[extension || 'jpg'] || 'image/jpeg';
+  }
+
+  /**
+   * Get file extension from URL
+   */
+  private getExtensionFromUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const match = pathname.match(/\.([a-z0-9]+)$/i);
+      return match ? match[1].toLowerCase() : null;
+    } catch {
+      return null;
     }
   }
 

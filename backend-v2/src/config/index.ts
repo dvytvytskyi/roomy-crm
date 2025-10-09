@@ -63,6 +63,14 @@ export const config = {
   // JWT shortcuts for services
   jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-for-v2-here',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+
+  // Apify Configuration
+  apify: {
+    apiToken: process.env['APIFY_API_TOKEN'],
+    userId: process.env['APIFY_USER_ID'],
+    actorId: process.env['APIFY_AIRBNB_ACTOR_ID'] || 'XhSu4AALp8O7es1XI', // rigelbytes/airbnb-listing
+    apiUrl: 'https://api.apify.com/v2',
+  },
 };
 
 // Validate required environment variables

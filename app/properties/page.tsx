@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import TopNavigation from '../../components/TopNavigation'
 import PropertiesTable from '../../components/properties/PropertiesTable'
 import PropertyModal from '../../components/properties/PropertyModal'
+import ImportFromAirbnbModal from '../../components/properties/ImportFromAirbnbModal'
+import AddPropertyDropdown from '../../components/properties/AddPropertyDropdown'
 import PropertiesFilters from '../../components/properties/PropertiesFilters'
 import Toast from '../../components/Toast'
 import { Plus, Search, Download, Archive, Trash2, Filter, Home, Building, Users, DollarSign } from 'lucide-react'
@@ -12,6 +14,7 @@ import { usePropertyEvents } from '../../hooks/usePropertyEvents'
 
 export default function PropertiesPage() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedProperty, setSelectedProperty] = useState<any>(null)
   const [selectedProperties, setSelectedProperties] = useState<(string | number)[]>([])
@@ -40,6 +43,10 @@ export default function PropertiesPage() {
   const handleCreateProperty = () => {
     setSelectedProperty(null)
     setIsPropertyModalOpen(true)
+  }
+
+  const handleImportFromAirbnb = () => {
+    setIsImportModalOpen(true)
   }
 
   const handleShowToast = (message: string) => {
@@ -254,14 +261,11 @@ export default function PropertiesPage() {
                     />
                   </div>
 
-                  {/* Add Property */}
-                  <button
-                    onClick={handleCreateProperty}
-                    className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Plus size={16} />
-                    <span>Add Property</span>
-                  </button>
+                  {/* Add Property Dropdown */}
+                  <AddPropertyDropdown 
+                    onImportFromAirbnb={handleImportFromAirbnb}
+                    onCreateManually={handleCreateProperty}
+                  />
                 </div>
               </div>
             </div>
@@ -427,6 +431,12 @@ export default function PropertiesPage() {
         property={selectedProperty}
         onShowToast={handleShowToast}
         onPropertyCreated={handlePropertyCreated}
+      />
+
+      <ImportFromAirbnbModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onShowToast={handleShowToast}
       />
 
       {/* Toast Notification */}

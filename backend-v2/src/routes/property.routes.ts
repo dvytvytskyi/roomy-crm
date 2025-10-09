@@ -77,6 +77,15 @@ router.put('/:id/availability', PropertyController.updatePropertyAvailability);
 router.put('/:id/amenities', PropertyController.updatePropertyAmenities);
 
 /**
+ * @route   GET /api/v2/properties/:id/availability
+ * @desc    Check property availability for specific dates
+ * @access  Private (JWT required) - RBAC handled in service layer
+ * @params  id - Property ID
+ * @query   startDate, endDate - ISO date strings (YYYY-MM-DD)
+ */
+router.get('/:id/availability', PropertyController.checkPropertyAvailability);
+
+/**
  * @route   DELETE /api/v2/properties/:id
  * @desc    Delete (deactivate) property by ID
  * @access  Private (JWT required) - Only ADMIN and MANAGER can deactivate

@@ -3,6 +3,7 @@ import { BaseService } from './BaseService';
 import { ServiceResponse } from '../types';
 import { CurrentUser, PropertyQueryParams, PaginatedResponse, CreatePropertyDto, UpdatePropertyDto } from '../types/dto';
 import { PricelabsService, PropertyData, PropertyUpdateData } from './pricelabs.service';
+import S3Service from './s3.service';
 import logger from '../utils/logger';
 
 // Property Response DTO
@@ -35,6 +36,12 @@ export interface PropertyResponseDto {
   updatedAt: Date;
   ownerId?: string;
   agentId?: string;
+  // Settings fields
+  minStay?: number;
+  maxStay?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+  bookingWindow?: string;
 }
 
 // Property with related data - SUPER ENDPOINT DTO
@@ -288,6 +295,12 @@ export class PropertyService extends BaseService {
         updatedAt: property.updated_at,
         ownerId: property.owner_id || undefined,
         agentId: property.agent_id || undefined,
+        // Settings fields
+        minStay: property.min_stay,
+        maxStay: property.max_stay,
+        checkInTime: property.check_in_time,
+        checkOutTime: property.check_out_time,
+        bookingWindow: property.booking_window,
         owner: property.users_properties_owner_idTousers ? {
           id: property.users_properties_owner_idTousers.id,
           firstName: property.users_properties_owner_idTousers.firstName,
@@ -564,10 +577,10 @@ export class PropertyService extends BaseService {
         otherThings: property.other_things || undefined,
         
         // Availability settings
-        bookingWindow: property.booking_window || undefined,
+        bookingWindow: property.booking_window,
         advanceNotice: property.advance_notice || undefined,
-        minStay: property.min_stay || undefined,
-        maxStay: property.max_stay || undefined,
+        minStay: property.min_stay,
+        maxStay: property.max_stay,
         
         // Utilities and additional settings
         utilities: property.utilities || [],
@@ -580,8 +593,8 @@ export class PropertyService extends BaseService {
         
         // Additional property details
         parkingSlots: property.parking_slots || undefined,
-        checkInTime: property.check_in_time || undefined,
-        checkOutTime: property.check_out_time || undefined,
+        checkInTime: property.check_in_time,
+        checkOutTime: property.check_out_time,
         
         // Owner information
         owner: property.users_properties_owner_idTousers ? {
@@ -684,7 +697,13 @@ export class PropertyService extends BaseService {
           transactions: property._count.transactions,
           expenses: property._count.expenses,
           auditLogs: property._count.audit_logs
-        }
+        },
+        // Settings fields (duplicate for PropertyResponseDto compatibility)
+        minStay: property.min_stay,
+        maxStay: property.max_stay,
+        checkInTime: property.check_in_time,
+        checkOutTime: property.check_out_time,
+        bookingWindow: property.booking_window
       };
 
       return PropertyService.prototype.success(propertyResponse);
@@ -738,6 +757,7 @@ export class PropertyService extends BaseService {
       logger.info(`[Property Creation] Starting property creation: ${data.name}`);
 
       // Create property in transaction with audit logging
+      // Increased timeout for photo uploads (30 seconds per photo * 25 photos = 750 seconds max)
       const result = await prisma.$transaction(async (tx) => {
         logger.info(`[Property Creation Step 1/2] Creating property record...`);
         
@@ -795,12 +815,19 @@ export class PropertyService extends BaseService {
             check_in_time: data.checkInTime || "15:00",
             check_out_time: data.checkOutTime || "12:00",
             
+            // Airbnb enrichment fields
+            beds_configuration: data.bedsConfiguration,
+            external_rating: data.externalRating,
+            external_review_count: data.externalReviewCount,
+            allows_pets: data.allowsPets,
+            external_cancellation_policy: data.externalCancellationPolicy,
+            
             created_at: new Date(),
             updated_at: new Date(),
           },
         });
 
-        logger.info(`[Property Creation Step 2/2] Creating audit log...`);
+        logger.info(`[Property Creation Step 2/5] Creating audit log...`);
 
         // Create audit log
         const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -823,8 +850,116 @@ export class PropertyService extends BaseService {
           }
         });
 
+        // Step 3: Upload photos to S3 and create records
+        if (data.photos && data.photos.length > 0) {
+          logger.info(`[Property Creation Step 3/5] Processing ${data.photos.length} photos...`);
+          
+          // Check if S3 is configured
+          const s3Service = S3Service.getInstance();
+          const s3Configured = s3Service.isConfigured();
+          
+          logger.info(`[Property Creation] S3 configured: ${s3Configured}`);
+          
+          if (!s3Configured) {
+            logger.warn(`[Property Creation] S3 not configured, storing Airbnb URLs directly`);
+          } else {
+            logger.info(`[Property Creation] S3 is configured, will upload photos to S3`);
+          }
+          
+          for (let i = 0; i < data.photos.length; i++) {
+            const photo = data.photos[i];
+            const photoId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}`;
+            
+            let photoUrl = photo.url;
+            let s3Key: string | null = null;
+            
+            // If S3 is configured and this is an external URL (Airbnb), upload to S3
+            if (s3Configured && (photo.url.includes('airbnb.com') || photo.url.includes('muscache.com'))) {
+              try {
+                logger.info(`[Property Creation] Uploading photo ${i + 1}/${data.photos.length} to S3...`);
+                const s3Result = await s3Service.uploadFromUrl(
+                  photo.url,
+                  property.id,
+                  i
+                );
+                photoUrl = s3Result.url;
+                s3Key = s3Result.key;
+                logger.info(`[Property Creation] Photo uploaded to S3: ${s3Key}`);
+              } catch (s3Error: any) {
+                logger.error(`[Property Creation] Failed to upload photo to S3: ${s3Error.message}`);
+                logger.warn(`[Property Creation] Falling back to original Airbnb URL`);
+                // Keep original Airbnb URL if S3 upload fails
+              }
+            }
+            
+            await tx.property_photos.create({
+              data: {
+                id: photoId,
+                property_id: property.id,
+                url: photoUrl,
+                s3_key: s3Key,
+                is_cover: photo.isCover || i === 0,
+                alt: photo.alt || null,
+                order: photo.order !== undefined ? photo.order : i,
+                created_at: new Date(),
+              }
+            });
+          }
+
+          logger.info(`[Property Creation] Created ${data.photos.length} photos`);
+        }
+
+        // Step 4: Create or link amenities if provided
+        if (data.amenities && data.amenities.length > 0) {
+          logger.info(`[Property Creation Step 4/5] Processing ${data.amenities.length} amenities...`);
+          
+          for (const amenityName of data.amenities) {
+            // Find or create amenity
+            let amenity = await tx.amenities.findFirst({
+              where: { 
+                name: {
+                  equals: amenityName,
+                  mode: 'insensitive' // Case-insensitive search
+                }
+              }
+            });
+
+            if (!amenity) {
+              // Create new amenity
+              const amenityId = `amenity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              amenity = await tx.amenities.create({
+                data: {
+                  id: amenityId,
+                  name: amenityName,
+                  icon: 'check', // Default icon
+                  category: 'GENERAL', // Default category
+                  created_at: new Date(),
+                  updated_at: new Date(),
+                }
+              });
+              logger.info(`[Property Creation] Created new amenity: ${amenityName}`);
+            }
+
+            // Link amenity to property
+            const propertyAmenityId = `prop-amenity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            await tx.property_amenities.create({
+              data: {
+                id: propertyAmenityId,
+                property_id: property.id,
+                amenity_id: amenity.id,
+                created_at: new Date(),
+              }
+            });
+          }
+
+          logger.info(`[Property Creation] Linked ${data.amenities.length} amenities`);
+        }
+
+        logger.info(`[Property Creation Step 5/5] All steps completed`);
         logger.info(`[Property Creation END] Property created successfully: ${property.name}`);
         return property;
+      }, {
+        timeout: 120000, // 120 seconds timeout for S3 uploads
       });
 
       await prisma.$disconnect();
@@ -1360,6 +1495,13 @@ export class PropertyService extends BaseService {
       if (availabilityData.isPublished !== undefined) updateData.is_published = availabilityData.isPublished;
       if (availabilityData.pricePerNight !== undefined) updateData.price_per_night = availabilityData.pricePerNight;
       if (availabilityData.capacity !== undefined) updateData.capacity = availabilityData.capacity;
+      
+      // Settings fields
+      if (availabilityData.minStay !== undefined) updateData.min_stay = availabilityData.minStay;
+      if (availabilityData.maxStay !== undefined) updateData.max_stay = availabilityData.maxStay;
+      if (availabilityData.checkInTime !== undefined) updateData.check_in_time = availabilityData.checkInTime;
+      if (availabilityData.checkOutTime !== undefined) updateData.check_out_time = availabilityData.checkOutTime;
+      if (availabilityData.bookingWindow !== undefined) updateData.booking_window = availabilityData.bookingWindow;
 
       // Update property availability in transaction with audit logging
       const result = await prisma.$transaction(async (tx) => {
@@ -1742,7 +1884,13 @@ export class PropertyService extends BaseService {
         createdAt: result.created_at,
         updatedAt: result.updated_at,
         ownerId: result.owner_id,
-        agentId: result.agent_id
+        agentId: result.agent_id,
+        // Settings fields
+        minStay: result.min_stay,
+        maxStay: result.max_stay,
+        checkInTime: result.check_in_time,
+        checkOutTime: result.check_out_time,
+        bookingWindow: result.booking_window
       };
 
       logger.info(`[Property Amenities Update] Successfully updated amenities for property ID: ${id}. Added ${amenityIds.length} amenities.`);
@@ -1754,6 +1902,93 @@ export class PropertyService extends BaseService {
       return PropertyService.prototype.success(propertyResponse, 'Property amenities updated successfully');
     } catch (error) {
       logger.error('[Property Amenities Update] Error updating property amenities:', error);
+      return PropertyService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Check property availability for specific dates
+   */
+  public static async checkAvailability(currentUser: CurrentUser, propertyId: string, startDate: string, endDate: string): Promise<ServiceResponse<{ isAvailable: boolean; conflictingReservations?: any[] }>> {
+    try {
+      const prisma = new PrismaClient();
+
+      logger.info(`[Property Availability Check] Checking availability for property ${propertyId} from ${startDate} to ${endDate}`);
+
+      // Check if property exists
+      const property = await prisma.properties.findUnique({
+        where: { id: propertyId },
+      });
+
+      if (!property) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Not Found', 'Property not found', 404);
+      }
+
+      // Check permissions
+      const canView = currentUser.role === 'ADMIN' || 
+                     currentUser.role === 'MANAGER' || 
+                     (currentUser.role === 'OWNER' && property.owner_id === currentUser.id) ||
+                     (currentUser.role === 'AGENT' && property.agent_id === currentUser.id);
+
+      if (!canView) {
+        await prisma.$disconnect();
+        return PropertyService.prototype.error('Forbidden', 'You do not have permission to check availability for this property', 403);
+      }
+
+      // Parse dates
+      const checkInDate = new Date(startDate);
+      const checkOutDate = new Date(endDate);
+
+      // Check for overlapping reservations
+      const overlappingReservations = await prisma.reservations.findMany({
+        where: {
+          property_id: propertyId,
+          status: { not: 'CANCELLED' },
+          OR: [
+            {
+              AND: [
+                { check_in: { lte: checkInDate } },
+                { check_out: { gt: checkInDate } }
+              ]
+            },
+            {
+              AND: [
+                { check_in: { lt: checkOutDate } },
+                { check_out: { gte: checkOutDate } }
+              ]
+            },
+            {
+              AND: [
+                { check_in: { gte: checkInDate } },
+                { check_out: { lte: checkOutDate } }
+              ]
+            }
+          ]
+        },
+        select: {
+          id: true,
+          reservation_id: true,
+          check_in: true,
+          check_out: true,
+          status: true,
+          guest_name: true
+        }
+      });
+
+      await prisma.$disconnect();
+
+      const isAvailable = overlappingReservations.length === 0;
+
+      logger.info(`[Property Availability Check] Property ${propertyId} is ${isAvailable ? 'available' : 'not available'} for the requested dates`);
+
+      return PropertyService.prototype.success({
+        isAvailable,
+        ...(overlappingReservations.length > 0 && { conflictingReservations: overlappingReservations })
+      }, 'Availability checked successfully');
+
+    } catch (error) {
+      logger.error('[Property Availability Check] Error checking availability:', error);
       return PropertyService.prototype.handleDatabaseError(error);
     }
   }

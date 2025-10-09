@@ -552,4 +552,60 @@ export class PropertyController extends BaseController {
       PropertyController.error(res, error, 500, 'An error occurred while retrieving available properties');
     }
   }
+
+  /**
+   * Check property availability endpoint
+   * GET /api/v2/properties/:id/availability
+   */
+  public static checkPropertyAvailability = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Get current user from JWT middleware
+      const currentUser = req.user;
+      if (!currentUser) {
+        PropertyController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { startDate, endDate } = req.query;
+
+      if (!id) {
+        PropertyController.validationError(res, [], 'Property ID is required');
+        return;
+      }
+
+      if (!startDate || !endDate) {
+        PropertyController.validationError(res, [], 'startDate and endDate query parameters are required');
+        return;
+      }
+
+      // Validate date formats
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        PropertyController.validationError(res, [], 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)');
+        return;
+      }
+
+      if (start >= end) {
+        PropertyController.validationError(res, [], 'startDate must be before endDate');
+        return;
+      }
+
+      // Check availability using PropertyService
+      const availabilityResult = await PropertyService.checkAvailability(currentUser, id, startDate as string, endDate as string);
+
+      if (!availabilityResult.success) {
+        PropertyController.error(res, availabilityResult.error || 'Availability check failed', availabilityResult.statusCode || 500, availabilityResult.message);
+        return;
+      }
+
+      // Return availability status
+      PropertyController.success(res, availabilityResult.data, 'Availability checked successfully');
+    } catch (error) {
+      logger.error('Check property availability error:', error);
+      PropertyController.error(res, error, 500, 'Property availability check failed');
+    }
+  };
 }

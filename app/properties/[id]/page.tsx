@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Home, DollarSign, FileText, Settings } from 'lucide-react'
+import { ArrowLeft, Home, DollarSign, FileText, Settings, Megaphone } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import TopNavigation from '../../../components/TopNavigation'
 import PropertyOverview from '../../../components/properties/PropertyOverview'
@@ -9,6 +9,7 @@ import PropertyTabs from './components/PropertyTabs'
 import FinancialTab from './components/tabs/FinancialTab'
 import DocumentsTab from './components/tabs/DocumentsTab'
 import SettingsTab from './components/tabs/SettingsTab'
+import MarketingTab from './components/tabs/MarketingTab'
 import Toast from '../../../components/Toast'
 import { usePropertyData } from './hooks/usePropertyData'
 
@@ -67,6 +68,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
   // Define tabs
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Home size={16} /> },
+    { id: 'marketing', label: 'Marketing', icon: <Megaphone size={16} /> },
     { id: 'financial', label: 'Financial', icon: <DollarSign size={16} /> },
     { id: 'documents', label: 'Documents', icon: <FileText size={16} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
@@ -166,6 +168,13 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
               onRefreshPrice={loadCurrentPrice}
               isLoading={isLoading}
               error={error}
+            />
+          )}
+
+          {activeTab === 'marketing' && (
+            <MarketingTab
+              propertyData={propertyData}
+              onUpdate={handlePropertyUpdate}
             />
           )}
 

@@ -142,6 +142,13 @@ model properties {
   check_in_time                    String?           @default("15:00")
   check_out_time                   String?           @default("12:00")
   
+  // Airbnb import enrichment fields
+  beds_configuration               Json?             // Detailed bed configuration [{"room": "Bedroom 1", "bedType": "King", "count": 1}]
+  external_rating                  Float?            // Rating from Airbnb (e.g., 4.84)
+  external_review_count            Int?              // Number of reviews on Airbnb
+  allows_pets                      Boolean?          // Whether pets are allowed
+  external_cancellation_policy     String?           // Cancellation policy from Airbnb (e.g., "MODERATE", "FIRM")
+  
   created_at                       DateTime          @default(now())
   updated_at                       DateTime
   owner_id                         String?

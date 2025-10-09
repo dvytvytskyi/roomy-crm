@@ -171,16 +171,14 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
    * 1. Revenue: from `reservations` table (status: CONFIRMED, CHECKED_IN, CHECKED_OUT)
    * 2. Expenses: from `expenses` table (filtered by property_id)
    * 3. Agency Fee: calculated using `properties.agency_fee_percentage` (default: 25%)
-   * 4. Platform Fees: calculated as 3% of revenue
-   * 5. Owner Payout: revenue - agency_fee - platform_fees
-   * 6. Metrics: ADR, RevPAR, Occupancy Rate from reservations data
+   * 4. Owner Payout: revenue - agency_fee
+   * 5. Metrics: ADR, RevPAR, Occupancy Rate from reservations data
    */
   const totalExpenses = financialData?.totalExpenses || expenses.reduce((sum, expense) => sum + expense.amount, 0)
   const totalRevenue = financialData?.totalRevenue || 0
   const totalProfit = financialData?.netProfit || 0
   const ownerPayout = financialData?.ownerPayout || 0
   const companyRevenue = financialData?.agencyFee || 0
-  const platformFees = financialData?.platformFees || 0
   const profitMargin = financialData?.profitMargin || 0
 
   // Use expenses by category from financial data or calculate from local expenses
@@ -292,24 +290,6 @@ export default function FinancialTab({ propertyData, onUpdate }: FinancialTabPro
         </div>
       )}
 
-      {/* Income Distribution */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Income Distribution</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">Owner Payout</span>
-            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(financialSummary.ownerPayout)}</span>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">Agency Fee</span>
-            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(financialSummary.companyRevenue)}</span>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">Platform Fees</span>
-            <span className="text-lg font-bold text-gray-900">{FinancialService.formatCurrency(platformFees)}</span>
-          </div>
-        </div>
-      </div>
 
       {/* Expenses by Category */}
       {Object.keys(expensesByCategory).length > 0 && (

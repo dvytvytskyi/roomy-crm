@@ -184,13 +184,6 @@ export default function SettingsTab({ propertyData, onUpdate }: SettingsTabProps
         </div>
       </div>
 
-      {/* Additional Settings (can be expanded later) */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-md font-semibold text-gray-900 mb-4">Additional Settings</h3>
-        <p className="text-sm text-gray-500">
-          More settings options will be available here in future updates.
-        </p>
-      </div>
     </div>
   )
 }

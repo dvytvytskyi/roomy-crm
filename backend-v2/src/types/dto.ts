@@ -111,6 +111,21 @@ export interface CreatePropertyDto {
   parkingSlots?: number;
   checkInTime?: string;
   checkOutTime?: string;
+  
+  // Airbnb enrichment fields
+  bedsConfiguration?: any; // JSON array of bed configurations
+  externalRating?: number;
+  externalReviewCount?: number;
+  allowsPets?: boolean;
+  externalCancellationPolicy?: string;
+  
+  // Photos array for Airbnb import
+  photos?: Array<{
+    url: string;
+    isCover?: boolean;
+    alt?: string;
+    order?: number;
+  }>;
 }
 
 export interface UpdatePropertyDto {
@@ -222,6 +237,13 @@ export interface PropertyResponseDto {
   parkingSlots?: number;
   checkInTime?: string;
   checkOutTime?: string;
+  
+  // Airbnb enrichment fields
+  bedsConfiguration?: any; // JSON array of bed configurations
+  externalRating?: number;
+  externalReviewCount?: number;
+  allowsPets?: boolean;
+  externalCancellationPolicy?: string;
 }
 
 export interface PropertyWithDetailsDto extends PropertyResponseDto {

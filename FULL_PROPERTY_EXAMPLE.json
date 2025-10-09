@@ -1,0 +1,495 @@
+{
+  "success": true,
+  "data": {
+    "id": "property-1760025863251-ycxywp17g",
+    "name": "Urban Oasis l Perfect for 4 l New Building",
+    "nickname": "Urban Oasis l Perfect for 4 l New Building",
+    "title": "Rental unit in Dubai · ★4.63 · 1 bedroom · 1 bath",
+    "type": "APARTMENT",
+    "typeOfUnit": "SINGLE",
+    "address": "Address not provided",
+    "city": "Unknown",
+    "country": "Unknown",
+    "latitude": 25.1889,
+    "longitude": 55.2697,
+    "capacity": 4,
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "pricePerNight": 100,
+    "description": "\nExperience modern living in this beautifully designed 1-bedroom apartment located in a new building in the heart of Business Bay, Dubai. The apartment features a spacious bedroom with elegant furnishings and a comfortable living area equipped with a sofa bed, making it perfect for couples, solo travelers, or small families.<br /> Enjoy the convenience of being in a vibrant neighborhood, close to iconic landmarks, dining, and entertainment options.\nRegistration Details\nBUS-URB-QY5C2",
+    "amenities": [
+      {
+        "id": "cmgijzt3i000a9e5ifmaws1ws",
+        "name": "Hair Dryer",
+        "icon": "💨",
+        "category": "Bathroom",
+        "description": "Hair dryer"
+      },
+      {
+        "id": "amenity-1760025863298-pou17p3k4",
+        "name": "Cleaning products",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863301-y1226atkh",
+        "name": "Shampoo",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863302-yd5fdu0vp",
+        "name": "Conditioner",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863303-zecptntdx",
+        "name": "Body soap",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i00079e5izmdpng7k",
+        "name": "Hot Water",
+        "icon": "♨️",
+        "category": "Bathroom",
+        "description": "Hot water available"
+      },
+      {
+        "id": "amenity-1760025863305-d88i4xun8",
+        "name": "Shower gel",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863306-n6xa2tv9v",
+        "name": "Washer",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i000h9e5i8mi105uc",
+        "name": "Dryer",
+        "icon": "🌪️",
+        "category": "Laundry",
+        "description": "Clothes dryer"
+      },
+      {
+        "id": "amenity-1760025863308-gqt9moq1m",
+        "name": "Essentials",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863308-tqe731ddi",
+        "name": "Hangers",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863310-e4lldc035",
+        "name": "Bed linens",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863311-2cu0amqyc",
+        "name": "Iron",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863312-vn5l3k1bu",
+        "name": "Clothing storage",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i000d9e5ikzktibo8",
+        "name": "TV",
+        "icon": "📺",
+        "category": "Entertainment",
+        "description": "Television"
+      },
+      {
+        "id": "amenity-1760025863314-kiw4yl95b",
+        "name": "Exercise equipment",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i000b9e5ixur6r5qa",
+        "name": "Air Conditioning",
+        "icon": "❄️",
+        "category": "Climate",
+        "description": "Air conditioning"
+      },
+      {
+        "id": "cmgijzt3i000c9e5izqpdn71f",
+        "name": "Heating",
+        "icon": "🔥",
+        "category": "Climate",
+        "description": "Heating system"
+      },
+      {
+        "id": "cmgijzt3i000n9e5iku8gtxga",
+        "name": "Smoke Alarm",
+        "icon": "🚨",
+        "category": "Safety",
+        "description": "Smoke alarm"
+      },
+      {
+        "id": "cmgijzt3i000o9e5iox1emza5",
+        "name": "Carbon Monoxide Alarm",
+        "icon": "⚠️",
+        "category": "Safety",
+        "description": "Carbon monoxide alarm"
+      },
+      {
+        "id": "cmgijzt3i000q9e5io5zvjjxa",
+        "name": "Fire Extinguisher",
+        "icon": "🧯",
+        "category": "Safety",
+        "description": "Fire extinguisher"
+      },
+      {
+        "id": "cmgijzt3i000p9e5iqypmg6w9",
+        "name": "First Aid Kit",
+        "icon": "🏥",
+        "category": "Safety",
+        "description": "First aid kit"
+      },
+      {
+        "id": "cmgijzt3i000e9e5ik4foddcq",
+        "name": "WiFi",
+        "icon": "📶",
+        "category": "Internet",
+        "description": "Free WiFi"
+      },
+      {
+        "id": "cmgijzt3h00009e5iafn33js0",
+        "name": "Kitchen",
+        "icon": "🍳",
+        "category": "Kitchen",
+        "description": "Fully equipped kitchen"
+      },
+      {
+        "id": "cmgijzt3i00029e5ihkndpyjs",
+        "name": "Microwave",
+        "icon": "📡",
+        "category": "Kitchen",
+        "description": "Microwave oven"
+      },
+      {
+        "id": "amenity-1760025863320-w9jn3cciq",
+        "name": "Cooking basics",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863321-1udnm1vcg",
+        "name": "Dishes and silverware",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863322-gqn6vpnmi",
+        "name": "Stove",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863322-vogjierer",
+        "name": "Oven",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863323-ey97npjaw",
+        "name": "Hot water kettle",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i00049e5imvlk96cy",
+        "name": "Coffee Maker",
+        "icon": "☕",
+        "category": "Kitchen",
+        "description": "Coffee maker"
+      },
+      {
+        "id": "amenity-1760025863327-jzw6l7evh",
+        "name": "Wine glasses",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863328-auxd92feb",
+        "name": "Toaster",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i00059e5iwqzqvpz6",
+        "name": "Dining Table",
+        "icon": "🪑",
+        "category": "Kitchen",
+        "description": "Dining table"
+      },
+      {
+        "id": "amenity-1760025863330-7e02pgc5t",
+        "name": "Patio or balcony",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "amenity-1760025863331-5cr58kcjo",
+        "name": "Free parking garage on premises",
+        "icon": "check",
+        "category": "GENERAL"
+      },
+      {
+        "id": "cmgijzt3i000k9e5ic4ij01la",
+        "name": "Pool",
+        "icon": "🏊",
+        "category": "Outdoor",
+        "description": "Swimming pool"
+      },
+      {
+        "id": "cmgijzt3i000t9e5igf4o7n8l",
+        "name": "Elevator",
+        "icon": "🛗",
+        "category": "Accessibility",
+        "description": "Elevator access"
+      },
+      {
+        "id": "amenity-1760025863332-4fgq1dyu1",
+        "name": "Host greets you",
+        "icon": "check",
+        "category": "GENERAL"
+      }
+    ],
+    "houseRules": [],
+    "tags": [
+      "imported-from-airbnb",
+      "airbnb-1293489979710718583"
+    ],
+    "isActive": true,
+    "isPublished": false,
+    "createdAt": "2025-10-09T16:04:23.252Z",
+    "updatedAt": "2025-10-09T16:04:23.252Z",
+    "ownerId": "e85f43a6-cb74-4e41-97c3-a4cc507d1eea",
+    "summary": "Urban Oasis l Perfect for 4 l New Building",
+    "theSpace": "\nExperience modern living in this beautifully designed 1-bedroom apartment located in a new building in the heart of Business Bay, Dubai. The apartment features a spacious bedroom with elegant furnishings and a comfortable living area equipped with a sofa bed, making it perfect for couples, solo travelers, or small families.<br /> Enjoy the convenience of being in a vibrant neighborhood, close to iconic landmarks, dining, and entertainment options.\nRegistration Details\nBUS-URB-QY5C2",
+    "bookingWindow": "all-days",
+    "advanceNotice": "none",
+    "minStay": 3,
+    "maxStay": 365,
+    "utilities": [],
+    "agencyFeePercentage": 25,
+    "referringAgentFeePercentage": 5,
+    "checkInTime": "15:00",
+    "checkOutTime": "12:00",
+    "owner": {
+      "id": "e85f43a6-cb74-4e41-97c3-a4cc507d1eea",
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@roomy.com",
+      "phone": "+1234567890"
+    },
+    "photos": [
+      {
+        "id": "photo-1760025863270-db10b3hws-0",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/5146187c-b71f-4da1-ad26-b69d892d8a36.jpeg",
+        "isCover": true,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 0,
+        "createdAt": "2025-10-09T16:04:23.271Z"
+      },
+      {
+        "id": "photo-1760025863274-cmttstd3s-1",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/44cd2082-fcba-405f-92e7-355d09b5b808.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 1,
+        "createdAt": "2025-10-09T16:04:23.274Z"
+      },
+      {
+        "id": "photo-1760025863275-krcp55e0x-2",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/8d9a4ea2-978a-4dbf-b661-3f1be9789bf5.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 2,
+        "createdAt": "2025-10-09T16:04:23.275Z"
+      },
+      {
+        "id": "photo-1760025863276-269rd52im-3",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/cb95c11d-92f2-4d82-8bf7-9a8fbc546f9a.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 3,
+        "createdAt": "2025-10-09T16:04:23.276Z"
+      },
+      {
+        "id": "photo-1760025863278-epvb472ur-4",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/39885a4d-f5d0-4a96-a107-7038378e88d2.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 4,
+        "createdAt": "2025-10-09T16:04:23.278Z"
+      },
+      {
+        "id": "photo-1760025863279-osbdai6tb-5",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/b38ea278-a4f2-4781-8c9f-183aac6ec6c9.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 5,
+        "createdAt": "2025-10-09T16:04:23.279Z"
+      },
+      {
+        "id": "photo-1760025863279-73ebi72bw-6",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/42659c5d-384c-4daa-8205-b7240fe5c2da.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 6,
+        "createdAt": "2025-10-09T16:04:23.279Z"
+      },
+      {
+        "id": "photo-1760025863279-r7kj49c8o-7",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/0a6bf591-a4e3-4c6b-baf4-db771c2ba245.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 7,
+        "createdAt": "2025-10-09T16:04:23.279Z"
+      },
+      {
+        "id": "photo-1760025863280-4tn4zcnv6-8",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/4143fb52-b86d-43af-af63-284fc891787a.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 8,
+        "createdAt": "2025-10-09T16:04:23.280Z"
+      },
+      {
+        "id": "photo-1760025863280-n4hdx3vke-9",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/77c66951-7ac9-47e0-9a10-2f1a0f29de82.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 9,
+        "createdAt": "2025-10-09T16:04:23.280Z"
+      },
+      {
+        "id": "photo-1760025863281-zv9i66un9-10",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/c08fbdf0-46cb-43f8-a25f-4df592e8f52d.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 10,
+        "createdAt": "2025-10-09T16:04:23.281Z"
+      },
+      {
+        "id": "photo-1760025863281-iiwm7djfq-11",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/a67a44e3-7fb0-4f9a-bb17-6543886cdb09.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 11,
+        "createdAt": "2025-10-09T16:04:23.281Z"
+      },
+      {
+        "id": "photo-1760025863281-icl1slov5-12",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/199e88c2-4a2b-4bbd-a5a5-45f0d8e600b8.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 12,
+        "createdAt": "2025-10-09T16:04:23.281Z"
+      },
+      {
+        "id": "photo-1760025863281-jkqkfzk2b-13",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/87d6e640-f195-4c48-b103-9621ab174fff.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 13,
+        "createdAt": "2025-10-09T16:04:23.281Z"
+      },
+      {
+        "id": "photo-1760025863282-mloib9rz4-14",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/022d68eb-4988-48dd-8965-443c3784f504.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 14,
+        "createdAt": "2025-10-09T16:04:23.282Z"
+      },
+      {
+        "id": "photo-1760025863282-k2uj4x6om-15",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/63691a65-34bb-47d4-824a-d5fee0aca95d.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 15,
+        "createdAt": "2025-10-09T16:04:23.282Z"
+      },
+      {
+        "id": "photo-1760025863282-mwmpp2dfy-16",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/a151b25f-551c-49e8-a620-8696c197c4d7.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 16,
+        "createdAt": "2025-10-09T16:04:23.282Z"
+      },
+      {
+        "id": "photo-1760025863283-0y91hz9gc-17",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/3163adfd-aa7b-4e87-9f40-543d7f2e6265.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 17,
+        "createdAt": "2025-10-09T16:04:23.283Z"
+      },
+      {
+        "id": "photo-1760025863283-xpttcgz6b-18",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/16f2ef27-d113-4d75-9738-6a008163bc5f.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 18,
+        "createdAt": "2025-10-09T16:04:23.283Z"
+      },
+      {
+        "id": "photo-1760025863283-ybplp34jp-19",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/77a1b0d5-e44a-40ae-96cc-0430e9c71ff0.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 19,
+        "createdAt": "2025-10-09T16:04:23.283Z"
+      },
+      {
+        "id": "photo-1760025863284-dsfp5ea2h-20",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/fd9eb731-1d43-49d8-98e5-2bc629431640.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 20,
+        "createdAt": "2025-10-09T16:04:23.284Z"
+      },
+      {
+        "id": "photo-1760025863284-lw83kxncx-21",
+        "url": "https://a0.muscache.com/im/pictures/miso/Hosting-1293489979710718583/original/99c0e36b-830a-4fd1-bfbb-ed5eedafc33f.jpeg",
+        "isCover": false,
+        "alt": "Urban Oasis l Perfect for 4 l New Building",
+        "order": 21,
+        "createdAt": "2025-10-09T16:04:23.284Z"
+      }
+    ],
+    "pricingRules": [],
+    "transactions": [],
+    "reservations": [],
+    "expenses": [],
+    "auditLogs": [],
+    "_count": {
+      "reservations": 0,
+      "photos": 22,
+      "pricingRules": 0,
+      "transactions": 0,
+      "expenses": 0,
+      "auditLogs": 0
+    }
+  },
+  "message": "Property retrieved successfully",
+  "timestamp": "2025-10-09T16:04:34.290Z"
+}

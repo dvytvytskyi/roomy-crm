@@ -94,6 +94,7 @@ import webhookRoutes from './routes/webhook.routes';
 import fileRoutes from './routes/file.routes';
 import healthRoutes from './routes/health.routes';
 import pricelabsRoutes from './routes/pricelabs.routes';
+import airbnbRoutes from './routes/airbnb.routes';
 import expenseRoutes from './routes/expense.routes';
 import photoRoutes from './routes/photo.routes';
 import documentRoutes from './routes/document.routes';
@@ -141,6 +142,7 @@ app.use('/api/v2/settings', settingsRoutes);
 app.use('/api/v2/webhooks', webhookRoutes);
 app.use('/api/v2/files', fileRoutes);
 app.use('/api/v2/integrations/pricelabs', pricelabsRoutes);
+app.use('/api/v2/integrations/airbnb', airbnbRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler

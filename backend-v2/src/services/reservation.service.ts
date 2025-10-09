@@ -492,6 +492,45 @@ export class ReservationService extends BaseService {
 
       logger.info(`[Reservation Creation] Starting reservation creation: ${data.guestName}`);
 
+      // Check availability for the requested dates
+      const checkInDate = new Date(data.checkIn);
+      const checkOutDate = new Date(data.checkOut);
+
+      // Check for overlapping reservations
+      const overlappingReservations = await prisma.reservations.findMany({
+        where: {
+          property_id: data.propertyId,
+          status: { not: 'CANCELLED' },
+          OR: [
+            {
+              AND: [
+                { check_in: { lte: checkInDate } },
+                { check_out: { gt: checkInDate } }
+              ]
+            },
+            {
+              AND: [
+                { check_in: { lt: checkOutDate } },
+                { check_out: { gte: checkOutDate } }
+              ]
+            },
+            {
+              AND: [
+                { check_in: { gte: checkInDate } },
+                { check_out: { lte: checkOutDate } }
+              ]
+            }
+          ]
+        }
+      });
+
+      if (overlappingReservations.length > 0) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Conflict', 'Property is not available for the selected dates', 409);
+      }
+
+      logger.info(`[Reservation Creation] Availability check passed for property ${data.propertyId}`);
+
       // Create reservation in transaction with audit logging
       const result = await prisma.$transaction(async (tx) => {
         logger.info(`[Reservation Creation Step 1/2] Creating reservation record...`);

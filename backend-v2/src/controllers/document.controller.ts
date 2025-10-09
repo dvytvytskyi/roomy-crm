@@ -169,6 +169,7 @@ export class DocumentController {
 
       logger.info(`[DocumentController] Getting documents for property ${propertyId}`);
 
+      // Get files from file_uploads table
       const result = await FileService.getEntityFiles(currentUser, 'PROPERTY', propertyId);
 
       if (!result.success) {
@@ -181,7 +182,28 @@ export class DocumentController {
         return;
       }
 
-      // Filter only document files (exclude photos)
+      // Get photos from property_photos table
+      const { PrismaClient } = require('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      let propertyPhotos: any[] = [];
+      try {
+        propertyPhotos = await prisma.property_photos.findMany({
+          where: {
+            property_id: propertyId
+          },
+          orderBy: {
+            created_at: 'asc'
+          }
+        });
+        logger.info(`[DocumentController] Found ${propertyPhotos.length} property photos`);
+      } catch (photoError) {
+        logger.warn('[DocumentController] Error fetching property photos:', photoError);
+      } finally {
+        await prisma.$disconnect();
+      }
+
+      // Map file_uploads to document format
       const documents = result.data.map(file => ({
         id: file.id,
         title: file.metadata?.title || file.originalName,
@@ -193,13 +215,36 @@ export class DocumentController {
         uploadedByEmail: file.uploadedByEmail || '',
         url: file.filePath,
         key: file.filename,
-        mimeType: file.mimeType
+        mimeType: file.mimeType,
+        source: 'file_uploads' // Mark source for debugging
       }));
+
+      // Map property_photos to document format
+      const photos = propertyPhotos.map(photo => ({
+        id: photo.id,
+        title: `Photo ${photo.id}`,
+        fileName: photo.s3_key ? photo.s3_key.split('/').pop() : 'photo',
+        uploadDate: photo.created_at,
+        fileSize: 'N/A', // We don't store file size in property_photos
+        type: 'PHOTO',
+        uploadedBy: 'Airbnb Import',
+        uploadedByEmail: 'system@airbnb-import.com',
+        url: photo.url,
+        key: photo.s3_key,
+        mimeType: 'image/jpeg', // Default, could be improved
+        source: 'property_photos', // Mark source for debugging
+        isCover: photo.is_cover
+      }));
+
+      // Combine documents and photos
+      const allFiles = [...documents, ...photos];
+
+      logger.info(`[DocumentController] Returning ${documents.length} documents and ${photos.length} photos`);
 
       res.status(200).json({
         success: true,
-        data: documents,
-        message: 'Documents retrieved successfully',
+        data: allFiles,
+        message: 'Documents and photos retrieved successfully',
         timestamp: new Date().toISOString()
       });
 

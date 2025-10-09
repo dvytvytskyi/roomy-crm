@@ -68,6 +68,12 @@ export interface PropertyV2 {
     photos: number;
     pricingRules: number;
   };
+  // Settings fields
+  minStay?: number;
+  maxStay?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+  bookingWindow?: string;
 }
 
 export interface PropertyQueryParams {
@@ -130,6 +136,12 @@ export interface UpdatePropertyRequest {
   primaryImage?: string;
   pricelabId?: string;
   ownerIds?: string[];
+  // Settings fields
+  minStay?: number;
+  maxStay?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+  bookingWindow?: string;
 }
 
 export interface PaginatedResponse<T> {

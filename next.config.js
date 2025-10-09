@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    webpackBuildWorker: true,
-  },
   webpack: (config, { isServer }) => {
     // Handle Bryntum modules
     config.resolve.fallback = {
@@ -17,20 +14,6 @@ const nextConfig = {
       ...config.resolve.alias,
       'mime-db': require.resolve('mime-db'),
     };
-
-    // Disable problematic optimizations and fix vendor chunks
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: false, // Disable splitChunks to avoid vendor issues
-    };
-
-    // Fix for server-side rendering issues
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push({
-        'mime-db': 'commonjs mime-db',
-      });
-    }
     
     return config;
   },

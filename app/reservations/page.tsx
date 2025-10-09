@@ -7,7 +7,7 @@ import ReservationsTable from '@/components/reservations/ReservationsTable'
 import ReservationsFilters from '@/components/reservations/ReservationsFilters'
 import ReservationDetailsModal from '@/components/reservations/ReservationDetailsModal'
 import ReservationEditModal from '@/components/reservations/ReservationEditModal'
-import NewReservationModal from '@/components/reservations/NewReservationModal'
+import SmartReservationModal from '@/components/reservations/SmartReservationModal'
 import { reservationServiceAdapted } from '@/lib/api/adapters/apiAdapter'
 import { Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
@@ -359,12 +359,15 @@ export default function ReservationsPage() {
         />
       )}
 
-      {/* New Reservation Modal */}
+      {/* Smart Reservation Modal */}
       {newReservationModal && (
-        <NewReservationModal
+        <SmartReservationModal
           onClose={() => setNewReservationModal(false)}
           onSave={(newReservation) => {
             console.log('New reservation created:', newReservation)
+            // Add the new reservation to the list and refresh
+            setReservations(prev => [newReservation, ...prev])
+            handleShowToast('Reservation created successfully!')
             setNewReservationModal(false)
           }}
         />
