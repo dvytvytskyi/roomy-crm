@@ -273,13 +273,19 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         }
       ]
       
-      // Set date range for horizontal scroll
+      // Set date range for horizontal scroll - extended range to show more reservations
       const today = new Date()
-      const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-      const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0)
+      const startDate = new Date(today.getFullYear(), today.getMonth() - 6, 1) // 6 months back
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 12, 0) // 12 months forward
       
       gantt.config.start_date = startDate
       gantt.config.end_date = endDate
+      
+      console.log('📅 Calendar date range set:', {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        today: today.toISOString().split('T')[0]
+      })
 
       // ============================================
       // GRID COLUMNS - Only Property Names
@@ -715,6 +721,16 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         const checkOut = new Date(reservation.checkOut)
         const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
 
+        console.log(`📅 Processing reservation ${reservation.id}:`, {
+          checkIn: reservation.checkIn,
+          checkOut: reservation.checkOut,
+          checkInDate: checkIn,
+          checkOutDate: checkOut,
+          nights: nights,
+          formattedStart: gantt.date.date_to_str('%Y-%m-%d')(checkIn),
+          formattedEnd: gantt.date.date_to_str('%Y-%m-%d')(checkOut)
+        })
+
         let progress = 0
         switch (reservation.status) {
           case 'PENDING': progress = 0.25; break
@@ -723,7 +739,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           case 'CHECKED_OUT': progress = 1; break
         }
 
-        ganttTasks.push({
+        const reservationTask = {
           id: `reservation-${reservation.id}`,
           text: reservation.guestName || 'Guest',
           start_date: gantt.date.date_to_str('%Y-%m-%d')(checkIn),
@@ -741,7 +757,10 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           status: reservation.status,
           source: reservation.source,
           notes: reservation.notes || reservation.specialRequests
-        })
+        }
+
+        console.log(`📅 Created reservation task:`, reservationTask)
+        ganttTasks.push(reservationTask)
       })
     })
 
@@ -750,8 +769,37 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     console.log('📅 Reservations processed:', reservations.length)
     console.log('📅 Raw reservations data:', reservations)
     console.log('📅 Gantt tasks:', ganttTasks)
+    
+    // Log current calendar date range
+    const currentDateRange = {
+      start_date: gantt.config.start_date,
+      end_date: gantt.config.end_date,
+      start_formatted: gantt.date.date_to_str('%Y-%m-%d')(gantt.config.start_date),
+      end_formatted: gantt.date.date_to_str('%Y-%m-%d')(gantt.config.end_date)
+    }
+    console.log('📅 Current calendar date range:', currentDateRange)
 
     gantt.parse({ data: ganttTasks, links: [] })
+    
+    // Auto-scroll to show reservations if any exist
+    const reservationTasks = ganttTasks.filter(task => task.type === 'task' && task.start_date)
+    if (reservationTasks.length > 0) {
+      // Find the earliest reservation date
+      const earliestReservation = reservationTasks.reduce((earliest, current) => {
+        return new Date(current.start_date) < new Date(earliest.start_date) ? current : earliest
+      })
+      
+      console.log('📅 Auto-scrolling to earliest reservation:', {
+        reservationId: earliestReservation.id,
+        startDate: earliestReservation.start_date,
+        guestName: earliestReservation.guestName
+      })
+      
+      // Scroll to show the earliest reservation
+      setTimeout(() => {
+        gantt.showDate(new Date(earliestReservation.start_date))
+      }, 100)
+    }
 
   }, [properties, reservations, ganttReady])
 
