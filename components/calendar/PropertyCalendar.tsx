@@ -210,6 +210,12 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.config.tooltip_timeout = 0
       gantt.config.tooltip_hide_timeout = 0
       
+      // Disable interactions for property rows
+      gantt.config.select_task = true
+      gantt.config.drag_move = false
+      gantt.config.drag_resize = false
+      gantt.config.drag_progress = false
+      
       // ============================================
       // TIMELINE SCALES - Classic Gantt: Month + Day
       // ============================================
@@ -475,6 +481,39 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         return task.type !== 'property'
       })
 
+      // Block clicks on property rows
+      gantt.attachEvent('onTaskClick', function(id: any, e: any) {
+        const task = gantt.getTask(id)
+        if (task && task.type === 'property') {
+          e.preventDefault()
+          e.stopPropagation()
+          return false
+        }
+        return true
+      })
+
+      // Block row clicks on property rows
+      gantt.attachEvent('onTaskRowClick', function(id: any, e: any) {
+        const task = gantt.getTask(id)
+        if (task && task.type === 'property') {
+          e.preventDefault()
+          e.stopPropagation()
+          return false
+        }
+        return true
+      })
+
+      // Block double clicks on property rows
+      gantt.attachEvent('onTaskDblClick', function(id: any, e: any) {
+        const task = gantt.getTask(id)
+        if (task && task.type === 'property') {
+          e.preventDefault()
+          e.stopPropagation()
+          return false
+        }
+        return true
+      })
+
       // ============================================
       // TODAY MARKER
       // ============================================
@@ -564,9 +603,10 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         text: propertyName,
         start_date: gantt.date.date_to_str('%Y-%m-%d')(new Date()),
         duration: 1,
-        type: 'project', // Use project type for visual styling
+        type: 'property', // Use property type to distinguish from reservations
         open: false,
         readonly: true,
+        render: 'split', // Make it non-interactive
         // Custom property data
         propertyId: property.id,
         image: property.primaryImage || (property.photos && property.photos[0]?.url),

@@ -60,6 +60,28 @@
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
+/* Make property rows non-interactive */
+.gantt_row[data-task-id*="property-"] {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.gantt_row[data-task-id*="property-"] .gantt_cell {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Allow interactions only for reservation rows */
+.gantt_row[data-task-id*="reservation-"] {
+  pointer-events: auto !important;
+  user-select: auto !important;
+}
+
+.gantt_row[data-task-id*="reservation-"] .gantt_cell {
+  pointer-events: auto !important;
+  user-select: auto !important;
+}
+
 /* Property info badges */
 .property-info-badge {
   display: inline-block;
