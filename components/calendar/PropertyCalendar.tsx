@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import './calendar.css'
+import { reservationApiAdapter } from '@/lib/api/adapters/apiAdapter'
 
 // Declare gantt on window object
 declare global {
@@ -30,6 +31,36 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   const ganttContainer = useRef<HTMLDivElement>(null)
   const ganttInstanceRef = useRef<any>(null)
   const [ganttReady, setGanttReady] = useState(false)
+
+  // Function to update reservation dates via API
+  const updateReservationDates = async (reservationId: string, startDate: string, endDate: string) => {
+    try {
+      console.log(`[API] Updating reservation ${reservationId}:`, { startDate, endDate })
+      
+      // Format dates for API
+      const formattedStartDate = new Date(startDate).toISOString().split('T')[0]
+      const formattedEndDate = new Date(endDate).toISOString().split('T')[0]
+      
+      // Update reservation via API
+      const response = await reservationApiAdapter.update(reservationId, {
+        checkIn: formattedStartDate,
+        checkOut: formattedEndDate
+      })
+      
+      if (response.success) {
+        console.log(`[API] Successfully updated reservation ${reservationId}`)
+        
+        // Notify parent component
+        if (onReservationUpdate) {
+          onReservationUpdate({ id: reservationId, checkIn: formattedStartDate, checkOut: formattedEndDate })
+        }
+      } else {
+        console.error(`[API] Failed to update reservation ${reservationId}:`, response.error)
+      }
+    } catch (error) {
+      console.error(`[API] Error updating reservation ${reservationId}:`, error)
+    }
+  }
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
@@ -210,11 +241,11 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.config.tooltip_timeout = 0
       gantt.config.tooltip_hide_timeout = 0
       
-      // Disable interactions for property rows
-      gantt.config.select_task = true
-      gantt.config.drag_move = false
-      gantt.config.drag_resize = false
-      gantt.config.drag_progress = false
+    // Enable interactions for reservations only
+    gantt.config.select_task = true
+    gantt.config.drag_move = true
+    gantt.config.drag_resize = true
+    gantt.config.drag_progress = false
       
       // ============================================
       // TIMELINE SCALES - Classic Gantt: Month + Day
@@ -506,6 +537,28 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.attachEvent('onBeforeTaskDrag', function(id: any) {
         const task = gantt.getTask(id)
         return task.type !== 'property'
+      })
+
+      gantt.attachEvent('onAfterTaskDrag', function(id: any, mode: string, e: Event) {
+        const task = gantt.getTask(id)
+        
+        // Only handle reservation tasks
+        if (task && task.type !== 'property') {
+          console.log(`[Drag & Drop] Reservation ${task.id} moved/resized:`, {
+            id: task.id,
+            mode: mode,
+            start_date: task.start_date,
+            end_date: task.end_date,
+            duration: task.duration,
+            reservation_id: task.reservation_id
+          })
+
+          // Update reservation dates via API
+          if (task.reservation_id) {
+            updateReservationDates(task.reservation_id, task.start_date, task.end_date)
+          }
+        }
+        return true
       })
 
       // Block clicks on property rows
