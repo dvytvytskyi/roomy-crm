@@ -362,7 +362,25 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.templates.timeline_cell_content = function(task: any, date: Date) {
         // Only show price for property rows
         if (task && task.type === 'property' && task.pricePerNight) {
-          return `<div class="price-badge">د.إ ${task.pricePerNight}</div>`
+          return `<div class="price-badge" style="
+            position: absolute !important;
+            bottom: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, 50%) !important;
+            font-size: 7px !important;
+            color: #6b7280 !important;
+            font-weight: 500 !important;
+            background: rgba(243, 244, 246, 0.9) !important;
+            padding: 1px 3px !important;
+            border-radius: 2px !important;
+            line-height: 1.1 !important;
+            z-index: 10 !important;
+            pointer-events: none !important;
+            border: 1px solid rgba(107, 114, 128, 0.2) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+            white-space: nowrap !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          ">د.إ ${task.pricePerNight}</div>`
         }
         return ''
       }

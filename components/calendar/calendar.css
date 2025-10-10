@@ -150,24 +150,27 @@
   overflow: visible;
 }
 
-/* Ensure price badges are visible */
-.gantt_timeline_cell .price-badge {
-  position: absolute;
-  bottom: 50%;
-  left: 50%;
-  transform: translate(-50%, 50%);
-  font-size: 7px;
-  color: #6b7280;
-  font-weight: 500;
-  background: rgba(243, 244, 246, 0.9);
-  padding: 1px 3px;
-  border-radius: 2px;
-  line-height: 1.1;
-  z-index: 10;
-  pointer-events: none;
-  border: 1px solid rgba(107, 114, 128, 0.2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  white-space: nowrap;
+/* Ensure price badges are visible with higher specificity */
+.gantt_timeline_cell .price-badge,
+.gantt_task_cell .price-badge,
+.price-badge {
+  position: absolute !important;
+  bottom: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, 50%) !important;
+  font-size: 7px !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+  background: rgba(243, 244, 246, 0.9) !important;
+  padding: 1px 3px !important;
+  border-radius: 2px !important;
+  line-height: 1.1 !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+  border: 1px solid rgba(107, 114, 128, 0.2) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  white-space: nowrap !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 /* ============================================ */
