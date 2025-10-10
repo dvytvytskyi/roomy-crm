@@ -31,6 +31,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   const ganttContainer = useRef<HTMLDivElement>(null)
   const ganttInstanceRef = useRef<any>(null)
   const [ganttReady, setGanttReady] = useState(false)
+  const [showReservationModal, setShowReservationModal] = useState(false)
+  const [reservationModalData, setReservationModalData] = useState<any>(null)
 
   // Function to update reservation dates via API
   const updateReservationDates = async (reservationId: string, startDate: string, endDate: string) => {
@@ -59,6 +61,54 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       }
     } catch (error) {
       console.error(`[API] Error updating reservation ${reservationId}:`, error)
+    }
+  }
+
+  // Function to open reservation creation modal
+  const openReservationCreationModal = (data: {
+    propertyId: string
+    propertyName: string
+    startDate: string
+    endDate: string
+  }) => {
+    console.log('[Modal] Opening reservation creation modal:', data)
+    setReservationModalData(data)
+    setShowReservationModal(true)
+  }
+
+  // Function to close reservation modal
+  const closeReservationModal = () => {
+    setShowReservationModal(false)
+    setReservationModalData(null)
+  }
+
+  // Function to handle reservation creation
+  const handleReservationCreate = async (reservationData: any) => {
+    try {
+      console.log('[API] Creating new reservation:', reservationData)
+      
+      const response = await reservationServiceAdapter.create(reservationData)
+      
+      if (response.success) {
+        console.log('[API] Successfully created reservation:', response.data)
+        
+        // Close modal
+        closeReservationModal()
+        
+        // Notify parent component
+        if (onReservationCreate) {
+          onReservationCreate(response.data)
+        }
+        
+        // Show success message
+        alert('Reservation created successfully!')
+      } else {
+        console.error('[API] Failed to create reservation:', response.error)
+        alert(`Failed to create reservation: ${response.error}`)
+      }
+    } catch (error) {
+      console.error('[API] Error creating reservation:', error)
+      alert(`Error creating reservation: ${error}`)
     }
   }
 
@@ -567,6 +617,66 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         return true
       })
 
+      // Handle clicks on empty grid cells to create new reservations
+      gantt.attachEvent('onEmptyClick', function(id: string, e: Event) {
+        console.log('[Empty Click] Clicked on empty area:', { id, event: e })
+        
+        // Get the property task from the clicked row
+        const propertyTask = gantt.getTask(id)
+        if (propertyTask && propertyTask.type === 'property') {
+          console.log('[Empty Click] Property clicked:', propertyTask)
+          
+          // Get the date from the timeline click position
+          const timelineDate = gantt.dateFromPos(e.pageX || 0)
+          const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(timelineDate)
+          
+          console.log('[Empty Click] Timeline date:', {
+            timelineDate,
+            formattedDate,
+            propertyId: propertyTask.propertyId
+          })
+          
+          // Open reservation creation modal
+          openReservationCreationModal({
+            propertyId: propertyTask.propertyId,
+            propertyName: propertyTask.text,
+            startDate: formattedDate,
+            endDate: formattedDate // Default to same day, user can extend
+          })
+        }
+        return false // Prevent default behavior
+      })
+
+      // Handle clicks on timeline cells for date selection
+      gantt.attachEvent('onScaleClick', function(date: Date, e: Event) {
+        console.log('[Scale Click] Timeline clicked:', { date, event: e })
+        
+        // Get the task ID from the row that was clicked
+        const taskId = gantt.locate(e)
+        if (taskId) {
+          const task = gantt.getTask(taskId)
+          if (task && task.type === 'property') {
+            const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+            
+            console.log('[Scale Click] Property timeline clicked:', {
+              taskId,
+              propertyId: task.propertyId,
+              propertyName: task.text,
+              clickedDate: formattedDate
+            })
+            
+            // Open reservation creation modal
+            openReservationCreationModal({
+              propertyId: task.propertyId,
+              propertyName: task.text,
+              startDate: formattedDate,
+              endDate: formattedDate
+            })
+          }
+        }
+        return false
+      })
+
       // Block clicks on property rows
       gantt.attachEvent('onTaskClick', function(id: any, e: any) {
         const task = gantt.getTask(id)
@@ -804,15 +914,163 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   }, [properties, reservations, ganttReady])
 
   return (
-    <div 
-      ref={ganttContainer} 
-      style={{ 
-        width: '100%', 
-        height: '100%',
-        minHeight: '600px'
-      }}
-      className="property-calendar"
-    />
+    <>
+      <div 
+        ref={ganttContainer}
+        style={{
+          width: '100%', 
+          height: '100%',
+          minHeight: '600px'
+        }}
+        className="property-calendar"
+      />
+      
+      {/* Reservation Creation Modal */}
+      {showReservationModal && reservationModalData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold mb-4">Create New Reservation</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Property
+                </label>
+                <input 
+                  type="text" 
+                  value={reservationModalData.propertyName}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Check-in Date
+                  </label>
+                  <input 
+                    type="date" 
+                    value={reservationModalData.startDate}
+                    onChange={(e) => setReservationModalData({
+                      ...reservationModalData,
+                      startDate: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Check-out Date
+                  </label>
+                  <input 
+                    type="date" 
+                    value={reservationModalData.endDate}
+                    onChange={(e) => setReservationModalData({
+                      ...reservationModalData,
+                      endDate: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Guest Name
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Enter guest name"
+                  onChange={(e) => setReservationModalData({
+                    ...reservationModalData,
+                    guestName: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Guest Email
+                </label>
+                <input 
+                  type="email" 
+                  placeholder="Enter guest email"
+                  onChange={(e) => setReservationModalData({
+                    ...reservationModalData,
+                    guestEmail: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Number of Guests
+                </label>
+                <input 
+                  type="number" 
+                  min="1"
+                  placeholder="Number of guests"
+                  onChange={(e) => setReservationModalData({
+                    ...reservationModalData,
+                    guests: parseInt(e.target.value) || 1
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Amount (AED)
+                </label>
+                <input 
+                  type="number" 
+                  min="0"
+                  step="0.01"
+                  placeholder="Total amount"
+                  onChange={(e) => setReservationModalData({
+                    ...reservationModalData,
+                    totalAmount: parseFloat(e.target.value) || 0
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeReservationModal}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const reservationData = {
+                    propertyId: reservationModalData.propertyId,
+                    checkIn: reservationModalData.startDate,
+                    checkOut: reservationModalData.endDate,
+                    guestName: reservationModalData.guestName || 'Guest',
+                    guestEmail: reservationModalData.guestEmail || '',
+                    guests: reservationModalData.guests || 1,
+                    totalAmount: reservationModalData.totalAmount || 0,
+                    source: 'CALENDAR',
+                    status: 'PENDING'
+                  }
+                  handleReservationCreate(reservationData)
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Create Reservation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 })
 
