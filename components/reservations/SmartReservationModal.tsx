@@ -10,19 +10,28 @@ import { useReservationData } from '@/hooks/useReservationData'
 interface SmartReservationModalProps {
   onClose: () => void
   onSave: (reservation: any) => void
+  initialData?: {
+    propertyId?: string
+    checkIn?: string
+    checkOut?: string
+    guestName?: string
+    guestEmail?: string
+    guests?: number
+    totalAmount?: number
+  }
 }
 
-export default function SmartReservationModal({ onClose, onSave }: SmartReservationModalProps) {
+export default function SmartReservationModal({ onClose, onSave, initialData }: SmartReservationModalProps) {
   const [formData, setFormData] = useState({
     guestId: '',
-    propertyId: '',
-    checkIn: '',
-    checkOut: '',
-    guests: 1,
-    totalAmount: '',
+    propertyId: initialData?.propertyId || '',
+    checkIn: initialData?.checkIn || '',
+    checkOut: initialData?.checkOut || '',
+    guests: initialData?.guests || 1,
+    totalAmount: initialData?.totalAmount?.toString() || '',
     source: 'MANUAL',
-    guestName: '',
-    guestEmail: '',
+    guestName: initialData?.guestName || '',
+    guestEmail: initialData?.guestEmail || '',
     guestPhone: '',
     notes: ''
   })

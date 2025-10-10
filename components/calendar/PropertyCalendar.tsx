@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import './calendar.css'
 import { reservationServiceAdapter } from '@/lib/api/adapters/apiAdapter'
+import SmartReservationModal from '@/components/reservations/SmartReservationModal'
 
 // Declare gantt on window object
 declare global {
@@ -31,8 +32,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   const ganttContainer = useRef<HTMLDivElement>(null)
   const ganttInstanceRef = useRef<any>(null)
   const [ganttReady, setGanttReady] = useState(false)
-  const [showReservationModal, setShowReservationModal] = useState(false)
-  const [reservationModalData, setReservationModalData] = useState<any>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [initialModalData, setInitialModalData] = useState<any>(null)
 
   // Function to update reservation dates via API
   const updateReservationDates = async (reservationId: string, startDate: string, endDate: string) => {
@@ -64,52 +65,45 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     }
   }
 
-  // Function to open reservation creation modal
-  const openReservationCreationModal = (data: {
-    propertyId: string
-    propertyName: string
-    startDate: string
-    endDate: string
-  }) => {
-    console.log('[Modal] Opening reservation creation modal:', data)
-    setReservationModalData(data)
-    setShowReservationModal(true)
+  // Function to handle reservation creation from calendar clicks
+  const handleCreateReservation = (propertyId: string, checkInDate: string) => {
+    console.log('[Modal] Opening reservation creation modal:', { propertyId, checkInDate })
+    
+    // Calculate check-out date (next day by default)
+    const checkOutDate = new Date(new Date(checkInDate).getTime() + 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0]
+    
+    setInitialModalData({
+      propertyId: propertyId,
+      checkIn: checkInDate,
+      checkOut: checkOutDate
+    })
+    setIsModalOpen(true)
   }
 
   // Function to close reservation modal
   const closeReservationModal = () => {
-    setShowReservationModal(false)
-    setReservationModalData(null)
+    setIsModalOpen(false)
+    setInitialModalData(null)
   }
 
-  // Function to handle reservation creation
-  const handleReservationCreate = async (reservationData: any) => {
-    try {
-      console.log('[API] Creating new reservation:', reservationData)
-      
-      const response = await reservationServiceAdapter.create(reservationData)
-      
-      if (response.success) {
-        console.log('[API] Successfully created reservation:', response.data)
-        
-        // Close modal
-        closeReservationModal()
-        
-        // Notify parent component
-        if (onReservationCreate) {
-          onReservationCreate(response.data)
-        }
-        
-        // Show success message
-        alert('Reservation created successfully!')
-      } else {
-        console.error('[API] Failed to create reservation:', response.error)
-        alert(`Failed to create reservation: ${response.error}`)
-      }
-    } catch (error) {
-      console.error('[API] Error creating reservation:', error)
-      alert(`Error creating reservation: ${error}`)
+  // Function to handle successful reservation creation
+  const handleReservationSave = (reservation: any) => {
+    console.log('[API] Reservation created successfully:', reservation)
+    
+    // Close modal
+    closeReservationModal()
+    
+    // Notify parent component
+    if (onReservationCreate) {
+      onReservationCreate(reservation)
     }
+    
+    // Refresh calendar data by reloading the page
+    // This ensures the new reservation appears immediately
+    setTimeout(() => {
+      window.location.reload()
+    }, 500)
   }
 
   // Expose methods to parent
@@ -637,12 +631,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           })
           
           // Open reservation creation modal
-          openReservationCreationModal({
-            propertyId: propertyTask.propertyId,
-            propertyName: propertyTask.text,
-            startDate: formattedDate,
-            endDate: formattedDate // Default to same day, user can extend
-          })
+          handleCreateReservation(propertyTask.propertyId, formattedDate)
         }
         return false // Prevent default behavior
       })
@@ -666,12 +655,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
             })
             
             // Open reservation creation modal
-            openReservationCreationModal({
-              propertyId: task.propertyId,
-              propertyName: task.text,
-              startDate: formattedDate,
-              endDate: formattedDate
-            })
+            handleCreateReservation(task.propertyId, formattedDate)
           }
         }
         return false
@@ -925,150 +909,13 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         className="property-calendar"
       />
       
-      {/* Reservation Creation Modal */}
-      {showReservationModal && reservationModalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Create New Reservation</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Property
-                </label>
-                <input 
-                  type="text" 
-                  value={reservationModalData.propertyName}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Check-in Date
-                  </label>
-                  <input 
-                    type="date" 
-                    value={reservationModalData.startDate}
-                    onChange={(e) => setReservationModalData({
-                      ...reservationModalData,
-                      startDate: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Check-out Date
-                  </label>
-                  <input 
-                    type="date" 
-                    value={reservationModalData.endDate}
-                    onChange={(e) => setReservationModalData({
-                      ...reservationModalData,
-                      endDate: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guest Name
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="Enter guest name"
-                  onChange={(e) => setReservationModalData({
-                    ...reservationModalData,
-                    guestName: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guest Email
-                </label>
-                <input 
-                  type="email" 
-                  placeholder="Enter guest email"
-                  onChange={(e) => setReservationModalData({
-                    ...reservationModalData,
-                    guestEmail: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Guests
-                </label>
-                <input 
-                  type="number" 
-                  min="1"
-                  placeholder="Number of guests"
-                  onChange={(e) => setReservationModalData({
-                    ...reservationModalData,
-                    guests: parseInt(e.target.value) || 1
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Amount (AED)
-                </label>
-                <input 
-                  type="number" 
-                  min="0"
-                  step="0.01"
-                  placeholder="Total amount"
-                  onChange={(e) => setReservationModalData({
-                    ...reservationModalData,
-                    totalAmount: parseFloat(e.target.value) || 0
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={closeReservationModal}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const reservationData = {
-                    propertyId: reservationModalData.propertyId,
-                    checkIn: reservationModalData.startDate,
-                    checkOut: reservationModalData.endDate,
-                    guestName: reservationModalData.guestName || 'Guest',
-                    guestEmail: reservationModalData.guestEmail || '',
-                    guests: reservationModalData.guests || 1,
-                    totalAmount: reservationModalData.totalAmount || 0,
-                    source: 'CALENDAR',
-                    status: 'PENDING'
-                  }
-                  handleReservationCreate(reservationData)
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Create Reservation
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Smart Reservation Modal */}
+      {isModalOpen && (
+        <SmartReservationModal
+          onClose={closeReservationModal}
+          onSave={handleReservationSave}
+          initialData={initialModalData}
+        />
       )}
     </>
   )
