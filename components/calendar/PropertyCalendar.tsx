@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import './calendar.css'
-import { reservationApiAdapter } from '@/lib/api/adapters/apiAdapter'
+import { reservationServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 // Declare gantt on window object
 declare global {
@@ -42,7 +42,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       const formattedEndDate = new Date(endDate).toISOString().split('T')[0]
       
       // Update reservation via API
-      const response = await reservationApiAdapter.update(reservationId, {
+      const response = await reservationServiceAdapter.update(reservationId, {
         checkIn: formattedStartDate,
         checkOut: formattedEndDate
       })
@@ -675,6 +675,12 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       const propertyReservations = reservations.filter(
         (res: any) => res.propertyId === property.id && res.status !== 'CANCELLED'
       )
+      
+      console.log(`🏠 Property ${property.id} (${property.name}):`, {
+        propertyId: property.id,
+        reservations: propertyReservations.length,
+        reservationData: propertyReservations
+      })
 
       // Each property is a standalone row (not a project with children)
       const propertyName = property.name || property.nickname || `Property ${property.id}`
@@ -742,6 +748,8 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     console.log('📊 Parsing Gantt data:', ganttTasks.length, 'tasks')
     console.log('🏠 Properties processed:', uniqueProperties.length)
     console.log('📅 Reservations processed:', reservations.length)
+    console.log('📅 Raw reservations data:', reservations)
+    console.log('📅 Gantt tasks:', ganttTasks)
 
     gantt.parse({ data: ganttTasks, links: [] })
 
