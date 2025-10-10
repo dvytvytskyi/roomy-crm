@@ -362,7 +362,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.templates.timeline_cell_content = function(task: any, date: Date) {
         // Only show price for property rows
         if (task && task.type === 'property' && task.pricePerNight) {
-          return `<div class="price-badge">AED ${task.pricePerNight}</div>`
+          return `<div class="price-badge">د.إ ${task.pricePerNight}</div>`
         }
         return ''
       }
