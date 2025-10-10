@@ -612,27 +612,49 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       })
 
       // Handle clicks on empty grid cells to create new reservations
-      gantt.attachEvent('onEmptyClick', function(id: string, e: Event) {
-        console.log('[Empty Click] Clicked on empty area:', { id, event: e })
+      gantt.attachEvent('onEmptyClick', function(e: Event) {
+        console.log('[Empty Click] Clicked on empty area:', { event: e })
         
-        // Get the property task from the clicked row
-        const propertyTask = gantt.getTask(id)
-        if (propertyTask && propertyTask.type === 'property') {
-          console.log('[Empty Click] Property clicked:', propertyTask)
+        const clickedElement = e.target as HTMLElement
+        
+        // Find the closest parent element that is a task row
+        const rowElement = clickedElement.closest('.gantt_task_row') as HTMLElement
+        
+        if (rowElement) {
+          const propertyId = rowElement.getAttribute('data-task-id')
           
-          // Get the date from the timeline click position
-          const timelineDate = gantt.dateFromPos(e.pageX || 0)
-          const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(timelineDate)
-          
-          console.log('[Empty Click] Timeline date:', {
-            timelineDate,
-            formattedDate,
-            propertyId: propertyTask.propertyId
-          })
-          
-          // Open reservation creation modal
-          handleCreateReservation(propertyTask.propertyId, formattedDate)
+          if (propertyId) {
+            // Get the property task to verify it's a property row
+            const propertyTask = gantt.getTask(propertyId)
+            
+            if (propertyTask && propertyTask.type === 'property') {
+              console.log('[Empty Click] Property clicked:', propertyTask)
+              
+              // Get the date from the click position
+              const pos = gantt.getScrollState()
+              const gridPos = gantt.getGridPosition(rowElement)
+              const date = gantt.dateFromPos(e.clientX - gridPos.x + pos.x)
+              const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+              
+              console.log('[Empty Click] Timeline date:', {
+                date,
+                formattedDate,
+                propertyId: propertyTask.propertyId,
+                propertyName: propertyTask.text
+              })
+              
+              // Open reservation creation modal
+              handleCreateReservation(propertyTask.propertyId, formattedDate)
+            } else {
+              console.warn('[Empty Click] Clicked row is not a property row:', propertyTask)
+            }
+          } else {
+            console.warn('[Empty Click] Could not find data-task-id attribute on row element')
+          }
+        } else {
+          console.warn('[Empty Click] Click was not on a valid property row')
         }
+        
         return false // Prevent default behavior
       })
 
@@ -640,24 +662,39 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       gantt.attachEvent('onScaleClick', function(date: Date, e: Event) {
         console.log('[Scale Click] Timeline clicked:', { date, event: e })
         
-        // Get the task ID from the row that was clicked
-        const taskId = gantt.locate(e)
-        if (taskId) {
-          const task = gantt.getTask(taskId)
-          if (task && task.type === 'property') {
-            const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+        const clickedElement = e.target as HTMLElement
+        
+        // Find the closest parent element that is a task row
+        const rowElement = clickedElement.closest('.gantt_task_row') as HTMLElement
+        
+        if (rowElement) {
+          const propertyId = rowElement.getAttribute('data-task-id')
+          
+          if (propertyId) {
+            const task = gantt.getTask(propertyId)
             
-            console.log('[Scale Click] Property timeline clicked:', {
-              taskId,
-              propertyId: task.propertyId,
-              propertyName: task.text,
-              clickedDate: formattedDate
-            })
-            
-            // Open reservation creation modal
-            handleCreateReservation(task.propertyId, formattedDate)
+            if (task && task.type === 'property') {
+              const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+              
+              console.log('[Scale Click] Property timeline clicked:', {
+                taskId: propertyId,
+                propertyId: task.propertyId,
+                propertyName: task.text,
+                clickedDate: formattedDate
+              })
+              
+              // Open reservation creation modal
+              handleCreateReservation(task.propertyId, formattedDate)
+            } else {
+              console.warn('[Scale Click] Clicked row is not a property row:', task)
+            }
+          } else {
+            console.warn('[Scale Click] Could not find data-task-id attribute on row element')
           }
+        } else {
+          console.warn('[Scale Click] Click was not on a valid property row')
         }
+        
         return false
       })
 
@@ -672,10 +709,27 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         return true
       })
 
-      // Block row clicks on property rows
+      // Handle row clicks on property rows for reservation creation
       gantt.attachEvent('onTaskRowClick', function(id: any, e: any) {
         const task = gantt.getTask(id)
         if (task && task.type === 'property') {
+          console.log('[Row Click] Property row clicked:', { id, task })
+          
+          // Get the date from the click position
+          const pos = gantt.getScrollState()
+          const date = gantt.dateFromPos(e.clientX + pos.x)
+          const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+          
+          console.log('[Row Click] Timeline date:', {
+            date,
+            formattedDate,
+            propertyId: task.propertyId,
+            propertyName: task.text
+          })
+          
+          // Open reservation creation modal
+          handleCreateReservation(task.propertyId, formattedDate)
+          
           e.preventDefault()
           e.stopPropagation()
           return false
