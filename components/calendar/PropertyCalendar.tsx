@@ -358,6 +358,15 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         return (day === 0 || day === 6) ? 'weekend-scale' : ''
       }
 
+      // Add price per night in each timeline cell
+      gantt.templates.timeline_cell_content = function(task: any, date: Date) {
+        // Only show price for property rows
+        if (task && task.type === 'property' && task.pricePerNight) {
+          return `<div class="price-badge">AED ${task.pricePerNight}</div>`
+        }
+        return ''
+      }
+
       gantt.templates.tooltip_text = function(start: Date, end: Date, task: any) {
         // Disable all tooltips completely
         return ''
