@@ -704,13 +704,181 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
-          // DataProcessor для збереження змін
-          gantt.createDataProcessor((entity: string, action: string, data: any, id: any) => {
-            console.log(`${entity} ${action}`, data);
-            gantt.message(`${entity} ${action}`);
+          // DataProcessor для збереження змін через API
+          gantt.createDataProcessor(async (entity: string, action: string, data: any, id: any) => {
+            console.log(`📊 DataProcessor: ${entity} ${action}`, data);
             
-            // Тут можна додати API виклик для збереження даних
-            return Promise.resolve({ id: id });
+            try {
+              // Працюємо тільки з резерваціями (task entity)
+              if (entity === "task") {
+                // Ігноруємо проекти (квартири) - вони не змінюються через планувальник
+                if (data.type === "project") {
+                  console.log('⚠️ Skipping project modification (read-only in scheduler)');
+                  return { id: id };
+                }
+
+                // Витягуємо ID резервації з префіксу
+                const extractReservationId = (ganttId: string): string => {
+                  // ganttId формат: "res_123" або "res_1759764990604"
+                  const match = ganttId.match(/^res_(.+)$/);
+                  return match ? match[1] : ganttId;
+                };
+
+                // Витягуємо ID квартири з батьківського task
+                const extractPropertyId = (parentGanttId: string): string => {
+                  // parentGanttId формат: "prop_123"
+                  const match = parentGanttId.match(/^prop_(.+)$/);
+                  return match ? match[1] : parentGanttId;
+                };
+
+                // Конвертуємо дату з Gantt формату в ISO формат
+                const formatDateForApi = (date: Date | string): string => {
+                  const d = typeof date === 'string' ? new Date(date) : date;
+                  return d.toISOString().split('T')[0]; // YYYY-MM-DD
+                };
+
+                // Обчислюємо checkOut дату з start_date + duration
+                const calculateCheckOut = (startDate: Date | string, duration: number): string => {
+                  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+                  const checkOut = new Date(start);
+                  checkOut.setDate(checkOut.getDate() + duration);
+                  return formatDateForApi(checkOut);
+                };
+
+                switch (action) {
+                  case "create": {
+                    console.log('➕ Creating new reservation via API...');
+                    
+                    // Готуємо дані для API
+                    const propertyId = extractPropertyId(data.parent);
+                    const checkIn = formatDateForApi(data.start_date);
+                    const checkOut = data.end_date 
+                      ? formatDateForApi(data.end_date)
+                      : calculateCheckOut(data.start_date, data.duration || 1);
+                    
+                    const reservationData = {
+                      propertyId: propertyId,
+                      checkIn: checkIn,
+                      checkOut: checkOut,
+                      guests: data.guest_amount || 1,
+                      totalAmount: parseFloat(data.price) || 0,
+                      paidAmount: 0,
+                      source: 'DIRECT' as const,
+                      guestName: data.text || 'New Guest',
+                      guestEmail: 'guest@example.com', // Мінімальні обов'язкові дані
+                      status: data.status?.toUpperCase() || 'PENDING',
+                      notes: data.notes || ''
+                    };
+
+                    console.log('📤 API Request data:', reservationData);
+
+                    const response = await reservationServiceAdapted.create(reservationData);
+                    
+                    if (response.success && response.data) {
+                      console.log('✅ Reservation created successfully:', response.data);
+                      gantt.message({
+                        text: "✅ Резервацію створено успішно!",
+                        type: "success",
+                        expire: 3000
+                      });
+                      
+                      // Повертаємо новий ID з API
+                      return { 
+                        id: `${ID_PREFIXES.RESERVATION}${response.data.id}`,
+                        tid: `${ID_PREFIXES.RESERVATION}${response.data.id}` // tid для Gantt
+                      };
+                    } else {
+                      throw new Error('Failed to create reservation');
+                    }
+                  }
+
+                  case "update": {
+                    console.log('✏️ Updating reservation via API...');
+                    
+                    const reservationId = extractReservationId(id);
+                    const checkIn = data.start_date ? formatDateForApi(data.start_date) : undefined;
+                    const checkOut = data.end_date 
+                      ? formatDateForApi(data.end_date)
+                      : (data.start_date && data.duration 
+                        ? calculateCheckOut(data.start_date, data.duration)
+                        : undefined);
+                    
+                    const updateData: any = {
+                      checkIn: checkIn,
+                      checkOut: checkOut,
+                      guests: data.guest_amount,
+                      totalAmount: data.price ? parseFloat(data.price) : undefined,
+                      guestName: data.text,
+                      status: data.status?.toUpperCase(),
+                      notes: data.notes
+                    };
+
+                    // Видаляємо undefined значення
+                    Object.keys(updateData).forEach(key => 
+                      updateData[key] === undefined && delete updateData[key]
+                    );
+
+                    console.log('📤 API Update data:', updateData);
+
+                    const response = await reservationServiceAdapted.update(reservationId, updateData);
+                    
+                    if (response.success) {
+                      console.log('✅ Reservation updated successfully:', response.data);
+                      gantt.message({
+                        text: "✅ Резервацію оновлено успішно!",
+                        type: "success",
+                        expire: 3000
+                      });
+                      return { id: id };
+                    } else {
+                      throw new Error('Failed to update reservation');
+                    }
+                  }
+
+                  case "delete": {
+                    console.log('🗑️ Deleting reservation via API...');
+                    
+                    const reservationId = extractReservationId(id);
+                    console.log('📤 Deleting reservation ID:', reservationId);
+
+                    const response = await reservationServiceAdapted.delete(reservationId);
+                    
+                    if (response.success) {
+                      console.log('✅ Reservation deleted successfully');
+                      gantt.message({
+                        text: "✅ Резервацію видалено успішно!",
+                        type: "success",
+                        expire: 3000
+                      });
+                      return { id: id };
+                    } else {
+                      throw new Error('Failed to delete reservation');
+                    }
+                  }
+
+                  default:
+                    console.warn('⚠️ Unknown action:', action);
+                    return { id: id };
+                }
+              }
+              
+              // Для інших entities (links тощо) просто повертаємо id
+              return { id: id };
+              
+            } catch (error: any) {
+              console.error('❌ DataProcessor error:', error);
+              
+              // Показуємо помилку користувачу
+              const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+              gantt.message({
+                text: `❌ Помилка: ${errorMessage}`,
+                type: "error",
+                expire: 5000
+              });
+              
+              // Повертаємо помилку для Gantt
+              throw error;
+            }
           });
 
           console.log(`🎯 Gantt loaded with ${ganttTasks.length} tasks from ${properties.length > 0 ? 'API' : 'mock data'}`);
