@@ -631,20 +631,26 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
               console.log('[Empty Click] Property clicked:', propertyTask)
               
               // Get the date from the click position
-              const pos = gantt.getScrollState()
-              const gridPos = gantt.getGridPosition(rowElement)
-              const date = gantt.dateFromPos(e.clientX - gridPos.x + pos.x)
-              const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
-              
-              console.log('[Empty Click] Timeline date:', {
-                date,
-                formattedDate,
-                propertyId: propertyTask.propertyId,
-                propertyName: propertyTask.text
-              })
-              
-              // Open reservation creation modal
-              handleCreateReservation(propertyTask.propertyId, formattedDate)
+              try {
+                const pos = gantt.getScrollState()
+                const date = gantt.dateFromPos(e.clientX + pos.x)
+                const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+                
+                console.log('[Empty Click] Timeline date:', {
+                  date,
+                  formattedDate,
+                  propertyId: propertyTask.propertyId,
+                  propertyName: propertyTask.text
+                })
+                
+                // Open reservation creation modal
+                handleCreateReservation(propertyTask.propertyId, formattedDate)
+              } catch (error) {
+                console.warn('[Empty Click] Error calculating date, using current date:', error)
+                // Fallback to current date if date calculation fails
+                const currentDate = gantt.date.date_to_str('%Y-%m-%d')(new Date())
+                handleCreateReservation(propertyTask.propertyId, currentDate)
+              }
             } else {
               console.warn('[Empty Click] Clicked row is not a property row:', propertyTask)
             }
@@ -716,19 +722,26 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
           console.log('[Row Click] Property row clicked:', { id, task })
           
           // Get the date from the click position
-          const pos = gantt.getScrollState()
-          const date = gantt.dateFromPos(e.clientX + pos.x)
-          const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
-          
-          console.log('[Row Click] Timeline date:', {
-            date,
-            formattedDate,
-            propertyId: task.propertyId,
-            propertyName: task.text
-          })
-          
-          // Open reservation creation modal
-          handleCreateReservation(task.propertyId, formattedDate)
+          try {
+            const pos = gantt.getScrollState()
+            const date = gantt.dateFromPos(e.clientX + pos.x)
+            const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
+            
+            console.log('[Row Click] Timeline date:', {
+              date,
+              formattedDate,
+              propertyId: task.propertyId,
+              propertyName: task.text
+            })
+            
+            // Open reservation creation modal
+            handleCreateReservation(task.propertyId, formattedDate)
+          } catch (error) {
+            console.warn('[Row Click] Error calculating date, using current date:', error)
+            // Fallback to current date if date calculation fails
+            const currentDate = gantt.date.date_to_str('%Y-%m-%d')(new Date())
+            handleCreateReservation(task.propertyId, currentDate)
+          }
           
           e.preventDefault()
           e.stopPropagation()
