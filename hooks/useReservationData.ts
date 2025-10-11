@@ -37,15 +37,18 @@ export function useReservationData() {
         propertyServiceV2.getAll({ limit: 100, status: 'ACTIVE' })
       ]);
 
-      if (guestsResponse.success && guestsResponse.data) {
+      if (guestsResponse.success && guestsResponse.data && Array.isArray(guestsResponse.data.data)) {
         const guestsData = guestsResponse.data.data.map(guest => ({
           ...guest,
           name: `${guest.firstName} ${guest.lastName}`.trim()
         }));
         setGuests(guestsData);
+      } else {
+        console.warn('Guests response not in expected format:', guestsResponse);
+        setGuests([]);
       }
 
-      if (propertiesResponse.success && propertiesResponse.data) {
+      if (propertiesResponse.success && propertiesResponse.data && Array.isArray(propertiesResponse.data.data)) {
         const propertiesData = propertiesResponse.data.data.map(property => ({
           id: property.id,
           name: property.name,
@@ -55,6 +58,9 @@ export function useReservationData() {
           pricePerNight: property.pricePerNight
         }));
         setProperties(propertiesData);
+      } else {
+        console.warn('Properties response not in expected format:', propertiesResponse);
+        setProperties([]);
       }
     } catch (err: any) {
       console.error('Error loading reservation data:', err);

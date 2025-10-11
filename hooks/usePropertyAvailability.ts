@@ -44,7 +44,7 @@ export function usePropertyAvailability({
 
       try {
         const response = await apiClientV2.get(
-          `/api/v2/properties/${propertyId}/availability`,
+          `/properties/${propertyId}/availability`,
           {
             startDate,
             endDate

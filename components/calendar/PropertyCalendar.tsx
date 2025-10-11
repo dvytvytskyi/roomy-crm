@@ -67,7 +67,12 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
 
   // Function to handle reservation creation from calendar clicks
   const handleCreateReservation = (propertyId: string, checkInDate: string) => {
-    console.log('[Modal] Opening reservation creation modal:', { propertyId, checkInDate })
+    console.log('[Modal] Opening reservation creation modal:', { 
+      propertyId, 
+      checkInDate,
+      propertyIdType: typeof propertyId,
+      propertyIdLength: propertyId?.length
+    })
     
     // Calculate check-out date (next day by default)
     const checkOutDate = new Date(new Date(checkInDate).getTime() + 24 * 60 * 60 * 1000)
@@ -846,7 +851,9 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
       console.log(`🏠 Property ${property.id} (${property.name}):`, {
         propertyId: property.id,
         reservations: propertyReservations.length,
-        reservationData: propertyReservations
+        reservationData: propertyReservations,
+        rawPropertyId: property.id,
+        taskId: `property-${property.id}`
       })
 
       // Each property is a standalone row (not a project with children)
