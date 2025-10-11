@@ -41,7 +41,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       
       if (currentTask.type === "project") {
         // Створюємо нову частину split task (бронювання)
+        const newReservationId = "res_" + Date.now();
         ganttRef.current.addTask({
+          id: newReservationId,
           text: "Нове бронювання",
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
@@ -50,9 +52,16 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           status: "pending"
         }, currentTask.id);
         
+        // Відкриваємо модалку для редагування нового бронювання
+        setTimeout(() => {
+          if (ganttRef.current && ganttRef.current.getTask(newReservationId)) {
+            ganttRef.current.showLightbox(newReservationId);
+          }
+        }, 200);
+        
         ganttRef.current.message({
-          text: "✅ Бронювання створено для " + currentTask.text,
-          expire: 2000
+          text: "✅ Створено бронювання для " + currentTask.text + ". Заповніть деталі в модалці.",
+          expire: 3000
         });
       } else {
         // Якщо клікнули на бронювання - створюємо новий проект
@@ -83,12 +92,27 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
     } else if (tasksInRow.length === 0) {
       // Створюємо новий проект (квартиру)
       const projectName = "Квартира #" + (Date.now() % 100);
+      const newPropertyId = "prop_" + Date.now();
+      
       ganttRef.current.createTask({
+        id: newPropertyId,
         text: projectName,
         render: "split",
         type: "project",
         start_date: ganttRef.current.roundDate(startDate),
         duration: 365
+      });
+      
+      // Відкриваємо модалку для редагування нової квартири
+      setTimeout(() => {
+        if (ganttRef.current && ganttRef.current.getTask(newPropertyId)) {
+          ganttRef.current.showLightbox(newPropertyId);
+        }
+      }, 200);
+      
+      ganttRef.current.message({
+        text: "✅ Створено нову квартиру. Заповніть деталі в модалці.",
+        expire: 3000
       });
     }
   };
@@ -250,7 +274,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             singleRow: true
           };
 
-          // Налаштування lightbox для бронювань
+          // Базові секції lightbox (будуть динамічно змінюватися)
           gantt.config.lightbox.sections = [
             { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
             { name: "guest", height: 22, map_to: "guest", type: "text" },
@@ -267,6 +291,34 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           gantt.locale.labels.section_guest = "Гість";
           gantt.locale.labels.section_price = "Ціна";
           gantt.locale.labels.section_status = "Статус";
+
+          // Динамічне налаштування секцій lightbox
+          gantt.attachEvent("onBeforeLightbox", (id: string) => {
+            const task = gantt.getTask(id);
+            
+            if (task && task.type === "project") {
+              // Секції для квартири
+              gantt.config.lightbox.sections = [
+                { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+                { name: "time", type: "duration", map_to: "auto" }
+              ];
+            } else {
+              // Секції для бронювання
+              gantt.config.lightbox.sections = [
+                { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+                { name: "guest", height: 22, map_to: "guest", type: "text" },
+                { name: "price", height: 22, map_to: "price", type: "text" },
+                { name: "status", height: 22, map_to: "status", type: "select", options: [
+                  { key: "pending", label: "Очікує" },
+                  { key: "confirmed", label: "Підтверджено" },
+                  { key: "cancelled", label: "Скасовано" }
+                ]},
+                { name: "time", type: "duration", map_to: "auto" }
+              ];
+            }
+            
+            return true;
+          });
 
           // Налаштування відображення для split tasks
           gantt.templates.task_class = (start, end, task) => {
@@ -313,11 +365,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // Обробник подвійного кліку для відкриття модалки
           gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
             const task = gantt.getTask(id);
-            if (task.type !== "project") {
+            if (task) {
+              // Відкриваємо модалку для всіх типів задач
               gantt.showLightbox(id);
-              return false; // запобігаємо стандартній поведінці
             }
-            return true;
+            return false; // запобігаємо стандартній поведінці
           });
 
           // DataProcessor для збереження змін
