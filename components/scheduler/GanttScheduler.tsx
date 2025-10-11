@@ -164,6 +164,16 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         .gantt_hidden_row {
           display: none !important;
         }
+        
+        /* Приховуємо рядки гостей/бронювань в grid */
+        .gantt_task_row[data-task-type]:not([data-task-type="project"]) {
+          display: none !important;
+        }
+        
+        /* Додатково приховуємо рядки з parent */
+        .gantt_task_row[data-parent] {
+          display: none !important;
+        }
       `;
       document.head.appendChild(style);
 
@@ -177,9 +187,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           const gantt = (window as any).gantt;
           ganttRef.current = gantt;
 
-          // Налаштування колонок (тільки назви квартир)
+          // Налаштування колонок (назви квартир + кнопка додавання)
           gantt.config.columns = [
             { name: "text", label: "Квартира", width: "*", tree: false },
+            { name: "add", label: "", width: 44 }
           ];
 
           // Налаштування для кращого вигляду
@@ -201,20 +212,34 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             click_drag: true
           });
 
-          // Налаштування для split tasks
-          gantt.config.open_split_tasks = true;
-          gantt.config.multiselect = true;
+          // Прибираємо split tasks, використовуємо звичайні дочірні завдання
+          gantt.config.open_split_tasks = false;
+          gantt.config.multiselect = false;
           
           // Приховуємо дропдаун для проектів (квартир)
           gantt.config.show_task_cells = false;
           
           // Показуємо тільки батьківські задачі в grid (тільки квартири)
           gantt.templates.grid_row_class = (start, end, task) => {
+            // Ховаємо рядки, які не є проектами (квартирами)
             if (task.type !== "project") {
               return "gantt_hidden_row";
             }
             return "";
           };
+          
+          // Додаткова перевірка після завантаження даних
+          gantt.attachEvent("onAfterTaskDisplay", () => {
+            // Ховаємо всі рядки, які не є проектами
+            gantt.eachTask((task) => {
+              if (task.type !== "project") {
+                const row = gantt.getTaskNode(task.id);
+                if (row) {
+                  row.style.display = "none";
+                }
+              }
+            });
+          });
           
           gantt.templates.grid_folder = (task) => {
             return ""; // Приховуємо стрілочку для всіх задач
@@ -270,19 +295,20 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             expire: 5000
           });
 
-          // Фільтруємо дані - показуємо тільки квартири (projects)
-          const filteredTasks = {
-            data: tasks.data.filter(task => task.type === "project"),
+          // Фільтруємо дані - показуємо тільки квартири (projects) в grid
+          const propertiesOnly = tasks.data.filter(task => task.type === "project");
+          
+          // Створюємо повну структуру з бронюваннями як частини split tasks
+          const fullData = {
+            data: tasks.data, // Всі дані включаючи бронювання
             links: []
           };
 
-          // Завантажуємо відфільтровані дані
-          gantt.parse(filteredTasks);
+          // Завантажуємо всі дані
+          gantt.parse(fullData);
           
-          // Додаємо бронювання як частини split tasks
-          tasks.data.filter(task => task.type !== "project").forEach(reservation => {
-            gantt.addTask(reservation, reservation.parent);
-          });
+          // Ховаємо рядки бронювань в grid (вони будуть відображатися тільки як split tasks)
+          gantt.refreshData();
 
           // Обробник подвійного кліку для відкриття модалки
           gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
