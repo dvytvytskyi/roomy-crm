@@ -117,14 +117,30 @@ class ApiClientV2 {
         
         // Try to parse error response
         let errorMessage = `HTTP error! status: ${response.status}`;
+        let errorData: any = null;
+        
         try {
-          const errorData = await response.json();
+          errorData = await response.json();
+          console.error("🔍 API Error Response Body:", errorData);
           errorMessage = errorData.error?.message || errorData.message || errorMessage;
         } catch (e) {
+          console.error("❌ Failed to parse error response JSON:", e);
           // If can't parse JSON, use default message
         }
         
-        throw new Error(errorMessage);
+        // Створюємо детальний об'єкт помилки
+        const error = new Error(errorMessage);
+        (error as any).response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        };
+        (error as any).config = {
+          url: url,
+          method: config.method || 'GET'
+        };
+        
+        throw error;
       }
 
       const data = await response.json();
