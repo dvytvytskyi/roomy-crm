@@ -5,9 +5,12 @@ import './calendar.css'
 import { reservationServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import SmartReservationModal from '@/components/reservations/SmartReservationModal'
 
-// Import DHTMLX Gantt properly
-import { gantt } from 'dhtmlx-gantt'
-import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
+// Declare gantt on window object
+declare global {
+  interface Window {
+    gantt: any
+  }
+}
 
 interface PropertyCalendarProps {
   properties: any[]
@@ -150,14 +153,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   }))
 
   useEffect(() => {
-    const initializeGantt = () => {
-      if (!ganttContainer.current) {
-        console.error('Gantt container not available')
-        return
-      }
-
-      try {
-        console.log('✅ DHTMLX Gantt available, initializing...')
+    const loadGantt = () => {
       // Load CSS from dhtmlxGantt folder
       if (!document.querySelector('link[href="/dhtmlxGantt/codebase/dhtmlxgantt.css"]')) {
         const link = document.createElement('link')
@@ -640,7 +636,7 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
               // Get the date from the click position
               try {
                 const pos = gantt.getScrollState()
-                const date = gantt.dateFromPos(e.clientX + pos.x)
+                const date = gantt.dateFromPos((e as MouseEvent).clientX + pos.x)
                 const formattedDate = gantt.date.date_to_str('%Y-%m-%d')(date)
                 
                 console.log('[Empty Click] Timeline date:', {
@@ -823,8 +819,11 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
     loadGantt()
 
     return () => {
-      if (ganttInstanceRef.current) {
-        ganttInstanceRef.current.clearAll()
+      if (window.gantt) {
+        window.gantt.destructor()
+      }
+      if (ganttContainer.current) {
+        ganttContainer.current.innerHTML = ""
       }
     }
   }, [])
