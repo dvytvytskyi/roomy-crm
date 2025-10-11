@@ -39,36 +39,33 @@ export function getGanttData() {
       // Приклади бронювань (частини split tasks)
       {
         id: "res_1",
-        text: "Іван Петренко (1500₴)",
+        text: "Ivan Petrenko",
         start_date: "15-10-2025",
         duration: 5,
         parent: "prop_1",
         progress: 1,
-        status: "confirmed",
-        guest: "Іван Петренко",
-        price: 1500
+        status: "paid",
+        guest_amount: 2
       },
       {
         id: "res_2", 
-        text: "Марія Сидоренко (1200₴)",
+        text: "Maria Sydorenko",
         start_date: "25-10-2025",
         duration: 3,
         parent: "prop_1",
         progress: 1,
-        status: "confirmed",
-        guest: "Марія Сидоренко", 
-        price: 1200
+        status: "booked",
+        guest_amount: 1
       },
       {
         id: "res_3",
-        text: "Олексій Коваленко (1800₴)",
+        text: "Oleksiy Kovalenko",
         start_date: "20-11-2025",
         duration: 7,
         parent: "prop_2",
         progress: 1,
-        status: "confirmed",
-        guest: "Олексій Коваленко",
-        price: 1800
+        status: "pending",
+        guest_amount: 4
       }
     ],
     links: [], // Для бронювань зв'язки не потрібні
@@ -82,14 +79,13 @@ export interface GanttTask {
   text: string;
   start_date: string | null;
   duration: number | null;
-  order: number;
+  order?: number;
   progress: number | null;
   open?: boolean;
   parent?: string;
-  type: "property" | "reservation";
-  status?: "confirmed" | "pending" | "cancelled";
-  guest?: string;
-  price?: number;
+  type?: "project" | "property";
+  status?: "paid" | "pending" | "booked";
+  guest_amount?: number;
 }
 
 export interface GanttLink {

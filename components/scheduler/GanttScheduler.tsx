@@ -44,12 +44,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         const newReservationId = "res_" + Date.now();
         ganttRef.current.addTask({
           id: newReservationId,
-          text: "Нове бронювання",
+          text: "New Reservation",
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
-          guest: "Новий гість",
-          price: 0,
-          status: "pending"
+          status: "pending",
+          guest_amount: 1
         }, currentTask.id);
         
         // Відкриваємо модалку для редагування нового бронювання
@@ -79,12 +78,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         
         // Створюємо нове бронювання
         ganttRef.current.addTask({
-          text: "Нове бронювання",
+          text: "New Reservation",
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
-          guest: "Новий гість",
-          price: 0,
-          status: "pending"
+          status: "pending",
+          guest_amount: 1
         }, newProject);
         
         ganttRef.current.calculateTaskLevel(currentTask);
@@ -139,25 +137,24 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           font-weight: bold !important;
         }
         
-        /* Стилі для бронювань (частини split tasks) */
-        .gantt_task_line[data-status="pending"] {
-          background: #fff3cd !important;
-          border: 2px solid #ffc107 !important;
-          color: #856404 !important;
-        }
-        
-        .gantt_task_line[data-status="confirmed"] {
-          background: #d4edda !important;
-          border: 2px solid #28a745 !important;
-          color: #155724 !important;
-        }
-        
-        .gantt_task_line[data-status="cancelled"] {
-          background: #f8d7da !important;
-          border: 2px solid #dc3545 !important;
-          color: #721c24 !important;
-          text-decoration: line-through !important;
-        }
+          /* Стилі для бронювань (частини split tasks) */
+          .gantt_task_line[data-status="pending"] {
+            background: #fff3cd !important;
+            border: 2px solid #ffc107 !important;
+            color: #856404 !important;
+          }
+          
+          .gantt_task_line[data-status="paid"] {
+            background: #d4edda !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+          }
+          
+          .gantt_task_line[data-status="booked"] {
+            background: #cce5ff !important;
+            border: 2px solid #007bff !important;
+            color: #004085 !important;
+          }
         
         /* Загальні стилі */
         .gantt_task_line {
@@ -277,20 +274,27 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // Базові секції lightbox (будуть динамічно змінюватися)
           gantt.config.lightbox.sections = [
             { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
-            { name: "guest", height: 22, map_to: "guest", type: "text" },
-            { name: "price", height: 22, map_to: "price", type: "text" },
             { name: "status", height: 22, map_to: "status", type: "select", options: [
-              { key: "pending", label: "Очікує" },
-              { key: "confirmed", label: "Підтверджено" },
-              { key: "cancelled", label: "Скасовано" }
+              { key: "paid", label: "Paid" },
+              { key: "pending", label: "Pending" },
+              { key: "booked", label: "Booked" }
+            ]},
+            { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
+              { key: 1, label: "1" },
+              { key: 2, label: "2" },
+              { key: 3, label: "3" },
+              { key: 4, label: "4" },
+              { key: 5, label: "5" },
+              { key: 6, label: "6" }
             ]},
             { name: "time", type: "duration", map_to: "auto" }
           ];
 
           // Налаштування локалізації
-          gantt.locale.labels.section_guest = "Гість";
-          gantt.locale.labels.section_price = "Ціна";
-          gantt.locale.labels.section_status = "Статус";
+          gantt.locale.labels.section_description = "Name";
+          gantt.locale.labels.section_status = "Status";
+          gantt.locale.labels.section_guest_amount = "Guest amount";
+          gantt.locale.labels.section_time = "Time period";
 
           // Динамічне налаштування секцій lightbox
           gantt.attachEvent("onBeforeLightbox", (id: string) => {
@@ -306,12 +310,18 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               // Секції для бронювання
               gantt.config.lightbox.sections = [
                 { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
-                { name: "guest", height: 22, map_to: "guest", type: "text" },
-                { name: "price", height: 22, map_to: "price", type: "text" },
                 { name: "status", height: 22, map_to: "status", type: "select", options: [
-                  { key: "pending", label: "Очікує" },
-                  { key: "confirmed", label: "Підтверджено" },
-                  { key: "cancelled", label: "Скасовано" }
+                  { key: "paid", label: "Paid" },
+                  { key: "pending", label: "Pending" },
+                  { key: "booked", label: "Booked" }
+                ]},
+                { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
+                  { key: 1, label: "1" },
+                  { key: 2, label: "2" },
+                  { key: 3, label: "3" },
+                  { key: 4, label: "4" },
+                  { key: 5, label: "5" },
+                  { key: 6, label: "6" }
                 ]},
                 { name: "time", type: "duration", map_to: "auto" }
               ];
@@ -334,7 +344,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             if (task.type === "project") {
               return task.text;
             } else {
-              return `${task.guest || 'Гість'} (${task.price || 0}₴)`;
+              const guestCount = task.guest_amount || 1;
+              const status = task.status || 'pending';
+              return `${task.text} (${guestCount} guest${guestCount > 1 ? 's' : ''}, ${status})`;
             }
           };
 
