@@ -66,6 +66,72 @@ export function getGanttData() {
         progress: 1,
         status: "pending",
         guest_amount: 4
+      },
+      
+      // Мокові дані для квартири #1 (1-3 вересня 2025)
+      {
+        id: "res_mock_1_prop_1",
+        text: "Green Mock Reservation",
+        start_date: "01-09-2025",
+        duration: 2,
+        parent: "prop_1",
+        progress: 1,
+        status: "pending",
+        guest_amount: 2
+      },
+      {
+        id: "res_mock_2_prop_1",
+        text: "Blue Mock Reservation",
+        start_date: "02-09-2025", 
+        duration: 2,
+        parent: "prop_1",
+        progress: 1,
+        status: "paid",
+        guest_amount: 3
+      },
+      
+      // Мокові дані для квартири #2 (1-3 вересня 2025)
+      {
+        id: "res_mock_1_prop_2",
+        text: "Green Mock Reservation",
+        start_date: "01-09-2025",
+        duration: 2,
+        parent: "prop_2",
+        progress: 1,
+        status: "pending",
+        guest_amount: 2
+      },
+      {
+        id: "res_mock_2_prop_2",
+        text: "Blue Mock Reservation",
+        start_date: "02-09-2025",
+        duration: 2,
+        parent: "prop_2",
+        progress: 1,
+        status: "paid",
+        guest_amount: 3
+      },
+      
+      // Мокові дані для квартири #3 (1-3 вересня 2025)
+      {
+        id: "res_mock_1_prop_3",
+        text: "Green Mock Reservation",
+        start_date: "01-09-2025",
+        duration: 2,
+        parent: "prop_3",
+        progress: 1,
+        status: "pending",
+        guest_amount: 2
+      },
+      {
+        id: "res_mock_2_prop_3",
+        text: "Blue Mock Reservation",
+        start_date: "02-09-2025",
+        duration: 2,
+        parent: "prop_3",
+        progress: 1,
+        status: "paid",
+        guest_amount: 3
       }
     ],
     links: [], // Для бронювань зв'язки не потрібні
