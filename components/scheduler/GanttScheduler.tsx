@@ -323,7 +323,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
           status: "pending",
-          guest_amount: 1
+          guest_amount: 1,
+          price: "" // Сума за період (optional)
         }, currentTask.id);
         
         // Відкриваємо модалку для редагування нового бронювання
@@ -361,7 +362,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
           status: "pending",
-          guest_amount: 1
+          guest_amount: 1,
+          price: "" // Сума за період (optional)
         }, newProject);
         
         ganttRef.current.calculateTaskLevel(currentTask);
@@ -591,6 +593,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           gantt.locale.labels.section_description = "Name";
           gantt.locale.labels.section_status = "Status";
           gantt.locale.labels.section_guest_amount = "Guest amount";
+          gantt.locale.labels.section_price = "Total Price (optional)";
           gantt.locale.labels.section_time = "Time period";
 
           // Динамічне налаштування секцій lightbox
@@ -626,6 +629,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   { key: 5, label: "5" },
                   { key: 6, label: "6" }
                 ]},
+                { name: "price", height: 38, map_to: "price", type: "textarea" },
                 { name: "time", type: "duration", map_to: "auto" }
               ];
             }
@@ -653,7 +657,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             } else {
               const guestCount = task.guest_amount || 1;
               const status = task.status || 'pending';
-              return `${task.text} (${guestCount} guest${guestCount > 1 ? 's' : ''}, ${status})`;
+              const price = task.price ? ` - $${task.price}` : '';
+              return `${task.text} (${guestCount} guest${guestCount > 1 ? 's' : ''}, ${status})${price}`;
             }
           };
 
