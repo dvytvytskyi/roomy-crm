@@ -330,7 +330,24 @@ export default function CalendarPage() {
                 </div>
               </div>
             ) : (
-              <TestGantt />
+              <PropertyCalendar 
+                ref={calendarRef}
+                properties={properties}
+                reservations={reservations}
+                groupBy={groupBy}
+                onReservationUpdate={(reservation) => {
+                  console.log('Reservation updated:', reservation)
+                  // TODO: Update via API
+                }}
+                onReservationCreate={(reservation) => {
+                  console.log('Reservation created:', reservation)
+                  // TODO: Create via API
+                }}
+                onReservationDelete={(id) => {
+                  console.log('Reservation deleted:', id)
+                  // TODO: Delete via API
+                }}
+              />
             )}
           </div>
         </div>

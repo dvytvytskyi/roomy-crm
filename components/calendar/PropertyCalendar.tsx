@@ -340,50 +340,48 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
         today: today.toISOString().split('T')[0]
       })
 
-      // ============================================
-      // GRID COLUMNS - Only Property Names
-      // ============================================
-      gantt.config.columns = [
-        {
-          name: 'text',
-          label: 'Property Name',
-          width: '*',
-          min_width: 200,
-          tree: false,
-          resize: true,
-          template: function(task: any) {
-            let html = '<div style="display: flex; align-items: center; padding: 8px 0; min-height: 44px;">'
-            
-            html += '<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">'
-            
-            // Property name with better truncation
-            const displayName = task.text || 'Unnamed Property'
-            html += `<div style="font-weight: 600; color: #1f2937; font-size: 14px; line-height: 1.3; word-break: break-word;" title="${displayName}">${displayName}</div>`
-            
-            // Property details row
-            html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">'
-            
-            if (task.city) {
-              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">📍 ${task.city}</span>`
-            }
-            
-            if (task.capacity) {
-              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">👥 ${task.capacity}</span>`
-            }
-            
-            if (task.bedrooms) {
-              html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">🛏️ ${task.bedrooms}</span>`
-            }
-            
-            if (task.pricePerNight) {
-              html += `<span style="font-size: 11px; color: #059669; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-weight: 600;">AED ${task.pricePerNight}</span>`
-            }
-            
-            html += '</div></div></div>'
-            return html
+    // ============================================
+    // GRID COLUMNS - Only Property Name (Official DHTMLX Gantt config)
+    // ============================================
+    gantt.config.columns = [
+      {
+        name: "text",
+        label: "Property Name",
+        width: "*",
+        tree: false,
+        template: function(task: any) {
+          let html = '<div style="display: flex; align-items: center; padding: 8px 0; min-height: 44px;">'
+          
+          html += '<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">'
+          
+          // Property name with better truncation
+          const displayName = task.text || 'Unnamed Property'
+          html += `<div style="font-weight: 600; color: #1f2937; font-size: 14px; line-height: 1.3; word-break: break-word;" title="${displayName}">${displayName}</div>`
+          
+          // Property details row
+          html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">'
+          
+          if (task.city) {
+            html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">📍 ${task.city}</span>`
           }
+          
+          if (task.capacity) {
+            html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">👥 ${task.capacity}</span>`
+          }
+          
+          if (task.bedrooms) {
+            html += `<span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">🛏️ ${task.bedrooms}</span>`
+          }
+          
+          if (task.pricePerNight) {
+            html += `<span style="font-size: 11px; color: #059669; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-weight: 600;">AED ${task.pricePerNight}</span>`
+          }
+          
+          html += '</div></div></div>'
+          return html
         }
-      ]
+      }
+    ]
 
       // ============================================
       // TEMPLATES
