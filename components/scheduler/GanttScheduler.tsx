@@ -733,28 +733,74 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
                 // Конвертуємо дату з Gantt формату в ISO формат
                 const formatDateForApi = (date: Date | string): string => {
-                  const d = typeof date === 'string' ? new Date(date) : date;
+                  let d: Date;
+                  
+                  if (typeof date === 'string') {
+                    // Gantt може передавати дати в різних форматах
+                    // Спробуємо різні варіанти парсингу
+                    if (date.includes('-')) {
+                      // Формат DD-MM-YYYY або YYYY-MM-DD
+                      const parts = date.split('-');
+                      if (parts[0].length === 4) {
+                        // YYYY-MM-DD
+                        d = new Date(date);
+                      } else {
+                        // DD-MM-YYYY
+                        d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                      }
+                    } else {
+                      // Спробуємо звичайний парсинг
+                      d = new Date(date);
+                    }
+                  } else {
+                    d = date;
+                  }
+                  
+                  console.log(`📅 Formatting date: input="${date}" -> parsed="${d.toISOString()}" -> output="${d.toISOString().split('T')[0]}"`);
                   return d.toISOString().split('T')[0]; // YYYY-MM-DD
                 };
 
                 // Обчислюємо checkOut дату з start_date + duration
                 const calculateCheckOut = (startDate: Date | string, duration: number): string => {
-                  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+                  let start: Date;
+                  
+                  if (typeof startDate === 'string') {
+                    if (startDate.includes('-')) {
+                      const parts = startDate.split('-');
+                      if (parts[0].length === 4) {
+                        start = new Date(startDate);
+                      } else {
+                        start = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                      }
+                    } else {
+                      start = new Date(startDate);
+                    }
+                  } else {
+                    start = startDate;
+                  }
+                  
                   const checkOut = new Date(start);
                   checkOut.setDate(checkOut.getDate() + duration);
+                  console.log(`📅 Calculating checkout: start="${startDate}" + ${duration} days = "${formatDateForApi(checkOut)}"`);
                   return formatDateForApi(checkOut);
                 };
 
                 switch (action) {
                   case "create": {
                     console.log('➕ Creating new reservation via API...');
+                    console.log('📊 Raw Gantt data:', data);
                     
                     // Готуємо дані для API
                     const propertyId = extractPropertyId(data.parent);
+                    console.log('🏠 Property ID:', propertyId);
+                    
                     const checkIn = formatDateForApi(data.start_date);
                     const checkOut = data.end_date 
                       ? formatDateForApi(data.end_date)
                       : calculateCheckOut(data.start_date, data.duration || 1);
+                    
+                    console.log('📅 Check-in date:', checkIn);
+                    console.log('📅 Check-out date:', checkOut);
                     
                     const reservationData = {
                       propertyId: propertyId,
@@ -767,7 +813,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       guestName: data.text || 'New Guest',
                       guestEmail: 'guest@example.com', // Мінімальні обов'язкові дані
                       status: data.status?.toUpperCase() || 'PENDING',
-                      notes: data.notes || ''
+                      notes: data.notes || '',
+                      // Додаємо обов'язкові поля з API
+                      specialRequests: data.notes || '',
+                      guestPhone: '+380000000000' // Обов'язкове поле
                     };
 
                     console.log('📤 API Request data:', reservationData);
@@ -867,9 +916,27 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               
             } catch (error: any) {
               console.error('❌ DataProcessor error:', error);
+              console.error('❌ Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                config: error.config
+              });
               
               // Показуємо помилку користувачу
-              const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+              let errorMessage = 'Unknown error';
+              
+              if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+              } else if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+              } else if (error.response?.data) {
+                errorMessage = JSON.stringify(error.response.data);
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+              
               gantt.message({
                 text: `❌ Помилка: ${errorMessage}`,
                 type: "error",
