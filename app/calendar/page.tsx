@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import TopNavigation from '@/components/TopNavigation'
 import PropertyCalendar from '@/components/calendar/PropertyCalendar'
+import TestGantt from '@/components/calendar/TestGantt'
 import { propertyServiceV2 } from '@/lib/api/services/propertyService-v2'
 import { reservationServiceAdapted } from '@/lib/api/adapters/apiAdapter'
 import { 
@@ -329,24 +330,7 @@ export default function CalendarPage() {
                 </div>
               </div>
             ) : (
-              <PropertyCalendar 
-                ref={calendarRef}
-                properties={properties}
-                reservations={reservations}
-                groupBy={groupBy}
-                onReservationUpdate={(reservation) => {
-                  console.log('Reservation updated:', reservation)
-                  // TODO: Update via API
-                }}
-                onReservationCreate={(reservation) => {
-                  console.log('Reservation created:', reservation)
-                  // TODO: Create via API
-                }}
-                onReservationDelete={(id) => {
-                  console.log('Reservation deleted:', id)
-                  // TODO: Delete via API
-                }}
-              />
+              <TestGantt />
             )}
           </div>
         </div>

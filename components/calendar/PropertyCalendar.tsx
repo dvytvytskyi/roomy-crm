@@ -5,12 +5,9 @@ import './calendar.css'
 import { reservationServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import SmartReservationModal from '@/components/reservations/SmartReservationModal'
 
-// Declare gantt on window object
-declare global {
-  interface Window {
-    gantt: any
-  }
-}
+// Import DHTMLX Gantt properly
+import { gantt } from 'dhtmlx-gantt'
+import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
 
 interface PropertyCalendarProps {
   properties: any[]
@@ -153,7 +150,14 @@ const PropertyCalendar = forwardRef<any, PropertyCalendarProps>(({
   }))
 
   useEffect(() => {
-    const loadGantt = async () => {
+    const initializeGantt = () => {
+      if (!ganttContainer.current) {
+        console.error('Gantt container not available')
+        return
+      }
+
+      try {
+        console.log('✅ DHTMLX Gantt available, initializing...')
       // Load CSS from dhtmlxGantt folder
       if (!document.querySelector('link[href="/dhtmlxGantt/codebase/dhtmlxgantt.css"]')) {
         const link = document.createElement('link')
