@@ -48,40 +48,18 @@ interface ReservationV2 {
 interface GanttTask {
   id: string;
   text: string;
-  start_date: string;
+  start_date: string | Date;
   duration: number;
-  order: number;
+  order?: number;
   progress: number;
   open?: boolean;
   parent?: string;
   type?: string;
-  status?: string;
+  status?: "paid" | "pending" | "booked";
   guest_amount?: number;
-}
-
-// Базовий інтерфейс для екземпляра Gantt
-interface GanttInstance {
-  init: (container: HTMLElement) => void;
-  parse: (data: { data: any[]; links: any[] }) => void;
-  destructor: () => void;
-  showLightbox: (taskId: string | number) => void;
-  hideLightbox: () => void;
-  getTask: (taskId: string | number) => any;
-  addTask: (task: any, parentId?: string) => string | number;
-  createTask: (task: any) => string | number;
-  moveTask: (taskId: string, targetIndex: number, parentId: string) => void;
-  calculateTaskLevel: (task: any) => void;
-  attachEvent: (eventName: string, handler: (...args: any[]) => any) => string;
-  detachAllEvents: () => void;
-  getTaskByTime: () => any[];
-  getState: () => any;
-  roundDate: (date: any) => Date;
-  message: (options: { text: string; expire: number }) => void;
-  config: any; // config - це великий об'єкт, залишаємо any на початку
-  plugins: (plugins: { [key: string]: boolean }) => void;
-  locale: any;
-  templates: any;
-  createDataProcessor: (handler: (entity: string, action: string, data: any, id: any) => Promise<any>) => void;
+  guest?: string;
+  price?: number;
+  render?: string;
 }
 
 interface GanttLink {
@@ -111,6 +89,7 @@ const convertPropertiesToGanttTasks = (properties: PropertyV2[]): GanttTask[] =>
     progress: 0,
     open: true,
     parent: 0,
+    render: "split", // КЛЮЧОВЕ! Split tasks для квартир
     // Кастомні поля для API даних
     propertyId: property.id,
     propertyType: property.type,
@@ -153,9 +132,7 @@ const combinePropertiesAndReservations = (
 
 export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const ganttRef = useRef<GanttInstance | null>(null); // ПОКРАЩЕНА ТИПІЗАЦІЯ
-  const timeoutIds = useRef<NodeJS.Timeout[]>([]); // НОВИЙ REF для зберігання ID таймерів
-  const styleTagRef = useRef<HTMLStyleElement | null>(null); // НОВИЙ REF для CSS стилів
+  const ganttRef = useRef<any>(null);
 
   // Стани для API даних
   const [properties, setProperties] = useState<PropertyV2[]>([]);
@@ -230,39 +207,36 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   const loadReservations = async (): Promise<ReservationV2[]> => {
     try {
       const response = await reservationServiceAdapted.getAll({
-        // Фільтруємо бронювання за періодом календаря
-        dateFrom: '2025-09-01',
-        dateTo: '2027-09-30',
         limit: 1000, // Отримуємо всі резервації за період
         page: 1,
         // Не фільтруємо за статусом - показуємо всі
       });
 
-        // Перевіряємо структуру відповіді від ReservationServiceV2
-        if (response.success && response.data) {
-          let reservations = [];
-          
-          if (Array.isArray(response.data)) {
-            // Пряма відповідь з масивом (поточна структура ReservationServiceV2)
-            reservations = response.data;
-            console.log(`✅ Direct array format: Loaded ${reservations.length} reservations directly`);
-          } else if (response.data?.data && Array.isArray(response.data.data)) {
-            // Вкладена структура з пагінацією (якщо зміниться в майбутньому)
-            reservations = response.data.data;
-            console.log(`✅ Nested format: Loaded ${reservations.length} reservations from API`);
-          }
-          
-          if (reservations.length > 0) {
-            console.log('✅ First reservation sample:', reservations[0]);
-            return reservations;
-          } else {
-            console.warn('⚠️ No reservations found in response');
-            return [];
-          }
+      // Перевіряємо структуру відповіді від ReservationServiceV2
+      if (response.success && response.data) {
+        let reservations = [];
+        
+        if (Array.isArray(response.data)) {
+          // Пряма відповідь з масивом (поточна структура ReservationServiceV2)
+          reservations = response.data;
+          console.log(`✅ Direct array format: Loaded ${reservations.length} reservations directly`);
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          // Вкладена структура з пагінацією (якщо зміниться в майбутньому)
+          reservations = response.data.data;
+          console.log(`✅ Nested format: Loaded ${reservations.length} reservations from API`);
+        }
+        
+        if (reservations.length > 0) {
+          console.log('✅ First reservation sample:', reservations[0]);
+          return reservations;
         } else {
-          console.warn('⚠️ No reservations from API:', response.error);
+          console.warn('⚠️ No reservations found in response');
           return [];
         }
+      } else {
+        console.warn('⚠️ No reservations from API:', response.error);
+        return [];
+      }
     } catch (error) {
       console.error('❌ Error loading reservations:', error);
       return [];
@@ -353,7 +327,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         }, currentTask.id);
         
         // Відкриваємо модалку для редагування нового бронювання
-        const timeoutId = setTimeout(() => {
+        setTimeout(() => {
           try {
             if (ganttRef.current && ganttRef.current.getTask(newReservationId)) {
               ganttRef.current.showLightbox(newReservationId);
@@ -362,7 +336,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             console.warn("Could not open lightbox for new reservation:", error);
           }
         }, 300);
-        timeoutIds.current.push(timeoutId); // ЗБЕРІГАЄМО ID
         
         ganttRef.current.message({
           text: "✅ Створено бронювання для " + currentTask.text + ". Заповніть деталі в модалці.",
@@ -407,35 +380,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         duration: 365
       });
       
-      // Створюємо мокові дані для нової квартири (1-3 вересня 2025)
-      const mockReservation1 = {
-        id: "res_mock_1_" + Date.now(),
-        text: "Green Mock Reservation",
-        start_date: "01-09-2025",
-        duration: 2,
-        parent: newPropertyId,
-        progress: 1,
-        status: "pending",
-        guest_amount: 2
-      };
-      
-      const mockReservation2 = {
-        id: "res_mock_2_" + Date.now(),
-        text: "Blue Mock Reservation", 
-        start_date: "02-09-2025",
-        duration: 2,
-        parent: newPropertyId,
-        progress: 1,
-        status: "paid",
-        guest_amount: 3
-      };
-      
-      // Додаємо мокові резервації
-      ganttRef.current.addTask(mockReservation1);
-      ganttRef.current.addTask(mockReservation2);
-      
       // Відкриваємо модалку для редагування нової квартири
-      const timeoutId2 = setTimeout(() => {
+      setTimeout(() => {
         try {
           if (ganttRef.current && ganttRef.current.getTask(newPropertyId)) {
             ganttRef.current.showLightbox(newPropertyId);
@@ -444,411 +390,14 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           console.warn("Could not open lightbox for new property:", error);
         }
       }, 300);
-      timeoutIds.current.push(timeoutId2); // ЗБЕРІГАЄМО ID
       
       ganttRef.current.message({
-        text: "✅ Створено нову квартиру з моковими даними (1-3 вересня 2025). Заповніть деталі в модалці.",
+        text: "✅ Створено нову квартиру. Заповніть деталі в модалці.",
         expire: 3000
       });
     }
   };
 
-  // Функція ініціалізації Gantt
-  const initializeGantt = () => {
-    if (!ganttRef.current || !containerRef.current) {
-      console.log('⚠️ Cannot initialize Gantt: missing refs');
-      return;
-    }
-    
-    const gantt = ganttRef.current;
-    
-    // Перевіряємо, чи Gantt вже ініціалізований
-    if (gantt.isInitialized && gantt.isInitialized()) {
-      console.log('⚠️ Gantt already initialized, skipping...');
-      return;
-    }
-
-    // Додаткова перевірка на наявність необхідних методів
-    if (!gantt.init || typeof gantt.init !== 'function') {
-      console.error('❌ Gantt init method not available');
-      return;
-    }
-
-    if (!gantt.parse || typeof gantt.parse !== 'function') {
-      console.error('❌ Gantt parse method not available');
-      return;
-    }
-
-    // Налаштування колонок (назви квартир + кнопка додавання)
-    gantt.config.columns = [
-      { name: "text", label: "Квартира", width: "*", tree: false },
-      { name: "add", label: "", width: 44 }
-    ];
-
-    // Налаштування для кращого вигляду
-    gantt.config.date_format = "%d-%m-%Y";
-    gantt.config.scale_height = 50;
-    
-    // Сучасний API для scales (як у вашому прикладі)
-    gantt.config.scales = [
-      { unit: "month", step: 1, format: "%F, %Y" },
-      { unit: "day", step: 1, format: "%j, %D" }
-    ];
-
-    // Фіксований діапазон календаря: вересень 2025 - вересень 2027
-    gantt.config.start_date = new Date(2025, 8, 1); // 1 вересня 2025
-    gantt.config.end_date = new Date(2027, 8, 30);   // 30 вересня 2027
-
-    // Налаштування Drag & Drop для створення split tasks
-    gantt.plugins({
-      click_drag: true
-    });
-
-    // Вимкнення стандартного обробника подвійного кліку
-    gantt.config.dblclick_create = false;
-
-    // Налаштування для split tasks
-    gantt.config.open_split_tasks = false;
-    gantt.config.multiselect = false;
-
-    // Налаштування для приховування dropdown-ів
-    gantt.config.show_task_cells = false;
-    gantt.templates.grid_folder = (task: any) => {
-      return ""; // Приховуємо стрілочку для всіх задач
-    };
-
-    // Налаштування Drag & Drop
-    gantt.config.click_drag = {
-      callback: onDragEnd,
-      singleRow: true
-    };
-
-    // Налаштування lightbox секцій
-    gantt.config.lightbox.sections = [
-      { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
-      { name: "status", height: 22, map_to: "status", type: "select", options: [
-        { key: "paid", label: "Paid" },
-        { key: "pending", label: "Pending" },
-        { key: "booked", label: "Booked" }
-      ] },
-      { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
-        { key: 1, label: "1" },
-        { key: 2, label: "2" },
-        { key: 3, label: "3" },
-        { key: 4, label: "4" },
-        { key: 5, label: "5" },
-        { key: 6, label: "6" }
-      ] },
-      { name: "time", type: "duration", map_to: "auto" }
-    ];
-
-    // Локалізація
-    gantt.locale.labels.section_description = "Name";
-    gantt.locale.labels.section_status = "Status";
-    gantt.locale.labels.section_guest_amount = "Guest amount";
-    gantt.locale.labels.section_time = "Time period";
-
-    // Динамічне налаштування секцій lightbox
-    gantt.attachEvent("onBeforeLightbox", (id: string) => {
-      console.log("onBeforeLightbox called with ID:", id);
-      
-      try {
-        const task = gantt.getTask(id);
-        
-        if (!task) {
-          console.warn("Task not found for lightbox:", id);
-          return false;
-        }
-        
-        console.log("Setting lightbox sections for task:", task);
-        
-        if (task.type === "project") {
-        // Секції для квартири
-        gantt.config.lightbox.sections = [
-          { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
-          { name: "time", type: "duration", map_to: "auto" }
-        ];
-        } else {
-        // Секції для бронювання
-        gantt.config.lightbox.sections = [
-          { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
-          { name: "status", height: 22, map_to: "status", type: "select", options: [
-            { key: "paid", label: "Paid" },
-            { key: "pending", label: "Pending" },
-            { key: "booked", label: "Booked" }
-          ] },
-          { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
-            { key: 1, label: "1" },
-            { key: 2, label: "2" },
-            { key: 3, label: "3" },
-            { key: 4, label: "4" },
-            { key: 5, label: "5" },
-            { key: 6, label: "6" }
-          ] },
-          { name: "time", type: "duration", map_to: "auto" }
-        ];
-        }
-        
-        return true;
-      } catch (error) {
-        console.error("Error in onBeforeLightbox:", error);
-        return false;
-      }
-    });
-
-    // Templates для відображення
-    gantt.templates.task_class = (start: any, end: any, task: any) => {
-      if (task.type === "project") {
-        return "project-row";
-      } else {
-        return `reservation-${task.status || 'pending'}`;
-      }
-    };
-
-    gantt.templates.task_text = (start: any, end: any, task: any) => {
-      if (task.type === "project") {
-        return task.text;
-      } else {
-        return `${task.text} (${task.guest_amount || 1} guests, ${task.status || 'pending'})`;
-      }
-    };
-
-    // КРОК 1: ІНІЦІАЛІЗАЦІЯ. Створює DOM і сховища даних.
-    console.log('🔧 Initializing Gantt container...');
-    gantt.init(containerRef.current);
-    console.log('✅ Gantt container initialized');
-
-    // КРОК 2: ЗАВАНТАЖЕННЯ ДАНИХ. Наповнює вже існуючі сховища.
-    console.log('📊 Loading data into Gantt...');
-    const fullData = {
-      data: ganttTasks || [], // Використовуємо API дані або fallback до mock
-      links: []
-    };
-
-    console.log('📊 Data to load:', fullData.data.length, 'tasks');
-    gantt.parse(fullData);
-    console.log('✅ Data loaded into Gantt');
-    
-    console.log(`🎯 Gantt loaded with ${ganttTasks.length} tasks from ${properties.length > 0 ? 'API' : 'mock data'}`);
-    
-    // Діагностика: показуємо всі завантажені задачі
-    console.log("Loaded tasks:", gantt.getTaskByTime());
-    console.log("Task IDs:", gantt.getTaskByTime().map(t => t.id));
-    
-    // Ховаємо рядки бронювань в grid (вони будуть відображатися тільки як split tasks)
-    gantt.refreshData();
-
-    // Обробник подвійного кліку для відкриття модалки
-    gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
-      console.log("Double click on task ID:", id);
-      
-      try {
-        // Спробуємо знайти задачу різними способами
-        let task = gantt.getTask(id);
-        
-        if (!task) {
-          // Якщо не знайшли за ID, спробуємо знайти в масиві задач
-          const allTasks = gantt.getTaskByTime();
-          task = allTasks.find(t => t.id === id);
-        }
-        
-        if (!task) {
-          // Спробуємо знайти за текстом або іншими властивостями
-          gantt.eachTask((t) => {
-            if (t.id === id || t.id.toString() === id.toString()) {
-              task = t;
-            }
-          });
-        }
-        
-        console.log("Found task:", task);
-        
-        if (task) {
-          // Запобігаємо подвійному відкриттю модалки
-          if (gantt.getState().lightbox_id) {
-            gantt.hideLightbox();
-          }
-          
-          // Відкриваємо модалку для всіх типів задач
-          const timeoutId3 = setTimeout(() => {
-            try {
-              gantt.showLightbox(task.id);
-            } catch (lightboxError) {
-              console.error("Error opening lightbox:", lightboxError);
-            }
-          }, 100);
-          timeoutIds.current.push(timeoutId3); // ЗБЕРІГАЄМО ID
-        } else {
-          console.warn("Task not found for ID:", id);
-          // Показуємо всі доступні ID для діагностики
-          console.log("Available task IDs:", gantt.getTaskByTime().map(t => t.id));
-        }
-      } catch (error) {
-        console.error("Error in double click handler:", error);
-      }
-      return false; // запобігаємо стандартній поведінці
-    });
-
-    // Обробники подій lightbox
-    gantt.attachEvent("onLightboxCancel", () => {
-      console.log("Lightbox cancelled");
-      return true;
-    });
-
-    gantt.attachEvent("onLightboxSave", (id: string, item: any, is_new: boolean) => {
-      console.log("Lightbox saved for task:", id, item);
-      return true;
-    });
-
-    // DataProcessor для збереження змін
-    gantt.createDataProcessor(async (entity: string, action: string, data: any, id: any) => {
-      console.log(`${entity} ${action}`, data);
-      
-      try {
-        if (entity === 'task') {
-          // Перевіряємо чи це резервація (має parent) чи property (project)
-          const isReservation = data.parent && String(data.parent) !== '0';
-          
-          if (isReservation) {
-            // ============================================
-            // RESERVATION OPERATIONS
-            // ============================================
-            
-            if (action === 'create') {
-              // Створюємо нову резервацію
-              console.log('📅 Creating new reservation via API...');
-              
-              // Calculate dates
-              const startDate = new Date(data.start_date);
-              const endDate = new Date(startDate);
-              endDate.setDate(endDate.getDate() + (data.duration || 1));
-              
-              const response = await reservationServiceAdapted.create({
-                propertyId: String(data.parent).replace('prop_', ''),
-                guestName: data.text || 'New Guest',
-                guestEmail: 'guest@example.com', // TODO: Prompt for email in modal
-                checkIn: startDate.toISOString(),
-                checkOut: endDate.toISOString(),
-                guests: data.guest_amount || 1,
-                totalAmount: 0, // TODO: Calculate from property price * nights
-                source: 'DIRECT',
-                status: data.status || 'PENDING',
-                notes: 'Created via scheduler'
-              });
-              
-              if (response.success && response.data) {
-                console.log('✅ Reservation created successfully:', response.data);
-                gantt.message({ text: '✅ Reservation created successfully!', expire: 3000 });
-                
-                // Return new ID with proper prefix
-                return { 
-                  id: `res_${response.data.id}`,
-                  tid: `res_${response.data.id}`
-                };
-              } else {
-                console.error('❌ Failed to create reservation:', response.error);
-                gantt.message({ text: `❌ Error: ${response.error || 'Failed to create reservation'}`, expire: 5000 });
-                return { id: id };
-              }
-            }
-            
-            if (action === 'update') {
-              // Оновлюємо існуючу резервацію
-              console.log('📅 Updating reservation via API...');
-              
-              const reservationId = String(id).replace('res_', '');
-              
-              // Calculate dates
-              const startDate = new Date(data.start_date);
-              const endDate = new Date(startDate);
-              endDate.setDate(endDate.getDate() + (data.duration || 1));
-              
-              const response = await reservationServiceAdapted.update(reservationId, {
-                guestName: data.text,
-                checkIn: startDate.toISOString(),
-                checkOut: endDate.toISOString(),
-                guests: data.guest_amount,
-                status: data.status,
-              });
-              
-              if (response.success) {
-                console.log('✅ Reservation updated successfully');
-                gantt.message({ text: '✅ Reservation updated!', expire: 3000 });
-                return { id: id };
-              } else {
-                console.error('❌ Failed to update reservation:', response.error);
-                gantt.message({ text: `❌ Error: ${response.error || 'Failed to update'}`, expire: 5000 });
-                return { id: id };
-              }
-            }
-            
-            if (action === 'delete') {
-              // Видаляємо резервацію
-              console.log('📅 Deleting reservation via API...');
-              
-              const reservationId = String(id).replace('res_', '');
-              const response = await reservationServiceAdapted.delete(reservationId);
-              
-              if (response.success) {
-                console.log('✅ Reservation deleted successfully');
-                gantt.message({ text: '✅ Reservation deleted!', expire: 3000 });
-                return { id: id };
-              } else {
-                console.error('❌ Failed to delete reservation:', response.error);
-                gantt.message({ text: `❌ Error: ${response.error || 'Failed to delete'}`, expire: 5000 });
-                return { id: id };
-              }
-            }
-          } else {
-            // ============================================
-            // PROPERTY OPERATIONS
-            // ============================================
-            
-            if (action === 'create') {
-              // Створення property через scheduler поки що не підтримується
-              console.log('⚠️ Property creation via scheduler not supported yet');
-              gantt.message({ text: '⚠️ Property creation not supported. Please use Property page.', expire: 3000 });
-              return { id: id };
-            }
-            
-            if (action === 'update') {
-              // Оновлення property через scheduler поки що не підтримується
-              console.log('⚠️ Property update via scheduler not supported yet');
-              gantt.message({ text: '⚠️ Property update not supported. Please use Property page.', expire: 3000 });
-              return { id: id };
-            }
-            
-            if (action === 'delete') {
-              // Видалення property через scheduler не підтримується
-              console.log('⚠️ Property deletion via scheduler not supported');
-              gantt.message({ text: '⚠️ Property deletion not supported. Please use Property page.', expire: 3000 });
-              return { id: id };
-            }
-          }
-        }
-        
-        // Fallback for other entities or actions
-        gantt.message({ text: `${entity} ${action}`, expire: 2000 });
-        return Promise.resolve({ id: id });
-        
-      } catch (error) {
-        console.error('❌ DataProcessor error:', error);
-        gantt.message({ 
-          text: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
-          expire: 5000 
-        });
-        return Promise.resolve({ id: id });
-      }
-    });
-
-    // Повідомлення користувачу
-    gantt.message({
-      text: "Клікніть та перетягніть для створення нового бронювання або нової квартири",
-      expire: 5000
-    });
-  };
-
-  // Ініціалізація Gantt після завантаження даних
   useEffect(() => {
     // Перевіряємо чи код виконується на клієнті
     if (typeof window === 'undefined') return;
@@ -869,104 +418,15 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
     // Динамічно завантажуємо dhtmlxGantt
     const loadGantt = async () => {
-      // Перевіряємо, чи вже ініціалізований Gantt
-      if (ganttRef.current) {
-        console.log('⚠️ Gantt instance already exists, cleaning up first...');
-        try {
-          // Перевіряємо чи Gantt повністю ініціалізований перед очищенням
-          if (ganttRef.current.isInitialized && ganttRef.current.isInitialized()) {
-            ganttRef.current.destructor();
-            console.log('✅ Gantt destructor called');
-          } else {
-            console.log('⚠️ Gantt not fully initialized, skipping destructor');
-          }
-          containerRef.current!.innerHTML = '';
-          ganttRef.current = null;
-          console.log('✅ Gantt instance cleaned up');
-        } catch (error) {
-          console.error('Error cleaning up existing Gantt:', error);
-          // Якщо помилка при очищенні, просто очищуємо контейнер
-          try {
-            containerRef.current!.innerHTML = '';
-            ganttRef.current = null;
-            console.log('✅ Container cleared after error');
-          } catch (clearError) {
-            console.error('Error clearing container:', clearError);
-          }
-        }
-      }
-
-      // Функція ініціалізації, яка буде викликана, коли все готово
-      const startGantt = () => {
-        console.log('🎯 startGantt called');
-        
-        if (!containerRef.current) {
-          console.error('❌ Container ref not available');
-          return;
-        }
-        
-        if (!(window as any).gantt) {
-          console.error('❌ Gantt object not available');
-          return;
-        }
-        
-        if (ganttRef.current) {
-          console.log('⚠️ Gantt ref already exists, cleaning up...');
-          try {
-            // Перевіряємо чи Gantt повністю ініціалізований перед очищенням
-            if (ganttRef.current.isInitialized && ganttRef.current.isInitialized()) {
-              ganttRef.current.destructor();
-              console.log('✅ Gantt destructor called');
-            } else {
-              console.log('⚠️ Gantt not fully initialized, skipping destructor');
-            }
-            containerRef.current.innerHTML = '';
-            console.log('✅ Container cleared');
-          } catch (error) {
-            console.error('Error cleaning up existing Gantt:', error);
-            // Якщо помилка при очищенні, просто очищуємо контейнер
-            try {
-              containerRef.current.innerHTML = '';
-              console.log('✅ Container cleared after error');
-            } catch (clearError) {
-              console.error('Error clearing container:', clearError);
-            }
-          }
-        }
-        
-        ganttRef.current = (window as any).gantt;
-        console.log('✅ Gantt ref set, initializing...');
-        
-        try {
-          initializeGantt();
-          console.log('✅ Gantt initialization completed');
-        } catch (error) {
-          console.error('❌ Error initializing Gantt:', error);
-        }
-      };
-
-      // Якщо об'єкт gantt вже є, просто запускаємо ініціалізацію
-      if ((window as any).gantt) {
-        console.log('Gantt object already available, starting initialization...');
-        startGantt();
-        return;
-      }
-
-      console.log('📦 Loading dhtmlxGantt CSS and JS...');
-      
       // Завантажуємо CSS
-      if (!document.querySelector('link[href*="dhtmlxgantt.css"]')) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/dhtmlxGantt/codebase/dhtmlxgantt.css';
-        document.head.appendChild(link);
-        console.log('✅ CSS loaded');
-      }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/dhtmlxGantt/codebase/dhtmlxgantt.css';
+      document.head.appendChild(link);
 
       // Додаємо кастомні стилі для split tasks
-      if (!styleTagRef.current) { // Створюємо тільки якщо ще не створено
-        const style = document.createElement('style');
-        style.textContent = `
+      const style = document.createElement('style');
+      style.textContent = `
         /* Стилі для проектів (квартир) */
         .gantt_task_line[data-type="project"] {
           background: #f8f9fa !important;
@@ -974,24 +434,24 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           font-weight: bold !important;
         }
         
-        /* Стилі для бронювань (частини split tasks) */
-        .gantt_task_line[data-status="pending"] {
-          background: #fff3cd !important;
-          border: 2px solid #ffc107 !important;
-          color: #856404 !important;
-        }
-        
-        .gantt_task_line[data-status="paid"] {
-          background: #d4edda !important;
-          border: 2px solid #28a745 !important;
-          color: #155724 !important;
-        }
-        
-        .gantt_task_line[data-status="booked"] {
-          background: #cce5ff !important;
-          border: 2px solid #007bff !important;
-          color: #004085 !important;
-        }
+          /* Стилі для бронювань (частини split tasks) */
+          .gantt_task_line[data-status="pending"] {
+            background: #fff3cd !important;
+            border: 2px solid #ffc107 !important;
+            color: #856404 !important;
+          }
+          
+          .gantt_task_line[data-status="paid"] {
+            background: #d4edda !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+          }
+          
+          .gantt_task_line[data-status="booked"] {
+            background: #cce5ff !important;
+            border: 2px solid #007bff !important;
+            color: #004085 !important;
+          }
         
         /* Загальні стилі */
         .gantt_task_line {
@@ -1008,7 +468,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           margin: 2px !important;
         }
         
-        /* Приховуємо стрілочки для всіх задач */
+        /* Приховуємо стрілочки дропдауну */
         .gantt_tree_icon {
           display: none !important;
         }
@@ -1032,73 +492,239 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         .gantt_task_row[data-parent] {
           display: none !important;
         }
-        
-        /* Показуємо мокові резервації тільки на 1-3 вересня 2025 */
-        .gantt_task_line[data-parent] {
-          display: none !important;
-        }
-        
-        /* Показуємо тільки мокові резервації */
-        .gantt_task_line[data-task-id*="mock"] {
-          display: block !important;
-        }
       `;
-        document.head.appendChild(style);
-        styleTagRef.current = style; // ЗБЕРІГАЄМО ЕЛЕМЕНТ
-      }
+      document.head.appendChild(style);
 
       // Завантажуємо JS
-      if (!document.querySelector('script[src*="dhtmlxgantt.js"]')) {
-        const script = document.createElement('script');
-        script.src = '/dhtmlxGantt/codebase/dhtmlxgantt.js';
-        script.async = true;
-        script.onload = () => {
-          console.log('✅ JS script loaded');
-          startGantt();
-        };
-        document.body.appendChild(script);
-        console.log('📦 JS script loading...');
-      } else {
-        // Якщо скрипт є, але об'єкта `gantt` ще немає, чекаємо на нього
-        console.log('Script exists but gantt object not ready, waiting...');
-        const intervalId = setInterval(() => {
-          if ((window as any).gantt) {
-            clearInterval(intervalId);
-            startGantt();
+      const script = document.createElement('script');
+      script.src = '/dhtmlxGantt/codebase/dhtmlxgantt.js';
+      script.async = true;
+
+      script.onload = () => {
+        if (containerRef.current && (window as any).gantt) {
+          const gantt = (window as any).gantt;
+          ganttRef.current = gantt;
+
+          // Налаштування колонок (назви квартир + кнопка додавання)
+          gantt.config.columns = [
+            { name: "text", label: "Квартира", width: "*", tree: false },
+            { name: "add", label: "", width: 44 }
+          ];
+
+          // Налаштування для кращого вигляду
+          gantt.config.date_format = "%d-%m-%Y";
+          gantt.config.scale_height = 50;
+          
+          // Сучасний API для scales (як у вашому прикладі)
+          gantt.config.scales = [
+            { unit: "month", step: 1, format: "%F, %Y" },
+            { unit: "day", step: 1, format: "%j, %D" }
+          ];
+
+          // Фіксований діапазон календаря: вересень 2025 - вересень 2027
+          gantt.config.start_date = new Date(2025, 8, 1); // 1 вересня 2025
+          gantt.config.end_date = new Date(2027, 8, 30);   // 30 вересня 2027
+
+          // Налаштування Drag & Drop для створення split tasks
+          gantt.plugins({
+            click_drag: true
+          });
+
+          // Прибираємо split tasks, використовуємо звичайні дочірні завдання
+          gantt.config.open_split_tasks = false;
+          gantt.config.multiselect = false;
+          
+          // Приховуємо дропдаун для проектів (квартир)
+          gantt.config.show_task_cells = false;
+          
+          // Показуємо тільки батьківські задачі в grid (тільки квартири)
+          gantt.templates.grid_row_class = (start, end, task) => {
+            // Ховаємо рядки, які не є проектами (квартирами)
+            if (task.type !== "project") {
+              return "gantt_hidden_row";
+            }
+            return "";
+          };
+          
+          // Додаткова перевірка після завантаження даних
+          gantt.attachEvent("onAfterTaskDisplay", () => {
+            // Ховаємо всі рядки, які не є проектами
+            gantt.eachTask((task) => {
+              if (task.type !== "project") {
+                const row = gantt.getTaskNode(task.id);
+                if (row) {
+                  row.style.display = "none";
+                }
+              }
+            });
+          });
+          
+          gantt.templates.grid_folder = (task) => {
+            return ""; // Приховуємо стрілочку для всіх задач
+          };
+          
+          gantt.config.click_drag = {
+            callback: onDragEnd,
+            singleRow: true
+          };
+
+          // Базові секції lightbox (будуть динамічно змінюватися)
+          gantt.config.lightbox.sections = [
+            { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+            { name: "status", height: 22, map_to: "status", type: "select", options: [
+              { key: "paid", label: "Paid" },
+              { key: "pending", label: "Pending" },
+              { key: "booked", label: "Booked" }
+            ]},
+            { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
+              { key: 1, label: "1" },
+              { key: 2, label: "2" },
+              { key: 3, label: "3" },
+              { key: 4, label: "4" },
+              { key: 5, label: "5" },
+              { key: 6, label: "6" }
+            ]},
+            { name: "time", type: "duration", map_to: "auto" }
+          ];
+
+          // Налаштування локалізації
+          gantt.locale.labels.section_description = "Name";
+          gantt.locale.labels.section_status = "Status";
+          gantt.locale.labels.section_guest_amount = "Guest amount";
+          gantt.locale.labels.section_time = "Time period";
+
+          // Динамічне налаштування секцій lightbox
+          gantt.attachEvent("onBeforeLightbox", (id: string) => {
+            try {
+              const task = gantt.getTask(id);
+              
+              if (!task) {
+                console.warn("Task not found for lightbox:", id);
+                return false;
+              }
+              
+              if (task.type === "project") {
+              // Секції для квартири
+              gantt.config.lightbox.sections = [
+                { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+                { name: "time", type: "duration", map_to: "auto" }
+              ];
+            } else {
+              // Секції для бронювання
+              gantt.config.lightbox.sections = [
+                { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+                { name: "status", height: 22, map_to: "status", type: "select", options: [
+                  { key: "paid", label: "Paid" },
+                  { key: "pending", label: "Pending" },
+                  { key: "booked", label: "Booked" }
+                ]},
+                { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
+                  { key: 1, label: "1" },
+                  { key: 2, label: "2" },
+                  { key: 3, label: "3" },
+                  { key: 4, label: "4" },
+                  { key: 5, label: "5" },
+                  { key: 6, label: "6" }
+                ]},
+                { name: "time", type: "duration", map_to: "auto" }
+              ];
+            }
+            
+            return true;
+          } catch (error) {
+            console.error("Error in onBeforeLightbox:", error);
+            return false;
           }
-        }, 100);
-      }
+        });
+
+          // Налаштування відображення для split tasks
+          gantt.templates.task_class = (start, end, task) => {
+            if (task.type === "project") {
+              return "project-row";
+            } else {
+              return `reservation-${task.status || 'pending'}`;
+            }
+          };
+
+          // Налаштування тексту в task
+          gantt.templates.task_text = (start, end, task) => {
+            if (task.type === "project") {
+              return task.text;
+            } else {
+              const guestCount = task.guest_amount || 1;
+              const status = task.status || 'pending';
+              return `${task.text} (${guestCount} guest${guestCount > 1 ? 's' : ''}, ${status})`;
+            }
+          };
+
+          // Ініціалізуємо Gantt
+          gantt.init(containerRef.current);
+
+          // Показуємо повідомлення про можливість створення split tasks
+          gantt.message({
+            text: "Клікніть та перетягніть для створення нового бронювання або нової квартири",
+            expire: 5000
+          });
+
+          // Фільтруємо дані - показуємо тільки квартири (projects) в grid
+          const propertiesOnly = ganttTasks.filter(task => task.type === "project");
+          
+          // Створюємо повну структуру з бронюваннями як частини split tasks
+          const fullData = {
+            data: ganttTasks, // Всі дані включаючи бронювання
+            links: []
+          };
+
+          // Завантажуємо всі дані
+          gantt.parse(fullData);
+          
+          // Ховаємо рядки бронювань в grid (вони будуть відображатися тільки як split tasks)
+          gantt.refreshData();
+
+          // Обробник подвійного кліку для відкриття модалки
+          gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
+            try {
+              const task = gantt.getTask(id);
+              if (task && task.id) {
+                // Відкриваємо модалку для всіх типів задач
+                setTimeout(() => {
+                  if (gantt.getTask(id)) {
+                    gantt.showLightbox(id);
+                  }
+                }, 50);
+              }
+            } catch (error) {
+              console.warn("Task not found for double click:", id);
+            }
+            return false; // запобігаємо стандартній поведінці
+          });
+
+          // DataProcessor для збереження змін
+          gantt.createDataProcessor((entity: string, action: string, data: any, id: any) => {
+            console.log(`${entity} ${action}`, data);
+            gantt.message(`${entity} ${action}`);
+            
+            // Тут можна додати API виклик для збереження даних
+            return Promise.resolve({ id: id });
+          });
+
+          console.log(`🎯 Gantt loaded with ${ganttTasks.length} tasks from ${properties.length > 0 ? 'API' : 'mock data'}`);
+        }
+      };
+
+      document.body.appendChild(script);
+
+      return () => {
+        if (ganttRef.current) {
+          ganttRef.current.destructor();
+        }
+        if (containerRef.current) {
+          containerRef.current.innerHTML = "";
+        }
+      };
     };
 
     loadGantt();
-
-    // Cleanup function
-    return () => {
-      // Очищуємо всі таймери, які були заплановані
-      timeoutIds.current.forEach(clearTimeout);
-      timeoutIds.current = [];
-
-      // Видаляємо тег стилів, якщо він існує
-      if (styleTagRef.current) {
-        styleTagRef.current.remove();
-        styleTagRef.current = null;
-      }
-
-      if (ganttRef.current) {
-        try {
-          // Видаляємо всі обробники подій
-          ganttRef.current.detachAllEvents();
-          // Знищуємо Gantt
-          ganttRef.current.destructor();
-          // Очищуємо контейнер
-          if (containerRef.current) {
-            containerRef.current.innerHTML = '';
-          }
-        } catch (error) {
-          console.error('Error cleaning up Gantt:', error);
-        }
-      }
-    };
   }, [isLoading, ganttTasks.length]); // Залежить тільки від кількості задач, а не від самого масиву
 
   // Loading State
