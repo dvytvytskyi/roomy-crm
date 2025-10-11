@@ -784,35 +784,59 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   switch (action) {
                     case "create": {
                       console.log('➕ CREATE: New reservation via API...');
-                      console.log('📊 Raw Gantt data:', data);
+                      console.log('🔍 Raw Gantt data:', data);
                       
                       // ВАЖЛИВО: Видаляємо тимчасовий ID для create
                       delete data.id;
                       
-                      // Готуємо дані для API
+                      // Логування всіх ключових значень для діагностики
+                      console.log('🔍 Extracted values:', {
+                        start_date: data.start_date,
+                        end_date: data.end_date,
+                        duration: data.duration,
+                        guest_amount: data.guest_amount,
+                        text: data.text,
+                        parent: data.parent,
+                        price: data.price
+                      });
+                      
+                      // Проблема №4: Виправляємо витягування propertyId
                       const propertyId = extractPropertyId(data.parent);
+                      console.log('🏠 Property ID extracted:', propertyId);
+                      
+                      // Проблема №3: Виправляємо обробку дат
                       const checkIn = formatDateForApi(data.start_date);
                       const checkOut = data.end_date 
                         ? formatDateForApi(data.end_date)
                         : calculateCheckOut(data.start_date, data.duration || 1);
                       
+                      console.log('📅 Dates calculated:', { 
+                        checkIn, 
+                        checkOut,
+                        duration_days: data.duration,
+                        has_end_date: !!data.end_date
+                      });
+                      
+                      // Проблема №1: НЕ ВКЛЮЧАЄМО reservationId!
+                      // Проблема №2: Виправляємо guests (Number() + fallback)
                       const reservationData = {
                         propertyId: propertyId,
                         checkIn: checkIn,
                         checkOut: checkOut,
-                        guests: data.guest_amount || 1,
-                        totalAmount: parseFloat(data.price) || 0,
-                        paidAmount: 0,
-                        source: 'DIRECT' as const,
+                        guests: Number(data.guest_amount) || 1,  // ✅ Виправлено: завжди число
                         guestName: data.text || 'New Guest',
                         guestEmail: 'guest@example.com',
-                        status: data.status?.toUpperCase() || 'PENDING',
+                        guestPhone: '+380000000000',
+                        source: 'DIRECT' as const,
+                        status: 'PENDING',
+                        totalAmount: parseFloat(data.price) || 0,
+                        paidAmount: 0,
                         notes: data.notes || '',
-                        specialRequests: data.notes || '',
-                        guestPhone: '+380000000000'
+                        specialRequests: data.notes || ''
+                        // ✅ НЕ ВКЛЮЧАЄМО reservationId!
                       };
 
-                      console.log('📤 API CREATE Request data:', reservationData);
+                      console.log('📤 Final API payload:', reservationData);
                       console.log('📤 API CREATE URL: POST /api/v2/reservations (NO ID!)');
 
                       const response = await reservationServiceAdapted.create(reservationData);
