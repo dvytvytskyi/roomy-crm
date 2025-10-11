@@ -53,10 +53,14 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         
         // Відкриваємо модалку для редагування нового бронювання
         setTimeout(() => {
-          if (ganttRef.current && ganttRef.current.getTask(newReservationId)) {
-            ganttRef.current.showLightbox(newReservationId);
+          try {
+            if (ganttRef.current && ganttRef.current.getTask(newReservationId)) {
+              ganttRef.current.showLightbox(newReservationId);
+            }
+          } catch (error) {
+            console.warn("Could not open lightbox for new reservation:", error);
           }
-        }, 200);
+        }, 300);
         
         ganttRef.current.message({
           text: "✅ Створено бронювання для " + currentTask.text + ". Заповніть деталі в модалці.",
@@ -103,10 +107,14 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       
       // Відкриваємо модалку для редагування нової квартири
       setTimeout(() => {
-        if (ganttRef.current && ganttRef.current.getTask(newPropertyId)) {
-          ganttRef.current.showLightbox(newPropertyId);
+        try {
+          if (ganttRef.current && ganttRef.current.getTask(newPropertyId)) {
+            ganttRef.current.showLightbox(newPropertyId);
+          }
+        } catch (error) {
+          console.warn("Could not open lightbox for new property:", error);
         }
-      }, 200);
+      }, 300);
       
       ganttRef.current.message({
         text: "✅ Створено нову квартиру. Заповніть деталі в модалці.",
@@ -298,9 +306,15 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
           // Динамічне налаштування секцій lightbox
           gantt.attachEvent("onBeforeLightbox", (id: string) => {
-            const task = gantt.getTask(id);
-            
-            if (task && task.type === "project") {
+            try {
+              const task = gantt.getTask(id);
+              
+              if (!task) {
+                console.warn("Task not found for lightbox:", id);
+                return false;
+              }
+              
+              if (task.type === "project") {
               // Секції для квартири
               gantt.config.lightbox.sections = [
                 { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
@@ -328,7 +342,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
             
             return true;
-          });
+          } catch (error) {
+            console.error("Error in onBeforeLightbox:", error);
+            return false;
+          }
+        });
 
           // Налаштування відображення для split tasks
           gantt.templates.task_class = (start, end, task) => {
@@ -376,10 +394,18 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
           // Обробник подвійного кліку для відкриття модалки
           gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
-            const task = gantt.getTask(id);
-            if (task) {
-              // Відкриваємо модалку для всіх типів задач
-              gantt.showLightbox(id);
+            try {
+              const task = gantt.getTask(id);
+              if (task && task.id) {
+                // Відкриваємо модалку для всіх типів задач
+                setTimeout(() => {
+                  if (gantt.getTask(id)) {
+                    gantt.showLightbox(id);
+                  }
+                }, 50);
+              }
+            } catch (error) {
+              console.warn("Task not found for double click:", id);
             }
             return false; // запобігаємо стандартній поведінці
           });
