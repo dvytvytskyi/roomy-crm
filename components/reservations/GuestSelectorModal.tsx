@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Search, Plus, User, Mail, Phone, Check } from 'lucide-react'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 
 interface Guest {
   id: number
@@ -28,52 +29,55 @@ export default function GuestSelectorModal({ onClose, onSelectGuest, onCreateGue
     phone: ''
   })
   const [errors, setErrors] = useState<any>({})
+  const [guests, setGuests] = useState<Guest[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Mock existing guests data
-  const mockGuests: Guest[] = [
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      phone: '+1 (555) 123-4567',
-      total_reservations: 5,
-      last_visit: '2024-07-15'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      email: 'sarah.j@example.com',
-      phone: '+1 (555) 234-5678',
-      total_reservations: 3,
-      last_visit: '2024-06-20'
-    },
-    {
-      id: 3,
-      name: 'Michael Brown',
-      email: 'mike.brown@example.com',
-      phone: '+1 (555) 345-6789',
-      total_reservations: 8,
-      last_visit: '2024-08-01'
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      email: 'emily.davis@example.com',
-      phone: '+1 (555) 456-7890',
-      total_reservations: 2,
-      last_visit: '2024-05-10'
-    },
-    {
-      id: 5,
-      name: 'David Wilson',
-      email: 'david.w@example.com',
-      phone: '+1 (555) 567-8901',
-      total_reservations: 12,
-      last_visit: '2024-07-30'
+  // Load real guests from API
+  useEffect(() => {
+    const loadGuests = async () => {
+      try {
+        setIsLoading(true)
+        console.log('👥 GuestSelectorModal: Loading guests from API...')
+        
+        const response = await userServiceAdapter.getUsers(`role=GUEST&search=${searchTerm}`)
+        
+        if (response.success && response.data) {
+          // Handle both API formats
+          let guestsData = []
+          if (Array.isArray(response.data)) {
+            guestsData = response.data
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            guestsData = response.data.data
+          }
+          
+          // Transform API guests to component format
+          const transformedGuests: Guest[] = guestsData.map((apiGuest: any) => ({
+            id: parseInt(apiGuest.id),
+            name: `${apiGuest.firstName} ${apiGuest.lastName}`,
+            email: apiGuest.email,
+            phone: apiGuest.phone,
+            total_reservations: apiGuest.reservationCount || 0,
+            last_visit: apiGuest.lastModifiedAt || apiGuest.createdAt
+          }))
+          
+          console.log('👥 GuestSelectorModal: Loaded guests:', transformedGuests.length)
+          setGuests(transformedGuests)
+        } else {
+          console.error('👥 GuestSelectorModal: Failed to load guests:', response.error)
+          setGuests([])
+        }
+      } catch (error) {
+        console.error('👥 GuestSelectorModal: Error loading guests:', error)
+        setGuests([])
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ]
 
-  const filteredGuests = mockGuests.filter(guest =>
+    loadGuests()
+  }, [searchTerm])
+
+  const filteredGuests = guests.filter(guest =>
     guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     guest.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     guest.phone.includes(searchTerm)
@@ -187,7 +191,19 @@ export default function GuestSelectorModal({ onClose, onSelectGuest, onCreateGue
 
               {/* Guests List */}
               <div className="space-y-2">
-                {filteredGuests.map((guest) => (
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-2 text-gray-500">Loading guests...</span>
+                  </div>
+                ) : filteredGuests.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <User size={48} className="mx-auto mb-2 text-gray-300" />
+                    <p>No guests found</p>
+                    <p className="text-sm">Try adjusting your search or create a new guest</p>
+                  </div>
+                ) : (
+                  filteredGuests.map((guest) => (
                   <div
                     key={guest.id}
                     onClick={() => handleSelectGuest(guest)}
@@ -230,13 +246,7 @@ export default function GuestSelectorModal({ onClose, onSelectGuest, onCreateGue
                       </div>
                     )}
                   </div>
-                ))}
-                
-                {filteredGuests.length === 0 && (
-                  <div className="text-center py-8">
-                    <User size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">No guests found matching your search</p>
-                  </div>
+                  ))
                 )}
               </div>
             </div>

@@ -37,19 +37,35 @@ export function useReservationData() {
         propertyServiceV2.getAll({ limit: 100, status: 'ACTIVE' })
       ]);
 
-      if (guestsResponse.success && guestsResponse.data && Array.isArray(guestsResponse.data.data)) {
-        const guestsData = guestsResponse.data.data.map(guest => ({
+      // Handle guests response - check both formats
+      let guestsData = [];
+      if (guestsResponse.success && guestsResponse.data) {
+        if (Array.isArray(guestsResponse.data)) {
+          guestsData = guestsResponse.data;
+        } else if (guestsResponse.data.data && Array.isArray(guestsResponse.data.data)) {
+          guestsData = guestsResponse.data.data;
+        }
+        
+        const transformedGuests = guestsData.map(guest => ({
           ...guest,
           name: `${guest.firstName} ${guest.lastName}`.trim()
         }));
-        setGuests(guestsData);
+        setGuests(transformedGuests);
       } else {
         console.warn('Guests response not in expected format:', guestsResponse);
         setGuests([]);
       }
 
-      if (propertiesResponse.success && propertiesResponse.data && Array.isArray(propertiesResponse.data.data)) {
-        const propertiesData = propertiesResponse.data.data.map(property => ({
+      // Handle properties response - check both formats
+      let propertiesData = [];
+      if (propertiesResponse.success && propertiesResponse.data) {
+        if (Array.isArray(propertiesResponse.data)) {
+          propertiesData = propertiesResponse.data;
+        } else if (propertiesResponse.data.data && Array.isArray(propertiesResponse.data.data)) {
+          propertiesData = propertiesResponse.data.data;
+        }
+        
+        const transformedProperties = propertiesData.map(property => ({
           id: property.id,
           name: property.name,
           address: property.address,
@@ -57,7 +73,7 @@ export function useReservationData() {
           capacity: property.capacity,
           pricePerNight: property.pricePerNight
         }));
-        setProperties(propertiesData);
+        setProperties(transformedProperties);
       } else {
         console.warn('Properties response not in expected format:', propertiesResponse);
         setProperties([]);

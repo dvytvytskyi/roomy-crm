@@ -11,6 +11,9 @@ import { initSentry, sentryMiddleware, flushSentry } from './config/sentry';
 import { sentryUserContext, sentryPerformanceContext } from './middleware/sentry.middleware';
 import logger from './utils/logger';
 
+// Initialize iCal importer service
+import './services/ical-importer.service';
+
 // Validate configuration on startup
 validateConfig();
 
@@ -99,6 +102,7 @@ import expenseRoutes from './routes/expense.routes';
 import photoRoutes from './routes/photo.routes';
 import documentRoutes from './routes/document.routes';
 import amenityRoutes from './routes/amenity.routes';
+import calendarRoutes from './routes/calendar.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -143,6 +147,7 @@ app.use('/api/v2/webhooks', webhookRoutes);
 app.use('/api/v2/files', fileRoutes);
 app.use('/api/v2/integrations/pricelabs', pricelabsRoutes);
 app.use('/api/v2/integrations/airbnb', airbnbRoutes);
+app.use('/api/v2/calendar', calendarRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler

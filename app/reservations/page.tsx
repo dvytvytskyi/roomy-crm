@@ -8,6 +8,7 @@ import ReservationsFilters from '@/components/reservations/ReservationsFilters'
 import ReservationDetailsModal from '@/components/reservations/ReservationDetailsModal'
 import ReservationEditModal from '@/components/reservations/ReservationEditModal'
 import SmartReservationModal from '@/components/reservations/SmartReservationModal'
+import NewReservationModalV2 from '@/components/reservations/NewReservationModalV2'
 import { reservationServiceAdapted } from '@/lib/api/adapters/apiAdapter'
 import { Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
@@ -359,9 +360,9 @@ export default function ReservationsPage() {
         />
       )}
 
-      {/* Smart Reservation Modal */}
+      {/* New Reservation Modal */}
       {newReservationModal && (
-        <SmartReservationModal
+        <NewReservationModalV2
           onClose={() => setNewReservationModal(false)}
           onSave={(newReservation) => {
             console.log('New reservation created:', newReservation)

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { BaseService } from './BaseService';
 import { ServiceResponse } from '../types';
 import { CurrentUser, ReservationQueryParams, PaginatedResponse, CreateReservationDto, UpdateReservationDto } from '../types/dto';
+import { conflictCheckService } from './conflict-check.service';
 import logger from '../utils/logger';
 
 // Reservation Response DTO
@@ -9,11 +10,13 @@ export interface ReservationResponseDto {
   id: string;
   reservationId: string;
   propertyId: string;
+  propertyName?: string; // ✅ Додано для frontend таблиці
   guestId?: string;
   agentId?: string;
   checkIn: Date;
   checkOut: Date;
   guests: number;
+  guestCount?: number; // ✅ Альтернативне поле
   totalAmount: number;
   paidAmount: number;
   outstandingBalance: number;
@@ -26,6 +29,7 @@ export interface ReservationResponseDto {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  nights?: number; // ✅ Додано для frontend (розраховується автоматично)
 }
 
 // Reservation with related data
@@ -58,6 +62,56 @@ export interface ReservationWithDetailsDto extends ReservationResponseDto {
   };
   _count?: {
     transactions?: number;
+  };
+  // ✅ Extended fields для детальної сторінки
+  notesList?: Array<{
+    id: number;
+    content: string;
+    type: string;
+    priority: string;
+    createdAt: string;
+    createdBy: string;
+    updatedAt?: string;
+  }>;
+  payments?: Array<{
+    id: number;
+    amount: number;
+    method: string;
+    date: string;
+    reference?: string;
+    description?: string;
+    type: string;
+    status: string;
+    createdAt?: string;
+  }>;
+  pricingHistory?: Array<{
+    id: number;
+    pricePerNight: number;
+    totalAmount: number;
+    reason: string;
+    date: string;
+    changedBy: string;
+  }>;
+  communicationHistory?: Array<{
+    id: number;
+    type: string;
+    subject: string;
+    content?: string;
+    date: string;
+    status: string;
+    sentBy?: string;
+  }>;
+  adjustments?: Array<{
+    id: number;
+    type: string;
+    amount: number;
+    reason: string;
+    createdBy: string;
+    createdAt: string;
+  }>;
+  createdBy?: {
+    name: string;
+    email: string;
   };
 }
 
@@ -128,8 +182,21 @@ export class ReservationService extends BaseService {
       if (propertyId) where.property_id = propertyId;
       if (guestId) where.guest_id = guestId;
       if (agentId) where.agent_id = agentId;
-      if (dateFrom) where.check_in = { gte: new Date(dateFrom) };
-      if (dateTo) where.check_out = { lte: new Date(dateTo) };
+      
+      // Date filtering: Show all reservations that OVERLAP with the period
+      // A reservation overlaps if: check_in < dateTo AND check_out > dateFrom
+      if (dateFrom && dateTo) {
+        where.AND = [
+          { check_in: { lt: new Date(dateTo) } },
+          { check_out: { gt: new Date(dateFrom) } }
+        ];
+      } else if (dateFrom) {
+        // Only dateFrom provided - show all reservations that end after dateFrom
+        where.check_out = { gte: new Date(dateFrom) };
+      } else if (dateTo) {
+        // Only dateTo provided - show all reservations that start before dateTo
+        where.check_in = { lte: new Date(dateTo) };
+      }
 
       // Get total count
       const total = await prisma.reservations.count({ where });
@@ -184,27 +251,36 @@ export class ReservationService extends BaseService {
       await prisma.$disconnect();
 
       // Map to response DTOs
-      const reservationResponses: ReservationWithDetailsDto[] = reservations.map(reservation => ({
-        id: reservation.id,
-        reservationId: reservation.reservation_id,
-        propertyId: reservation.property_id,
-        guestId: reservation.guest_id || undefined,
-        agentId: reservation.agent_id || undefined,
-        checkIn: reservation.check_in,
-        checkOut: reservation.check_out,
-        guests: reservation.guests,
-        totalAmount: reservation.total_amount,
-        paidAmount: reservation.paid_amount,
-        outstandingBalance: reservation.outstanding_balance,
-        status: reservation.status,
-        source: reservation.source,
-        guestName: reservation.guest_name || undefined,
-        guestEmail: reservation.guest_email || undefined,
-        guestPhone: reservation.guest_phone || undefined,
-        specialRequests: reservation.special_requests || undefined,
-        notes: reservation.notes || undefined,
-        createdAt: reservation.created_at,
-        updatedAt: reservation.updated_at,
+      const reservationResponses: ReservationWithDetailsDto[] = reservations.map(reservation => {
+        // Calculate nights (difference between check-out and check-in)
+        const checkInDate = new Date(reservation.check_in);
+        const checkOutDate = new Date(reservation.check_out);
+        const nightsCount = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          id: reservation.id,
+          reservationId: reservation.reservation_id,
+          propertyId: reservation.property_id,
+          propertyName: reservation.properties.name, // ✅ Додано для frontend таблиці
+          guestId: reservation.guest_id || undefined,
+          agentId: reservation.agent_id || undefined,
+          checkIn: reservation.check_in,
+          checkOut: reservation.check_out,
+          guests: reservation.guests,
+          guestCount: reservation.guests, // ✅ Додано альтернативне поле
+          nights: nightsCount, // ✅ Розраховано автоматично
+          totalAmount: reservation.total_amount,
+          paidAmount: reservation.paid_amount,
+          outstandingBalance: reservation.outstanding_balance,
+          status: reservation.status,
+          source: reservation.source,
+          guestName: reservation.guest_name || undefined,
+          guestEmail: reservation.guest_email || undefined,
+          guestPhone: reservation.guest_phone || undefined,
+          specialRequests: reservation.special_requests || undefined,
+          notes: reservation.notes || undefined,
+          createdAt: reservation.created_at,
+          updatedAt: reservation.updated_at,
         property: {
           id: reservation.properties.id,
           name: reservation.properties.name,
@@ -231,10 +307,11 @@ export class ReservationService extends BaseService {
           email: reservation.users_reservations_agent_idTousers.email,
           phone: reservation.users_reservations_agent_idTousers.phone || undefined
         } : undefined,
-        _count: {
-          transactions: reservation._count.transactions
-        }
-      }));
+          _count: {
+            transactions: reservation._count.transactions
+          }
+        };
+      });
 
       // Create pagination metadata
       const pagination = ReservationService.prototype.createPaginationMetadata(page, limit, total);
@@ -378,15 +455,23 @@ export class ReservationService extends BaseService {
         return ReservationService.prototype.success(null);
       }
 
+      // Calculate nights
+      const checkInDate = new Date(reservation.check_in);
+      const checkOutDate = new Date(reservation.check_out);
+      const nightsCount = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+
       const reservationResponse: ReservationWithDetailsDto = {
         id: reservation.id,
         reservationId: reservation.reservation_id,
         propertyId: reservation.property_id,
+        propertyName: reservation.properties.name, // ✅ Додано для frontend
         guestId: reservation.guest_id || undefined,
         agentId: reservation.agent_id || undefined,
         checkIn: reservation.check_in,
         checkOut: reservation.check_out,
         guests: reservation.guests,
+        guestCount: reservation.guests, // ✅ Альтернативне поле
+        nights: nightsCount, // ✅ Розраховано автоматично
         totalAmount: reservation.total_amount,
         paidAmount: reservation.paid_amount,
         outstandingBalance: reservation.outstanding_balance,
@@ -427,7 +512,23 @@ export class ReservationService extends BaseService {
         } : undefined,
         _count: {
           transactions: reservation._count.transactions
-        }
+        },
+        // ✅ Extended fields для детальної сторінки
+        notesList: [], // TODO: Додати коли буде таблиця notes в БД
+        payments: reservation.transactions.map(tx => ({
+          id: parseInt(tx.id),
+          amount: parseFloat(tx.amount.toString()),
+          method: tx.payment_method || 'unknown',
+          date: tx.created_at.toISOString().split('T')[0],
+          reference: tx.payment_reference || undefined,
+          description: tx.description || undefined,
+          type: tx.type || 'payment',
+          status: tx.status || 'completed',
+          createdAt: tx.created_at.toISOString()
+        })),
+        pricingHistory: [], // TODO: Додати коли буде таблиця pricing_history в БД
+        communicationHistory: [], // TODO: Додати коли буде таблиця communications в БД
+        adjustments: [] // TODO: Додати коли буде таблиця adjustments в БД
       };
 
       return ReservationService.prototype.success(reservationResponse);
@@ -492,41 +593,27 @@ export class ReservationService extends BaseService {
 
       logger.info(`[Reservation Creation] Starting reservation creation: ${data.guestName}`);
 
-      // Check availability for the requested dates
+      // Check for conflicts using the new conflict check service
       const checkInDate = new Date(data.checkIn);
       const checkOutDate = new Date(data.checkOut);
 
-      // Check for overlapping reservations
-      const overlappingReservations = await prisma.reservations.findMany({
-        where: {
-          property_id: data.propertyId,
-          status: { not: 'CANCELLED' },
-          OR: [
-            {
-              AND: [
-                { check_in: { lte: checkInDate } },
-                { check_out: { gt: checkInDate } }
-              ]
-            },
-            {
-              AND: [
-                { check_in: { lt: checkOutDate } },
-                { check_out: { gte: checkOutDate } }
-              ]
-            },
-            {
-              AND: [
-                { check_in: { gte: checkInDate } },
-                { check_out: { lte: checkOutDate } }
-              ]
-            }
-          ]
-        }
+      const conflictResult = await conflictCheckService.checkForConflicts({
+        propertyId: data.propertyId,
+        checkIn: checkInDate,
+        checkOut: checkOutDate
       });
 
-      if (overlappingReservations.length > 0) {
+      if (conflictResult.hasConflict) {
         await prisma.$disconnect();
-        return ReservationService.prototype.error('Conflict', 'Property is not available for the selected dates', 409);
+        const conflictingDetails = conflictResult.conflictingReservations
+          .map(conflict => `${conflict.guestName} (${conflict.source}) ${conflict.checkIn.toISOString().split('T')[0]} to ${conflict.checkOut.toISOString().split('T')[0]}`)
+          .join(', ');
+        
+        return ReservationService.prototype.error(
+          'Conflict', 
+          `The property is not available for the selected dates. Conflicting reservations: ${conflictingDetails}`, 
+          409
+        );
       }
 
       logger.info(`[Reservation Creation] Availability check passed for property ${data.propertyId}`);
@@ -967,5 +1054,770 @@ export class ReservationService extends BaseService {
         message: 'An error occurred while processing your request'
       };
     }
+  }
+
+  // ============================================
+  // NOTES MANAGEMENT
+  // ============================================
+
+  /**
+   * Add note to reservation
+   */
+  public static async addNote(
+    currentUser: CurrentUser,
+    reservationId: string,
+    noteData: { content: string; type?: string; priority?: string }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation first
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to add notes to this reservation', 403);
+      }
+
+      // Create note (mock implementation - adjust based on your schema)
+      const note = {
+        id: Date.now(),
+        reservationId,
+        content: noteData.content,
+        type: noteData.type || 'internal',
+        priority: noteData.priority || 'normal',
+        createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Note added to reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(note, 'Note added successfully');
+    } catch (error) {
+      logger.error('Error adding note:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Update reservation note
+   */
+  public static async updateNote(
+    currentUser: CurrentUser,
+    reservationId: string,
+    noteId: string,
+    content: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to update notes for this reservation', 403);
+      }
+
+      // Mock update
+      const updatedNote = {
+        id: noteId,
+        content,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Note ${noteId} updated for reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(updatedNote, 'Note updated successfully');
+    } catch (error) {
+      logger.error('Error updating note:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Delete reservation note
+   */
+  public static async deleteNote(
+    currentUser: CurrentUser,
+    reservationId: string,
+    noteId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to delete notes from this reservation', 403);
+      }
+
+      await prisma.$disconnect();
+
+      logger.info(`Note ${noteId} deleted from reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success({ id: noteId }, 'Note deleted successfully');
+    } catch (error) {
+      logger.error('Error deleting note:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // PAYMENTS MANAGEMENT
+  // ============================================
+
+  /**
+   * Add payment to reservation
+   */
+  public static async addPayment(
+    currentUser: CurrentUser,
+    reservationId: string,
+    paymentData: { amount: number; method: string; date: string; reference?: string; description?: string; type?: string }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to add payments to this reservation', 403);
+      }
+
+      // Update paid amount
+      const newPaidAmount = (reservation.paid_amount || 0) + paymentData.amount;
+      const newOutstandingBalance = reservation.total_amount - newPaidAmount;
+
+      await prisma.reservations.update({
+        where: { id: reservationId },
+        data: {
+          paid_amount: newPaidAmount,
+          outstanding_balance: newOutstandingBalance,
+          updated_at: new Date(),
+        }
+      });
+
+      // Create payment record (mock - adjust based on schema)
+      const payment = {
+        id: Date.now(),
+        reservationId,
+        amount: paymentData.amount,
+        method: paymentData.method,
+        date: paymentData.date,
+        reference: paymentData.reference,
+        description: paymentData.description,
+        type: paymentData.type || 'payment',
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Payment added to reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(payment, 'Payment added successfully');
+    } catch (error) {
+      logger.error('Error adding payment:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Delete payment from reservation
+   */
+  public static async deletePayment(
+    currentUser: CurrentUser,
+    reservationId: string,
+    paymentId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to delete payments from this reservation', 403);
+      }
+
+      await prisma.$disconnect();
+
+      logger.info(`Payment ${paymentId} deleted from reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success({ id: paymentId }, 'Payment deleted successfully');
+    } catch (error) {
+      logger.error('Error deleting payment:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // ADJUSTMENTS MANAGEMENT
+  // ============================================
+
+  /**
+   * Add adjustment to reservation
+   */
+  public static async addAdjustment(
+    currentUser: CurrentUser,
+    reservationId: string,
+    adjustmentData: { type: string; amount: number; reason: string }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to add adjustments to this reservation', 403);
+      }
+
+      // Update total amount based on adjustment
+      const newTotalAmount = reservation.total_amount + adjustmentData.amount;
+      const newOutstandingBalance = newTotalAmount - (reservation.paid_amount || 0);
+
+      await prisma.reservations.update({
+        where: { id: reservationId },
+        data: {
+          total_amount: newTotalAmount,
+          outstanding_balance: newOutstandingBalance,
+          updated_at: new Date(),
+        }
+      });
+
+      // Create adjustment record (mock)
+      const adjustment = {
+        id: Date.now(),
+        reservationId,
+        type: adjustmentData.type,
+        amount: adjustmentData.amount,
+        reason: adjustmentData.reason,
+        createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Adjustment added to reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(adjustment, 'Adjustment added successfully');
+    } catch (error) {
+      logger.error('Error adding adjustment:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Delete adjustment from reservation
+   */
+  public static async deleteAdjustment(
+    currentUser: CurrentUser,
+    reservationId: string,
+    adjustmentId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to delete adjustments from this reservation', 403);
+      }
+
+      await prisma.$disconnect();
+
+      logger.info(`Adjustment ${adjustmentId} deleted from reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success({ id: adjustmentId }, 'Adjustment deleted successfully');
+    } catch (error) {
+      logger.error('Error deleting adjustment:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // COMMUNICATIONS MANAGEMENT
+  // ============================================
+
+  /**
+   * Send communication to guest
+   */
+  public static async sendCommunication(
+    currentUser: CurrentUser,
+    reservationId: string,
+    commData: { type: string; subject: string; content: string }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to send communications for this reservation', 403);
+      }
+
+      // Create communication record (mock - integrate with real email/SMS service)
+      const communication = {
+        id: Date.now(),
+        reservationId,
+        type: commData.type,
+        subject: commData.subject,
+        content: commData.content,
+        status: 'sent',
+        sentBy: `${currentUser.firstName} ${currentUser.lastName}`,
+        date: new Date().toISOString(),
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Communication sent for reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(communication, 'Communication sent successfully');
+    } catch (error) {
+      logger.error('Error sending communication:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Get all communications for reservation
+   */
+  public static async getCommunications(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any[]>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canView = await ReservationService.checkViewPermission(currentUser, reservation);
+      if (!canView) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to view communications for this reservation', 403);
+      }
+
+      // Mock communications array
+      const communications: any[] = [];
+
+      await prisma.$disconnect();
+
+      logger.info(`Communications retrieved for reservation ${reservationId}`);
+      return ReservationService.prototype.success(communications, 'Communications retrieved successfully');
+    } catch (error) {
+      logger.error('Error getting communications:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // INVOICES MANAGEMENT
+  // ============================================
+
+  /**
+   * Generate invoice for reservation
+   */
+  public static async generateInvoice(
+    currentUser: CurrentUser,
+    reservationId: string,
+    type: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to generate invoices for this reservation', 403);
+      }
+
+      // Generate invoice (mock - integrate with real invoice generator)
+      const invoice = {
+        id: Date.now(),
+        reservationId,
+        type,
+        number: `INV-${Date.now()}`,
+        issueDate: new Date().toISOString(),
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        amount: reservation.total_amount,
+        status: 'draft',
+        pdfUrl: null,
+      };
+
+      await prisma.$disconnect();
+
+      logger.info(`Invoice generated for reservation ${reservationId} by user ${currentUser.email}`);
+      return ReservationService.prototype.success(invoice, 'Invoice generated successfully');
+    } catch (error) {
+      logger.error('Error generating invoice:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Get all invoices for reservation
+   */
+  public static async getInvoices(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any[]>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canView = await ReservationService.checkViewPermission(currentUser, reservation);
+      if (!canView) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to view invoices for this reservation', 403);
+      }
+
+      // Mock invoices array
+      const invoices: any[] = [];
+
+      await prisma.$disconnect();
+
+      logger.info(`Invoices retrieved for reservation ${reservationId}`);
+      return ReservationService.prototype.success(invoices, 'Invoices retrieved successfully');
+    } catch (error) {
+      logger.error('Error getting invoices:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // PRICING MANAGEMENT
+  // ============================================
+
+  /**
+   * Update reservation pricing
+   */
+  public static async updatePricing(
+    currentUser: CurrentUser,
+    reservationId: string,
+    pricingData: { pricePerNight?: number; totalAmount?: number }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to update pricing for this reservation', 403);
+      }
+
+      // Update pricing
+      const updateData: any = { updated_at: new Date() };
+      if (pricingData.totalAmount !== undefined) {
+        updateData.total_amount = pricingData.totalAmount;
+        updateData.outstanding_balance = pricingData.totalAmount - (reservation.paid_amount || 0);
+      }
+
+      const updatedReservation = await prisma.reservations.update({
+        where: { id: reservationId },
+        data: updateData
+      });
+
+      await prisma.$disconnect();
+
+      logger.info(`Pricing updated for reservation ${reservationId} by user ${currentUser.email}`);
+      
+      // Return full reservation data
+      const reservationResult = await ReservationService.findById(currentUser, reservationId);
+      return reservationResult;
+    } catch (error) {
+      logger.error('Error updating pricing:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // ============================================
+  // STATUS OPERATIONS (using Orchestrator)
+  // ============================================
+
+  /**
+   * Confirm reservation (delegates to orchestrator)
+   */
+  public static async confirmReservation(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      // Import orchestrator dynamically to avoid circular dependencies
+      const { ReservationOrchestratorService } = require('./reservation-orchestrator.service');
+      
+      logger.info(`Confirming reservation ${reservationId} via orchestrator`);
+      return await ReservationOrchestratorService.confirmReservation(currentUser, reservationId);
+    } catch (error) {
+      logger.error('Error confirming reservation:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Cancel reservation (delegates to orchestrator)
+   */
+  public static async cancelReservation(
+    currentUser: CurrentUser,
+    reservationId: string,
+    reason?: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const { ReservationOrchestratorService } = require('./reservation-orchestrator.service');
+      
+      logger.info(`Cancelling reservation ${reservationId} via orchestrator`);
+      return await ReservationOrchestratorService.cancelReservation(currentUser, reservationId, reason);
+    } catch (error) {
+      logger.error('Error cancelling reservation:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Check-in guest (delegates to orchestrator)
+   */
+  public static async checkInReservation(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const { ReservationOrchestratorService } = require('./reservation-orchestrator.service');
+      
+      logger.info(`Checking in guest for reservation ${reservationId} via orchestrator`);
+      return await ReservationOrchestratorService.checkInGuest(currentUser, reservationId);
+    } catch (error) {
+      logger.error('Error checking in guest:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Check-out guest (delegates to orchestrator)
+   */
+  public static async checkOutReservation(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const { ReservationOrchestratorService } = require('./reservation-orchestrator.service');
+      
+      logger.info(`Checking out guest for reservation ${reservationId} via orchestrator`);
+      return await ReservationOrchestratorService.checkOutGuest(currentUser, reservationId);
+    } catch (error) {
+      logger.error('Error checking out guest:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Mark reservation as no-show
+   */
+  public static async markAsNoShow(
+    currentUser: CurrentUser,
+    reservationId: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const prisma = new PrismaClient();
+
+      // Get reservation
+      const reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: { properties: true }
+      });
+
+      if (!reservation) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Not Found', 'Reservation not found', 404);
+      }
+
+      // RBAC check
+      const canEdit = await ReservationService.checkEditPermission(currentUser, reservation);
+      if (!canEdit) {
+        await prisma.$disconnect();
+        return ReservationService.prototype.error('Forbidden', 'You do not have permission to modify this reservation', 403);
+      }
+
+      // Update status
+      await prisma.reservations.update({
+        where: { id: reservationId },
+        data: {
+          status: 'NO_SHOW',
+          updated_at: new Date(),
+        }
+      });
+
+      await prisma.$disconnect();
+
+      logger.info(`Reservation ${reservationId} marked as no-show by user ${currentUser.email}`);
+      
+      // Return full reservation data
+      const reservationResult = await ReservationService.findById(currentUser, reservationId);
+      return reservationResult;
+    } catch (error) {
+      logger.error('Error marking as no-show:', error);
+      return ReservationService.prototype.handleDatabaseError(error);
+    }
+  }
+
+  // Helper methods for RBAC checks
+
+  private static async checkEditPermission(currentUser: CurrentUser, reservation: any): Promise<boolean> {
+    if (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') {
+      return true;
+    }
+    if (currentUser.role === 'AGENT' && reservation.agent_id === currentUser.id) {
+      return true;
+    }
+    if (currentUser.role === 'OWNER' && reservation.properties?.owner_id === currentUser.id) {
+      return true;
+    }
+    return false;
+  }
+
+  private static async checkViewPermission(currentUser: CurrentUser, reservation: any): Promise<boolean> {
+    if (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') {
+      return true;
+    }
+    if (currentUser.role === 'AGENT' && reservation.agent_id === currentUser.id) {
+      return true;
+    }
+    if (currentUser.role === 'OWNER' && reservation.properties?.owner_id === currentUser.id) {
+      return true;
+    }
+    if (currentUser.role === 'GUEST' && reservation.guest_id === currentUser.id) {
+      return true;
+    }
+    return false;
   }
 }

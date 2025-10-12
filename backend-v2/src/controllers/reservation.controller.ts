@@ -21,7 +21,8 @@ export class ReservationController extends BaseController {
 
       // Parse query parameters
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+      // Увеличен default limit для scheduler (для получения всех резерваций за период)
+      const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit as string) || 100));
       const search = req.query.search as string;
       const status = req.query.status as string;
       const propertyId = req.query.propertyId as string;
@@ -436,4 +437,665 @@ export class ReservationController extends BaseController {
       ReservationController.error(res, error, 500, 'An error occurred while retrieving reservation statistics');
     }
   }
+
+  // ============================================
+  // NOTES MANAGEMENT
+  // ============================================
+
+  /**
+   * Add note to reservation
+   * POST /api/v2/reservations/:id/notes
+   */
+  public static addNote = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { content, type, priority } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (!content) {
+        ReservationController.validationError(res, [], 'Note content is required');
+        return;
+      }
+
+      const result = await ReservationService.addNote(currentUser, id, { content, type, priority });
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to add note', 400, result.message);
+        return;
+      }
+
+      logger.info(`Note added to reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Note added successfully', 201);
+    } catch (error) {
+      logger.error('Add note error:', error);
+      ReservationController.error(res, error, 500, 'Failed to add note');
+    }
+  };
+
+  /**
+   * Update reservation note
+   * PUT /api/v2/reservations/:id/notes/:noteId
+   */
+  public static updateNote = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id, noteId } = req.params;
+      const { content } = req.body;
+
+      if (!id || !noteId) {
+        ReservationController.validationError(res, [], 'Reservation ID and Note ID are required');
+        return;
+      }
+
+      if (!content) {
+        ReservationController.validationError(res, [], 'Note content is required');
+        return;
+      }
+
+      const result = await ReservationService.updateNote(currentUser, id, noteId, content);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to update note', 400, result.message);
+        return;
+      }
+
+      logger.info(`Note ${noteId} updated for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Note updated successfully');
+    } catch (error) {
+      logger.error('Update note error:', error);
+      ReservationController.error(res, error, 500, 'Failed to update note');
+    }
+  };
+
+  /**
+   * Delete reservation note
+   * DELETE /api/v2/reservations/:id/notes/:noteId
+   */
+  public static deleteNote = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id, noteId } = req.params;
+
+      if (!id || !noteId) {
+        ReservationController.validationError(res, [], 'Reservation ID and Note ID are required');
+        return;
+      }
+
+      const result = await ReservationService.deleteNote(currentUser, id, noteId);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to delete note', 400, result.message);
+        return;
+      }
+
+      logger.info(`Note ${noteId} deleted from reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Note deleted successfully');
+    } catch (error) {
+      logger.error('Delete note error:', error);
+      ReservationController.error(res, error, 500, 'Failed to delete note');
+    }
+  };
+
+  // ============================================
+  // PAYMENTS MANAGEMENT
+  // ============================================
+
+  /**
+   * Add payment to reservation
+   * POST /api/v2/reservations/:id/payments
+   */
+  public static addPayment = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { amount, method, date, reference, description, type } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (!amount || amount <= 0) {
+        ReservationController.validationError(res, [], 'Valid payment amount is required');
+        return;
+      }
+
+      if (!method) {
+        ReservationController.validationError(res, [], 'Payment method is required');
+        return;
+      }
+
+      const result = await ReservationService.addPayment(currentUser, id, { 
+        amount, 
+        method, 
+        date: date || new Date().toISOString(), 
+        reference, 
+        description, 
+        type 
+      });
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to add payment', 400, result.message);
+        return;
+      }
+
+      logger.info(`Payment added to reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Payment added successfully', 201);
+    } catch (error) {
+      logger.error('Add payment error:', error);
+      ReservationController.error(res, error, 500, 'Failed to add payment');
+    }
+  };
+
+  /**
+   * Delete payment from reservation
+   * DELETE /api/v2/reservations/:id/payments/:paymentId
+   */
+  public static deletePayment = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id, paymentId } = req.params;
+
+      if (!id || !paymentId) {
+        ReservationController.validationError(res, [], 'Reservation ID and Payment ID are required');
+        return;
+      }
+
+      const result = await ReservationService.deletePayment(currentUser, id, paymentId);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to delete payment', 400, result.message);
+        return;
+      }
+
+      logger.info(`Payment ${paymentId} deleted from reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Payment deleted successfully');
+    } catch (error) {
+      logger.error('Delete payment error:', error);
+      ReservationController.error(res, error, 500, 'Failed to delete payment');
+    }
+  };
+
+  // ============================================
+  // ADJUSTMENTS MANAGEMENT
+  // ============================================
+
+  /**
+   * Add adjustment to reservation
+   * POST /api/v2/reservations/:id/adjustments
+   */
+  public static addAdjustment = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { type, amount, reason } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (!type || !amount || !reason) {
+        ReservationController.validationError(res, [], 'Type, amount, and reason are required');
+        return;
+      }
+
+      const result = await ReservationService.addAdjustment(currentUser, id, { type, amount, reason });
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to add adjustment', 400, result.message);
+        return;
+      }
+
+      logger.info(`Adjustment added to reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Adjustment added successfully', 201);
+    } catch (error) {
+      logger.error('Add adjustment error:', error);
+      ReservationController.error(res, error, 500, 'Failed to add adjustment');
+    }
+  };
+
+  /**
+   * Delete adjustment from reservation
+   * DELETE /api/v2/reservations/:id/adjustments/:adjustmentId
+   */
+  public static deleteAdjustment = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id, adjustmentId } = req.params;
+
+      if (!id || !adjustmentId) {
+        ReservationController.validationError(res, [], 'Reservation ID and Adjustment ID are required');
+        return;
+      }
+
+      const result = await ReservationService.deleteAdjustment(currentUser, id, adjustmentId);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to delete adjustment', 400, result.message);
+        return;
+      }
+
+      logger.info(`Adjustment ${adjustmentId} deleted from reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Adjustment deleted successfully');
+    } catch (error) {
+      logger.error('Delete adjustment error:', error);
+      ReservationController.error(res, error, 500, 'Failed to delete adjustment');
+    }
+  };
+
+  // ============================================
+  // COMMUNICATIONS MANAGEMENT
+  // ============================================
+
+  /**
+   * Send communication to guest
+   * POST /api/v2/reservations/:id/communications
+   */
+  public static sendCommunication = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { type, subject, content } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (!type || !subject || !content) {
+        ReservationController.validationError(res, [], 'Type, subject, and content are required');
+        return;
+      }
+
+      const result = await ReservationService.sendCommunication(currentUser, id, { type, subject, content });
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to send communication', 400, result.message);
+        return;
+      }
+
+      logger.info(`Communication sent for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Communication sent successfully', 201);
+    } catch (error) {
+      logger.error('Send communication error:', error);
+      ReservationController.error(res, error, 500, 'Failed to send communication');
+    }
+  };
+
+  /**
+   * Get all communications for reservation
+   * GET /api/v2/reservations/:id/communications
+   */
+  public static getCommunications = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.getCommunications(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to get communications', 400, result.message);
+        return;
+      }
+
+      logger.info(`Communications retrieved for reservation ${id}`);
+      ReservationController.success(res, result.data, 'Communications retrieved successfully');
+    } catch (error) {
+      logger.error('Get communications error:', error);
+      ReservationController.error(res, error, 500, 'Failed to get communications');
+    }
+  };
+
+  // ============================================
+  // INVOICES MANAGEMENT
+  // ============================================
+
+  /**
+   * Generate invoice for reservation
+   * POST /api/v2/reservations/:id/invoices
+   */
+  public static generateInvoice = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { type } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.generateInvoice(currentUser, id, type || 'final');
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to generate invoice', 400, result.message);
+        return;
+      }
+
+      logger.info(`Invoice generated for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Invoice generated successfully', 201);
+    } catch (error) {
+      logger.error('Generate invoice error:', error);
+      ReservationController.error(res, error, 500, 'Failed to generate invoice');
+    }
+  };
+
+  /**
+   * Get all invoices for reservation
+   * GET /api/v2/reservations/:id/invoices
+   */
+  public static getInvoices = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.getInvoices(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to get invoices', 400, result.message);
+        return;
+      }
+
+      logger.info(`Invoices retrieved for reservation ${id}`);
+      ReservationController.success(res, result.data, 'Invoices retrieved successfully');
+    } catch (error) {
+      logger.error('Get invoices error:', error);
+      ReservationController.error(res, error, 500, 'Failed to get invoices');
+    }
+  };
+
+  // ============================================
+  // PRICING MANAGEMENT
+  // ============================================
+
+  /**
+   * Update reservation pricing
+   * PUT /api/v2/reservations/:id/pricing
+   */
+  public static updatePricing = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { pricePerNight, totalAmount } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      if (pricePerNight !== undefined && pricePerNight <= 0) {
+        ReservationController.validationError(res, [], 'Price per night must be positive');
+        return;
+      }
+
+      if (totalAmount !== undefined && totalAmount <= 0) {
+        ReservationController.validationError(res, [], 'Total amount must be positive');
+        return;
+      }
+
+      const result = await ReservationService.updatePricing(currentUser, id, { pricePerNight, totalAmount });
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to update pricing', 400, result.message);
+        return;
+      }
+
+      logger.info(`Pricing updated for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Pricing updated successfully');
+    } catch (error) {
+      logger.error('Update pricing error:', error);
+      ReservationController.error(res, error, 500, 'Failed to update pricing');
+    }
+  };
+
+  // ============================================
+  // STATUS OPERATIONS (using Orchestrator)
+  // ============================================
+
+  /**
+   * Confirm reservation
+   * PUT /api/v2/reservations/:id/confirm
+   */
+  public static confirmReservation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.confirmReservation(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to confirm reservation', 400, result.message);
+        return;
+      }
+
+      logger.info(`Reservation ${id} confirmed by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Reservation confirmed successfully');
+    } catch (error) {
+      logger.error('Confirm reservation error:', error);
+      ReservationController.error(res, error, 500, 'Failed to confirm reservation');
+    }
+  };
+
+  /**
+   * Cancel reservation
+   * PUT /api/v2/reservations/:id/cancel
+   */
+  public static cancelReservation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.cancelReservation(currentUser, id, reason);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to cancel reservation', 400, result.message);
+        return;
+      }
+
+      logger.info(`Reservation ${id} cancelled by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Reservation cancelled successfully');
+    } catch (error) {
+      logger.error('Cancel reservation error:', error);
+      ReservationController.error(res, error, 500, 'Failed to cancel reservation');
+    }
+  };
+
+  /**
+   * Check-in guest
+   * PUT /api/v2/reservations/:id/check-in
+   */
+  public static checkInReservation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.checkInReservation(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to check-in guest', 400, result.message);
+        return;
+      }
+
+      logger.info(`Guest checked in for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Guest checked in successfully');
+    } catch (error) {
+      logger.error('Check-in reservation error:', error);
+      ReservationController.error(res, error, 500, 'Failed to check-in guest');
+    }
+  };
+
+  /**
+   * Check-out guest
+   * PUT /api/v2/reservations/:id/check-out
+   */
+  public static checkOutReservation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.checkOutReservation(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to check-out guest', 400, result.message);
+        return;
+      }
+
+      logger.info(`Guest checked out for reservation ${id} by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Guest checked out successfully');
+    } catch (error) {
+      logger.error('Check-out reservation error:', error);
+      ReservationController.error(res, error, 500, 'Failed to check-out guest');
+    }
+  };
+
+  /**
+   * Mark reservation as no-show
+   * PUT /api/v2/reservations/:id/no-show
+   */
+  public static markAsNoShow = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
+        return;
+      }
+
+      const { id } = req.params;
+
+      if (!id) {
+        ReservationController.validationError(res, [], 'Reservation ID is required');
+        return;
+      }
+
+      const result = await ReservationService.markAsNoShow(currentUser, id);
+
+      if (!result.success) {
+        ReservationController.error(res, result.error || 'Failed to mark as no-show', 400, result.message);
+        return;
+      }
+
+      logger.info(`Reservation ${id} marked as no-show by user ${currentUser.email}`);
+      ReservationController.success(res, result.data, 'Reservation marked as no-show successfully');
+    } catch (error) {
+      logger.error('Mark as no-show error:', error);
+      ReservationController.error(res, error, 500, 'Failed to mark as no-show');
+    }
+  };
 }

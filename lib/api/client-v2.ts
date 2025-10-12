@@ -121,7 +121,8 @@ class ApiClientV2 {
         
         try {
           errorData = await response.json();
-          console.error("🔍 API Error Response Body:", errorData);
+          // Прибрано детальне логування помилок - не заважає роботі
+          console.error("🚨 API Error:", response.status, response.statusText, errorData.message || errorMessage);
           errorMessage = errorData.error?.message || errorData.message || errorMessage;
         } catch (e) {
           console.error("❌ Failed to parse error response JSON:", e);

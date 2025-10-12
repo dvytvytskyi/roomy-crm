@@ -111,6 +111,11 @@ model properties {
   amenities                        String[]
   house_rules                      String[]
   tags                             String[]
+  
+  // Calendar integration fields
+  airbnb_ical_import_url           String?           @map("airbnb_ical_import_url")
+  booking_ical_import_url          String?           @map("booking_ical_import_url")
+  ical_export_url                  String?           @map("ical_export_url")
   is_active                        Boolean           @default(true)
   is_published                     Boolean           @default(false)
   primary_image                    String?
@@ -196,7 +201,8 @@ model reservations {
   paid_amount                        Float             @default(0)
   outstanding_balance                Float             @default(0)
   status                             ReservationStatus @default(PENDING)
-  source                             String            @default("Direct")
+  source                             String            @default("DIRECT")
+  external_id                        String?           @map("external_id")
   guest_name                         String?
   guest_email                        String?
   guest_phone                        String?

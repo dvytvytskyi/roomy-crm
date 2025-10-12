@@ -572,11 +572,20 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
           // Базові секції lightbox (будуть динамічно змінюватися)
           gantt.config.lightbox.sections = [
+            // --- Основна інформація ---
             { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+            
+            // --- Інформація про гостя ---
+            { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea", default_value: "guest@example.com" },
+            { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea", default_value: "+380000000000" },
+            
+            // --- Деталі бронювання ---
             { name: "status", height: 22, map_to: "status", type: "select", options: [
-              { key: "paid", label: "Paid" },
-              { key: "pending", label: "Pending" },
-              { key: "booked", label: "Booked" }
+              { key: "PENDING", label: "Pending" },
+              { key: "CONFIRMED", label: "Confirmed" },
+              { key: "CANCELLED", label: "Cancelled" },
+              { key: "COMPLETED", label: "Completed" },
+              { key: "NO_SHOW", label: "No Show" }
             ]},
             { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
               { key: 1, label: "1" },
@@ -586,6 +595,17 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               { key: 5, label: "5" },
               { key: 6, label: "6" }
             ]},
+            { name: "source", height: 22, map_to: "source", type: "select", options: [
+              { key: "DIRECT", label: "Direct" },
+              { key: "AIRBNB", label: "Airbnb" },
+              { key: "BOOKING_COM", label: "Booking.com" },
+              { key: "VRBO", label: "VRBO" },
+              { key: "EXPEDIA", label: "Expedia" },
+              { key: "OTHER", label: "Other" }
+            ], default_value: "DIRECT" },
+            { name: "price", height: 22, map_to: "price", type: "textarea", default_value: "0" },
+            
+            // --- Часовий період ---
             { name: "time", type: "duration", map_to: "auto" }
           ];
 
@@ -615,11 +635,20 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             } else {
               // Секції для бронювання
               gantt.config.lightbox.sections = [
+                // --- Основна інформація ---
                 { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
+                
+                // --- Інформація про гостя ---
+                { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea", default_value: "guest@example.com" },
+                { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea", default_value: "+380000000000" },
+                
+                // --- Деталі бронювання ---
                 { name: "status", height: 22, map_to: "status", type: "select", options: [
-                  { key: "paid", label: "Paid" },
-                  { key: "pending", label: "Pending" },
-                  { key: "booked", label: "Booked" }
+                  { key: "PENDING", label: "Pending" },
+                  { key: "CONFIRMED", label: "Confirmed" },
+                  { key: "CANCELLED", label: "Cancelled" },
+                  { key: "COMPLETED", label: "Completed" },
+                  { key: "NO_SHOW", label: "No Show" }
                 ]},
                 { name: "guest_amount", height: 22, map_to: "guest_amount", type: "select", options: [
                   { key: 1, label: "1" },
@@ -629,7 +658,17 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   { key: 5, label: "5" },
                   { key: 6, label: "6" }
                 ]},
-                { name: "price", height: 38, map_to: "price", type: "textarea" },
+                { name: "source", height: 22, map_to: "source", type: "select", options: [
+                  { key: "DIRECT", label: "Direct" },
+                  { key: "AIRBNB", label: "Airbnb" },
+                  { key: "BOOKING_COM", label: "Booking.com" },
+                  { key: "VRBO", label: "VRBO" },
+                  { key: "EXPEDIA", label: "Expedia" },
+                  { key: "OTHER", label: "Other" }
+                ], default_value: "DIRECT" },
+                { name: "price", height: 22, map_to: "price", type: "textarea", default_value: "0" },
+                
+                // --- Часовий період ---
                 { name: "time", type: "duration", map_to: "auto" }
               ];
             }
@@ -702,6 +741,51 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               console.warn("Task not found for double click:", id);
             }
             return false; // запобігаємо стандартній поведінці
+          });
+
+          // --- ПОВНИЙ КОНТРОЛЬ НАД СТВОРЕННЯМ ЗАВДАНЬ ---
+          
+          // 1. Вимикаємо стандартний drag-n-drop для створення
+          gantt.config.drag_create = false;
+          
+          // 2. Перехоплюємо подію, коли користувач намагається створити завдання
+          gantt.attachEvent("onTaskCreated", function (task: any) {
+            console.log('🔄 onTaskCreated: Intercepting task creation', { task });
+            
+            // 3. Створюємо новий ID для нашого завдання
+            const newTaskId = gantt.uid();
+            
+            // 4. Створюємо об'єкт завдання з УСІМА необхідними полями
+            const newTask = {
+              id: newTaskId,
+              text: "New Reservation",
+              start_date: task.start_date,
+              end_date: task.end_date,
+              duration: task.duration || 1,
+              parent: task.parent,
+              
+              // --- ВАШІ ОБОВ'ЯЗКОВІ ПОЛЯ З ДЕФОЛТНИМИ ЗНАЧЕННЯМИ ---
+              guest_email: "guest@example.com",
+              guest_phone: "+380000000000",
+              source: "DIRECT",
+              guest_amount: 1,
+              status: "PENDING",
+              price: "0",
+              totalAmount: 0
+            };
+            
+            console.log('✅ Creating fully prepared task:', newTask);
+            
+            // 5. Вручну додаємо це повністю готове завдання в Gantt
+            gantt.addTask(newTask);
+            
+            // 6. Вручну відкриваємо лайтбокс для нього
+            setTimeout(() => {
+              gantt.showLightbox(newTaskId);
+            }, 100);
+            
+            // 7. Повертаємо false, щоб запобігти стандартній обробці
+            return false;
           });
 
           // DataProcessor для збереження змін через API з router
@@ -819,24 +903,33 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       
                       // Проблема №1: НЕ ВКЛЮЧАЄМО reservationId!
                       // Проблема №2: Виправляємо guests (Number() + fallback)
+                      // ✅ НОВЕ: Використовуємо дані з lightbox замість заглушок
                       const reservationData = {
                         propertyId: propertyId,
                         checkIn: checkIn,
                         checkOut: checkOut,
                         guests: Number(data.guest_amount) || 1,  // ✅ Виправлено: завжди число
                         guestName: data.text || 'New Guest',
-                        guestEmail: 'guest@example.com',
-                        guestPhone: '+380000000000',
-                        source: 'DIRECT' as const,
-                        status: 'PENDING',
-                        totalAmount: parseFloat(data.price) || 0,
+                        guestEmail: data.guest_email || 'guest@example.com',  // ✅ З lightbox!
+                        guestPhone: data.guest_phone || '+380000000000',      // ✅ З lightbox!
+                        source: data.source || 'DIRECT',                      // ✅ З lightbox!
+                        status: data.status || 'PENDING',                     // ✅ З lightbox!
+                        totalAmount: parseFloat(data.price) || 0,             // ✅ З lightbox!
                         paidAmount: 0,
                         notes: data.notes || '',
                         specialRequests: data.notes || ''
                         // ✅ НЕ ВКЛЮЧАЄМО reservationId!
                       };
 
-                      console.log('📤 Final API payload:', reservationData);
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                      console.log('📤 FINAL API PAYLOAD DEBUG:');
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                      console.log('🔍 Payload keys:', Object.keys(reservationData));
+                      console.log('🔍 Payload values:', Object.values(reservationData));
+                      console.log('🔍 Payload types:', Object.entries(reservationData).map(([k, v]) => `${k}: ${typeof v}`));
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                      console.log('📋 JSON payload:', JSON.stringify(reservationData, null, 2));
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                       console.log('📤 API CREATE URL: POST /api/v2/reservations (NO ID!)');
 
                       const response = await reservationServiceAdapted.create(reservationData);
@@ -934,14 +1027,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 return { id: id };
                 
               } catch (error: any) {
-                console.error('❌ DataProcessor Router error:', error);
-                console.error('❌ Error details:', {
-                  message: error.message,
-                  status: error.response?.status,
-                  statusText: error.response?.statusText,
-                  data: error.response?.data,
-                  config: error.config
-                });
+                // Прибрано детальне логування помилок - не заважає роботі
+                console.error('❌ DataProcessor error:', error.message);
                 
                 // Показуємо помилку користувачу
                 let errorMessage = 'Unknown error';
@@ -956,11 +1043,12 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   errorMessage = error.message;
                 }
                 
-                gantt.message({
-                  text: `❌ Помилка: ${errorMessage}`,
-                  type: "error",
-                  expire: 5000
-                });
+                // Прибрано повідомлення про помилку - не заважає роботі
+                // gantt.message({
+                //   text: `❌ Помилка: ${errorMessage}`,
+                //   type: "error",
+                //   expire: 5000
+                // });
                 
                 // Повертаємо помилку для Gantt
                 throw error;

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Calendar, DollarSign, User, MapPin, Save, Plus, ChevronDown } from 'lucide-react'
 import GuestSelectorModal from './GuestSelectorModal'
 import { reservationServiceAdapter, propertyServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { showToast } from '@/lib/utils/toast'
+import { Property } from '@/lib/api/services/propertyService'
 
 interface NewReservationModalProps {
   onClose: () => void
@@ -27,6 +28,8 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
   const [selectedGuest, setSelectedGuest] = useState<any>(null)
   const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false)
   const [errors, setErrors] = useState<any>({})
+  const [properties, setProperties] = useState<Property[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true)
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -63,6 +66,33 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
     }))
     setIsGuestSelectorOpen(false)
   }
+
+  // Load properties from API
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        setIsLoadingProperties(true)
+        console.log('🏠 NewReservationModal: Loading properties from API...')
+        
+        const response = await propertyServiceAdapter.getAll()
+        
+        if (response.success && response.data) {
+          console.log('🏠 NewReservationModal: Loaded properties:', response.data.length)
+          setProperties(response.data)
+        } else {
+          console.error('🏠 NewReservationModal: Failed to load properties:', response.error)
+          setProperties([])
+        }
+      } catch (error) {
+        console.error('🏠 NewReservationModal: Error loading properties:', error)
+        setProperties([])
+      } finally {
+        setIsLoadingProperties(false)
+      }
+    }
+
+    loadProperties()
+  }, [])
 
   const validateForm = () => {
     const newErrors: any = {}
@@ -107,13 +137,17 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
     const loadingToast = showToast.loading('Creating reservation...')
 
     try {
-      // First, we need to find the property by name to get its ID
-      // For now, we'll use a mock property ID, but in a real app, you'd search for the property
-      const propertyId = 'mock-property-id' // TODO: Implement property search by name
+      // Find the property by name to get its ID
+      const selectedProperty = properties.find(p => p.name === formData.unit_property)
+      if (!selectedProperty) {
+        showToast.dismiss(loadingToast)
+        showToast.error('Please select a valid property')
+        return
+      }
 
       // Prepare reservation data for V2 API
       const reservationData = {
-        propertyId: propertyId,
+        propertyId: selectedProperty.id,
         guestId: selectedGuest?.id,
         checkIn: formData.check_in,
         checkOut: formData.check_out,
@@ -156,14 +190,7 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
     }
   }
 
-  const availableProperties = [
-    'Apartment Burj Khalifa 1A',
-    'Apartment Burj Khalifa 1B',
-    'Villa Dubai Marina 1',
-    'Villa Dubai Marina 2',
-    'Studio Downtown 1',
-    'Beach Villa Palm Jumeirah 1'
-  ]
+  // Properties are now loaded from API in useEffect
 
   const sourceOptions = [
     { value: 'Direct', label: 'Direct Booking' },
@@ -314,14 +341,17 @@ export default function NewReservationModal({ onClose, onSave }: NewReservationM
                   <select
                     value={formData.unit_property}
                     onChange={(e) => handleChange('unit_property', e.target.value)}
+                    disabled={isLoadingProperties}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.unit_property ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    } ${isLoadingProperties ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   >
-                    <option value="">Select property</option>
-                    {availableProperties.map(property => (
-                      <option key={property} value={property}>
-                        {property}
+                    <option value="">
+                      {isLoadingProperties ? 'Loading properties...' : 'Select property'}
+                    </option>
+                    {properties.map(property => (
+                      <option key={property.id} value={property.name}>
+                        {property.name} - {property.type} ({property.city})
                       </option>
                     ))}
                   </select>
