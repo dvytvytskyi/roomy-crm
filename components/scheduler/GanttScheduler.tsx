@@ -1402,29 +1402,57 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
-          // Обробник збереження з модалки - спрощена версія
+          // Обробник збереження з модалки - з діагностикою
           gantt.attachEvent("onLightboxSave", function(id: any, item: any, is_new: any) {
             try {
               console.log('💾 onLightboxSave:', { id, item, is_new });
+              console.log('📋 Item data:', JSON.stringify(item, null, 2));
               
-              // Якщо це нова резервація, DataProcessor вже обробить її
+              // Якщо це нова резервація
               if (is_new) {
-                console.log('✅ New reservation will be handled by DataProcessor');
+                console.log('✅ New reservation - DataProcessor will handle it');
+                
+                // Показуємо повідомлення про створення
+                setTimeout(() => {
+                  gantt.message({
+                    text: "✅ Нова резервація створюється...",
+                    type: "success",
+                    expire: 3000
+                  });
+                }, 100);
+                
                 return true;
               }
               
-              // Для існуючих резервацій - дозволяємо стандартному DataProcessor обробити
+              // Для існуючих резервацій - примусово зберігаємо
               if (item && item.type !== "project") {
-                console.log('🔄 Existing reservation - letting DataProcessor handle it');
+                console.log('🔄 Existing reservation - forcing save...');
                 
-                // Просто показуємо повідомлення
+                // Примусово викликаємо DataProcessor
                 setTimeout(() => {
-                  gantt.message({
-                    text: "✅ Зміни резервації збережено!",
-                    type: "success",
-                    expire: 2000
-                  });
-                }, 500);
+                  try {
+                    const dp = gantt.getDataProcessor();
+                    if (dp) {
+                      console.log('📤 Calling DataProcessor.sendData for update...');
+                      dp.sendData("update", id, item);
+                    } else {
+                      console.warn('⚠️ No DataProcessor found');
+                    }
+                    
+                    gantt.message({
+                      text: "✅ Зміни резервації збережено!",
+                      type: "success",
+                      expire: 3000
+                    });
+                  } catch (error) {
+                    console.error('❌ Error saving reservation:', error);
+                    gantt.message({
+                      text: "❌ Помилка збереження резервації",
+                      type: "error",
+                      expire: 3000
+                    });
+                  }
+                }, 200);
               }
               
               return true;
@@ -1494,6 +1522,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           const dp = gantt.createDataProcessor({
             router: async (entity: string, action: string, data: any, id: any) => {
               console.log(`📊 DataProcessor Router: ${entity} ${action}`, { data, id });
+              
+              // Перевіряємо токен авторизації
+              const token = localStorage.getItem('token');
+              console.log('🔑 Auth token check:', token ? 'Token exists' : 'No token found');
               
               try {
                 // Працюємо тільки з резерваціями (task entity)
@@ -1634,6 +1666,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                       console.log('📤 API CREATE URL: POST /api/v2/reservations (NO ID!)');
 
+                      // Перевіряємо авторизацію перед API викликом
+                      if (!token) {
+                        throw new Error('No authentication token found. Please log in.');
+                      }
+
                       const response = await reservationServiceAdapted.create(reservationData);
                       
                       if (response.success && response.data) {
@@ -1684,6 +1721,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       console.log('📤 API UPDATE Request data:', updateData);
                       console.log('📤 API UPDATE URL: PUT /api/v2/reservations/' + reservationId);
 
+                      // Перевіряємо авторизацію перед API викликом
+                      if (!token) {
+                        throw new Error('No authentication token found. Please log in.');
+                      }
+
                       const response = await reservationServiceAdapted.update(reservationId, updateData);
                       
                       if (response.success) {
@@ -1704,6 +1746,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       
                       const reservationId = extractReservationId(id);
                       console.log('📤 API DELETE URL: DELETE /api/v2/reservations/' + reservationId);
+
+                      // Перевіряємо авторизацію перед API викликом
+                      if (!token) {
+                        throw new Error('No authentication token found. Please log in.');
+                      }
 
                       const response = await reservationServiceAdapted.delete(reservationId);
                       
