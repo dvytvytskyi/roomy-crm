@@ -609,15 +609,51 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         /* Стилі для tooltip */
         .gantt_tooltip {
           font-size: 13px !important;
-          line-height: 16px !important;
+          line-height: 1.4 !important;
           background: white !important;
           border: 1px solid #e5e7eb !important;
           border-radius: 8px !important;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
-          padding: 16px !important;
-          max-width: 320px !important;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+          padding: 12px 14px !important;
+          max-width: 300px !important;
+          min-width: 250px !important;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
           color: #374151 !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          white-space: normal !important;
+        }
+        
+        /* Покращення стилів для елементів всередині tooltip */
+        .gantt_tooltip img {
+          max-width: 16px !important;
+          max-height: 16px !important;
+          vertical-align: middle !important;
+          display: inline-block !important;
+        }
+        
+        .gantt_tooltip svg {
+          flex-shrink: 0 !important;
+          width: 16px !important;
+          height: 16px !important;
+        }
+        
+        /* Стилі для task content */
+        .gantt_task_content {
+          font-size: 11px !important;
+          line-height: 1.2 !important;
+          padding: 2px 4px !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+          word-break: break-all !important;
+        }
+        
+        .gantt_task_content img {
+          max-width: 14px !important;
+          max-height: 14px !important;
+          vertical-align: middle !important;
+          display: inline-block !important;
         }
       `;
       document.head.appendChild(style);
@@ -944,77 +980,91 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             const logoUrl = getPlatformLogo(task.source || 'DIRECT');
             const platformName = task.source || 'DIRECT';
 
-            // Створюємо HTML контент tooltip
+            // Отримуємо дані для відображення
+            const guestName = reservation?.guestName || task.guest_name || 'Unknown Guest';
+            const propertyName = property?.name || 'Unknown Property';
+            const totalAmount = reservation?.totalAmount || task.price || 0;
+            const guestCount = task.guest_amount || 1;
+            const agentName = reservation?.agentName || 'System';
+            
+            // Обмежуємо довжину тексту
+            const truncateText = (text: string, maxLength: number) => {
+              if (text.length <= maxLength) return text;
+              return text.substring(0, maxLength) + '...';
+            };
+
+            // Створюємо HTML контент tooltip з покращеним дизайном
             let content = `
-              <div style="margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 8px; color: #374151;">
+              <div style="margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; margin-bottom: 3px; min-height: 20px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 6px; color: #374151; flex-shrink: 0;">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   </svg>
-                  <span style="color: #374151; font-size: 14px;">
-                    ${logoUrl ? `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" alt="${platformName} logo" />` : ''}
+                  <span style="color: #374151; font-size: 13px; word-break: break-word;">
+                    ${logoUrl ? `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle; display: inline-block;" alt="${platformName} logo" />` : ''}
                     ${platformName}
                   </span>
                 </div>
                 
-                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px; color: #059669;">
+                <div style="display: flex; align-items: center; margin-bottom: 3px; min-height: 20px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; color: #059669; flex-shrink: 0;">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                   </svg>
-                  <span style="color: #374151; font-size: 14px;">Reservation • ${nights} nights</span>
+                  <span style="color: #374151; font-size: 13px;">Reservation • ${nights} nights</span>
                 </div>
                 
-                <div style="color: #374151; font-size: 14px; margin-bottom: 8px;">
+                <div style="color: #374151; font-size: 13px; margin-bottom: 6px; line-height: 1.3;">
                   ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
                 </div>
               </div>
               
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+              <div style="margin-bottom: 3px; display: flex; align-items: flex-start; min-height: 20px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 6px; color: #374151; margin-top: 2px; flex-shrink: 0;">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 </svg>
-                <span style="color: #374151; font-size: 14px;">${property?.name || 'Unknown Property'}</span>
+                <span style="color: #374151; font-size: 13px; word-break: break-word; line-height: 1.3;">${truncateText(propertyName, 25)}</span>
               </div>
               
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+              <div style="margin-bottom: 3px; display: flex; align-items: flex-start; min-height: 20px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 6px; color: #374151; margin-top: 2px; flex-shrink: 0;">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <span style="color: #374151; font-size: 14px;">
-                  ${reservation?.guestName || task.guest_name || 'Unknown Guest'} ${reservation?.totalAmount || task.price ? `${reservation?.totalAmount || task.price} AED` : ''} • ${task.guest_amount || 1} guest${(task.guest_amount || 1) > 1 ? 's' : ''}
+                <span style="color: #374151; font-size: 13px; word-break: break-word; line-height: 1.3;">
+                  ${truncateText(guestName, 20)} ${totalAmount > 0 ? `${totalAmount} AED` : ''} • ${guestCount} guest${guestCount > 1 ? 's' : ''}
                 </span>
               </div>
               
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
-                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
-                  <polyline points="12,6 12,12 16,14"/>
+              <div style="margin-bottom: 3px; display: flex; align-items: flex-start; min-height: 20px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 6px; color: #374151; margin-top: 2px; flex-shrink: 0;">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
-                <span style="color: #374151; font-size: 14px;">AED ${reservation?.totalAmount || task.price || 0} total</span>
+                <span style="color: #374151; font-size: 13px;">AED ${totalAmount} total</span>
               </div>
               
               ${reservation?.totalAmount && reservation?.paidAmount && (reservation.totalAmount - reservation.paidAmount) > 0 ? `
-                <div style="margin-bottom: 4px; color: #EA580C; font-size: 14px;">
-                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Unpaid</strong>
+                <div style="margin-bottom: 3px; color: #EA580C; font-size: 13px; font-weight: 600;">
+                  AED ${reservation.totalAmount - reservation.paidAmount} Unpaid
                 </div>
-                <div style="margin-bottom: 8px; color: #EA580C; font-size: 14px;">
-                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Payout</strong>
+                <div style="margin-bottom: 6px; color: #EA580C; font-size: 13px; font-weight: 600;">
+                  AED ${reservation.totalAmount - reservation.paidAmount} Payout
                 </div>
               ` : ''}
               
-              <div style="color: #6B7280; font-size: 14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle;">
+              <div style="color: #6B7280; font-size: 12px; display: flex; align-items: flex-start; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f3f4f6;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 6px; margin-top: 1px; flex-shrink: 0;">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12,6 12,12 16,14"/>
                 </svg>
-                Added by ${reservation?.agentName || 'System'} on ${new Date(task.start_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                <span style="line-height: 1.3; word-break: break-word;">
+                  Added by ${truncateText(agentName, 15)} on ${new Date(task.start_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
               </div>
             `;
 
@@ -1064,7 +1114,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
           };
 
-          // Кастомний template для task content з логотипами
+          // Кастомний template для task content з логотипами та обрізкою тексту
           gantt.templates.task_content = (start, end, task) => {
             if (task.type === "project") {
               return task.text;
@@ -1088,14 +1138,26 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
               const logoUrl = getPlatformLogo(platform);
               
-              // Створюємо HTML з логотипом та текстом
+              // Обрізаємо довгі тексти для кращого відображення
+              const truncateText = (text: string, maxLength: number) => {
+                if (text.length <= maxLength) return text;
+                return text.substring(0, maxLength) + '...';
+              };
+              
+              // Створюємо HTML з логотипом та обрізаним текстом
               let content = '';
               
               if (logoUrl) {
-                content += `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;" alt="${platform} logo" />`;
+                content += `<img src="${logoUrl}" style="width: 14px; height: 14px; margin-right: 3px; vertical-align: middle; display: inline-block;" alt="${platform} logo" />`;
               }
               
-              content += `${platform} | ${guestName} | ${price} | ${status}`;
+              // Обрізаємо кожен компонент для кращого відображення
+              const shortPlatform = truncateText(platform, 8);
+              const shortGuestName = truncateText(guestName, 15);
+              const shortPrice = price.length > 10 ? truncateText(price, 10) : price;
+              const shortStatus = truncateText(status, 8);
+              
+              content += `${shortPlatform} | ${shortGuestName} | ${shortPrice} | ${shortStatus}`;
               
               return content;
             }
