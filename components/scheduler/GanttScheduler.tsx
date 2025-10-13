@@ -893,15 +893,17 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               lightboxTimeout = setTimeout(() => {
                 try {
                   const lightboxData = {
-                    text: task.text || '',
-                    guest_email: task.guest_email || 'guest@example.com', // ✅ Додаємо default значення
-                    guest_phone: task.guest_phone || '+380000000000',      // ✅ Додаємо default значення
-                    status: task.status || 'pending',                      // ✅ Виправляємо статус
-                    guest_amount: task.guest_amount || 1,
+                    text: task.text || 'New Reservation',
+                    guest_email: task.guest_email || 'guest@example.com',
+                    guest_phone: task.guest_phone || '+971501234567',
+                    status: task.status || 'pending',
+                    guest_amount: task.guest_amount || 2,
                     source: task.source || 'DIRECT',
-                    price: task.price || '0',
+                    price: task.price || '500',
                     start_date: task.start_date,
-                    end_date: task.end_date
+                    end_date: task.end_date,
+                    notes: task.notes || 'Reservation created via scheduler',
+                    special_requests: task.special_requests || 'Late check-in preferred'
                   };
                   
                   console.log('📝 Setting lightbox data:', lightboxData);
@@ -1651,16 +1653,16 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                         propertyId: propertyId,
                         checkIn: checkIn,
                         checkOut: checkOut,
-                        guests: Number(data.guest_amount) || 1,
+                        guests: Number(data.guest_amount) || 2,
                         guestName: data.text || 'New Guest',
-                        guestEmail: getLightboxValue('guest_email') || 'guest@example.com',  // ✅ З форми!
-                        guestPhone: getLightboxValue('guest_phone') || '+380000000000',      // ✅ З форми!
-                        source: getLightboxValue('source') || 'DIRECT',                      // ✅ З форми!
-                        status: getLightboxValue('status') || 'pending',                     // ✅ З форми!
-                        totalAmount: parseFloat(getLightboxValue('price')) || 0,             // ✅ З форми!
+                        guestEmail: getLightboxValue('guest_email') || 'guest@example.com',
+                        guestPhone: getLightboxValue('guest_phone') || '+971501234567',
+                        source: getLightboxValue('source') || 'DIRECT',
+                        status: getLightboxValue('status') || 'pending',
+                        totalAmount: parseFloat(getLightboxValue('price')) || 500,
                         paidAmount: 0,
-                        notes: getLightboxValue('notes') || '',
-                        specialRequests: getLightboxValue('special_requests') || ''
+                        notes: getLightboxValue('notes') || 'Reservation created via scheduler',
+                        specialRequests: getLightboxValue('special_requests') || 'Late check-in preferred'
                         // ✅ НЕ ВКЛЮЧАЄМО reservationId!
                       };
 
