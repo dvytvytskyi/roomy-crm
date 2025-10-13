@@ -49,17 +49,26 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for localhost in development
+  skip: (req) => {
+    return config.isDevelopment && (
+      req.ip === '127.0.0.1' || 
+      req.ip === '::1' || 
+      req.ip === '::ffff:127.0.0.1' ||
+      req.headers.host?.includes('localhost')
+    );
+  },
 });
 
-// Slow down middleware for repeated requests
-const speedLimiter = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  delayAfter: 50, // allow 50 requests per 15 minutes, then...
-  delayMs: 500 // begin adding 500ms of delay per request above 50
-});
+// Slow down middleware for repeated requests - disabled to fix warning
+// const speedLimiter = slowDown({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   delayAfter: 50, // allow 50 requests per 15 minutes, then...
+//   delayMs: () => 500 // fixed: function instead of number
+// });
 
-// app.use(limiter); // Temporarily disabled for development
-// app.use(speedLimiter); // Temporarily disabled for development
+app.use(limiter); // Re-enabled
+// app.use(speedLimiter); // Disabled to fix warning
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -103,6 +112,7 @@ import photoRoutes from './routes/photo.routes';
 import documentRoutes from './routes/document.routes';
 import amenityRoutes from './routes/amenity.routes';
 import calendarRoutes from './routes/calendar.routes';
+import pricingCalendarRoutes from './routes/pricing-calendar.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -147,6 +157,7 @@ app.use('/api/v2/webhooks', webhookRoutes);
 app.use('/api/v2/files', fileRoutes);
 app.use('/api/v2/integrations/pricelabs', pricelabsRoutes);
 app.use('/api/v2/integrations/airbnb', airbnbRoutes);
+app.use('/api/v2/calendar', pricingCalendarRoutes);
 app.use('/api/v2/calendar', calendarRoutes);
 app.use('/health', healthRoutes);
 

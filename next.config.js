@@ -17,12 +17,17 @@ const nextConfig = {
     
     return config;
   },
-  // Enable static file serving for Bryntum assets
+  // Enable static file serving for Bryntum assets and API proxy
   async rewrites() {
     return [
       {
         source: '/build/:path*',
         destination: '/build/:path*',
+      },
+      // Proxy API requests to backend
+      {
+        source: '/api/v2/:path*',
+        destination: 'http://localhost:3002/api/v2/:path*',
       },
     ];
   },

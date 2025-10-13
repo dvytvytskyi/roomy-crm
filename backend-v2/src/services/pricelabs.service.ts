@@ -609,4 +609,157 @@ export class PricelabsService {
       console.log(`[PricelabsService] ===== GET ALL LISTINGS END =====`);
     }
   }
+
+  /**
+   * Get bulk pricing data for multiple listings over a date range
+   * Uses DSO (Date Specific Overrides) + base prices for optimal performance
+   * @param listingIds - Array of PriceLabs listing IDs
+   * @param startDate - Start date in YYYY-MM-DD format
+   * @param endDate - End date in YYYY-MM-DD format
+   * @returns Array of pricing data for each listing
+   */
+  public static async getBulkPrices(
+    listingIds: string[],
+    startDate: string,
+    endDate: string
+  ): Promise<{
+    success: boolean;
+    data?: Array<{
+      listing_id: string;
+      prices: Array<{
+        date: string;
+        price: number;
+      }>;
+    }>;
+    error?: string;
+  }> {
+    try {
+      if (!this.API_KEY) {
+        logger.warn('[PricelabsService] API key not configured for bulk pricing');
+        return {
+          success: false,
+          error: 'PriceLabs API key not configured'
+        };
+      }
+
+      if (!listingIds || listingIds.length === 0) {
+        return {
+          success: true,
+          data: []
+        };
+      }
+
+      logger.info(`[PricelabsService] Fetching bulk prices for ${listingIds.length} listings from ${startDate} to ${endDate}`);
+
+      const results = await Promise.allSettled(
+        listingIds.map(async (listingId) => {
+          try {
+            // Step 1: Get base price from listing details
+            const listingResponse = await axios.get(`${this.PRICELABS_API_URL}/listings/${listingId}`, {
+              headers: {
+                'X-API-Key': this.API_KEY,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+
+            const listing = listingResponse.data.listings?.[0];
+            const basePrice = listing?.base || 0;
+
+            // Step 2: Get DSO overrides for the date range
+            const overridesResponse = await axios.get(`${this.PRICELABS_API_URL}/listings/${listingId}/overrides`, {
+              params: {
+                pms: listing?.pms || 'airbnb' // Default PMS
+              },
+              headers: {
+                'X-API-Key': this.API_KEY,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+
+            const overrides = overridesResponse.data.overrides || [];
+            
+            logger.info(`[PricelabsService] Listing ${listingId}: base=${basePrice}, overrides=${overrides.length}`);
+            
+            // Step 3: Create pricing map for the date range
+            const prices: Array<{ date: string; price: number }> = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+              const dateStr = d.toISOString().split('T')[0];
+              
+              // Check if there's an override for this date
+              const override = overrides.find((o: any) => o.date === dateStr);
+              const price = override ? parseFloat(override.price) : basePrice;
+              
+              // Log if we found an override
+              if (override) {
+                logger.info(`[PricelabsService] Found override for ${dateStr}: ${override.price} (base: ${basePrice})`);
+              }
+              
+              prices.push({
+                date: dateStr,
+                price: price
+              });
+            }
+
+            logger.info(`[PricelabsService] Successfully fetched ${prices.length} prices for listing ${listingId}`);
+            
+            return {
+              listing_id: listingId,
+              prices: prices
+            };
+
+          } catch (error: any) {
+            logger.error(`[PricelabsService] Error fetching prices for listing ${listingId}:`, error.message);
+            
+            // Return fallback with base price for all dates
+            const prices: Array<{ date: string; price: number }> = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+              const dateStr = d.toISOString().split('T')[0];
+              prices.push({
+                date: dateStr,
+                price: 0 // Fallback price
+              });
+            }
+            
+            return {
+              listing_id: listingId,
+              prices: prices
+            };
+          }
+        })
+      );
+
+      // Process results
+      const successfulResults = results
+        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+        .map(result => result.value);
+
+      const failedCount = results.filter(result => result.status === 'rejected').length;
+      
+      if (failedCount > 0) {
+        logger.warn(`[PricelabsService] ${failedCount} listings failed to fetch prices`);
+      }
+
+      logger.info(`[PricelabsService] Successfully fetched bulk prices for ${successfulResults.length} listings`);
+
+      return {
+        success: true,
+        data: successfulResults
+      };
+
+    } catch (error: any) {
+      logger.error('[PricelabsService] Error in getBulkPrices:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch bulk prices'
+      };
+    }
+  }
 }

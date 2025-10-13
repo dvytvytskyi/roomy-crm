@@ -163,7 +163,7 @@
   background-color: #dbeafe;
   color: #2563eb;
   font-weight: 600;
-  border: 2px solid #3b82f6;
+  border: 2px solid #f97316;
 }
 
 .react-datepicker__day--checkout:hover {
@@ -261,14 +261,14 @@
 }
 
 .fc-button-primary {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #f97316;
+  border-color: #f97316;
   color: white;
 }
 
 .fc-button-primary:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: #ea580c;
+  border-color: #ea580c;
 }
 
 .fc-resource-timeline-divider {
@@ -356,14 +356,14 @@
 }
 
 .fc-button-primary {
-  background: #3b82f6 !important;
-  border-color: #3b82f6 !important;
+  background: #f97316 !important;
+  border-color: #f97316 !important;
   color: white !important;
 }
 
 .fc-button-primary:hover {
-  background: #2563eb !important;
-  border-color: #2563eb !important;
+  background: #ea580c !important;
+  border-color: #ea580c !important;
 }
 
 .fc-resource-timeline-divider {
@@ -944,6 +944,380 @@ body, html {
   overflow: hidden;
 }
 
+/* ===== DHHTMLXGANTT CUSTOM STYLING ===== */
+
+/* Глобальні CSS змінні для dhtmlxGantt */
+:root {
+  /* --- Типографіка --- */
+  --dhx-gantt-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --dhx-gantt-font-size: 14px;
+  --dhx-gantt-base-colors-text-base: #1f2937;
+  --dhx-gantt-base-colors-text-light: #6b7280;
+
+  /* --- Основна палітра --- */
+  --dhx-gantt-container-background: #ffffff;
+  --dhx-gantt-base-colors-primary: #f97316;
+  --dhx-gantt-base-colors-border: #e5e7eb;
+  --dhx-gantt-base-colors-border-light: #f3f4f6;
+
+  /* --- Область сітки (ліва частина) --- */
+  --dhx-gantt-grid-scale-background: #f8fafc;
+  --dhx-gantt-grid-scale-color: var(--dhx-gantt-base-colors-text-light);
+  --dhx-gantt-task-row-background: #ffffff;
+  --dhx-gantt-task-row-background--odd: #f9fafb;
+  --dhx-gantt-task-row-border: 1px solid #f3f4f6;
+  --dhx-gantt-base-colors-select: #eff6ff;
+
+  /* --- Область таймлайну (права частина) --- */
+  --dhx-gantt-timeline-scale-background: #ffffff;
+  --dhx-gantt-timeline-scale-color: var(--dhx-gantt-base-colors-text-light);
+  --dhx-gantt-offtime-background: #f9fafb;
+  --dhx-gantt-scale-border-vertical: 1px solid #f3f4f6;
+
+  /* --- Блоки завдань (бронювання) --- */
+  --dhx-gantt-task-background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --dhx-gantt-task-color: #ffffff;
+  --dhx-gantt-task-border-radius: 8px;
+
+  /* --- Рядки квартир (проекти) --- */
+  --dhx-gantt-project-background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --dhx-gantt-project-color: #ffffff;
+
+  /* --- Інтерактивні елементи --- */
+  --dhx-gantt-tooltip-background: #1f2937;
+  --dhx-gantt-tooltip-color: #ffffff;
+  --dhx-gantt-popup-background: #ffffff;
+  --dhx-gantt-popup-color: #1f2937;
+
+  /* --- Кольори для різних статусів бронювань --- */
+  --dhx-gantt-status-pending: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --dhx-gantt-status-confirmed: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --dhx-gantt-status-cancelled: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --dhx-gantt-status-completed: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --dhx-gantt-status-airbnb: linear-gradient(135deg, #ff5a5f 0%, #e00007 100%);
+  --dhx-gantt-status-booking: linear-gradient(135deg, #003580 0%, #002366 100%);
+}
+
+/* Стилі для різних статусів бронювань */
+.gantt_task_line[data-status="PENDING"] {
+  background: var(--dhx-gantt-status-pending) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3) !important;
+}
+
+.gantt_task_line[data-status="CONFIRMED"] {
+  background: var(--dhx-gantt-status-confirmed) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+}
+
+.gantt_task_line[data-status="CANCELLED"] {
+  background: var(--dhx-gantt-status-cancelled) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3) !important;
+}
+
+.gantt_task_line[data-status="COMPLETED"] {
+  background: var(--dhx-gantt-status-completed) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+}
+
+.gantt_task_line[data-source="AIRBNB"] {
+  background: var(--dhx-gantt-status-airbnb) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(255, 90, 95, 0.3) !important;
+}
+
+.gantt_task_line[data-source="BOOKING_COM"] {
+  background: var(--dhx-gantt-status-booking) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 53, 128, 0.3) !important;
+}
+
+/* Стилі для проектів (квартир) - зелений колір */
+.gantt_task_line[data-type="project"],
+.gantt_task_line.project-row,
+.gantt_task_line[class*="project"] {
+  background: linear-gradient(135deg, #f0f0f0 0%, #f0f0f0 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+/* Hover ефекти */
+.gantt_task_line:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Стилі для тексту в завданнях */
+.gantt_task_content {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Стилі для сітки */
+.gantt_grid_scale {
+  background: var(--dhx-gantt-grid-scale-background) !important;
+  border-right: 2px solid var(--dhx-gantt-base-colors-border) !important;
+}
+
+.gantt_grid_data .gantt_row {
+  border-bottom: 1px solid var(--dhx-gantt-base-colors-border-light) !important;
+}
+
+.gantt_grid_data .gantt_row:nth-child(even) {
+  background: var(--dhx-gantt-task-row-background--odd) !important;
+}
+
+/* Стилі для таймлайну */
+.gantt_scale_line {
+  background: var(--dhx-gantt-timeline-scale-background) !important;
+  border-bottom: 1px solid var(--dhx-gantt-base-colors-border) !important;
+}
+
+.gantt_scale_line .gantt_scale_cell {
+  border-right: 1px solid var(--dhx-gantt-base-colors-border-light) !important;
+  color: var(--dhx-gantt-timeline-scale-color) !important;
+}
+
+/* Стилі для вихідних днів */
+.gantt_offtime {
+  background: var(--dhx-gantt-offtime-background) !important;
+}
+
+/* ===== DHTMLXGANTT ВИСОТА 50PX + ЦЕНТРУВАННЯ ===== */
+
+/* Центрування тексту в рядках висотою 50px */
+.gantt_grid_data .gantt_row {
+  display: flex !important;
+  align-items: center !important;
+  height: 50px !important;
+}
+
+.gantt_grid_data .gantt_cell {
+  display: flex !important;
+  align-items: center !important;
+  height: 50px !important;
+  padding: 0 8px !important;
+}
+
+/* Центрування блоків бронювань по вертикалі */
+.gantt_task_content {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+/* Заголовки також центруємо */
+.gantt_grid_scale .gantt_grid_head_cell {
+  display: flex !important;
+  align-items: center !important;
+  height: 50px !important;
+}
+
+/* ===== ТЕСТОВІ СТИЛІ ДЛЯ ПЕРЕВІРКИ ===== */
+
+/* Резервації - оригінальний оранжевий колір (тільки для бронювань, не для проектів) */
+.gantt_task_line:not([data-type="project"]):not(.project-row) {
+  background: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;
+  border: 1px solid rgb(234 88 12 / var(--tw-bg-opacity, 1)) !important;
+  border-radius: 120px !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Додаткове перевизначення тільки для бронювань (не для проектів) */
+.gantt_task_line:not([data-type="project"]):not(.project-row) {
+  background: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;
+  opacity: 1 !important;
+}
+
+/* Контент резервацій */
+.gantt_task_content {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  padding: 2px 4px !important;
+  line-height: 1.2 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Різні статуси резервацій */
+.gantt_task_line[data-status="CONFIRMED"],
+.gantt_task_line.reservation-confirmed,
+.gantt_task_line[class*="confirmed"] {
+  background: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;
+  border-color: rgb(234 88 12 / var(--tw-bg-opacity, 1)) !important;
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.gantt_task_line[data-status="PENDING"] {
+  background: rgb(251 146 60 / var(--tw-bg-opacity, 1)) !important;
+  border-color: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;
+  border-radius: 8px !important;
+  opacity: 0.8 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.gantt_task_line[data-status="CANCELLED"] {
+  background: rgb(156 163 175 / var(--tw-bg-opacity, 1)) !important;
+  border-color: rgb(107 114 128 / var(--tw-bg-opacity, 1)) !important;
+  border-radius: 8px !important;
+  opacity: 0.6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.gantt_task_line[data-status="COMPLETED"] {
+  background: rgb(34 197 94 / var(--tw-bg-opacity, 1)) !important;
+  border-color: rgb(22 163 74 / var(--tw-bg-opacity, 1)) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Стилі для різних платформ */
+.gantt_task_line[data-source="AIRBNB"] {
+  border-left: 4px solid #ff5a5f !important;
+}
+
+.gantt_task_line[data-source="BOOKING_COM"] {
+  border-left: 4px solid #003580 !important;
+}
+
+.gantt_task_line[data-source="DIRECT"] {
+  border-left: 4px solid #f97316 !important;
+}
+
+/* Grid рядки - повертаємо до нормального стану */
+.gantt_grid_data .gantt_row {
+  background: inherit !important;
+}
+
+/* Заголовки - повертаємо до нормального стану */
+.gantt_grid_scale .gantt_grid_head_cell {
+  background: inherit !important;
+  color: inherit !important;
+}
+
+/* ===== MARKER ДЛЯ СЬОГОДНІШНЬОГО ДНЯ ===== */
+
+/* Стилі для marker сьогоднішнього дня */
+.today_marker {
+  background: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;  /* Оранжева лінія */
+  width: 2px !important;
+  z-index: 10 !important;
+  position: absolute !important;
+}
+
+/* Текст marker */
+.today_marker .gantt_marker_content {
+  background: rgb(249 115 22 / var(--tw-bg-opacity, 1)) !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* ===== ВІДКЛЮЧЕННЯ ІНТЕРАКТИВНОСТІ ДЛЯ КВАРТИР ===== */
+
+/* Відключаємо hover та інші дії для рядків квартир */
+.no_interaction {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.no_interaction:hover {
+  background: inherit !important;
+  color: inherit !important;
+}
+
+/* Відключаємо hover для grid рядків квартир */
+.gantt_grid_data .gantt_row.no_interaction {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.gantt_grid_data .gantt_row.no_interaction:hover {
+  background: inherit !important;
+}
+
+/* Відключаємо hover для task рядків квартир */
+.gantt_task_line.no_interaction {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.gantt_task_line.no_interaction:hover {
+  background: inherit !important;
+  opacity: 1 !important;
+}
+
+/* ===== ПРИХОВУЄМО ПРОГРЕС-БАР ТА ВСІ ДИНАМІЧНІ ЕЛЕМЕНТИ ===== */
+
+/* Приховуємо прогрес-бар */
+.gantt_task_progress_wrapper,
+.gantt_task_progress,
+.gantt_task_progress_drag,
+.gantt_task_progress_resize {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Приховуємо всі індикатори переміщення */
+.gantt_task_drag,
+.gantt_task_resize,
+.gantt_task_progress_drag,
+.gantt_task_progress_resize {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Приховуємо всі елементи, пов'язані з прогресом */
+.gantt_task_line .gantt_task_progress_wrapper,
+.gantt_task_line .gantt_task_progress,
+.gantt_task_line .gantt_task_progress_drag {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* ===== ПРИХОВУЄМО ТІЛЬКИ ВІЗУАЛЬНІ ЕЛЕМЕНТИ КЕРУВАННЯ ===== */
+
+/* Приховуємо тільки елементи зв'язків та дат (функціонал drag/resize залишаємо) */
+.gantt_link_control,
+.gantt_task_start_date,
+.gantt_task_end_date,
+.gantt_link_point,
+.gantt_link_arrow {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Приховуємо візуальні іконки left/right, але залишаємо можливість resize */
+.gantt_task_line .gantt_link_control,
+.gantt_task_line .gantt_task_start_date,
+.gantt_task_line .gantt_task_end_date {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 /* Bryntum Scheduler - Hide watermark and trial messages */
 .b-watermark,
 .b-trial-message,
@@ -1095,4 +1469,5 @@ body, html {
   background-image: none !important;
   background: transparent !important;
 }
+
 

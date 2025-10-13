@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { propertyServiceAdapted } from '../../lib/api/adapters/apiAdapter';
 import { reservationServiceAdapted } from '../../lib/api/adapters/apiAdapter';
+// import { pricingCalendarService, PropertyPricingMap } from '../../lib/api/services/pricingCalendarService';
 
 // Константи для ID префіксів
 const ID_PREFIXES = {
@@ -110,7 +111,8 @@ const convertReservationsToGanttTasks = (reservations: ReservationV2[]): GanttTa
     duration: Math.ceil((new Date(reservation.checkOut).getTime() - new Date(reservation.checkIn).getTime()) / (1000 * 60 * 60 * 24)),
     parent: `${ID_PREFIXES.PROPERTY}${reservation.propertyId}`,
     progress: 1,
-    status: reservation.status || 'pending',
+    status: reservation.status || 'PENDING',
+    source: 'AIRBNB', // Встановлюємо джерело для стилізації
     guest_amount: reservation.guestCount || 1,
     // Кастомні поля
     reservationId: reservation.id,
@@ -137,6 +139,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   // Стани для API даних
   const [properties, setProperties] = useState<PropertyV2[]>([]);
   const [reservations, setReservations] = useState<ReservationV2[]>([]);
+  // const [pricingData, setPricingData] = useState<PropertyPricingMap[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -274,6 +277,25 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
     }
   }, [properties, reservations, tasks]);
 
+  // Функція завантаження pricing data (закоментовано)
+  // const loadPricingData = async (startDate: string, endDate: string): Promise<PropertyPricingMap[]> => {
+  //   try {
+  //     console.log('Loading pricing data...');
+  //     const response = await pricingCalendarService.getBulkPricing(startDate, endDate);
+  //     
+  //     if (response.success && response.data) {
+  //       console.log(`Loaded pricing data for ${response.data.length} properties`);
+  //       return response.data;
+  //     } else {
+  //       console.warn('Failed to load pricing data:', response.error);
+  //       return [];
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading pricing data:', error);
+  //     return [];
+  //   }
+  // };
+
   // Завантаження всіх даних
   useEffect(() => {
     const loadAllData = async () => {
@@ -289,8 +311,19 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           loadReservations()
         ]);
 
+        // Завантажуємо pricing data для поточного місяця (закоментовано)
+        // const today = new Date();
+        // const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        // const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0); // +2 місяці для кращого покриття
+        
+        // const startDate = startOfMonth.toISOString().split('T')[0];
+        // const endDate = endOfMonth.toISOString().split('T')[0];
+        
+        // const pricingData = await loadPricingData(startDate, endDate);
+
         setProperties(propertiesData);
         setReservations(reservationsData);
+        // setPricingData(pricingData);
 
         console.log(`✅ Data loaded: ${propertiesData.length} properties, ${reservationsData.length} reservations`);
         console.log('🔍 Properties sample:', propertiesData[0]);
@@ -301,6 +334,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         handleApiError(error, 'Data loading');
         setProperties([]);
         setReservations([]);
+        // setPricingData([]);
       } finally {
         setIsLoading(false);
       }
@@ -308,6 +342,83 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
     loadAllData();
   }, []); // Запускаємо тільки один раз при монтуванні
+
+  // Оновлення цін коли pricingData зміниться (закоментовано)
+  // useEffect(() => {
+  //   if (pricingData.length > 0 && ganttRef.current) {
+  //     console.log('🔄 Updating prices with new pricing data:', pricingData);
+  //     // Додаємо ціни з новими даними
+  //     setTimeout(() => {
+  //       const addPricesToCells = () => {
+  //         // Видаляємо попередні ціни, якщо вони є
+  //         const existingPrices = containerRef.current?.querySelectorAll('.gantt-cell-price');
+  //         existingPrices?.forEach(el => el.remove());
+  //         
+  //         // Отримуємо всі квартири (projects) - використовуємо правильний API
+  //         const allTasks = ganttRef.current.getTaskByTime();
+  //         const projectTasks = allTasks.filter((task: any) => task.type === 'project');
+  //         
+  //         projectTasks.forEach((task: any) => {
+  //           // Знаходимо відповідний property
+  //           const property = properties.find(p => p.id === task.propertyId);
+  //           if (!property) return;
+  //           
+  //           // Отримуємо видимий діапазон дат
+  //           const startDate = ganttRef.current.getState().min_date;
+  //           const endDate = ganttRef.current.getState().max_date;
+  //           
+  //           // Ітеруємо через кожен день у видимому діапазоні
+  //           let currentDate = new Date(startDate);
+  //           while (currentDate <= endDate) {
+  //             const nextDate = new Date(currentDate);
+  //             nextDate.setDate(nextDate.getDate() + 1);
+  //             
+  //             // Отримуємо позицію клітинки
+  //             const cellStartPos = ganttRef.current.posFromDate(currentDate);
+  //             const cellEndPos = ganttRef.current.posFromDate(nextDate);
+  //             
+  //             const cellWidth = cellEndPos - cellStartPos;
+  //             
+  //             // Отримуємо ціну для цієї конкретної дати
+  //             const dateStr = currentDate.toISOString().split('T')[0];
+  //             const pricingEntry = pricingData.find(p => p.propertyId === task.propertyId);
+  //             const priceForDate = pricingEntry?.pricingMap?.[dateStr] || property.pricePerNight;
+  //             
+  //             // Створюємо div з ціною
+  //             const priceDiv = document.createElement('div');
+  //             priceDiv.className = 'gantt-cell-price';
+  //             priceDiv.style.cssText = `
+  //               position: absolute;
+  //               top: 0;
+  //               left: ${cellStartPos}px;
+  //               width: ${cellWidth}px;
+  //               height: ${ganttRef.current.config.row_height}px;
+  //               display: flex;
+  //               align-items: center;
+  //               justify-content: center;
+  //               font-size: 11px;
+  //               color: #000;
+  //               font-weight: 400;
+  //               pointer-events: none;
+  //               z-index: 0;
+  //             `;
+  //             priceDiv.textContent = `$${priceForDate}`;
+  //             
+  //             // Додаємо в відповідний рядок
+  //             const rowElement = containerRef.current?.querySelector(`[task_id="${task.id}"]`);
+  //             if (rowElement) {
+  //               rowElement.appendChild(priceDiv);
+  //             }
+  //             
+  //             currentDate.setDate(currentDate.getDate() + 1);
+  //           }
+  //         });
+  //       };
+  //       
+  //       addPricesToCells();
+  //     }, 100);
+  //   }
+  // }, [pricingData, properties]);
 
   // Функція для створення split tasks (бронювань)
   const onDragEnd = (startPoint: any, endPoint: any, startDate: any, endDate: any, tasksBetweenDates: any, tasksInRow: any) => {
@@ -429,47 +540,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       // Додаємо кастомні стилі для split tasks
       const style = document.createElement('style');
       style.textContent = `
-        /* Стилі для проектів (квартир) */
-        .gantt_task_line[data-type="project"] {
-          background: #f8f9fa !important;
-          border-left: 4px solid #007bff !important;
-          font-weight: bold !important;
-        }
-        
-          /* Стилі для бронювань (частини split tasks) */
-          .gantt_task_line[data-status="pending"] {
-            background: #fff3cd !important;
-            border: 2px solid #ffc107 !important;
-            color: #856404 !important;
-          }
-          
-          .gantt_task_line[data-status="paid"] {
-            background: #d4edda !important;
-            border: 2px solid #28a745 !important;
-            color: #155724 !important;
-          }
-          
-          .gantt_task_line[data-status="booked"] {
-            background: #cce5ff !important;
-            border: 2px solid #007bff !important;
-            color: #004085 !important;
-          }
-        
-        /* Загальні стилі */
-        .gantt_task_line {
-          border-radius: 4px !important;
-        }
-        
-        .gantt_task_content {
-          font-size: 12px !important;
-          font-weight: 500 !important;
-        }
-        
-        /* Стилі для split tasks */
-        .gantt_split_task {
-          margin: 2px !important;
-        }
-        
         /* Приховуємо стрілочки дропдауну */
         .gantt_tree_icon {
           display: none !important;
@@ -494,6 +564,34 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         .gantt_task_row[data-parent] {
           display: none !important;
         }
+        
+        /* Стилі для split tasks */
+        .gantt_split_task {
+          margin: 2px !important;
+        }
+        
+        /* Додаткові hover ефекти */
+        .gantt_task_line {
+          transition: all 0.2s ease !important;
+        }
+        
+        .gantt_task_line:hover {
+          z-index: 10 !important;
+        }
+        
+        /* Ціни в клітинках - завжди позаду всіх елементів (закоментовано) */
+        /* .gantt-cell-price {
+          z-index: 0 !important;
+        } */
+        
+        /* Бронювання завжди поверх цін */
+        .gantt_task_line {
+          z-index: 2 !important;
+        }
+        
+        .gantt_task_content {
+          z-index: 3 !important;
+        }
       `;
       document.head.appendChild(style);
 
@@ -507,20 +605,38 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           const gantt = (window as any).gantt;
           ganttRef.current = gantt;
 
-          // Налаштування колонок (назви квартир + кнопка додавання)
+          // Налаштування колонок (тільки назви квартир)
           gantt.config.columns = [
-            { name: "text", label: "Квартира", width: "*", tree: false },
-            { name: "add", label: "", width: 44 }
+            { name: "text", label: "Квартира", width: "*", tree: false }
           ];
 
           // Налаштування для кращого вигляду
           gantt.config.date_format = "%d-%m-%Y";
           gantt.config.scale_height = 50;
           
-          // Сучасний API для scales (як у вашому прикладі)
+          // Встановлюємо висоту рядків 50px
+          gantt.config.row_height = 50;      // Висота рядка в grid
+          gantt.config.bar_height = 40;      // Висота блоку бронювання (bar)
+          
+          // Відключаємо прогрес-бар
+          gantt.config.show_progress = false;
+          gantt.config.progress_height = 0;
+          
+          // Дозволяємо перетягування та зміну розміру, але без створення та зв'язків
+          gantt.config.drag_move = true;        // ✅ Дозволяємо переміщення
+          gantt.config.drag_resize = true;      // ✅ Дозволяємо зміну розміру
+          gantt.config.drag_create = false;     // ❌ Заборонено створення
+          gantt.config.drag_links = false;      // ❌ Заборонено зв'язки
+          
+          // Увімкнення marker плагіна
+          gantt.plugins({ 
+            marker: true 
+          });
+          
+          // Сучасний API для scales з новим форматом дат
           gantt.config.scales = [
             { unit: "month", step: 1, format: "%F, %Y" },
-            { unit: "day", step: 1, format: "%j, %D" }
+            { unit: "day", step: 1, format: "%d %D" }
           ];
 
           // Фіксований діапазон календаря: вересень 2025 - вересень 2027
@@ -689,20 +805,233 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
           };
 
+          // Відключаємо прогрес для всіх задач
+          gantt.templates.task_progress = (start, end, task) => {
+            return 0; // Встановлюємо прогрес на 0 для всіх задач
+          };
+
+          // Приховуємо тільки дати (drag/resize залишаємо активними)
+          gantt.templates.task_start_date = (start, end, task) => {
+            return ""; // Приховуємо дату початку
+          };
+
+          gantt.templates.task_end_date = (start, end, task) => {
+            return ""; // Приховуємо дату закінчення
+          };
+
+          // Відключаємо інтерактивність для рядків квартир
+          gantt.templates.task_row_class = (start, end, task) => {
+            if (task.type === "project") {
+              return "no_interaction";
+            }
+            return "";
+          };
+
+          // Відключаємо клік для рядків квартир
+          gantt.attachEvent("onTaskClick", function(id, e) {
+            const task = gantt.getTask(id);
+            if (task && task.type === "project") {
+              return false; // Блокуємо клік для квартир
+            }
+            return true; // Дозволяємо клік для бронювань
+          });
+
+          // Відключаємо подвійний клік для рядків квартир
+          gantt.attachEvent("onTaskDblClick", function(id, e) {
+            const task = gantt.getTask(id);
+            if (task && task.type === "project") {
+              return false; // Блокуємо подвійний клік для квартир
+            }
+            return true; // Дозволяємо подвійний клік для бронювань
+          });
+
+          // Додаємо data-атрибути для стилізації
+          gantt.attachEvent("onTaskCreated", function(task) {
+            const taskNode = gantt.getTaskNode(task.id);
+            if (taskNode) {
+              // Додаємо data-атрибути для CSS селекторів
+              if (task.type === "project") {
+                taskNode.setAttribute('data-type', 'project');
+              } else {
+                taskNode.setAttribute('data-status', task.status || 'PENDING');
+                taskNode.setAttribute('data-source', task.source || 'DIRECT');
+              }
+            }
+          });
+
+          // Оновлюємо data-атрибути при зміні завдання
+          gantt.attachEvent("onAfterTaskUpdate", function(id, task) {
+            const taskNode = gantt.getTaskNode(id);
+            if (taskNode) {
+              if (task.type === "project") {
+                taskNode.setAttribute('data-type', 'project');
+              } else {
+                taskNode.setAttribute('data-status', task.status || 'PENDING');
+                taskNode.setAttribute('data-source', task.source || 'DIRECT');
+              }
+            }
+          });
+
           // Налаштування тексту в task
           gantt.templates.task_text = (start, end, task) => {
             if (task.type === "project") {
               return task.text;
             } else {
-              const guestCount = task.guest_amount || 1;
-              const status = task.status || 'pending';
-              const price = task.price ? ` - $${task.price}` : '';
-              return `${task.text} (${guestCount} guest${guestCount > 1 ? 's' : ''}, ${status})${price}`;
+              // Отримуємо дані з task
+              const platform = task.source || 'DIRECT';
+              const guestName = task.guest_name || task.text || 'Гість';
+              const price = task.price ? `$${task.price}` : 'N/A';
+              const status = task.status || 'PENDING';
+              
+              // Форматуємо текст для відображення
+              return `${platform} | ${guestName} | ${price} | ${status}`;
             }
           };
 
+          // Функція для отримання ціни для конкретної дати (закоментовано)
+          // const getPriceForDate = (task: any, date: Date): number => {
+          //   const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+          //   
+          //   // Спочатку шукаємо в pricing data з PriceLabs
+          //   const pricingEntry = pricingData.find(p => p.propertyId === task.propertyId);
+          //   if (pricingEntry && pricingEntry.pricingMap && pricingEntry.pricingMap[dateStr]) {
+          //     return pricingEntry.pricingMap[dateStr];
+          //   }
+          //   
+          //   // Якщо є динамічне ціноутворення в task (legacy)
+          //   if (task.pricingMap && typeof task.pricingMap === 'object') {
+          //     if (task.pricingMap[dateStr]) {
+          //       return task.pricingMap[dateStr];
+          //     }
+          //   }
+          //   
+          //   // Якщо є масив цін по датах (legacy)
+          //   if (task.pricing && Array.isArray(task.pricing)) {
+          //     const priceEntry = task.pricing.find((p: any) => p.date === dateStr);
+          //     if (priceEntry && priceEntry.price) {
+          //       return priceEntry.price;
+          //     }
+          //   }
+          //   
+          //   // Fallback до базової ціни
+          //   return task.pricePerNight || 0;
+          // };
+
+          // Функція для додавання цін в клітинки календаря (закоментовано)
+          // const addPricesToCells = () => {
+          //   // Видаляємо попередні ціни, якщо вони є
+          //   const existingPrices = containerRef.current?.querySelectorAll('.gantt-cell-price');
+          //   existingPrices?.forEach(el => el.remove());
+          //   
+          //   // Отримуємо всі квартири (projects) - використовуємо правильний API
+          //   const allTasks = gantt.getTaskByTime();
+          //   const projectTasks = allTasks.filter((task: any) => task.type === 'project');
+          //   
+          //   projectTasks.forEach((task) => {
+          //     
+          //     const taskId = task.id;
+          //     
+          //     // Знаходимо всі рядки в timeline area
+          //     const taskBgRows = containerRef.current?.querySelectorAll('.gantt_task_row');
+          //     
+          //     // Для кожного рядка перевіряємо чи він відповідає нашому task
+          //     taskBgRows?.forEach((row: any) => {
+          //       const rowTaskId = row.getAttribute('task_id');
+          //       if (rowTaskId !== taskId) return;
+          //       
+          //       // Отримуємо всі клітинки днів в цьому рядку
+          //       const dataArea = containerRef.current?.querySelector('.gantt_data_area');
+          //       if (!dataArea) return;
+          //       
+          //       // Рахуємо скільки днів показується
+          //       const scaleConfigs = gantt.config.scales;
+          //       const dayScale = scaleConfigs?.find((s: any) => s.unit === 'day');
+          //       
+          //       if (!dayScale) return;
+          //       
+          //       // Генеруємо позиції для кожного дня
+          //       let currentDate = new Date(gantt.config.start_date);
+          //       const endDate = new Date(gantt.config.end_date);
+          //       
+          //       while (currentDate < endDate) {
+          //         const cellStartPos = gantt.posFromDate(currentDate);
+          //         
+          //         const nextDate = new Date(currentDate);
+          //         nextDate.setDate(nextDate.getDate() + 1);
+          //         const cellEndPos = gantt.posFromDate(nextDate);
+          //         
+          //         const cellWidth = cellEndPos - cellStartPos;
+          //         
+          //         // Отримуємо ціну для цієї конкретної дати
+          //         const priceForDate = getPriceForDate(task, new Date(currentDate));
+          //         
+          //         // Створюємо div з ціною
+          //         const priceDiv = document.createElement('div');
+          //         priceDiv.className = 'gantt-cell-price';
+          //         priceDiv.style.cssText = `
+          //           position: absolute;
+          //           top: 0;
+          //           left: ${cellStartPos}px;
+          //           width: ${cellWidth}px;
+          //           height: ${gantt.config.row_height}px;
+          //           display: flex;
+          //           align-items: center;
+          //           justify-content: center;
+          //           font-size: 11px;
+          //           color: #000;
+          //           font-weight: 400;
+          //           pointer-events: none;
+          //           z-index: 0;
+          //         `;
+          //         priceDiv.textContent = `$${priceForDate}`;
+          //         
+          //         // Додаємо ціну до рядка
+          //         row.appendChild(priceDiv);
+          //         
+          //         currentDate = nextDate;
+          //       }
+          //     });
+          //   }); // Закриваємо forEach для projectTasks
+          // };
+
+          // Додаємо ціни після рендерингу Gantt (закоментовано)
+          // gantt.attachEvent("onGanttRender", function() {
+          //   setTimeout(addPricesToCells, 200);
+          //   return true;
+          // });
+
+          // Додаємо ціни після завантаження даних (закоментовано)
+          // gantt.attachEvent("onDataRender", function() {
+          //   setTimeout(addPricesToCells, 200);
+          // });
+
+          // Додаємо ціни після скролу (закоментовано)
+          // gantt.attachEvent("onGanttScroll", function() {
+          //   setTimeout(addPricesToCells, 100);
+          // });
+
           // Ініціалізуємо Gantt
           gantt.init(containerRef.current);
+
+          // Додаємо marker для сьогоднішнього дня
+          const dateToStr = gantt.date.date_to_str(gantt.config.task_date);
+          const todayMarkerId = gantt.addMarker({
+            start_date: new Date(),
+            css: "today_marker",
+            text: "Сьогодні",
+            title: dateToStr(new Date())
+          });
+          
+          // Оновлюємо marker кожну хвилину
+          const updateTodayMarker = () => {
+            const today = gantt.getMarker(todayMarkerId);
+            today.start_date = new Date();
+            today.title = dateToStr(today.start_date);
+            gantt.updateMarker(todayMarkerId);
+          };
+          
+          // Запускаємо оновлення кожну хвилину
+          const markerInterval = setInterval(updateTodayMarker, 1000 * 60);
 
           // Показуємо повідомлення про можливість створення split tasks
           gantt.message({
@@ -724,6 +1053,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           
           // Ховаємо рядки бронювань в grid (вони будуть відображатися тільки як split tasks)
           gantt.refreshData();
+          
+          // Додаємо ціни після першого завантаження (закоментовано)
+          // setTimeout(addPricesToCells, 300);
 
           // Обробник подвійного кліку для відкриття модалки
           gantt.attachEvent("onTaskDblClick", (id: string, e: Event) => {
@@ -1081,6 +1413,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         if (containerRef.current) {
           containerRef.current.innerHTML = "";
         }
+        // Cleanup marker interval
+        if (markerInterval) {
+          clearInterval(markerInterval);
+        }
       };
     };
 
@@ -1090,7 +1426,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   // Loading State
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-96 rounded-2xl bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Завантаження квартир та бронювань...</p>
@@ -1102,7 +1438,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   // Error State
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-96 rounded-2xl bg-red-50">
         <div className="text-center text-red-600">
           <p className="text-lg font-medium">{error}</p>
           <button 
@@ -1119,7 +1455,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   // Empty State
   if (!isLoading && properties.length === 0 && reservations.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-96 rounded-2xl bg-gray-50">
         <div className="text-center text-gray-600">
           <p className="text-lg font-medium">Дані не знайдені</p>
           <p className="text-sm mt-2">Створіть першу квартиру, щоб почати роботу з планувальником</p>
@@ -1131,6 +1467,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
   return (
     <div 
       ref={containerRef} 
+      className="rounded-2xl overflow-hidden"
       style={{ 
         width: "100%", 
         height: "100%",

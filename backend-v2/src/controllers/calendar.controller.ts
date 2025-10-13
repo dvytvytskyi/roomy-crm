@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { createEvents, createCalendar } from 'ical-generator';
+import icalGenerator from 'ical-generator';
 
 const prisma = new PrismaClient();
 
@@ -39,7 +39,7 @@ export class CalendarController {
       console.log(`📊 Found ${reservations.length} confirmed reservations`);
 
       // Створюємо iCal календар
-      const calendar = createCalendar({
+      const calendar = icalGenerator({
         name: `${property.name} - Availability Calendar`,
         description: `Availability calendar for ${property.name}`,
         prodId: {
