@@ -1431,12 +1431,15 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 // Примусово викликаємо DataProcessor
                 setTimeout(() => {
                   try {
-                    const dp = gantt.getDataProcessor();
+                    // Отримуємо DataProcessor з глобального об'єкта gantt
+                    const dp = gantt.ext && gantt.ext.dataProcessor ? gantt.ext.dataProcessor : null;
                     if (dp) {
                       console.log('📤 Calling DataProcessor.sendData for update...');
                       dp.sendData("update", id, item);
                     } else {
-                      console.warn('⚠️ No DataProcessor found');
+                      console.warn('⚠️ No DataProcessor found, trying alternative method...');
+                      // Альтернативний спосіб - оновлюємо завдання напряму
+                      gantt.updateTask(id);
                     }
                     
                     gantt.message({
@@ -1688,7 +1691,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                           data: response.data // Додаємо дані резервації для onAfterUpdate
                         };
                       } else {
-                        throw new Error('Failed to create reservation');
+                        console.error('❌ API Response error:', response);
+                        throw new Error(`Failed to create reservation: ${response.error || response.message || 'Unknown error'}`);
                       }
                     }
 
@@ -1777,28 +1781,40 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 return { id: id };
                 
               } catch (error: any) {
-                // Прибрано детальне логування помилок - не заважає роботі
-                console.error('❌ DataProcessor error:', error.message);
+                console.error('❌ DataProcessor error:', error);
+                console.error('❌ Error details:', {
+                  message: error.message,
+                  status: error.response?.status,
+                  statusText: error.response?.statusText,
+                  data: error.response?.data,
+                  url: error.config?.url
+                });
                 
-                // Показуємо помилку користувачу
+                // Показуємо детальну помилку користувачу
                 let errorMessage = 'Unknown error';
                 
                 if (error.response?.data?.message) {
                   errorMessage = error.response.data.message;
                 } else if (error.response?.data?.error) {
                   errorMessage = error.response.data.error;
+                } else if (error.response?.data?.details) {
+                  errorMessage = error.response.data.details;
                 } else if (error.response?.data) {
                   errorMessage = JSON.stringify(error.response.data);
                 } else if (error.message) {
                   errorMessage = error.message;
                 }
                 
-                // Прибрано повідомлення про помилку - не заважає роботі
-                // gantt.message({
-                //   text: `❌ Помилка: ${errorMessage}`,
-                //   type: "error",
-                //   expire: 5000
-                // });
+                // Додаємо інформацію про статус код
+                if (error.response?.status) {
+                  errorMessage = `HTTP ${error.response.status}: ${errorMessage}`;
+                }
+                
+                gantt.message({
+                  text: `❌ Помилка збереження: ${errorMessage}`,
+                  type: "error",
+                  expire: 8000
+                });
                 
                 // Повертаємо помилку для Gantt
                 throw error;
