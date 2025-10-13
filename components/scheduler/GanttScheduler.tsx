@@ -701,10 +701,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           gantt.config.show_progress = false;
           gantt.config.progress_height = 0;
           
-          // Дозволяємо перетягування та зміну розміру, але без створення та зв'язків
+          // Дозволяємо перетягування та зміну розміру, включаючи створення резервацій
           gantt.config.drag_move = true;        // ✅ Дозволяємо переміщення
           gantt.config.drag_resize = true;      // ✅ Дозволяємо зміну розміру
-          gantt.config.drag_create = false;     // ❌ Заборонено створення
+          gantt.config.drag_create = true;      // ✅ Дозволяємо створення резервацій
           gantt.config.drag_links = false;      // ❌ Заборонено зв'язки
           
           // Увімкнення marker та tooltip плагінів
@@ -916,7 +916,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             
             // Для резервацій - відкриваємо сторінку в новому вікні
             if (task && task.type !== "project") {
-              const reservationId = task.reservationId || task.id.replace('res_', '');
+              const reservationId = task.reservationId || (typeof task.id === 'string' ? task.id.replace('res_', '') : String(task.id));
               if (reservationId) {
                 window.open(`/reservations/${reservationId}`, '_blank');
               }
@@ -946,7 +946,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
 
             // Отримуємо дані резервації
-            const reservation = reservations.find(r => r.id === task.reservationId || r.id === task.id.replace('res_', ''));
+            const reservationId = task.reservationId || (typeof task.id === 'string' ? task.id.replace('res_', '') : String(task.id));
+            const reservation = reservations.find(r => r.id === reservationId);
             const property = properties.find(p => p.id === task.propertyId);
 
             // Форматуємо дати
