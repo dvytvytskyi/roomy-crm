@@ -876,40 +876,54 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           }
         });
 
-        // Обробник для заповнення lightbox поточними даними task
+        // Обробник для заповнення lightbox поточними даними task (з debounce)
+        let lightboxTimeout: NodeJS.Timeout | null = null;
         gantt.attachEvent("onLightbox", function(id: any) {
-          const task = gantt.getTask(id);
-          if (task && task.type !== "project") {
-            console.log('🔍 onLightbox - Task data:', task);
+          try {
+            // Очищуємо попередній таймаут
+            if (lightboxTimeout) {
+              clearTimeout(lightboxTimeout);
+            }
             
-            // Заповнюємо поля поточними значеннями з task
-            const lightboxData = {
-              text: task.text || '',
-              guest_email: task.guest_email || '',
-              guest_phone: task.guest_phone || '',
-              status: task.status || 'PENDING',
-              guest_amount: task.guest_amount || 1,
-              source: task.source || 'DIRECT',
-              price: task.price || '0',
-              start_date: task.start_date,
-              end_date: task.end_date
-            };
-            
-            console.log('📝 Setting lightbox data:', lightboxData);
-            
-            // Встановлюємо дані в lightbox
-            setTimeout(() => {
-              Object.keys(lightboxData).forEach(key => {
-                const input = document.querySelector(`[name="${key}"]`) as HTMLInputElement;
-                if (input) {
-                  input.value = lightboxData[key] || '';
-                  console.log(`✅ Set ${key} = ${lightboxData[key]}`);
+            const task = gantt.getTask(id);
+            if (task && task.type !== "project") {
+              console.log('🔍 onLightbox - Task data:', task);
+              
+              // Заповнюємо поля поточними значеннями з task з debounce
+              lightboxTimeout = setTimeout(() => {
+                try {
+                  const lightboxData = {
+                    text: task.text || '',
+                    guest_email: task.guest_email || '',
+                    guest_phone: task.guest_phone || '',
+                    status: task.status || 'PENDING',
+                    guest_amount: task.guest_amount || 1,
+                    source: task.source || 'DIRECT',
+                    price: task.price || '0',
+                    start_date: task.start_date,
+                    end_date: task.end_date
+                  };
+                  
+                  console.log('📝 Setting lightbox data:', lightboxData);
+                  
+                  Object.keys(lightboxData).forEach(key => {
+                    const input = document.querySelector(`[name="${key}"]`) as HTMLInputElement;
+                    if (input && input.value !== lightboxData[key]) {
+                      input.value = lightboxData[key] || '';
+                      console.log(`✅ Set ${key} = ${lightboxData[key]}`);
+                    }
+                  });
+                } catch (error) {
+                  console.warn('⚠️ Error setting lightbox data:', error);
                 }
-              });
-            }, 50);
+              }, 200);
+            }
+            
+            return true;
+          } catch (error) {
+            console.error('❌ Error in onLightbox:', error);
+            return false;
           }
-          
-          return true;
         });
 
           // Налаштування відображення для split tasks
@@ -1388,97 +1402,47 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
-          // Обробник збереження з модалки - синхронізуємо з backend
+          // Обробник збереження з модалки - спрощена версія
           gantt.attachEvent("onLightboxSave", function(id: any, item: any, is_new: any) {
-            console.log('💾 onLightboxSave:', { id, item, is_new });
-            
-            // Якщо це нова резервація, DataProcessor вже обробить її
-            if (is_new) {
-              console.log('✅ New reservation will be handled by DataProcessor');
-              return true;
-            }
-            
-            // Для існуючих резервацій - примусово зберігаємо зміни
-            if (item && item.type !== "project") {
-              console.log('🔄 Saving existing reservation changes...');
-              console.log('📋 Item data to save:', item);
+            try {
+              console.log('💾 onLightboxSave:', { id, item, is_new });
               
-              // Оновлюємо завдання в Gantt з новими даними
-              try {
-                const updatedTask = {
-                  ...gantt.getTask(id),
-                  ...item
-                };
-                
-                console.log('📝 Updated task data:', updatedTask);
-                gantt.updateTask(id);
-                
-                // Викликаємо DataProcessor для синхронізації з backend
-                const dp = gantt.getDataProcessor();
-                if (dp) {
-                  console.log('📤 Sending data to DataProcessor...');
-                  dp.sendData("update", id, updatedTask);
-                }
-                
-                console.log('✅ Reservation changes saved to backend');
-                
-                gantt.message({
-                  text: "✅ Зміни резервації збережено!",
-                  type: "success",
-                  expire: 3000
-                });
-                
-              } catch (error) {
-                console.error('❌ Failed to save reservation changes:', error);
-                gantt.message({
-                  text: "❌ Помилка збереження змін",
-                  type: "error",
-                  expire: 3000
-                });
+              // Якщо це нова резервація, DataProcessor вже обробить її
+              if (is_new) {
+                console.log('✅ New reservation will be handled by DataProcessor');
+                return true;
               }
+              
+              // Для існуючих резервацій - дозволяємо стандартному DataProcessor обробити
+              if (item && item.type !== "project") {
+                console.log('🔄 Existing reservation - letting DataProcessor handle it');
+                
+                // Просто показуємо повідомлення
+                setTimeout(() => {
+                  gantt.message({
+                    text: "✅ Зміни резервації збережено!",
+                    type: "success",
+                    expire: 2000
+                  });
+                }, 500);
+              }
+              
+              return true;
+            } catch (error) {
+              console.error('❌ Error in onLightboxSave:', error);
+              return false;
             }
-            
-            return true;
           });
 
-          // Обробник закриття модалки - перевіряємо чи потрібно зберегти зміни
+          // Обробник закриття модалки - спрощена версія
           gantt.attachEvent("onLightboxCancel", function(id: any, item: any) {
-            console.log('❌ onLightboxCancel:', { id, item });
-            
-            // Якщо є зміни, пропонуємо зберегти
-            const task = gantt.getTask(id);
-            if (task && item && item.type !== "project") {
-              const hasChanges = (
-                task.text !== item.text ||
-                task.start_date !== item.start_date ||
-                task.end_date !== item.end_date ||
-                task.guest_amount !== item.guest_amount ||
-                task.price !== item.price ||
-                task.source !== item.source ||
-                task.status !== item.status
-              );
-              
-              if (hasChanges) {
-                const shouldSave = confirm('Ви внесли зміни. Зберегти їх?');
-                if (shouldSave) {
-                  // Зберігаємо зміни
-                  setTimeout(() => {
-                    try {
-                      gantt.updateTask(id);
-                      const dp = gantt.getDataProcessor();
-                      if (dp) {
-                        dp.sendData("update", id, item);
-                      }
-                      console.log('✅ Changes saved on cancel');
-                    } catch (error) {
-                      console.error('❌ Failed to save changes on cancel:', error);
-                    }
-                  }, 100);
-                }
-              }
+            try {
+              console.log('❌ onLightboxCancel:', { id, item });
+              return true;
+            } catch (error) {
+              console.error('❌ Error in onLightboxCancel:', error);
+              return false;
             }
-            
-            return true;
           });
 
           // --- ПОВНИЙ КОНТРОЛЬ НАД СТВОРЕННЯМ ЗАВДАНЬ ---
@@ -1835,6 +1799,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       document.body.appendChild(script);
 
       return () => {
+        // Cleanup lightbox timeout
+        if (lightboxTimeout) {
+          clearTimeout(lightboxTimeout);
+        }
+        
         if (ganttRef.current) {
           ganttRef.current.destructor();
         }
