@@ -772,8 +772,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
             
             // --- Інформація про гостя ---
-            { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea", default_value: "guest@example.com" },
-            { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea", default_value: "+380000000000" },
+            { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea" },
+            { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea" },
             
             // --- Деталі бронювання ---
             { name: "status", height: 22, map_to: "status", type: "select", options: [
@@ -798,8 +798,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               { key: "VRBO", label: "VRBO" },
               { key: "EXPEDIA", label: "Expedia" },
               { key: "OTHER", label: "Other" }
-            ], default_value: "DIRECT" },
-            { name: "price", height: 22, map_to: "price", type: "textarea", default_value: "0" },
+            ] },
+            { name: "price", height: 22, map_to: "price", type: "textarea" },
             
             // --- Часовий період ---
             { name: "time", type: "duration", map_to: "auto" }
@@ -835,8 +835,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 { name: "description", height: 38, map_to: "text", type: "textarea", focus: true },
                 
                 // --- Інформація про гостя ---
-                { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea", default_value: "guest@example.com" },
-                { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea", default_value: "+380000000000" },
+                { name: "guest_email", height: 22, map_to: "guest_email", type: "textarea" },
+                { name: "guest_phone", height: 22, map_to: "guest_phone", type: "textarea" },
                 
                 // --- Деталі бронювання ---
                 { name: "status", height: 22, map_to: "status", type: "select", options: [
@@ -861,8 +861,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   { key: "VRBO", label: "VRBO" },
                   { key: "EXPEDIA", label: "Expedia" },
                   { key: "OTHER", label: "Other" }
-                ], default_value: "DIRECT" },
-                { name: "price", height: 22, map_to: "price", type: "textarea", default_value: "0" },
+                ] },
+                { name: "price", height: 22, map_to: "price", type: "textarea" },
                 
                 // --- Часовий період ---
                 { name: "time", type: "duration", map_to: "auto" }
@@ -874,6 +874,42 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             console.error("Error in onBeforeLightbox:", error);
             return false;
           }
+        });
+
+        // Обробник для заповнення lightbox поточними даними task
+        gantt.attachEvent("onLightbox", function(id: any) {
+          const task = gantt.getTask(id);
+          if (task && task.type !== "project") {
+            console.log('🔍 onLightbox - Task data:', task);
+            
+            // Заповнюємо поля поточними значеннями з task
+            const lightboxData = {
+              text: task.text || '',
+              guest_email: task.guest_email || '',
+              guest_phone: task.guest_phone || '',
+              status: task.status || 'PENDING',
+              guest_amount: task.guest_amount || 1,
+              source: task.source || 'DIRECT',
+              price: task.price || '0',
+              start_date: task.start_date,
+              end_date: task.end_date
+            };
+            
+            console.log('📝 Setting lightbox data:', lightboxData);
+            
+            // Встановлюємо дані в lightbox
+            setTimeout(() => {
+              Object.keys(lightboxData).forEach(key => {
+                const input = document.querySelector(`[name="${key}"]`) as HTMLInputElement;
+                if (input) {
+                  input.value = lightboxData[key] || '';
+                  console.log(`✅ Set ${key} = ${lightboxData[key]}`);
+                }
+              });
+            }, 50);
+          }
+          
+          return true;
         });
 
           // Налаштування відображення для split tasks
@@ -1365,24 +1401,41 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             // Для існуючих резервацій - примусово зберігаємо зміни
             if (item && item.type !== "project") {
               console.log('🔄 Saving existing reservation changes...');
+              console.log('📋 Item data to save:', item);
               
-              // Викликаємо DataProcessor для збереження змін
-              setTimeout(() => {
-                try {
-                  // Примусово оновлюємо завдання в Gantt
-                  gantt.updateTask(id);
-                  
-                  // Викликаємо DataProcessor для синхронізації з backend
-                  const dp = gantt.getDataProcessor();
-                  if (dp) {
-                    dp.sendData("update", id, item);
-                  }
-                  
-                  console.log('✅ Reservation changes saved to backend');
-                } catch (error) {
-                  console.error('❌ Failed to save reservation changes:', error);
+              // Оновлюємо завдання в Gantt з новими даними
+              try {
+                const updatedTask = {
+                  ...gantt.getTask(id),
+                  ...item
+                };
+                
+                console.log('📝 Updated task data:', updatedTask);
+                gantt.updateTask(id);
+                
+                // Викликаємо DataProcessor для синхронізації з backend
+                const dp = gantt.getDataProcessor();
+                if (dp) {
+                  console.log('📤 Sending data to DataProcessor...');
+                  dp.sendData("update", id, updatedTask);
                 }
-              }, 100);
+                
+                console.log('✅ Reservation changes saved to backend');
+                
+                gantt.message({
+                  text: "✅ Зміни резервації збережено!",
+                  type: "success",
+                  expire: 3000
+                });
+                
+              } catch (error) {
+                console.error('❌ Failed to save reservation changes:', error);
+                gantt.message({
+                  text: "❌ Помилка збереження змін",
+                  type: "error",
+                  expire: 3000
+                });
+              }
             }
             
             return true;
