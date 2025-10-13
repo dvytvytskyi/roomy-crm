@@ -205,7 +205,7 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
             >
               <div className="flex items-center space-x-1">
                 <DollarSign size={14} />
-                <span>Amount</span>
+                <span>AED</span>
                 {getSortIcon('totalAmount')}
               </div>
             </th>
@@ -266,13 +266,8 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
                 <span className="text-sm text-slate-900">{reservation.source}</span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap w-32">
-                <div>
-                  <div className="text-sm font-medium text-slate-900">${reservation.totalAmount}</div>
-                  {reservation.outstandingBalance && reservation.outstandingBalance > 0 && (
-                    <div className="text-xs text-red-600">
-                      ${reservation.outstandingBalance} outstanding
-                    </div>
-                  )}
+                <div className="text-sm font-medium text-slate-900">
+                  AED {reservation.totalAmount || 0}
                 </div>
               </td>
               <td className="px-4 py-4 whitespace-nowrap w-28">
