@@ -426,23 +426,36 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       const currentTask = tasksInRow[0];
       
       if (currentTask.type === "project") {
-        // Створюємо нову частину split task (бронювання)
-        const newReservationId = "res_" + Date.now();
-        ganttRef.current.addTask({
-          id: newReservationId,
-          text: "New Reservation",
+        // НЕ створюємо task тут - дозволяємо DataProcessor обробити створення
+        // Тільки зберігаємо дані для DataProcessor
+        const tempData = {
           start_date: ganttRef.current.roundDate(startDate),
           end_date: ganttRef.current.roundDate(endDate),
+          parent: currentTask.id,
+          text: "New Reservation",
+          status: "PENDING",
+          guest_amount: 1,
+          price: "0"
+        };
+        
+        // Додаємо тимчасовий task для відображення
+        const tempId = ganttRef.current.uid();
+        ganttRef.current.addTask({
+          id: tempId,
+          text: "New Reservation",
+          start_date: tempData.start_date,
+          end_date: tempData.end_date,
+          parent: tempData.parent,
           status: "pending",
           guest_amount: 1,
-          price: "" // Сума за період (optional)
-        }, currentTask.id);
+          price: "0"
+        });
         
         // Відкриваємо модалку для редагування нового бронювання
         setTimeout(() => {
           try {
-            if (ganttRef.current && ganttRef.current.getTask(newReservationId)) {
-              ganttRef.current.showLightbox(newReservationId);
+            if (ganttRef.current && ganttRef.current.getTask(tempId)) {
+              ganttRef.current.showLightbox(tempId);
             }
           } catch (error) {
             console.warn("Could not open lightbox for new reservation:", error);
@@ -607,8 +620,24 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
           // Налаштування колонок (тільки назви квартир)
           gantt.config.columns = [
-            { name: "text", label: "Квартира", width: "*", tree: false }
+            { name: "text", label: "", width: "*", tree: false }
           ];
+          
+          // Приховуємо заголовок колонки
+          gantt.config.show_task_cells = true;
+          gantt.config.show_links = false;
+          
+          // CSS для приховування заголовка колонки
+          setTimeout(() => {
+            const headerCell = document.querySelector('.gantt_grid_head_cell');
+            if (headerCell) {
+              headerCell.style.display = 'none';
+            }
+            const headerRow = document.querySelector('.gantt_grid_head_row');
+            if (headerRow) {
+              headerRow.style.height = '0px';
+            }
+          }, 100);
 
           // Налаштування для кращого вигляду
           gantt.config.date_format = "%d-%m-%Y";
@@ -1274,10 +1303,11 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                           expire: 3000
                         });
                         
-                        // Повертаємо новий ID з API
+                        // Повертаємо відповідь з даними для onAfterUpdate
                         return { 
-                          id: `${ID_PREFIXES.RESERVATION}${response.data.id}`,
-                          tid: `${ID_PREFIXES.RESERVATION}${response.data.id}`
+                          id: id, // Залишаємо оригінальний тимчасовий ID
+                          tid: id,
+                          data: response.data // Додаємо дані резервації для onAfterUpdate
                         };
                       } else {
                         throw new Error('Failed to create reservation');
@@ -1392,11 +1422,32 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           dp.attachEvent("onAfterUpdate", function(id: any, action: string, tid: any, response: any){
             console.log('🔄 onAfterUpdate:', { id, action, tid, response });
             
-            if (action === "create" && response && response.data && response.data.id) {
-              // Замінюємо тимчасовий ID (id) на реальний ID з бекенду (response.data.id)
-              const newId = `${ID_PREFIXES.RESERVATION}${response.data.id}`;
-              console.log(`🔄 Changing task ID from "${id}" to "${newId}"`);
-              gantt.changeTaskId(id, newId);
+            if (action === "create" && response) {
+              // Перевіряємо різні можливі структури відповіді
+              let reservationId = null;
+              
+              if (response.data && response.data.id) {
+                reservationId = response.data.id;
+              } else if (response.id) {
+                reservationId = response.id;
+              } else if (response.data && response.data.reservationId) {
+                reservationId = response.data.reservationId;
+              }
+              
+              if (reservationId) {
+                // Замінюємо тимчасовий ID (id) на реальний ID з бекенду
+                const newId = `${ID_PREFIXES.RESERVATION}${reservationId}`;
+                console.log(`🔄 Changing task ID from "${id}" to "${newId}"`);
+                
+                try {
+                  gantt.changeTaskId(id, newId);
+                  console.log(`✅ Successfully changed task ID to "${newId}"`);
+                } catch (error) {
+                  console.warn(`⚠️ Failed to change task ID: ${error.message}`);
+                }
+              } else {
+                console.warn('⚠️ No reservation ID found in response:', response);
+              }
             }
           });
 
@@ -1470,8 +1521,7 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       className="rounded-2xl overflow-hidden"
       style={{ 
         width: "100%", 
-        height: "100%",
-        minHeight: "600px"
+        height: "100vh"
       }}
     />
   );
