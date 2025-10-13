@@ -956,11 +956,48 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               // Отримуємо дані з task
               const platform = task.source || 'DIRECT';
               const guestName = task.guest_name || task.text || 'Гість';
-              const price = task.price ? `$${task.price}` : 'N/A';
+              const price = task.price ? `AED ${task.price}` : 'N/A';
               const status = task.status || 'PENDING';
               
               // Форматуємо текст для відображення
               return `${platform} | ${guestName} | ${price} | ${status}`;
+            }
+          };
+
+          // Кастомний template для task content з логотипами
+          gantt.templates.task_content = (start, end, task) => {
+            if (task.type === "project") {
+              return task.text;
+            } else {
+              const platform = task.source || 'DIRECT';
+              const guestName = task.guest_name || task.text || 'Гість';
+              const price = task.price ? `AED ${task.price}` : 'N/A';
+              const status = task.status || 'PENDING';
+              
+              // Отримуємо URL логотипу платформи
+              const getPlatformLogo = (source: string) => {
+                switch (source.toUpperCase()) {
+                  case 'AIRBNB':
+                    return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                  case 'BOOKING_COM':
+                    return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                  default:
+                    return null;
+                }
+              };
+
+              const logoUrl = getPlatformLogo(platform);
+              
+              // Створюємо HTML з логотипом та текстом
+              let content = '';
+              
+              if (logoUrl) {
+                content += `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;" alt="${platform} logo" />`;
+              }
+              
+              content += `${platform} | ${guestName} | ${price} | ${status}`;
+              
+              return content;
             }
           };
 
@@ -1129,73 +1166,85 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             const checkOut = new Date(reservation?.checkOut || task.end_date);
             const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
-            // Створюємо контент tooltip
+            // Функція для отримання логотипу платформи
+            const getPlatformLogo = (source: string) => {
+              switch (source?.toUpperCase()) {
+                case 'AIRBNB':
+                  return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                case 'BOOKING_COM':
+                  return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                default:
+                  return null;
+              }
+            };
+
+            const logoUrl = getPlatformLogo(task.source || 'DIRECT');
+
+            // Створюємо контент tooltip в стилі зображення
             tooltip.innerHTML = `
-              <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                <div style="
-                  background: ${task.source === 'AIRBNB' ? '#FF5A5F' : task.source === 'BOOKING_COM' ? '#003580' : '#6366F1'};
-                  color: white;
-                  padding: 4px 8px;
-                  border-radius: 4px;
-                  font-size: 12px;
-                  font-weight: 600;
-                  margin-right: 8px;
-                ">
-                  ${task.source || 'DIRECT'}
+              <div style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 8px; color: #374151;">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  </svg>
+                  <span style="color: #374151; font-size: 14px;">
+                    ${logoUrl ? `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" alt="${task.source} logo" />` : ''}
+                    ${task.source || 'DIRECT'}
+                  </span>
                 </div>
-                <div style="display: flex; align-items: center; color: #059669;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px; color: #059669;">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                   </svg>
-                  <span style="font-size: 12px; font-weight: 500;">Reservation • ${nights} nights</span>
+                  <span style="color: #374151; font-size: 14px;">Reservation • ${nights} nights</span>
+                </div>
+                
+                <div style="color: #374151; font-size: 14px; margin-bottom: 8px;">
+                  ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
                 </div>
               </div>
               
-              <div style="color: #374151; margin-bottom: 8px;">
-                ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
-              </div>
-              
-              <div style="margin-bottom: 4px; color: #374151;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 </svg>
-                ${property?.name || 'Unknown Property'}
+                <span style="color: #374151; font-size: 14px;">${property?.name || 'Unknown Property'}</span>
               </div>
               
-              <div style="margin-bottom: 4px; color: #374151;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                ${reservation?.guestName || task.guest_name || 'Unknown Guest'} • ${task.guest_amount || 1} guests
+                <span style="color: #374151; font-size: 14px;">
+                  ${reservation?.guestName || task.guest_name || 'Unknown Guest'} ${reservation?.totalAmount || task.price ? `${reservation?.totalAmount || task.price} AED` : ''} • ${task.guest_amount || 1} guest${(task.guest_amount || 1) > 1 ? 's' : ''}
+                </span>
               </div>
               
-              <div style="margin-bottom: 4px; color: #374151;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
-                  <circle cx="12" cy="12" r="10"/>
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
                   <polyline points="12,6 12,12 16,14"/>
                 </svg>
-                AED ${reservation?.totalAmount || task.price || 0} total
+                <span style="color: #374151; font-size: 14px;">AED ${reservation?.totalAmount || task.price || 0} total</span>
               </div>
-              
-              ${reservation?.paidAmount && reservation.paidAmount > 0 ? `
-                <div style="margin-bottom: 4px; color: #DC2626;">
-                  <strong>AED ${reservation.paidAmount} Paid</strong>
-                </div>
-              ` : ''}
               
               ${reservation?.totalAmount && reservation?.paidAmount && (reservation.totalAmount - reservation.paidAmount) > 0 ? `
-                <div style="margin-bottom: 4px; color: #DC2626;">
+                <div style="margin-bottom: 4px; color: #EA580C; font-size: 14px;">
                   <strong>AED ${reservation.totalAmount - reservation.paidAmount} Unpaid</strong>
+                </div>
+                <div style="margin-bottom: 8px; color: #EA580C; font-size: 14px;">
+                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Payout</strong>
                 </div>
               ` : ''}
               
-              <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb; color: #6B7280; font-size: 12px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 4px; vertical-align: middle;">
+              <div style="color: #6B7280; font-size: 14px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle;">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12,6 12,12 16,14"/>
                 </svg>
-                Added on ${new Date(task.start_date).toLocaleDateString('en-US', {
+                Added by ${reservation?.agentName || 'System'} on ${new Date(task.start_date).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
