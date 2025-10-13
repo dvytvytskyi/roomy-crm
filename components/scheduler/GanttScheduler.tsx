@@ -1543,14 +1543,26 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   }
 
                   // Витягуємо ID резервації з префіксу
-                  const extractReservationId = (ganttId: string): string => {
+                  const extractReservationId = (ganttId: any): string => {
+                    // Перевіряємо, чи ganttId є рядком
+                    if (typeof ganttId !== 'string') {
+                      console.warn('⚠️ extractReservationId: ganttId is not a string:', ganttId, typeof ganttId);
+                      return String(ganttId);
+                    }
+                    
                     // ganttId формат: "res_123" або "res_1759764990604"
                     const match = ganttId.match(/^res_(.+)$/);
                     return match ? match[1] : ganttId;
                   };
 
                   // Витягуємо ID квартири з батьківського task
-                  const extractPropertyId = (parentGanttId: string): string => {
+                  const extractPropertyId = (parentGanttId: any): string => {
+                    // Перевіряємо, чи parentGanttId є рядком
+                    if (typeof parentGanttId !== 'string') {
+                      console.warn('⚠️ extractPropertyId: parentGanttId is not a string:', parentGanttId, typeof parentGanttId);
+                      return String(parentGanttId);
+                    }
+                    
                     // parentGanttId формат: "prop_123"
                     const match = parentGanttId.match(/^prop_(.+)$/);
                     return match ? match[1] : parentGanttId;
@@ -1865,6 +1877,46 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 }
               } else {
                 console.warn('⚠️ No reservation ID found in response:', response);
+              }
+            }
+            
+            // ✅ Додаємо обробку для оновлення
+            if (action === "update" && response) {
+              console.log('🔄 Updating task data after successful API update');
+              
+              try {
+                // Отримуємо поточний task
+                const task = gantt.getTask(id);
+                if (task && task.type !== "project") {
+                  // Оновлюємо дані task з відповіді API
+                  if (response.data) {
+                    const updatedTask = {
+                      ...task,
+                      text: response.data.guestName || task.text,
+                      guest_email: response.data.guestEmail || task.guest_email,
+                      guest_phone: response.data.guestPhone || task.guest_phone,
+                      status: response.data.status || task.status,
+                      source: response.data.source || task.source,
+                      total_amount: response.data.totalAmount || task.total_amount,
+                      guest_amount: response.data.guests || task.guest_amount,
+                      notes: response.data.notes || task.notes,
+                      special_requests: response.data.specialRequests || task.special_requests
+                    };
+                    
+                    // Оновлюємо task в Gantt
+                    gantt.updateTask(id, updatedTask);
+                    console.log('✅ Task data updated successfully');
+                    
+                    // Показуємо повідомлення про успіх
+                    gantt.message({
+                      text: "✅ Дані резервації оновлено!",
+                      type: "success",
+                      expire: 3000
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error('❌ Error updating task data:', error);
               }
             }
           });
