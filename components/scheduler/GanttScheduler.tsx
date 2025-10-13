@@ -605,6 +605,20 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         .gantt_task_content {
           z-index: 3 !important;
         }
+        
+        /* Стилі для tooltip */
+        .gantt_tooltip {
+          font-size: 13px !important;
+          line-height: 16px !important;
+          background: white !important;
+          border: 1px solid #e5e7eb !important;
+          border-radius: 8px !important;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+          padding: 16px !important;
+          max-width: 320px !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          color: #374151 !important;
+        }
       `;
       document.head.appendChild(style);
 
@@ -657,9 +671,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           gantt.config.drag_create = false;     // ❌ Заборонено створення
           gantt.config.drag_links = false;      // ❌ Заборонено зв'язки
           
-          // Увімкнення marker плагіна
+          // Увімкнення marker та tooltip плагінів
           gantt.plugins({ 
-            marker: true 
+            marker: true,
+            tooltip: true
           });
           
           // Сучасний API для scales з новим форматом дат
@@ -884,42 +899,127 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return true; // Дозволяємо подвійний клік для бронювань
           });
 
-          // Додаємо hover tooltip для резервацій
-          let tooltipTimeout: NodeJS.Timeout | null = null;
-          let currentTooltip: HTMLElement | null = null;
-
-          gantt.attachEvent("onTaskMouseOver", function(id, e) {
-            const task = gantt.getTask(id);
-            
+          // Налаштування tooltip для резервацій
+          gantt.templates.tooltip_date_format = gantt.date.date_to_str("%F %j, %Y");
+          
+          // Кастомний tooltip для резервацій
+          gantt.templates.tooltip_text = function (start, end, task) {
             // Показуємо tooltip тільки для резервацій (не для квартир)
-            if (!task || task.type === "project") {
-              return true;
+            if (task.type === "project") {
+              return null;
             }
 
-            // Очищуємо попередній таймаут
-            if (tooltipTimeout) {
-              clearTimeout(tooltipTimeout);
-            }
+            // Отримуємо дані резервації
+            const reservation = reservations.find(r => r.id === task.reservationId || r.id === task.id.replace('res_', ''));
+            const property = properties.find(p => p.id === task.propertyId);
 
-            // Додаємо затримку перед показом tooltip
-            tooltipTimeout = setTimeout(() => {
-              showReservationTooltip(task, e);
-            }, 500);
+            // Форматуємо дати
+            const formatDate = (dateStr: string) => {
+              return new Date(dateStr).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            };
 
-            return true;
-          });
+            // Обчислюємо кількість ночей
+            const checkIn = new Date(reservation?.checkIn || task.start_date);
+            const checkOut = new Date(reservation?.checkOut || task.end_date);
+            const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
-          gantt.attachEvent("onTaskMouseOut", function(id, e) {
-            // Очищуємо таймаут якщо мишка вийшла до показу tooltip
-            if (tooltipTimeout) {
-              clearTimeout(tooltipTimeout);
-              tooltipTimeout = null;
-            }
+            // Функція для отримання логотипу платформи
+            const getPlatformLogo = (source: string) => {
+              switch (source?.toUpperCase()) {
+                case 'AIRBNB':
+                  return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                case 'BOOKING_COM':
+                  return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                default:
+                  return null;
+              }
+            };
 
-            // Ховаємо tooltip
-            hideReservationTooltip();
-            return true;
-          });
+            const logoUrl = getPlatformLogo(task.source || 'DIRECT');
+            const platformName = task.source || 'DIRECT';
+
+            // Створюємо HTML контент tooltip
+            let content = `
+              <div style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 8px; color: #374151;">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  </svg>
+                  <span style="color: #374151; font-size: 14px;">
+                    ${logoUrl ? `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" alt="${platformName} logo" />` : ''}
+                    ${platformName}
+                  </span>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px; color: #059669;">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  <span style="color: #374151; font-size: 14px;">Reservation • ${nights} nights</span>
+                </div>
+                
+                <div style="color: #374151; font-size: 14px; margin-bottom: 8px;">
+                  ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
+                <span style="color: #374151; font-size: 14px;">${property?.name || 'Unknown Property'}</span>
+              </div>
+              
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span style="color: #374151; font-size: 14px;">
+                  ${reservation?.guestName || task.guest_name || 'Unknown Guest'} ${reservation?.totalAmount || task.price ? `${reservation?.totalAmount || task.price} AED` : ''} • ${task.guest_amount || 1} guest${(task.guest_amount || 1) > 1 ? 's' : ''}
+                </span>
+              </div>
+              
+              <div style="margin-bottom: 4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
+                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                <span style="color: #374151; font-size: 14px;">AED ${reservation?.totalAmount || task.price || 0} total</span>
+              </div>
+              
+              ${reservation?.totalAmount && reservation?.paidAmount && (reservation.totalAmount - reservation.paidAmount) > 0 ? `
+                <div style="margin-bottom: 4px; color: #EA580C; font-size: 14px;">
+                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Unpaid</strong>
+                </div>
+                <div style="margin-bottom: 8px; color: #EA580C; font-size: 14px;">
+                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Payout</strong>
+                </div>
+              ` : ''}
+              
+              <div style="color: #6B7280; font-size: 14px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle;">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                Added by ${reservation?.agentName || 'System'} on ${new Date(task.start_date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            `;
+
+            return content;
+          };
 
           // Додаємо data-атрибути для стилізації
           gantt.attachEvent("onTaskCreated", function(task) {
@@ -1123,167 +1223,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           //   setTimeout(addPricesToCells, 100);
           // });
 
-          // Функції для tooltip
-          const showReservationTooltip = (task: any, event: any) => {
-            // Прибираємо попередній tooltip якщо він є
-            hideReservationTooltip();
-
-            // Створюємо tooltip
-            const tooltip = document.createElement('div');
-            tooltip.className = 'reservation-tooltip';
-            tooltip.style.cssText = `
-              position: absolute;
-              background: white;
-              border: 1px solid #e5e7eb;
-              border-radius: 8px;
-              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-              padding: 16px;
-              z-index: 1000;
-              max-width: 320px;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              font-size: 14px;
-              line-height: 1.4;
-              pointer-events: none;
-            `;
-
-            // Отримуємо дані резервації
-            const reservation = reservations.find(r => r.id === task.reservationId || r.id === task.id.replace('res_', ''));
-            const property = properties.find(p => p.id === task.propertyId);
-
-            // Форматуємо дати
-            const formatDate = (dateStr: string) => {
-              return new Date(dateStr).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            };
-
-            // Обчислюємо кількість ночей
-            const checkIn = new Date(reservation?.checkIn || task.start_date);
-            const checkOut = new Date(reservation?.checkOut || task.end_date);
-            const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-
-            // Функція для отримання логотипу платформи
-            const getPlatformLogo = (source: string) => {
-              switch (source?.toUpperCase()) {
-                case 'AIRBNB':
-                  return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
-                case 'BOOKING_COM':
-                  return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
-                default:
-                  return null;
-              }
-            };
-
-            const logoUrl = getPlatformLogo(task.source || 'DIRECT');
-
-            // Створюємо контент tooltip в стилі зображення
-            tooltip.innerHTML = `
-              <div style="margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 8px; color: #374151;">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                  </svg>
-                  <span style="color: #374151; font-size: 14px;">
-                    ${logoUrl ? `<img src="${logoUrl}" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" alt="${task.source} logo" />` : ''}
-                    ${task.source || 'DIRECT'}
-                  </span>
-                </div>
-                
-                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px; color: #059669;">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                  <span style="color: #374151; font-size: 14px;">Reservation • ${nights} nights</span>
-                </div>
-                
-                <div style="color: #374151; font-size: 14px; margin-bottom: 8px;">
-                  ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
-                </div>
-              </div>
-              
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                </svg>
-                <span style="color: #374151; font-size: 14px;">${property?.name || 'Unknown Property'}</span>
-              </div>
-              
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <span style="color: #374151; font-size: 14px;">
-                  ${reservation?.guestName || task.guest_name || 'Unknown Guest'} ${reservation?.totalAmount || task.price ? `${reservation?.totalAmount || task.price} AED` : ''} • ${task.guest_amount || 1} guest${(task.guest_amount || 1) > 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              <div style="margin-bottom: 4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle; color: #374151;">
-                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
-                  <polyline points="12,6 12,12 16,14"/>
-                </svg>
-                <span style="color: #374151; font-size: 14px;">AED ${reservation?.totalAmount || task.price || 0} total</span>
-              </div>
-              
-              ${reservation?.totalAmount && reservation?.paidAmount && (reservation.totalAmount - reservation.paidAmount) > 0 ? `
-                <div style="margin-bottom: 4px; color: #EA580C; font-size: 14px;">
-                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Unpaid</strong>
-                </div>
-                <div style="margin-bottom: 8px; color: #EA580C; font-size: 14px;">
-                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Payout</strong>
-                </div>
-              ` : ''}
-              
-              <div style="color: #6B7280; font-size: 14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 8px; vertical-align: middle;">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12,6 12,12 16,14"/>
-                </svg>
-                Added by ${reservation?.agentName || 'System'} on ${new Date(task.start_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </div>
-            `;
-
-            // Додаємо tooltip до body
-            document.body.appendChild(tooltip);
-            currentTooltip = tooltip;
-
-            // Позиціонуємо tooltip
-            const rect = event.target.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
-            
-            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            let top = rect.top - tooltipRect.height - 10;
-
-            // Перевіряємо чи tooltip виходить за межі екрану
-            if (left < 10) left = 10;
-            if (left + tooltipRect.width > window.innerWidth - 10) {
-              left = window.innerWidth - tooltipRect.width - 10;
-            }
-            if (top < 10) {
-              top = rect.bottom + 10;
-            }
-
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-          };
-
-          const hideReservationTooltip = () => {
-            if (currentTooltip) {
-              currentTooltip.remove();
-              currentTooltip = null;
-            }
-          };
 
           // Ініціалізуємо Gantt
           gantt.init(containerRef.current);
@@ -1704,9 +1643,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       document.body.appendChild(script);
 
       return () => {
-        // Cleanup tooltip
-        hideReservationTooltip();
-        
         if (ganttRef.current) {
           ganttRef.current.destructor();
         }
