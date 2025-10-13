@@ -1405,17 +1405,14 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
-          // Обробник збереження з модалки - з діагностикою
+          // Спрощений обробник збереження з модалки
           gantt.attachEvent("onLightboxSave", function(id: any, item: any, is_new: any) {
             try {
               console.log('💾 onLightboxSave:', { id, item, is_new });
-              console.log('📋 Item data:', JSON.stringify(item, null, 2));
               
-              // Якщо це нова резервація
+              // Просто дозволяємо DataProcessor обробити збереження
               if (is_new) {
                 console.log('✅ New reservation - DataProcessor will handle it');
-                
-                // Показуємо повідомлення про створення
                 setTimeout(() => {
                   gantt.message({
                     text: "✅ Нова резервація створюється...",
@@ -1423,45 +1420,18 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                     expire: 3000
                   });
                 }, 100);
-                
-                return true;
-              }
-              
-              // Для існуючих резервацій - примусово зберігаємо
-              if (item && item.type !== "project") {
-                console.log('🔄 Existing reservation - forcing save...');
-                
-                // Примусово викликаємо DataProcessor
+              } else {
+                console.log('🔄 Existing reservation - DataProcessor will handle it');
                 setTimeout(() => {
-                  try {
-                    // Отримуємо DataProcessor з глобального об'єкта gantt
-                    const dp = gantt.ext && gantt.ext.dataProcessor ? gantt.ext.dataProcessor : null;
-                    if (dp) {
-                      console.log('📤 Calling DataProcessor.sendData for update...');
-                      dp.sendData("update", id, item);
-                    } else {
-                      console.warn('⚠️ No DataProcessor found, trying alternative method...');
-                      // Альтернативний спосіб - оновлюємо завдання напряму
-                      gantt.updateTask(id);
-                    }
-                    
-                    gantt.message({
-                      text: "✅ Зміни резервації збережено!",
-                      type: "success",
-                      expire: 3000
-                    });
-                  } catch (error) {
-                    console.error('❌ Error saving reservation:', error);
-                    gantt.message({
-                      text: "❌ Помилка збереження резервації",
-                      type: "error",
-                      expire: 3000
-                    });
-                  }
-                }, 200);
+                  gantt.message({
+                    text: "✅ Зміни резервації збережено!",
+                    type: "success",
+                    expire: 3000
+                  });
+                }, 500);
               }
               
-              return true;
+              return true; // Дозволяємо стандартну обробку
             } catch (error) {
               console.error('❌ Error in onLightboxSave:', error);
               return false;
@@ -1484,44 +1454,32 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // 1. Дозволяємо створення резервацій
           gantt.config.drag_create = true;
           
-          // 2. Перехоплюємо подію, коли користувач намагається створити завдання
+          // Спрощена логіка створення завдань
           gantt.attachEvent("onTaskCreated", function (task: any) {
-            console.log('🔄 onTaskCreated: Intercepting task creation', { task });
+            console.log('🔄 onTaskCreated: Task created', { task });
             
-            // 3. Створюємо новий ID для нашого завдання
-            const newTaskId = gantt.uid();
-            
-            // 4. Створюємо об'єкт завдання з УСІМА необхідними полями
-            const newTask = {
-              id: newTaskId,
-              text: "New Reservation",
-              start_date: task.start_date,
-              end_date: task.end_date,
-              duration: task.duration || 1,
-              parent: task.parent,
+            // Просто додаємо моки до існуючого task
+            const enhancedTask = {
+              ...task,
+              text: task.text || "New Reservation",
+              type: "reservation",
               
-              // --- ВАШІ ОБОВ'ЯЗКОВІ ПОЛЯ З ДЕФОЛТНИМИ ЗНАЧЕННЯМИ ---
-              guest_email: "guest@example.com",
-              guest_phone: "+380000000000",
-              source: "DIRECT",
-              guest_amount: 1,
-              status: "PENDING",
-              price: "0",
-              totalAmount: 0
+              // Додаємо моки для всіх полів
+              guest_email: 'guest@example.com',
+              guest_phone: '+971501234567',
+              status: 'pending',
+              guest_amount: 2,
+              source: 'DIRECT',
+              price: '500',
+              notes: 'Reservation created via scheduler',
+              special_requests: 'Late check-in preferred'
             };
             
-            console.log('✅ Creating fully prepared task:', newTask);
+            // Оновлюємо task з новими даними
+            gantt.updateTask(task.id, enhancedTask);
             
-            // 5. Вручну додаємо це повністю готове завдання в Gantt
-            gantt.addTask(newTask);
-            
-            // 6. Вручну відкриваємо лайтбокс для нього
-            setTimeout(() => {
-              gantt.showLightbox(newTaskId);
-            }, 100);
-            
-            // 7. Повертаємо false, щоб запобігти стандартній обробці
-            return false;
+            console.log('✅ Task enhanced with mock data:', enhancedTask);
+            return true; // Дозволяємо стандартну обробку
           });
 
           // DataProcessor для збереження змін через API з router
