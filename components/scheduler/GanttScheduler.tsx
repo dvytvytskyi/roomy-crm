@@ -103,23 +103,30 @@ const convertPropertiesToGanttTasks = (properties: PropertyV2[]): GanttTask[] =>
   }));
 };
 
-const convertReservationsToGanttTasks = (reservations: ReservationV2[]): GanttTask[] => {
-  return reservations.map(reservation => ({
-    id: `${ID_PREFIXES.RESERVATION}${reservation.id}`,
-    text: `${reservation.guestName || 'Гість'} (${reservation.guestCount || 1} ос.)`,
-    start_date: new Date(reservation.checkIn),
-    duration: Math.ceil((new Date(reservation.checkOut).getTime() - new Date(reservation.checkIn).getTime()) / (1000 * 60 * 60 * 24)),
-    parent: `${ID_PREFIXES.PROPERTY}${reservation.propertyId}`,
-    progress: 1,
-    status: reservation.status || 'PENDING',
-    source: 'AIRBNB', // Встановлюємо джерело для стилізації
-    guest_amount: reservation.guestCount || 1,
-    // Кастомні поля
-    reservationId: reservation.id,
-    guestName: reservation.guestName,
-    totalPrice: reservation.totalPrice,
-    notes: reservation.notes
-  }));
+const convertReservationsToGanttTasks = (reservations: ReservationV2[], properties: PropertyV2[]): GanttTask[] => {
+  return reservations.map(reservation => {
+    // Знаходимо нерухомість для цієї резервації
+    const property = properties.find(p => p.id === reservation.propertyId);
+    
+    return {
+      id: `${ID_PREFIXES.RESERVATION}${reservation.id}`,
+      text: `${reservation.guestName || 'Гість'} (${reservation.guestCount || 1} ос.)`,
+      start_date: new Date(reservation.checkIn),
+      duration: Math.ceil((new Date(reservation.checkOut).getTime() - new Date(reservation.checkIn).getTime()) / (1000 * 60 * 60 * 24)),
+      parent: `${ID_PREFIXES.PROPERTY}${reservation.propertyId}`,
+      progress: 1,
+      status: reservation.status || 'PENDING',
+      source: reservation.source || 'DIRECT', // Використовуємо source з резервації
+      guest_amount: reservation.guestCount || 1,
+      // Кастомні поля
+      reservationId: reservation.id,
+      guestName: reservation.guestName,
+      // Додаємо фото нерухомості
+      propertyPhotoUrl: property?.photos?.[0]?.url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop&crop=center',
+      totalPrice: reservation.totalPrice,
+      notes: reservation.notes
+    };
+  });
 };
 
 const combinePropertiesAndReservations = (
@@ -127,7 +134,7 @@ const combinePropertiesAndReservations = (
   reservations: ReservationV2[]
 ): GanttTask[] => {
   const propertyTasks = convertPropertiesToGanttTasks(properties);
-  const reservationTasks = convertReservationsToGanttTasks(reservations);
+  const reservationTasks = convertReservationsToGanttTasks(reservations, properties);
   
   return [...propertyTasks, ...reservationTasks];
 };
@@ -650,8 +657,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
         }
         
         .gantt_task_content img {
-          max-width: 14px !important;
-          max-height: 14px !important;
+          max-width: 24px !important;
+          max-height: 24px !important;
           vertical-align: middle !important;
           display: inline-block !important;
         }
@@ -889,21 +896,56 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             if (task && task.type !== "project") {
               console.log('🔍 onLightbox - Task data:', task);
               
+              // Якщо це новий task (без моків) - додаємо preview маркер та моки
+              if (!task.isPreview && !task.guest_email) {
+                console.log('🔄 Converting new task to preview...');
+                
+                // Отримуємо фото нерухомості для preview task
+                const propertyId = task.parent?.replace('prop_', '') || '';
+                const property = properties.find(p => p.id === propertyId);
+                const propertyPhotoUrl = property?.photos?.[0]?.url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop&crop=center';
+                
+                const previewTask = {
+                  ...task,
+                  text: "New Reservation (Preview)",
+                  isPreview: true,
+                  
+                  // Додаємо моки для всіх полів
+                  guest_email: 'guest@example.com',
+                  guest_phone: '+971501234567',
+                  status: 'pending',
+                  guest_amount: 2,
+                  source: 'DIRECT',
+                  price: '500',
+                  notes: 'Reservation created via scheduler',
+                  special_requests: 'Late check-in preferred',
+                  
+                  // Додаємо фото нерухомості
+                  propertyPhotoUrl: propertyPhotoUrl
+                };
+                
+                // Оновлюємо task з preview даними
+                gantt.updateTask(id, previewTask);
+                
+                console.log('✅ Task converted to preview:', previewTask);
+              }
+              
               // Заповнюємо поля поточними значеннями з task з debounce
               lightboxTimeout = setTimeout(() => {
                 try {
+                  const currentTask = gantt.getTask(id);
                   const lightboxData = {
-                    text: task.text || 'New Reservation',
-                    guest_email: task.guest_email || 'guest@example.com',
-                    guest_phone: task.guest_phone || '+971501234567',
-                    status: task.status || 'pending',
-                    guest_amount: task.guest_amount || 2,
-                    source: task.source || 'DIRECT',
-                    price: task.price || '500',
-                    start_date: task.start_date,
-                    end_date: task.end_date,
-                    notes: task.notes || 'Reservation created via scheduler',
-                    special_requests: task.special_requests || 'Late check-in preferred'
+                    text: currentTask.text || 'New Reservation',
+                    guest_email: currentTask.guest_email || 'guest@example.com',
+                    guest_phone: currentTask.guest_phone || '+971501234567',
+                    status: currentTask.status || 'pending',
+                    guest_amount: currentTask.guest_amount || 2,
+                    source: currentTask.source || 'DIRECT',
+                    price: currentTask.price || '500',
+                    start_date: currentTask.start_date,
+                    end_date: currentTask.end_date,
+                    notes: currentTask.notes || 'Reservation created via scheduler',
+                    special_requests: currentTask.special_requests || 'Late check-in preferred'
                   };
                   
                   console.log('📝 Setting lightbox data:', lightboxData);
@@ -1026,6 +1068,12 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
                 case 'BOOKING_COM':
                   return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                case 'VRBO':
+                  return 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Vrbo_logo.svg';
+                case 'EXPEDIA':
+                  return 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Expedia_logo.svg';
+                case 'DIRECT':
+                  return 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Home_icon.svg';
                 default:
                   return null;
               }
@@ -1168,29 +1216,94 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
           };
 
-          // Кастомний template для task content з логотипами та обрізкою тексту
-          gantt.templates.task_content = (start, end, task) => {
+          // Кастомний template для task text з логотипами та обрізкою тексту
+          gantt.templates.task_text = (start, end, task) => {
             if (task.type === "project") {
               return task.text;
             } else {
+              // 🚨 МАКСИМАЛЬНО ПРОСТЕ ЛОГУВАННЯ
+              console.log('🚨🚨🚨 TASK_CONTENT CALLED 🚨🚨🚨');
+              console.log('🚨 task.source =', task.source);
+              console.log('🚨 task.source type =', typeof task.source);
+              console.log('🚨 task.id =', task.id);
+              console.log('🚨 task.text =', task.text);
+              
               const platform = task.source || 'DIRECT';
+              console.log('🚨 Final platform =', platform);
+              
+              // Якщо platform не VRBO/DIRECT/BOOKING_COM - показуємо ВСЕ!
+              if (platform !== 'VRBO' && platform !== 'DIRECT' && platform !== 'BOOKING_COM' && platform !== 'EXPEDIA' && platform !== 'OTHER') {
+                console.log('🚨🚨🚨 WRONG PLATFORM DETECTED! 🚨🚨🚨');
+                console.log('🚨 Expected: VRBO, DIRECT, BOOKING_COM, EXPEDIA, or OTHER');
+                console.log('🚨 Got:', platform);
+                console.log('🚨 Full task object:', JSON.stringify(task, null, 2));
+              } else {
+                console.log('✅ Platform is valid:', platform);
+              }
+              
               const guestName = task.guest_name || task.text || 'Гість';
               const price = task.price ? `AED ${task.price}` : 'N/A';
               const status = task.status || 'PENDING';
               
               // Отримуємо URL логотипу платформи
               const getPlatformLogo = (source: string) => {
-                switch (source.toUpperCase()) {
+                console.log('🎨 GET_PLATFORM_LOGO DEBUG - Input source:', source);
+                console.log('🎨 GET_PLATFORM_LOGO DEBUG - Input source type:', typeof source);
+                console.log('🎨 GET_PLATFORM_LOGO DEBUG - Input source.toUpperCase():', source?.toUpperCase());
+                
+                const upperSource = source?.toUpperCase();
+                let result = null;
+                
+                switch (upperSource) {
                   case 'AIRBNB':
-                    return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                    result = 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                    break;
                   case 'BOOKING_COM':
-                    return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                    result = 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                    break;
+                  case 'VRBO':
+                    result = 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Vrbo_logo.svg';
+                    break;
+                  case 'EXPEDIA':
+                    result = 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Expedia_logo.svg';
+                    break;
+                  case 'DIRECT':
+                    // Створюємо кастомний логотип "R" для DIRECT (Roomy стиль)
+                    result = 'data:image/svg+xml;base64,' + btoa(`
+                      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="white" stroke="#FF6B35" stroke-width="1"/>
+                        <text x="12" y="16.5" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#FF6B35">R</text>
+                      </svg>
+                    `);
+                    break;
                   default:
-                    return null;
+                    result = null;
+                    break;
                 }
+                
+                console.log('🎨 GET_PLATFORM_LOGO DEBUG - Result:', result);
+                console.log('🎨 GET_PLATFORM_LOGO DEBUG - Platform:', source);
+                if (source === 'DIRECT') {
+                  console.log('🎨 DIRECT LOGO: Custom R logo created');
+                }
+                return result;
               };
 
               const logoUrl = getPlatformLogo(platform);
+              
+              // Отримуємо фото нерухомості з task (вже збережене при створенні)
+              console.log('🏠 Task object keys:', Object.keys(task));
+              console.log('🏠 Task propertyPhotoUrl:', task.propertyPhotoUrl);
+              console.log('🏠 Task parent:', task.parent);
+              
+              // Перевіряємо, чи є реальне фото нерухомості
+              let propertyPhotoUrl = task.propertyPhotoUrl;
+              if (!propertyPhotoUrl || propertyPhotoUrl.includes('Home_icon') || propertyPhotoUrl.includes('fallback')) {
+                console.log('⚠️ Using fallback property photo');
+                propertyPhotoUrl = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop&crop=center';
+              }
+              
+              console.log('🏠 Final property photo URL:', propertyPhotoUrl);
               
               // Обрізаємо довгі тексти для кращого відображення
               const truncateText = (text: string, maxLength: number) => {
@@ -1198,11 +1311,16 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 return text.substring(0, maxLength) + '...';
               };
               
-              // Створюємо HTML з логотипом та обрізаним текстом
+              // Створюємо HTML тільки з логотипом платформи
               let content = '';
               
+              // Додаємо тільки логотип платформи (24px)
               if (logoUrl) {
-                content += `<img src="${logoUrl}" style="width: 14px; height: 14px; margin-right: 3px; vertical-align: middle; display: inline-block;" alt="${platform} logo" />`;
+                const logoHtml = `<img src="${logoUrl}" style="width: 24px; height: 24px; margin-right: 6px; vertical-align: middle; display: inline-block;" alt="${platform} logo" />`;
+                content += logoHtml;
+                console.log('🏷️ Logo HTML:', logoHtml);
+                console.log('🏷️ Logo URL:', logoUrl);
+                console.log('🏷️ Logo size: 24x24px');
               }
               
               // Обрізаємо кожен компонент для кращого відображення
@@ -1211,8 +1329,68 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               const shortPrice = price.length > 10 ? truncateText(price, 10) : price;
               const shortStatus = truncateText(status, 8);
               
-              content += `${shortPlatform} | ${shortGuestName} | ${shortPrice} | ${shortStatus}`;
+              // Додаємо візуальну відмінність для preview tasks
+              const previewText = task.isPreview ? ' (Preview)' : '';
+              const previewStyle = task.isPreview ? 'style="opacity: 0.7; font-style: italic;"' : '';
               
+              content += `<span ${previewStyle}>${shortPlatform} | ${shortGuestName}${previewText} | ${shortPrice} | ${shortStatus}</span>`;
+              
+              console.log('🎨 TASK_CONTENT DEBUG - Final content:', content);
+              console.log('🎨 TASK_CONTENT DEBUG - shortPlatform:', shortPlatform);
+              console.log('🎨 TASK_CONTENT DEBUG - logoUrl:', logoUrl);
+              console.log('🎨 TASK_CONTENT DEBUG - propertyPhotoUrl:', propertyPhotoUrl);
+              
+              return content;
+            }
+          };
+          
+          // Кастомний template для task content з HTML
+          gantt.templates.task_content = (start, end, task) => {
+            if (task.type === "project") {
+              return '';
+            } else {
+              // Отримуємо фото нерухомості з task
+              let propertyPhotoUrl = task.propertyPhotoUrl;
+              if (!propertyPhotoUrl || propertyPhotoUrl.includes('Home_icon') || propertyPhotoUrl.includes('fallback')) {
+                propertyPhotoUrl = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop&crop=center';
+              }
+              const platform = task.source || 'DIRECT';
+              
+              // Функція для отримання логотипу платформи
+              const getPlatformLogo = (source: string) => {
+                switch (source?.toUpperCase()) {
+                  case 'AIRBNB':
+                    return 'https://images.icon-icons.com/2108/PNG/512/airbnb_icon_131000.png';
+                  case 'BOOKING_COM':
+                    return 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Booking.com_Icon_2022.svg';
+                  case 'VRBO':
+                    return 'https://upload.wikimedia.org/wikipedia/commons/9/9c/Vrbo_logo.svg';
+                  case 'EXPEDIA':
+                    return 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Expedia_logo.svg';
+                  case 'DIRECT':
+                    // Створюємо кастомний логотип "R" для DIRECT (Roomy стиль)
+                    return 'data:image/svg+xml;base64,' + btoa(`
+                      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="24" height="24" rx="6" fill="white" stroke="#FF6B35" stroke-width="1"/>
+                        <text x="12" y="16.5" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#FF6B35">R</text>
+                      </svg>
+                    `);
+                  default:
+                    return null;
+                }
+              };
+              
+              const logoUrl = getPlatformLogo(platform);
+              
+              // Створюємо HTML тільки з логотипом платформи
+              let content = '';
+              
+              // Додаємо тільки логотип платформи (24px)
+              if (logoUrl) {
+                content += `<img src="${logoUrl}" style="width: 24px; height: 24px; margin-right: 6px; vertical-align: middle; display: inline-block;" alt="${platform} logo" />`;
+              }
+              
+              console.log('🎨 TASK_CONTENT HTML:', content);
               return content;
             }
           };
@@ -1384,6 +1562,22 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // Ховаємо рядки бронювань в grid (вони будуть відображатися тільки як split tasks)
           gantt.refreshData();
           
+          // Оновлюємо існуючі tasks з фото нерухомості (якщо його немає)
+          gantt.eachTask(function(task: any) {
+            if (task.type !== "project" && !task.propertyPhotoUrl) {
+              const propertyId = task.parent?.replace('prop_', '') || '';
+              const property = properties.find(p => p.id === propertyId);
+              const propertyPhotoUrl = property?.photos?.[0]?.url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop&crop=center';
+              
+              gantt.updateTask(task.id, {
+                ...task,
+                propertyPhotoUrl: propertyPhotoUrl
+              });
+              
+              console.log('🔄 Updated existing task with property photo:', task.id, propertyPhotoUrl);
+            }
+          });
+          
           // Додаємо ціни після першого завантаження (закоментовано)
           // setTimeout(addPricesToCells, 300);
 
@@ -1405,12 +1599,94 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
-          // Спрощений обробник збереження з модалки
+          // Нова логіка збереження: створюємо резервацію тільки при Save
           gantt.attachEvent("onLightboxSave", function(id: any, item: any, is_new: any) {
             try {
-              console.log('💾 onLightboxSave:', { id, item, is_new });
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('💾 onLightboxSave START');
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('📋 Parameters:', { id, item, is_new });
               
-              // Просто дозволяємо DataProcessor обробити збереження
+              const task = gantt.getTask(id);
+              console.log('🔍 Current task:', task);
+              
+              // Якщо це preview task - створюємо реальну резервацію
+              if (task && task.isPreview) {
+                console.log('🔄 Converting preview to real reservation...');
+                console.log('📝 Item data from form:', item);
+                console.log('📝 Task data before conversion:', task);
+                console.log('🔍 Task isPreview:', task.isPreview);
+                console.log('🔍 Task type:', typeof task.isPreview);
+                console.log('🔍 SOURCE DEBUG - Item source:', item.source);
+                console.log('🔍 SOURCE DEBUG - Task source:', task.source);
+                console.log('🔍 SOURCE DEBUG - Item source type:', typeof item.source);
+                console.log('🔍 SOURCE DEBUG - Task source type:', typeof task.source);
+                
+                // Видаляємо preview маркер та додаємо дані з форми
+                const realTask = {
+                  ...task,
+                  ...item,
+                  isPreview: false,
+                  text: item.text || task.text,
+                  // Додаємо всі дані з форми
+                  guest_email: item.guest_email || task.guest_email,
+                  guest_phone: item.guest_phone || task.guest_phone,
+                  status: item.status || task.status,
+                  guest_amount: item.guest_amount || task.guest_amount,
+                  source: item.source || task.source,
+                  price: item.price || task.price,
+                  notes: item.notes || task.notes,
+                  special_requests: item.special_requests || task.special_requests
+                };
+                
+                console.log('📝 Real task data:', realTask);
+                
+                // Оновлюємо task
+                console.log('🔄 Updating task with real data...');
+                gantt.updateTask(id, realTask);
+                
+                console.log('✅ Task converted to real reservation:', realTask);
+                
+                // ✅ ВАЖЛИВО: Видаляємо task та створюємо новий з НОВИМ ID для CREATE action
+                console.log('🗑️ Deleting old task...');
+                gantt.deleteTask(id);
+                
+                // ✅ НОВЕ: Генеруємо НОВИЙ ID для CREATE action
+                const newId = gantt.uid();
+                
+                // Створюємо новий task з НОВИМ ID, але без preview маркера
+                const newRealTask = {
+                  ...realTask,
+                  id: newId // ✅ НОВИЙ ID для CREATE action
+                };
+                
+                console.log('➕ Adding new task for CREATE action with NEW ID:', newRealTask);
+                
+                // Додаємо task з НОВИМ ID - це викличе CREATE action
+                gantt.addTask(newRealTask);
+                
+                console.log('✅ New task added for CREATE action:', newRealTask);
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('💾 onLightboxSave END - Preview converted');
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                
+                setTimeout(() => {
+                  gantt.message({
+                    text: "✅ Резервацію створено!",
+                    type: "success",
+                    expire: 3000
+                  });
+                }, 500);
+                
+                return true; // Дозволяємо DataProcessor обробити
+              } else {
+                console.log('❌ Task is NOT preview - skipping conversion');
+                console.log('🔍 Task exists:', !!task);
+                console.log('🔍 Task isPreview:', task?.isPreview);
+                console.log('🔍 Task type:', typeof task?.isPreview);
+              }
+              
+              // Для існуючих резервацій - стандартна обробка
               if (is_new) {
                 console.log('✅ New reservation - DataProcessor will handle it');
                 setTimeout(() => {
@@ -1438,10 +1714,25 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             }
           });
 
-          // Обробник закриття модалки - спрощена версія
+          // Обробник закриття модалки - видаляємо preview task при Cancel
           gantt.attachEvent("onLightboxCancel", function(id: any, item: any) {
             try {
               console.log('❌ onLightboxCancel:', { id, item });
+              
+              const task = gantt.getTask(id);
+              
+              // Якщо це preview task - видаляємо його
+              if (task && task.isPreview) {
+                console.log('🗑️ Deleting preview task...');
+                gantt.deleteTask(id);
+                
+                gantt.message({
+                  text: "❌ Створення резервації скасовано",
+                  type: "error",
+                  expire: 2000
+                });
+              }
+              
               return true;
             } catch (error) {
               console.error('❌ Error in onLightboxCancel:', error);
@@ -1454,38 +1745,34 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // 1. Дозволяємо створення резервацій
           gantt.config.drag_create = true;
           
-          // Спрощена логіка створення завдань
+          // Простий обробник створення task - без моків
           gantt.attachEvent("onTaskCreated", function (task: any) {
             console.log('🔄 onTaskCreated: Task created', { task });
             
-            // Просто додаємо моки до існуючого task
-            const enhancedTask = {
+            // Просто встановлюємо базові поля
+            const newTask = {
               ...task,
-              text: task.text || "New Reservation",
-              type: "reservation",
-              
-              // Додаємо моки для всіх полів
-              guest_email: 'guest@example.com',
-              guest_phone: '+971501234567',
-              status: 'pending',
-              guest_amount: 2,
-              source: 'DIRECT',
-              price: '500',
-              notes: 'Reservation created via scheduler',
-              special_requests: 'Late check-in preferred'
+              text: "New Reservation",
+              type: "reservation"
             };
             
-            // Оновлюємо task з новими даними
-            gantt.updateTask(task.id, enhancedTask);
+            // Оновлюємо task
+            gantt.updateTask(task.id, newTask);
             
-            console.log('✅ Task enhanced with mock data:', enhancedTask);
+            console.log('✅ Task created:', newTask);
             return true; // Дозволяємо стандартну обробку
           });
 
           // DataProcessor для збереження змін через API з router
           const dp = gantt.createDataProcessor({
             router: async (entity: string, action: string, data: any, id: any) => {
-              console.log(`📊 DataProcessor Router: ${entity} ${action}`, { data, id });
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('📊 DataProcessor Router START');
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log(`📊 Entity: ${entity}, Action: ${action}`);
+              console.log('📊 Data:', data);
+              console.log('📊 ID:', id, 'Type:', typeof id);
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
               
               // Перевіряємо токен авторизації
               const token = localStorage.getItem('token');
@@ -1494,17 +1781,36 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               try {
                 // Працюємо тільки з резерваціями (task entity)
                 if (entity === "task") {
+                  console.log('🔍 Processing task entity...');
+                  
                   // Ігноруємо проекти (квартири) - вони не змінюються через планувальник
                   if (data.type === "project") {
                     console.log('⚠️ Skipping project modification (read-only in scheduler)');
                     return { id: id };
                   }
+                  
+                  // Ігноруємо preview tasks - вони не зберігаються в базі
+                  if (data.isPreview) {
+                    console.log('⚠️ Skipping preview task (not saved to database)');
+                    console.log('📝 Data isPreview:', data.isPreview);
+                    return { id: id };
+                  }
+                  
+                  // ✅ НОВЕ: Ігноруємо нові task без guest_email (ще не готові для збереження)
+                  if (action === "create" && !data.guest_email) {
+                    console.log('⚠️ Skipping new task without guest data (not ready for saving)');
+                    console.log('📝 Action:', action, 'guest_email:', data.guest_email);
+                    return { id: id };
+                  }
+                  
+                  console.log('✅ Task passed all checks, proceeding with processing...');
 
                   // Витягуємо ID резервації з префіксу
                   const extractReservationId = (ganttId: any): string => {
                     // Перевіряємо, чи ganttId є рядком
                     if (typeof ganttId !== 'string') {
                       console.warn('⚠️ extractReservationId: ganttId is not a string:', ganttId, typeof ganttId);
+                      // Якщо це число - повертаємо як є (це тимчасовий ID)
                       return String(ganttId);
                     }
                     
@@ -1577,8 +1883,27 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
                   switch (action) {
                     case "create": {
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                       console.log('➕ CREATE: New reservation via API...');
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                       console.log('🔍 Raw Gantt data:', data);
+                      console.log('🔍 Task ID:', id, 'Type:', typeof id);
+                      console.log('🔍 Data keys:', Object.keys(data));
+                      console.log('🔍 Data values:', Object.values(data));
+                      // 🚨 МАКСИМАЛЬНО ПРОСТЕ ЛОГУВАННЯ
+                      console.log('🚨🚨🚨 DATAPROCESSOR CREATE 🚨🚨🚨');
+                      console.log('🚨 data.source =', data.source);
+                      console.log('🚨 data.source type =', typeof data.source);
+                      
+                      // Якщо source не той - показуємо ВСЕ!
+                      if (data.source !== 'VRBO' && data.source !== 'DIRECT' && data.source !== 'BOOKING_COM' && data.source !== 'EXPEDIA' && data.source !== 'OTHER') {
+                        console.log('🚨🚨🚨 WRONG SOURCE IN CREATE! 🚨🚨🚨');
+                        console.log('🚨 Expected: VRBO, DIRECT, BOOKING_COM, EXPEDIA, or OTHER');
+                        console.log('🚨 Got:', data.source);
+                        console.log('🚨 Full data object:', JSON.stringify(data, null, 2));
+                      } else {
+                        console.log('✅ Source is valid:', data.source);
+                      }
                       
                       // ВАЖЛИВО: Видаляємо тимчасовий ID для create
                       delete data.id;
@@ -1616,7 +1941,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       // ✅ НОВЕ: Збираємо дані з lightbox форми
                       const getLightboxValue = (fieldName: string): string => {
                         const input = document.querySelector(`[name="${fieldName}"]`) as HTMLInputElement;
-                        return input ? input.value : '';
+                        const value = input ? input.value : '';
+                        console.log(`🔍 getLightboxValue(${fieldName}): "${value}"`);
+                        return value;
                       };
                       
                       const reservationData = {
@@ -1809,6 +2136,8 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // ВАЖЛИВО! Синхронізуємо ID після створення
           dp.attachEvent("onAfterUpdate", function(id: any, action: string, tid: any, response: any){
             console.log('🔄 onAfterUpdate:', { id, action, tid, response });
+            console.log('🔍 SOURCE DEBUG - Response data source:', response?.data?.source);
+            console.log('🔍 SOURCE DEBUG - Response source:', response?.source);
             
             if (action === "create" && response) {
               // Перевіряємо різні можливі структури відповіді
@@ -1822,14 +2151,27 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 reservationId = response.data.reservationId;
               }
               
+              console.log('🔍 ON_AFTER_UPDATE DEBUG - Full response.data:', response.data);
+              console.log('🔍 ON_AFTER_UPDATE DEBUG - response.data.source:', response.data?.source);
+              
               if (reservationId) {
                 // Замінюємо тимчасовий ID (id) на реальний ID з бекенду
                 const newId = `${ID_PREFIXES.RESERVATION}${reservationId}`;
                 console.log(`🔄 Changing task ID from "${id}" to "${newId}"`);
                 
+                // Перевіряємо task перед оновленням
+                const currentTask = gantt.getTask(id);
+                console.log('🔍 ON_AFTER_UPDATE DEBUG - Current task before changeTaskId:', currentTask);
+                console.log('🔍 ON_AFTER_UPDATE DEBUG - Current task.source:', currentTask?.source);
+                
                 try {
                   gantt.changeTaskId(id, newId);
                   console.log(`✅ Successfully changed task ID to "${newId}"`);
+                  
+                  // Перевіряємо task після оновлення ID
+                  const updatedTask = gantt.getTask(newId);
+                  console.log('🔍 ON_AFTER_UPDATE DEBUG - Updated task after changeTaskId:', updatedTask);
+                  console.log('🔍 ON_AFTER_UPDATE DEBUG - Updated task.source:', updatedTask?.source);
                 } catch (error) {
                   console.warn(`⚠️ Failed to change task ID: ${error.message}`);
                 }
@@ -1842,9 +2184,15 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             if (action === "update" && response) {
               console.log('🔄 Updating task data after successful API update');
               
+              console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Response data:', response.data);
+              console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Response data.source:', response.data?.source);
+              
               try {
                 // Отримуємо поточний task
                 const task = gantt.getTask(id);
+                console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Current task:', task);
+                console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Current task.source:', task?.source);
+                
                 if (task && task.type !== "project") {
                   // Оновлюємо дані task з відповіді API
                   if (response.data) {
@@ -1854,12 +2202,32 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       guest_email: response.data.guestEmail || task.guest_email,
                       guest_phone: response.data.guestPhone || task.guest_phone,
                       status: response.data.status || task.status,
-                      source: response.data.source || task.source,
+                      source: response.data.source !== undefined ? response.data.source : task.source,
                       total_amount: response.data.totalAmount || task.total_amount,
                       guest_amount: response.data.guests || task.guest_amount,
                       notes: response.data.notes || task.notes,
                       special_requests: response.data.specialRequests || task.special_requests
                     };
+                    
+                    // 🚨 МАКСИМАЛЬНО ПРОСТЕ ЛОГУВАННЯ
+                    console.log('🚨🚨🚨 ON_AFTER_UPDATE 🚨🚨🚨');
+                    console.log('🚨 response.data.source =', response.data.source);
+                    console.log('🚨 task.source =', task.source);
+                    console.log('🚨 updatedTask.source =', updatedTask.source);
+                    
+                    // Якщо source не той - показуємо ВСЕ!
+                    if (updatedTask.source !== 'VRBO' && updatedTask.source !== 'DIRECT' && updatedTask.source !== 'BOOKING_COM' && updatedTask.source !== 'EXPEDIA' && updatedTask.source !== 'OTHER') {
+                      console.log('🚨🚨🚨 WRONG SOURCE IN UPDATE! 🚨🚨🚨');
+                      console.log('🚨 Expected: VRBO, DIRECT, BOOKING_COM, EXPEDIA, or OTHER');
+                      console.log('🚨 Got:', updatedTask.source);
+                      console.log('🚨 Full response.data:', JSON.stringify(response.data, null, 2));
+                      console.log('🚨 Full task:', JSON.stringify(task, null, 2));
+                    } else {
+                      console.log('✅ Source is valid in update:', updatedTask.source);
+                    }
+                    
+                    console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Updated task data:', updatedTask);
+                    console.log('🔍 ON_AFTER_UPDATE DEBUG - Update action - Updated task.source:', updatedTask.source);
                     
                     // Оновлюємо task в Gantt
                     gantt.updateTask(id, updatedTask);
