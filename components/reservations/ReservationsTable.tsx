@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Trash2, Eye, Home, Users, Star, DollarSign, Copy, Settings, ChevronUp, ChevronDown, Calendar, User, Hash, Building, X } from 'lucide-react'
+import { Trash2, DollarSign, ChevronUp, ChevronDown, Calendar, User, Building } from 'lucide-react'
 import { Reservation, ReservationFilters } from '@/lib/api/services/reservationService'
 
 interface ReservationsTableProps {
@@ -9,15 +9,13 @@ interface ReservationsTableProps {
   filters?: ReservationFilters
   reservations?: Reservation[]
   isLoading?: boolean
-  onViewReservation: (reservation: Reservation) => void
-  onEditReservation: (reservation: Reservation) => void
   selectedReservations: string[]
   onSelectionChange: (selectedIds: string[]) => void
 }
 
 // No mock data needed - using real API data
 
-export default function ReservationsTable({ searchTerm, filters, reservations, isLoading, onViewReservation, onEditReservation, selectedReservations, onSelectionChange }: ReservationsTableProps) {
+export default function ReservationsTable({ searchTerm, filters, reservations, isLoading, selectedReservations, onSelectionChange }: ReservationsTableProps) {
   const [sortField, setSortField] = useState<string>('checkIn')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
@@ -174,16 +172,6 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
               </div>
             </th>
             <th 
-              className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-32"
-              onClick={() => handleSort('id')}
-            >
-              <div className="flex items-center space-x-1">
-                <Hash size={14} />
-                <span>Code</span>
-                {getSortIcon('id')}
-              </div>
-            </th>
-            <th 
               className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 w-40"
               onClick={() => handleSort('checkIn')}
             >
@@ -265,9 +253,6 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
                   {reservation.propertyName}
                 </span>
               </td>
-              <td className="px-4 py-4 whitespace-nowrap w-32">
-                <span className="text-sm font-mono text-slate-900">{reservation.id}</span>
-              </td>
               <td className="px-4 py-4 whitespace-nowrap w-40">
                 <div className="text-sm text-slate-900">
                   <div>{formatDate(reservation.checkIn)}</div>
@@ -294,34 +279,17 @@ export default function ReservationsTable({ searchTerm, filters, reservations, i
                 {getStatusBadge(reservation.status)}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm font-medium w-24">
-                <div className={`flex items-center space-x-2 transition-opacity ${hoveredRow === reservation.id ? 'opacity-100' : 'opacity-70'}`}>
-                  <button
-                    onClick={() => {
-                      // Navigate to reservation details page
-                      window.location.href = `/reservations/${reservation.id}`
-                    }}
-                    className="text-orange-600 hover:text-orange-900 p-1 hover:bg-orange-100 rounded cursor-pointer"
-                    title="View Details"
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    onClick={() => onEditReservation(reservation)}
-                    className="text-green-600 hover:text-green-900 p-1 hover:bg-green-100 rounded cursor-pointer"
-                    title="Edit Reservation"
-                  >
-                    <Edit size={16} />
-                  </button>
+                <div className={`flex items-center justify-center transition-opacity ${hoveredRow === reservation.id ? 'opacity-100' : 'opacity-70'}`}>
                   <button
                     className="text-red-600 hover:text-red-900 p-1 hover:bg-red-100 rounded cursor-pointer"
-                    title="Cancel Reservation"
+                    title="Delete Reservation"
                     onClick={() => {
-                      if (confirm('Are you sure you want to cancel this reservation?')) {
-                        console.log('Canceling reservation:', reservation.id)
+                      if (confirm('Are you sure you want to delete this reservation?')) {
+                        console.log('Deleting reservation:', reservation.id)
                       }
                     }}
                   >
-                    <X size={16} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </td>

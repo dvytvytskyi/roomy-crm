@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Filter, Download, Archive, Trash2, Eye, Edit, X, Plus, MessageSquare, AlertCircle, Bell } from 'lucide-react'
+import { Search, Filter, Download, Archive, Trash2, X, Plus, MessageSquare, AlertCircle, Bell } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import ReservationsTable from '@/components/reservations/ReservationsTable'
 import ReservationsFilters from '@/components/reservations/ReservationsFilters'
@@ -130,19 +130,6 @@ export default function ReservationsPage() {
     loadReservations(filtersWithSearch)
   }, [filters, searchTerm])
 
-  const handleViewReservation = (reservation: any) => {
-    setReservationDetailsModal({
-      isOpen: true,
-      reservation
-    })
-  }
-
-  const handleEditReservation = (reservation: any) => {
-    setReservationEditModal({
-      isOpen: true,
-      reservation
-    })
-  }
 
   const handleNewReservation = () => {
     setNewReservationModal(true)
@@ -324,11 +311,9 @@ export default function ReservationsPage() {
                 filters={filters}
                 reservations={reservations}
                 isLoading={isLoading}
-                onViewReservation={handleViewReservation}
-                data-testid="reservations-table"
-                onEditReservation={handleEditReservation}
                 selectedReservations={selectedReservations}
                 onSelectionChange={handleSelectionChange}
+                data-testid="reservations-table"
               />
             </div>
           </div>
