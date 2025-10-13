@@ -856,13 +856,23 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return "";
           };
 
-          // Відключаємо клік для рядків квартир
+          // Налаштування кліку для резервацій - відкриваємо сторінку в новому вікні
           gantt.attachEvent("onTaskClick", function(id, e) {
             const task = gantt.getTask(id);
             if (task && task.type === "project") {
               return false; // Блокуємо клік для квартир
             }
-            return true; // Дозволяємо клік для бронювань
+            
+            // Для резервацій - відкриваємо сторінку в новому вікні
+            if (task && task.type !== "project") {
+              const reservationId = task.reservationId || task.id.replace('res_', '');
+              if (reservationId) {
+                window.open(`/reservations/${reservationId}`, '_blank');
+              }
+              return false; // Запобігаємо стандартній поведінці
+            }
+            
+            return true;
           });
 
           // Відключаємо подвійний клік для рядків квартир
@@ -872,6 +882,43 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
               return false; // Блокуємо подвійний клік для квартир
             }
             return true; // Дозволяємо подвійний клік для бронювань
+          });
+
+          // Додаємо hover tooltip для резервацій
+          let tooltipTimeout: NodeJS.Timeout | null = null;
+          let currentTooltip: HTMLElement | null = null;
+
+          gantt.attachEvent("onTaskMouseOver", function(id, e) {
+            const task = gantt.getTask(id);
+            
+            // Показуємо tooltip тільки для резервацій (не для квартир)
+            if (!task || task.type === "project") {
+              return true;
+            }
+
+            // Очищуємо попередній таймаут
+            if (tooltipTimeout) {
+              clearTimeout(tooltipTimeout);
+            }
+
+            // Додаємо затримку перед показом tooltip
+            tooltipTimeout = setTimeout(() => {
+              showReservationTooltip(task, e);
+            }, 500);
+
+            return true;
+          });
+
+          gantt.attachEvent("onTaskMouseOut", function(id, e) {
+            // Очищуємо таймаут якщо мишка вийшла до показу tooltip
+            if (tooltipTimeout) {
+              clearTimeout(tooltipTimeout);
+              tooltipTimeout = null;
+            }
+
+            // Ховаємо tooltip
+            hideReservationTooltip();
+            return true;
           });
 
           // Додаємо data-атрибути для стилізації
@@ -1038,6 +1085,156 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           // gantt.attachEvent("onGanttScroll", function() {
           //   setTimeout(addPricesToCells, 100);
           // });
+
+          // Функції для tooltip
+          const showReservationTooltip = (task: any, event: any) => {
+            // Прибираємо попередній tooltip якщо він є
+            hideReservationTooltip();
+
+            // Створюємо tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'reservation-tooltip';
+            tooltip.style.cssText = `
+              position: absolute;
+              background: white;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+              padding: 16px;
+              z-index: 1000;
+              max-width: 320px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 14px;
+              line-height: 1.4;
+              pointer-events: none;
+            `;
+
+            // Отримуємо дані резервації
+            const reservation = reservations.find(r => r.id === task.reservationId || r.id === task.id.replace('res_', ''));
+            const property = properties.find(p => p.id === task.propertyId);
+
+            // Форматуємо дати
+            const formatDate = (dateStr: string) => {
+              return new Date(dateStr).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            };
+
+            // Обчислюємо кількість ночей
+            const checkIn = new Date(reservation?.checkIn || task.start_date);
+            const checkOut = new Date(reservation?.checkOut || task.end_date);
+            const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+            // Створюємо контент tooltip
+            tooltip.innerHTML = `
+              <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                <div style="
+                  background: ${task.source === 'AIRBNB' ? '#FF5A5F' : task.source === 'BOOKING_COM' ? '#003580' : '#6366F1'};
+                  color: white;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  font-size: 12px;
+                  font-weight: 600;
+                  margin-right: 8px;
+                ">
+                  ${task.source || 'DIRECT'}
+                </div>
+                <div style="display: flex; align-items: center; color: #059669;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  <span style="font-size: 12px; font-weight: 500;">Reservation • ${nights} nights</span>
+                </div>
+              </div>
+              
+              <div style="color: #374151; margin-bottom: 8px;">
+                ${formatDate(reservation?.checkIn || task.start_date)} → ${formatDate(reservation?.checkOut || task.end_date)}
+              </div>
+              
+              <div style="margin-bottom: 4px; color: #374151;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
+                ${property?.name || 'Unknown Property'}
+              </div>
+              
+              <div style="margin-bottom: 4px; color: #374151;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                ${reservation?.guestName || task.guest_name || 'Unknown Guest'} • ${task.guest_amount || 1} guests
+              </div>
+              
+              <div style="margin-bottom: 4px; color: #374151;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 6px; vertical-align: middle;">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                AED ${reservation?.totalAmount || task.price || 0} total
+              </div>
+              
+              ${reservation?.paidAmount && reservation.paidAmount > 0 ? `
+                <div style="margin-bottom: 4px; color: #DC2626;">
+                  <strong>AED ${reservation.paidAmount} Paid</strong>
+                </div>
+              ` : ''}
+              
+              ${reservation?.totalAmount && reservation?.paidAmount && (reservation.totalAmount - reservation.paidAmount) > 0 ? `
+                <div style="margin-bottom: 4px; color: #DC2626;">
+                  <strong>AED ${reservation.totalAmount - reservation.paidAmount} Unpaid</strong>
+                </div>
+              ` : ''}
+              
+              <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb; color: #6B7280; font-size: 12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline; margin-right: 4px; vertical-align: middle;">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+                Added on ${new Date(task.start_date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            `;
+
+            // Додаємо tooltip до body
+            document.body.appendChild(tooltip);
+            currentTooltip = tooltip;
+
+            // Позиціонуємо tooltip
+            const rect = event.target.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            let top = rect.top - tooltipRect.height - 10;
+
+            // Перевіряємо чи tooltip виходить за межі екрану
+            if (left < 10) left = 10;
+            if (left + tooltipRect.width > window.innerWidth - 10) {
+              left = window.innerWidth - tooltipRect.width - 10;
+            }
+            if (top < 10) {
+              top = rect.bottom + 10;
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+          };
+
+          const hideReservationTooltip = () => {
+            if (currentTooltip) {
+              currentTooltip.remove();
+              currentTooltip = null;
+            }
+          };
 
           // Ініціалізуємо Gantt
           gantt.init(containerRef.current);
@@ -1458,6 +1655,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
       document.body.appendChild(script);
 
       return () => {
+        // Cleanup tooltip
+        hideReservationTooltip();
+        
         if (ganttRef.current) {
           ganttRef.current.destructor();
         }
