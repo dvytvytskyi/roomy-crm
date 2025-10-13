@@ -894,9 +894,9 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                 try {
                   const lightboxData = {
                     text: task.text || '',
-                    guest_email: task.guest_email || '',
-                    guest_phone: task.guest_phone || '',
-                    status: task.status || 'PENDING',
+                    guest_email: task.guest_email || 'guest@example.com', // ✅ Додаємо default значення
+                    guest_phone: task.guest_phone || '+380000000000',      // ✅ Додаємо default значення
+                    status: task.status || 'pending',                      // ✅ Виправляємо статус
                     guest_amount: task.guest_amount || 1,
                     source: task.source || 'DIRECT',
                     price: task.price || '0',
@@ -908,9 +908,10 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   
                   Object.keys(lightboxData).forEach(key => {
                     const input = document.querySelector(`[name="${key}"]`) as HTMLInputElement;
-                    if (input && input.value !== lightboxData[key]) {
+                    if (input) {
+                      // ✅ Завжди встановлюємо значення, навіть якщо воно порожнє
                       input.value = lightboxData[key] || '';
-                      console.log(`✅ Set ${key} = ${lightboxData[key]}`);
+                      console.log(`✅ Set ${key} = "${lightboxData[key] || ''}"`);
                     }
                   });
                 } catch (error) {
@@ -1640,27 +1641,38 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                       
                       // Проблема №1: НЕ ВКЛЮЧАЄМО reservationId!
                       // Проблема №2: Виправляємо guests (Number() + fallback)
-                      // ✅ НОВЕ: Використовуємо дані з lightbox замість заглушок
+                      // ✅ НОВЕ: Збираємо дані з lightbox форми
+                      const getLightboxValue = (fieldName: string): string => {
+                        const input = document.querySelector(`[name="${fieldName}"]`) as HTMLInputElement;
+                        return input ? input.value : '';
+                      };
+                      
                       const reservationData = {
                         propertyId: propertyId,
                         checkIn: checkIn,
                         checkOut: checkOut,
-                        guests: Number(data.guest_amount) || 1,  // ✅ Виправлено: завжди число
+                        guests: Number(data.guest_amount) || 1,
                         guestName: data.text || 'New Guest',
-                        guestEmail: data.guest_email || 'guest@example.com',  // ✅ З lightbox!
-                        guestPhone: data.guest_phone || '+380000000000',      // ✅ З lightbox!
-                        source: data.source || 'DIRECT',                      // ✅ З lightbox!
-                        status: data.status || 'PENDING',                     // ✅ З lightbox!
-                        totalAmount: parseFloat(data.price) || 0,             // ✅ З lightbox!
+                        guestEmail: getLightboxValue('guest_email') || 'guest@example.com',  // ✅ З форми!
+                        guestPhone: getLightboxValue('guest_phone') || '+380000000000',      // ✅ З форми!
+                        source: getLightboxValue('source') || 'DIRECT',                      // ✅ З форми!
+                        status: getLightboxValue('status') || 'pending',                     // ✅ З форми!
+                        totalAmount: parseFloat(getLightboxValue('price')) || 0,             // ✅ З форми!
                         paidAmount: 0,
-                        notes: data.notes || '',
-                        specialRequests: data.notes || ''
+                        notes: getLightboxValue('notes') || '',
+                        specialRequests: getLightboxValue('special_requests') || ''
                         // ✅ НЕ ВКЛЮЧАЄМО reservationId!
                       };
 
                       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                       console.log('📤 FINAL API PAYLOAD DEBUG:');
                       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                      console.log('🔍 Form values from lightbox:');
+                      console.log('  guest_email:', getLightboxValue('guest_email'));
+                      console.log('  guest_phone:', getLightboxValue('guest_phone'));
+                      console.log('  source:', getLightboxValue('source'));
+                      console.log('  status:', getLightboxValue('status'));
+                      console.log('  price:', getLightboxValue('price'));
                       console.log('🔍 Payload keys:', Object.keys(reservationData));
                       console.log('🔍 Payload values:', Object.values(reservationData));
                       console.log('🔍 Payload types:', Object.entries(reservationData).map(([k, v]) => `${k}: ${typeof v}`));
