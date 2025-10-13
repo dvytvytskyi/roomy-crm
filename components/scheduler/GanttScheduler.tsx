@@ -1352,10 +1352,86 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
             return false; // запобігаємо стандартній поведінці
           });
 
+          // Обробник збереження з модалки - синхронізуємо з backend
+          gantt.attachEvent("onLightboxSave", function(id: any, item: any, is_new: any) {
+            console.log('💾 onLightboxSave:', { id, item, is_new });
+            
+            // Якщо це нова резервація, DataProcessor вже обробить її
+            if (is_new) {
+              console.log('✅ New reservation will be handled by DataProcessor');
+              return true;
+            }
+            
+            // Для існуючих резервацій - примусово зберігаємо зміни
+            if (item && item.type !== "project") {
+              console.log('🔄 Saving existing reservation changes...');
+              
+              // Викликаємо DataProcessor для збереження змін
+              setTimeout(() => {
+                try {
+                  // Примусово оновлюємо завдання в Gantt
+                  gantt.updateTask(id);
+                  
+                  // Викликаємо DataProcessor для синхронізації з backend
+                  const dp = gantt.getDataProcessor();
+                  if (dp) {
+                    dp.sendData("update", id, item);
+                  }
+                  
+                  console.log('✅ Reservation changes saved to backend');
+                } catch (error) {
+                  console.error('❌ Failed to save reservation changes:', error);
+                }
+              }, 100);
+            }
+            
+            return true;
+          });
+
+          // Обробник закриття модалки - перевіряємо чи потрібно зберегти зміни
+          gantt.attachEvent("onLightboxCancel", function(id: any, item: any) {
+            console.log('❌ onLightboxCancel:', { id, item });
+            
+            // Якщо є зміни, пропонуємо зберегти
+            const task = gantt.getTask(id);
+            if (task && item && item.type !== "project") {
+              const hasChanges = (
+                task.text !== item.text ||
+                task.start_date !== item.start_date ||
+                task.end_date !== item.end_date ||
+                task.guest_amount !== item.guest_amount ||
+                task.price !== item.price ||
+                task.source !== item.source ||
+                task.status !== item.status
+              );
+              
+              if (hasChanges) {
+                const shouldSave = confirm('Ви внесли зміни. Зберегти їх?');
+                if (shouldSave) {
+                  // Зберігаємо зміни
+                  setTimeout(() => {
+                    try {
+                      gantt.updateTask(id);
+                      const dp = gantt.getDataProcessor();
+                      if (dp) {
+                        dp.sendData("update", id, item);
+                      }
+                      console.log('✅ Changes saved on cancel');
+                    } catch (error) {
+                      console.error('❌ Failed to save changes on cancel:', error);
+                    }
+                  }, 100);
+                }
+              }
+            }
+            
+            return true;
+          });
+
           // --- ПОВНИЙ КОНТРОЛЬ НАД СТВОРЕННЯМ ЗАВДАНЬ ---
           
-          // 1. Вимикаємо стандартний drag-n-drop для створення
-          gantt.config.drag_create = false;
+          // 1. Дозволяємо створення резервацій
+          gantt.config.drag_create = true;
           
           // 2. Перехоплюємо подію, коли користувач намагається створити завдання
           gantt.attachEvent("onTaskCreated", function (task: any) {
