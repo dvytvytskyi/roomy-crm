@@ -292,7 +292,6 @@ export interface CreateReservationDto {
   guestEmail?: string;
   guestPhone?: string;
   specialRequests?: string;
-  notes?: string;
 }
 
 export interface UpdateReservationDto {
@@ -311,7 +310,6 @@ export interface UpdateReservationDto {
   guestEmail?: string;
   guestPhone?: string;
   specialRequests?: string;
-  notes?: string;
 }
 
 export interface ReservationResponseDto {

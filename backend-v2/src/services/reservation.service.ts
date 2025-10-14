@@ -543,23 +543,42 @@ export class ReservationService extends BaseService {
    */
   public static async create(currentUser: CurrentUser, data: CreateReservationDto): Promise<ServiceResponse<ReservationResponseDto>> {
     try {
+      console.log('🚀 [RESERVATION SERVICE] Starting reservation creation...');
+      console.log('🚀 [RESERVATION SERVICE] Current user:', {
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role
+      });
+      console.log('🚀 [RESERVATION SERVICE] Input data:', JSON.stringify(data, null, 2));
+      
       const prisma = new PrismaClient();
 
       // Validate permissions
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'AGENT') {
+        console.log('❌ [RESERVATION SERVICE] Insufficient permissions for user:', currentUser.role);
         await prisma.$disconnect();
         return ReservationService.prototype.error('Forbidden', 'Only ADMIN, MANAGER, and AGENT can create reservations', 403);
       }
+      
+      console.log('✅ [RESERVATION SERVICE] User has sufficient permissions');
 
       // Verify property exists
+      console.log('🔍 [RESERVATION SERVICE] Checking if property exists:', data.propertyId);
       const property = await prisma.properties.findUnique({
         where: { id: data.propertyId },
       });
 
       if (!property) {
+        console.log('❌ [RESERVATION SERVICE] Property not found:', data.propertyId);
         await prisma.$disconnect();
         return ReservationService.prototype.error('Not Found', 'Property not found', 404);
       }
+      
+      console.log('✅ [RESERVATION SERVICE] Property found:', {
+        id: property.id,
+        name: property.name,
+        address: property.address
+      });
 
       // If AGENT, they can only create reservations for properties they manage
       if (currentUser.role === 'AGENT' && property.agent_id !== currentUser.id) {
@@ -617,13 +636,36 @@ export class ReservationService extends BaseService {
       }
 
       logger.info(`[Reservation Creation] Availability check passed for property ${data.propertyId}`);
+      console.log('✅ [RESERVATION SERVICE] Availability check passed');
 
       // Create reservation in transaction with audit logging
       const result = await prisma.$transaction(async (tx) => {
         logger.info(`[Reservation Creation Step 1/2] Creating reservation record...`);
+        console.log('🔍 [RESERVATION SERVICE] Starting transaction...');
         
         // Generate reservation ID
         const reservationId = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+        console.log('🔍 [RESERVATION SERVICE] Generated reservation ID:', reservationId);
+
+        console.log('🔍 [RESERVATION SERVICE] About to create reservation with data:', {
+          id: `reservation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          reservation_id: reservationId,
+          property_id: data.propertyId,
+          guest_id: data.guestId || null,
+          agent_id: data.agentId || currentUser.id,
+          check_in: new Date(data.checkIn),
+          check_out: new Date(data.checkOut),
+          guests: data.guests,
+          total_amount: data.totalAmount,
+          paid_amount: 0,
+          outstanding_balance: data.totalAmount,
+          status: 'PENDING',
+          source: data.source,
+          guest_name: data.guestName,
+          guest_email: data.guestEmail,
+          guest_phone: data.guestPhone,
+          special_requests: data.specialRequests
+        });
 
         // Create reservation
         const reservation = await tx.reservations.create({
@@ -645,13 +687,20 @@ export class ReservationService extends BaseService {
             guest_email: data.guestEmail,
             guest_phone: data.guestPhone,
             special_requests: data.specialRequests,
-            notes: data.notes,
             created_at: new Date(),
             updated_at: new Date(),
           },
         });
 
+        console.log('✅ [RESERVATION SERVICE] Reservation created successfully:', {
+          id: reservation.id,
+          reservation_id: reservation.reservation_id
+        });
+
+        // Notes functionality removed to avoid database schema conflicts
+
         logger.info(`[Reservation Creation Step 2/2] Creating audit log...`);
+        console.log('🔍 [RESERVATION SERVICE] Creating audit log...');
 
         // Create audit log
         const auditId = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -678,21 +727,27 @@ export class ReservationService extends BaseService {
         });
 
         logger.info(`[Reservation Creation END] Reservation created successfully: ${reservationId}`);
+        console.log('✅ [RESERVATION SERVICE] Transaction completed successfully');
         return reservation;
       });
 
       await prisma.$disconnect();
 
+      console.log('🔍 [RESERVATION SERVICE] Fetching created reservation details...');
       // Return the created reservation with full details
       const reservationResult = await ReservationService.findById(currentUser, result.id);
       if (!reservationResult.success || !reservationResult.data) {
+        console.log('❌ [RESERVATION SERVICE] Failed to retrieve created reservation');
         return ReservationService.prototype.error('Error', 'Failed to retrieve created reservation', 500);
       }
 
       logger.info(`Reservation created successfully: ${result.reservation_id} by ${currentUser.email}`);
+      console.log('🎉 [RESERVATION SERVICE] Reservation creation completed successfully!');
       return ReservationService.prototype.success(reservationResult.data, 'Reservation created successfully');
     } catch (error) {
       logger.error('Error creating reservation:', error);
+      console.log('❌ [RESERVATION SERVICE] Error occurred:', error);
+      console.log('❌ [RESERVATION SERVICE] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return ReservationService.prototype.handleDatabaseError(error);
     }
   }
@@ -790,7 +845,6 @@ export class ReservationService extends BaseService {
       if (data.guestEmail !== undefined) updateData.guest_email = data.guestEmail;
       if (data.guestPhone !== undefined) updateData.guest_phone = data.guestPhone;
       if (data.specialRequests !== undefined) updateData.special_requests = data.specialRequests;
-      if (data.notes !== undefined) updateData.notes = data.notes;
 
       logger.info(`[Reservation Update] Starting reservation update: ${existingReservation.reservation_id}`);
 

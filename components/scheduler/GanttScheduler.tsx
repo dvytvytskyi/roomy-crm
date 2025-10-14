@@ -662,6 +662,317 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           vertical-align: middle !important;
           display: inline-block !important;
         }
+        
+        /* ===== ROOMY LIGHTBOX MODAL STYLING ===== */
+        
+        /* Основний контейнер модалки - правильні класи dhtmlxGantt */
+        .gantt_cal_light {
+          background: #ffffff !important;
+          border-radius: 16px !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+          border: none !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          max-width: 500px !important;
+          width: 90% !important;
+        }
+
+        /* Заголовок модалки */
+        .gantt_cal_ltitle {
+          background: #FF6B35 !important;
+          color: #ffffff !important;
+          font-weight: 600 !important;
+          font-size: 18px !important;
+          padding: 20px 24px !important;
+          border-radius: 16px 16px 0 0 !important;
+          border: none !important;
+          text-align: center !important;
+          letter-spacing: 0.5px !important;
+        }
+
+        /* Кнопка закриття */
+        .gantt_cal_ltitle_close_btn {
+          background: rgba(255, 255, 255, 0.2) !important;
+          border-radius: 50% !important;
+          width: 32px !important;
+          height: 32px !important;
+          top: 16px !important;
+          right: 16px !important;
+          border: none !important;
+          color: #ffffff !important;
+          font-size: 18px !important;
+          font-weight: bold !important;
+          transition: all 0.2s ease !important;
+        }
+
+        .gantt_cal_ltitle_close_btn:hover {
+          background: rgba(255, 255, 255, 0.3) !important;
+          transform: scale(1.1) !important;
+        }
+
+        /* Контент модалки */
+        .gantt_cal_larea {
+          padding: 24px !important;
+          background: #ffffff !important;
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 16px !important;
+          align-items: start !important;
+        }
+
+        /* Секції форми - кожна секція займає одну клітинку сітки */
+        .gantt_cal_lsection {
+          margin-bottom: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 0 !important;
+        }
+        
+        /* Контейнери для полів вводу */
+        .gantt_cal_ltext {
+          height: auto !important;
+          min-height: 36px !important;
+          max-height: 36px !important;
+          overflow: hidden !important;
+        }
+
+        /* Лейбли полів */
+        .gantt_cal_lsection label {
+          color: #2d3748 !important;
+          font-weight: 500 !important;
+          font-size: 14px !important;
+          margin-bottom: 8px !important;
+          display: block !important;
+          letter-spacing: 0.3px !important;
+          width: 100% !important;
+        }
+
+        /* Поля вводу */
+        .gantt_cal_ltext textarea,
+        .gantt_cal_ltext select,
+        .gantt_cal_ltext input {
+          width: 100% !important;
+          padding: 8px 12px !important;
+          border: 2px solid #e2e8f0 !important;
+          border-radius: 8px !important;
+          font-size: 14px !important;
+          font-family: inherit !important;
+          background: #ffffff !important;
+          color: #2d3748 !important;
+          transition: all 0.2s ease !important;
+          box-sizing: border-box !important;
+          line-height: 1.2 !important;
+          height: auto !important;
+          min-height: 36px !important;
+          max-height: 36px !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+        }
+        
+        /* Спеціальні стилі для textarea */
+        .gantt_cal_ltext textarea {
+          height: 36px !important;
+          resize: none !important;
+          overflow-y: hidden !important;
+        }
+
+        .gantt_cal_ltext textarea:focus,
+        .gantt_cal_ltext select:focus,
+        .gantt_cal_ltext input:focus {
+          outline: none !important;
+          border-color: #FF6B35 !important;
+          box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1) !important;
+        }
+
+        .gantt_cal_ltext textarea:hover,
+        .gantt_cal_ltext select:hover,
+        .gantt_cal_ltext input:hover {
+          border-color: #cbd5e0 !important;
+        }
+
+        /* Кнопки */
+        .gantt_btn_set {
+          border-radius: 12px !important;
+          font-weight: 600 !important;
+          font-size: 14px !important;
+          padding: 12px 24px !important;
+          border: none !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          letter-spacing: 0.3px !important;
+          margin-left: 8px !important;
+        }
+
+        /* Кнопка Save (основна) */
+        .gantt_save_btn_set {
+          background: #FF6B35 !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+        }
+
+        .gantt_save_btn_set:hover {
+          background: #e55a2b !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4) !important;
+        }
+
+        .gantt_save_btn_set:active {
+          transform: translateY(0) !important;
+        }
+
+        /* Кнопка Cancel */
+        .gantt_cancel_btn_set {
+          background: #ffffff !important;
+          color: #718096 !important;
+          border: 2px solid #e2e8f0 !important;
+        }
+
+        .gantt_cancel_btn_set:hover {
+          background: #f7fafc !important;
+          border-color: #cbd5e0 !important;
+          color: #4a5568 !important;
+        }
+
+        /* Кнопка Delete */
+        .gantt_delete_btn_set {
+          background: #ffffff !important;
+          color: #e53e3e !important;
+          border: 2px solid #fed7d7 !important;
+        }
+
+        .gantt_delete_btn_set:hover {
+          background: #fed7d7 !important;
+          color: #c53030 !important;
+          border-color: #feb2b2 !important;
+        }
+
+        /* Спеціальні стилі для Time period - займає всю ширину */
+        .gantt_section_time,
+        .gantt_section_duration {
+          grid-column: 1 / -1 !important;
+          margin-bottom: 16px !important;
+        }
+
+        /* Футер з кнопками */
+        .gantt_cal_lcontrols {
+          padding: 20px 24px !important;
+          background: #f8fafc !important;
+          border-radius: 0 0 16px 16px !important;
+          border-top: 1px solid #e2e8f0 !important;
+          display: flex !important;
+          justify-content: flex-end !important;
+          align-items: center !important;
+          gap: 12px !important;
+        }
+
+        /* Анімація появи модалки */
+        .gantt_cal_light {
+          animation: lightboxSlideIn 0.3s ease-out !important;
+        }
+
+        @keyframes lightboxSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* Overlay фон - можливо gantt використовує інший клас */
+        .gantt_cal_light::before,
+        .gantt_cal_light::after {
+          background: rgba(0, 0, 0, 0.4) !important;
+          backdrop-filter: blur(4px) !important;
+        }
+
+        /* Додаткові стилі для Roomy lightbox */
+        .roomy-lightbox {
+          transform: scale(1) !important;
+          opacity: 1 !important;
+        }
+        
+        /* Більш специфічні селектори для перевизначення dhtmlx стилів */
+        .gantt_lightbox,
+        div[class*="gantt_lightbox"],
+        div[id*="lightbox"] {
+          background: #ffffff !important;
+          border-radius: 16px !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+          border: none !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+          max-width: 500px !important;
+          width: 90% !important;
+        }
+        
+        /* Агресивне перевизначення стилів dhtmlxGantt - перевизначаємо inline стилі */
+        .gantt_cal_light .gantt_cal_ltext,
+        .gantt_cal_light .gantt_cal_ltext[style*="height"] {
+          height: 36px !important;
+          min-height: 36px !important;
+          max-height: 36px !important;
+          overflow: hidden !important;
+        }
+        
+        .gantt_cal_light .gantt_cal_ltext textarea,
+        .gantt_cal_light .gantt_cal_ltext input,
+        .gantt_cal_light .gantt_cal_ltext select,
+        .gantt_cal_light .gantt_cal_ltext textarea[style*="height"],
+        .gantt_cal_light .gantt_cal_ltext input[style*="height"],
+        .gantt_cal_light .gantt_cal_ltext select[style*="height"] {
+          height: 36px !important;
+          min-height: 36px !important;
+          max-height: 36px !important;
+          line-height: 1.2 !important;
+          padding: 8px 12px !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+        }
+        
+        .gantt_cal_light .gantt_cal_ltext textarea,
+        .gantt_cal_light .gantt_cal_ltext textarea[style*="resize"] {
+          resize: none !important;
+          overflow-y: hidden !important;
+        }
+        
+        /* Додаткові стилі для grid layout */
+        .gantt_cal_light .gantt_cal_larea,
+        .gantt_cal_light .gantt_cal_larea[style*="grid"] {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 16px !important;
+          align-items: start !important;
+          padding: 24px !important;
+        }
+        
+        /* Стилі для секцій */
+        .gantt_cal_light .gantt_cal_lsection,
+        .gantt_cal_light .gantt_cal_lsection[style*="margin"] {
+          margin-bottom: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 0 !important;
+        }
+        
+        /* Стилізація заголовка колонки Calendar - ТИМЧАСОВО ВІДКЛЮЧЕНО */
+        /*
+        .gantt_grid_head_cell {
+          width: 389px !important;
+          padding-left: 8px !important;
+          font-size: 20px !important;
+          font-weight: 600 !important;
+          color: #111111 !important;
+          display: block !important;
+          text-align: left !important;
+        }
+        
+        .gantt_grid_head_row {
+          height: auto !important;
+        }
+        */
       `;
       document.head.appendChild(style);
 
@@ -677,22 +988,23 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
 
           // Налаштування колонок (тільки назви квартир)
           gantt.config.columns = [
-            { name: "text", label: "", width: "*", tree: false }
+            { name: "text", label: "Calendar", width: "*", tree: false }
           ];
           
           // Приховуємо заголовок колонки
           gantt.config.show_task_cells = true;
           gantt.config.show_links = false;
           
-          // CSS для приховування заголовка колонки
+          // CSS для стилізації заголовка колонки - ТИМЧАСОВО ВІДКЛЮЧЕНО
           setTimeout(() => {
             const headerCell = document.querySelector('.gantt_grid_head_cell');
             if (headerCell) {
-              headerCell.style.display = 'none';
+              // Тимчасово приховуємо для тестування
+              headerCell.style.setProperty('display', 'none', 'important');
             }
             const headerRow = document.querySelector('.gantt_grid_head_row');
             if (headerRow) {
-              headerRow.style.height = '0px';
+              headerRow.style.setProperty('height', '0px', 'important');
             }
           }, 100);
 
@@ -883,6 +1195,144 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
           }
         });
 
+        // Обробник для застосування стилів до lightbox після його створення
+        gantt.attachEvent("onLightbox", function(id: any) {
+          // Застосовуємо стилі після створення lightbox
+          setTimeout(() => {
+            const lightbox = document.querySelector('.gantt_cal_light');
+            if (lightbox) {
+              console.log('🎨 Applying Roomy styles to lightbox');
+              // Додаємо клас для додаткового стилювання
+              lightbox.classList.add('roomy-lightbox');
+              
+              // Додаємо інлайн стилі для гарантії
+              (lightbox as HTMLElement).style.background = '#ffffff';
+              (lightbox as HTMLElement).style.borderRadius = '16px';
+              (lightbox as HTMLElement).style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)';
+              (lightbox as HTMLElement).style.fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+              
+              // Стилізуємо область контенту для grid layout
+              const contentArea = lightbox.querySelector('.gantt_cal_larea');
+              if (contentArea) {
+                (contentArea as HTMLElement).style.display = 'grid';
+                (contentArea as HTMLElement).style.gridTemplateColumns = '1fr 1fr';
+                (contentArea as HTMLElement).style.gap = '16px';
+                (contentArea as HTMLElement).style.alignItems = 'start';
+                (contentArea as HTMLElement).style.padding = '24px';
+              }
+              
+              // Стилізуємо заголовок
+              const title = lightbox.querySelector('.gantt_cal_ltitle');
+              if (title) {
+                (title as HTMLElement).style.background = '#FF6B35';
+                (title as HTMLElement).style.color = '#ffffff';
+                (title as HTMLElement).style.borderRadius = '16px 16px 0 0';
+                (title as HTMLElement).style.padding = '20px 24px';
+                (title as HTMLElement).style.textAlign = 'center';
+                (title as HTMLElement).style.fontWeight = '600';
+                (title as HTMLElement).style.fontSize = '18px';
+              }
+              
+              // Стилізуємо кнопки
+              const saveBtn = lightbox.querySelector('.gantt_save_btn_set');
+              if (saveBtn) {
+                (saveBtn as HTMLElement).style.background = '#FF6B35';
+                (saveBtn as HTMLElement).style.color = '#ffffff';
+                (saveBtn as HTMLElement).style.borderRadius = '12px';
+                (saveBtn as HTMLElement).style.border = 'none';
+                (saveBtn as HTMLElement).style.padding = '12px 24px';
+                (saveBtn as HTMLElement).style.fontWeight = '600';
+                (saveBtn as HTMLElement).style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.3)';
+              }
+              
+              const cancelBtn = lightbox.querySelector('.gantt_cancel_btn_set');
+              if (cancelBtn) {
+                (cancelBtn as HTMLElement).style.background = '#ffffff';
+                (cancelBtn as HTMLElement).style.color = '#718096';
+                (cancelBtn as HTMLElement).style.border = '2px solid #e2e8f0';
+                (cancelBtn as HTMLElement).style.borderRadius = '12px';
+                (cancelBtn as HTMLElement).style.padding = '12px 24px';
+                (cancelBtn as HTMLElement).style.fontWeight = '600';
+              }
+              
+              const deleteBtn = lightbox.querySelector('.gantt_delete_btn_set');
+              if (deleteBtn) {
+                (deleteBtn as HTMLElement).style.background = '#ffffff';
+                (deleteBtn as HTMLElement).style.color = '#e53e3e';
+                (deleteBtn as HTMLElement).style.border = '2px solid #fed7d7';
+                (deleteBtn as HTMLElement).style.borderRadius = '12px';
+                (deleteBtn as HTMLElement).style.padding = '12px 24px';
+                (deleteBtn as HTMLElement).style.fontWeight = '600';
+              }
+              
+              // Стилізуємо всі поля вводу - агресивно перевизначаємо inline стилі
+              const inputs = lightbox.querySelectorAll('input, select, textarea');
+              inputs.forEach((input) => {
+                const element = input as HTMLElement;
+                // Видаляємо всі inline стилі висоти
+                element.style.removeProperty('height');
+                element.style.removeProperty('min-height');
+                element.style.removeProperty('max-height');
+                element.style.removeProperty('line-height');
+                element.style.removeProperty('overflow');
+                element.style.removeProperty('text-overflow');
+                element.style.removeProperty('white-space');
+                
+                // Встановлюємо наші стилі
+                element.style.setProperty('padding', '8px 12px', 'important');
+                element.style.setProperty('border', '2px solid #e2e8f0', 'important');
+                element.style.setProperty('border-radius', '8px', 'important');
+                element.style.setProperty('font-size', '14px', 'important');
+                element.style.setProperty('line-height', '1.2', 'important');
+                element.style.setProperty('height', '36px', 'important');
+                element.style.setProperty('min-height', '36px', 'important');
+                element.style.setProperty('max-height', '36px', 'important');
+                element.style.setProperty('box-sizing', 'border-box', 'important');
+                element.style.setProperty('overflow', 'hidden', 'important');
+                element.style.setProperty('text-overflow', 'ellipsis', 'important');
+                element.style.setProperty('white-space', 'nowrap', 'important');
+              });
+              
+              // Спеціальні стилі для textarea
+              const textareas = lightbox.querySelectorAll('textarea');
+              textareas.forEach((textarea) => {
+                (textarea as HTMLElement).style.resize = 'none';
+                (textarea as HTMLElement).style.overflowY = 'hidden';
+              });
+              
+              // Стилізуємо контейнери полів - агресивно перевизначаємо
+              const textContainers = lightbox.querySelectorAll('.gantt_cal_ltext');
+              textContainers.forEach((container) => {
+                const element = container as HTMLElement;
+                element.style.removeProperty('height');
+                element.style.removeProperty('min-height');
+                element.style.removeProperty('max-height');
+                element.style.removeProperty('overflow');
+                
+                element.style.setProperty('height', '36px', 'important');
+                element.style.setProperty('min-height', '36px', 'important');
+                element.style.setProperty('max-height', '36px', 'important');
+                element.style.setProperty('overflow', 'hidden', 'important');
+              });
+              
+              // Стилізуємо секції форми
+              const sections = lightbox.querySelectorAll('.gantt_cal_lsection');
+              sections.forEach((section) => {
+                (section as HTMLElement).style.marginBottom = '0';
+                (section as HTMLElement).style.display = 'flex';
+                (section as HTMLElement).style.flexDirection = 'column';
+              });
+              
+              // Спеціальні стилі для Time period
+              const timeSection = lightbox.querySelector('.gantt_section_time, .gantt_section_duration');
+              if (timeSection) {
+                (timeSection as HTMLElement).style.gridColumn = '1 / -1';
+                (timeSection as HTMLElement).style.marginBottom = '16px';
+              }
+            }
+          }, 50);
+        });
+
         // Обробник для заповнення lightbox поточними даними task (з debounce)
         let lightboxTimeout: NodeJS.Timeout | null = null;
         gantt.attachEvent("onLightbox", function(id: any) {
@@ -917,7 +1367,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                   guest_amount: 2,
                   source: 'DIRECT',
                   price: '500',
-                  notes: 'Reservation created via scheduler',
                   special_requests: 'Late check-in preferred',
                   
                   // Додаємо фото нерухомості
@@ -944,7 +1393,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                     price: currentTask.price || '500',
                     start_date: currentTask.start_date,
                     end_date: currentTask.end_date,
-                    notes: currentTask.notes || 'Reservation created via scheduler',
                     special_requests: currentTask.special_requests || 'Late check-in preferred'
                   };
                   
@@ -1958,7 +2406,6 @@ export default function GanttScheduler({ tasks }: GanttSchedulerProps) {
                         status: getLightboxValue('status') || 'pending',
                         totalAmount: parseFloat(getLightboxValue('price')) || 500,
                         paidAmount: 0,
-                        notes: getLightboxValue('notes') || 'Reservation created via scheduler',
                         specialRequests: getLightboxValue('special_requests') || 'Late check-in preferred'
                         // ✅ НЕ ВКЛЮЧАЄМО reservationId!
                       };

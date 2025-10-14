@@ -1492,6 +1492,258 @@ body, html {
   background: transparent !important;
 }
 
+/* ===== ROOMY LIGHTBOX MODAL STYLING ===== */
+
+/* Основний контейнер модалки */
+.gantt_lightbox {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  border: none !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  max-width: 500px !important;
+  width: 90% !important;
+}
+
+/* Заголовок модалки */
+.gantt_lightbox_title {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  padding: 20px 24px !important;
+  border-radius: 16px 16px 0 0 !important;
+  border: none !important;
+  text-align: center !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Кнопка закриття */
+.gantt_lightbox_close {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  top: 16px !important;
+  right: 16px !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease !important;
+}
+
+.gantt_lightbox_close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1) !important;
+}
+
+/* Контент модалки */
+.gantt_lightbox_content {
+  padding: 24px !important;
+  background: #ffffff !important;
+}
+
+/* Секції форми */
+.gantt_lightbox_section {
+  margin-bottom: 20px !important;
+}
+
+/* Лейбли полів */
+.gantt_lightbox_section label {
+  color: #2d3748 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Поля вводу */
+.gantt_lightbox_section textarea,
+.gantt_lightbox_section select,
+.gantt_lightbox_section input {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  background: #ffffff !important;
+  color: #2d3748 !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.gantt_lightbox_section textarea:focus,
+.gantt_lightbox_section select:focus,
+.gantt_lightbox_section input:focus {
+  outline: none !important;
+  border-color: #FF6B35 !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1) !important;
+}
+
+.gantt_lightbox_section textarea:hover,
+.gantt_lightbox_section select:hover,
+.gantt_lightbox_section input:hover {
+  border-color: #cbd5e0 !important;
+}
+
+/* Кнопки */
+.gantt_lightbox_btn {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 12px 24px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: 0.3px !important;
+  margin-left: 8px !important;
+}
+
+/* Кнопка Save (основна) */
+.gantt_lightbox_btn_set {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+}
+
+.gantt_lightbox_btn_set:hover {
+  background: linear-gradient(135deg, #e55a2b 0%, #e67e47 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4) !important;
+}
+
+.gantt_lightbox_btn_set:active {
+  transform: translateY(0) !important;
+}
+
+/* Кнопка Cancel */
+.gantt_lightbox_btn_cancel {
+  background: #ffffff !important;
+  color: #718096 !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+.gantt_lightbox_btn_cancel:hover {
+  background: #f7fafc !important;
+  border-color: #cbd5e0 !important;
+  color: #4a5568 !important;
+}
+
+/* Кнопка Delete */
+.gantt_lightbox_btn_delete {
+  background: #ffffff !important;
+  color: #e53e3e !important;
+  border: 2px solid #fed7d7 !important;
+}
+
+.gantt_lightbox_btn_delete:hover {
+  background: #fed7d7 !important;
+  color: #c53030 !important;
+  border-color: #feb2b2 !important;
+}
+
+/* Футер з кнопками */
+.gantt_lightbox_footer {
+  padding: 20px 24px !important;
+  background: #f8fafc !important;
+  border-radius: 0 0 16px 16px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+/* Спеціальні стилі для select полів */
+.gantt_lightbox_section select {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 12px !important;
+  padding-right: 40px !important;
+  appearance: none !important;
+}
+
+/* Стилі для duration секції (часовий період) */
+.gantt_lightbox_section .gantt_duration {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.gantt_lightbox_section .gantt_duration input {
+  width: auto !important;
+  min-width: 80px !important;
+}
+
+/* Responsive стилі */
+@media (max-width: 768px) {
+  .gantt_lightbox {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 20px !important;
+  }
+  
+  .gantt_lightbox_content {
+    padding: 16px !important;
+  }
+  
+  .gantt_lightbox_footer {
+    padding: 16px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .gantt_lightbox_btn {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+/* Анімація появи модалки */
+.gantt_lightbox {
+  animation: lightboxSlideIn 0.3s ease-out !important;
+}
+
+@keyframes lightboxSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Overlay фон */
+.gantt_lightbox_backdrop {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Іконки в кнопках */
+.gantt_lightbox_btn::before {
+  margin-right: 8px !important;
+  font-size: 16px !important;
+}
+
+.gantt_lightbox_btn_set::before {
+  content: "✓" !important;
+}
+
+.gantt_lightbox_btn_cancel::before {
+  content: "✕" !important;
+}
+
+.gantt_lightbox_btn_delete::before {
+  content: "🗑" !important;
+}
+
 /* Remove any SVG background watermarks */
 *[style*="background-image"][style*="data:image/svg+xml"],
 *[style*="background-image"][style*="bryntum"],
@@ -1500,4 +1752,237 @@ body, html {
   background: transparent !important;
 }
 
+/* ===== ROOMY LIGHTBOX MODAL STYLING ===== */
+
+/* Основний контейнер модалки */
+.gantt_lightbox {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  border: none !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  max-width: 500px !important;
+  width: 90% !important;
+}
+
+/* Заголовок модалки */
+.gantt_lightbox_title {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  padding: 20px 24px !important;
+  border-radius: 16px 16px 0 0 !important;
+  border: none !important;
+  text-align: center !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Кнопка закриття */
+.gantt_lightbox_close {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  top: 16px !important;
+  right: 16px !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease !important;
+}
+
+.gantt_lightbox_close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1) !important;
+}
+
+/* Контент модалки */
+.gantt_lightbox_content {
+  padding: 24px !important;
+  background: #ffffff !important;
+}
+
+/* Секції форми */
+.gantt_lightbox_section {
+  margin-bottom: 20px !important;
+}
+
+/* Лейбли полів */
+.gantt_lightbox_section label {
+  color: #2d3748 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Поля вводу */
+.gantt_lightbox_section textarea,
+.gantt_lightbox_section select,
+.gantt_lightbox_section input {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  background: #ffffff !important;
+  color: #2d3748 !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.gantt_lightbox_section textarea:focus,
+.gantt_lightbox_section select:focus,
+.gantt_lightbox_section input:focus {
+  outline: none !important;
+  border-color: #FF6B35 !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1) !important;
+}
+
+.gantt_lightbox_section textarea:hover,
+.gantt_lightbox_section select:hover,
+.gantt_lightbox_section input:hover {
+  border-color: #cbd5e0 !important;
+}
+
+/* Кнопки */
+.gantt_lightbox_btn {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 12px 24px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: 0.3px !important;
+  margin-left: 8px !important;
+}
+
+/* Кнопка Save (основна) */
+.gantt_lightbox_btn_set {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+}
+
+.gantt_lightbox_btn_set:hover {
+  background: linear-gradient(135deg, #e55a2b 0%, #e67e47 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4) !important;
+}
+
+.gantt_lightbox_btn_set:active {
+  transform: translateY(0) !important;
+}
+
+/* Кнопка Cancel */
+.gantt_lightbox_btn_cancel {
+  background: #ffffff !important;
+  color: #718096 !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+.gantt_lightbox_btn_cancel:hover {
+  background: #f7fafc !important;
+  border-color: #cbd5e0 !important;
+  color: #4a5568 !important;
+}
+
+/* Кнопка Delete */
+.gantt_lightbox_btn_delete {
+  background: #ffffff !important;
+  color: #e53e3e !important;
+  border: 2px solid #fed7d7 !important;
+}
+
+.gantt_lightbox_btn_delete:hover {
+  background: #fed7d7 !important;
+  color: #c53030 !important;
+  border-color: #feb2b2 !important;
+}
+
+/* Футер з кнопками */
+.gantt_lightbox_footer {
+  padding: 20px 24px !important;
+  background: #f8fafc !important;
+  border-radius: 0 0 16px 16px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+/* Спеціальні стилі для select полів */
+.gantt_lightbox_section select {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 12px !important;
+  padding-right: 40px !important;
+  appearance: none !important;
+}
+
+/* Стилі для duration секції (часовий період) */
+.gantt_lightbox_section .gantt_duration {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.gantt_lightbox_section .gantt_duration input {
+  width: auto !important;
+  min-width: 80px !important;
+}
+
+/* Responsive стилі */
+@media (max-width: 768px) {
+  .gantt_lightbox {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 20px !important;
+  }
+  
+  .gantt_lightbox_content {
+    padding: 16px !important;
+  }
+  
+  .gantt_lightbox_footer {
+    padding: 16px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .gantt_lightbox_btn {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+/* Анімація появи модалки */
+.gantt_lightbox {
+  animation: lightboxSlideIn 0.3s ease-out !important;
+}
+
+@keyframes lightboxSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Overlay фон */
+.gantt_lightbox_backdrop {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+}
 

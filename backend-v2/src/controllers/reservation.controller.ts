@@ -133,12 +133,23 @@ export class ReservationController extends BaseController {
    */
   public static createReservation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      console.log('🔍 [CREATE RESERVATION] Starting reservation creation...');
+      console.log('🔍 [CREATE RESERVATION] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 [CREATE RESERVATION] Request headers:', JSON.stringify(req.headers, null, 2));
+      
       // Get current user from JWT middleware
       const currentUser = req.user;
       if (!currentUser) {
+        console.log('❌ [CREATE RESERVATION] No current user found');
         ReservationController.error(res, 'Unauthorized', 401, 'Authentication required');
         return;
       }
+      
+      console.log('✅ [CREATE RESERVATION] Current user:', {
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role
+      });
 
       const {
         propertyId,
@@ -155,23 +166,64 @@ export class ReservationController extends BaseController {
         specialRequests,
         notes
       } = req.body;
+      
+      console.log('🔍 [CREATE RESERVATION] Extracted fields:', {
+        propertyId: propertyId,
+        guestId: guestId,
+        agentId: agentId,
+        checkIn: checkIn,
+        checkOut: checkOut,
+        guests: guests,
+        totalAmount: totalAmount,
+        source: source,
+        guestName: guestName,
+        guestEmail: guestEmail,
+        guestPhone: guestPhone,
+        specialRequests: specialRequests,
+        notes: notes
+      });
 
       // Validate required fields
-      if (!propertyId || !checkIn || !checkOut || !guests || !totalAmount || !source || !guestName || !guestEmail) {
-        ReservationController.validationError(res, [], 'Property ID, check-in date, check-out date, guests count, total amount, source, guest name, and guest email are required');
+      console.log('🔍 [CREATE RESERVATION] Validating required fields...');
+      const missingFields = [];
+      if (!propertyId) missingFields.push('propertyId');
+      if (!checkIn) missingFields.push('checkIn');
+      if (!checkOut) missingFields.push('checkOut');
+      if (!guests) missingFields.push('guests');
+      if (!totalAmount) missingFields.push('totalAmount');
+      if (!source) missingFields.push('source');
+      if (!guestName) missingFields.push('guestName');
+      if (!guestEmail) missingFields.push('guestEmail');
+      
+      if (missingFields.length > 0) {
+        console.log('❌ [CREATE RESERVATION] Missing required fields:', missingFields);
+        ReservationController.validationError(res, missingFields, `Missing required fields: ${missingFields.join(', ')}`);
         return;
       }
+      
+      console.log('✅ [CREATE RESERVATION] All required fields present');
 
       // Validate dates
+      console.log('🔍 [CREATE RESERVATION] Validating dates...');
+      console.log('🔍 [CREATE RESERVATION] checkIn string:', checkIn);
+      console.log('🔍 [CREATE RESERVATION] checkOut string:', checkOut);
+      
       const checkInDate = new Date(checkIn);
       const checkOutDate = new Date(checkOut);
       
+      console.log('🔍 [CREATE RESERVATION] checkInDate parsed:', checkInDate);
+      console.log('🔍 [CREATE RESERVATION] checkOutDate parsed:', checkOutDate);
+      console.log('🔍 [CREATE RESERVATION] checkInDate valid:', !isNaN(checkInDate.getTime()));
+      console.log('🔍 [CREATE RESERVATION] checkOutDate valid:', !isNaN(checkOutDate.getTime()));
+      
       if (isNaN(checkInDate.getTime())) {
+        console.log('❌ [CREATE RESERVATION] Invalid check-in date format:', checkIn);
         ReservationController.validationError(res, [], 'Invalid check-in date format');
         return;
       }
 
       if (isNaN(checkOutDate.getTime())) {
+        console.log('❌ [CREATE RESERVATION] Invalid check-out date format:', checkOut);
         ReservationController.validationError(res, [], 'Invalid check-out date format');
         return;
       }
@@ -200,6 +252,8 @@ export class ReservationController extends BaseController {
         return;
       }
 
+      console.log('✅ [CREATE RESERVATION] All validations passed, preparing reservation data...');
+      
       const reservationData: CreateReservationDto = {
         propertyId,
         guestId,
@@ -216,8 +270,13 @@ export class ReservationController extends BaseController {
         notes
       };
 
+      console.log('🔍 [CREATE RESERVATION] Final reservation data:', JSON.stringify(reservationData, null, 2));
+      console.log('🔍 [CREATE RESERVATION] Calling ReservationService.create...');
+
       // Create reservation
       const createResult = await ReservationService.create(currentUser, reservationData);
+      
+      console.log('🔍 [CREATE RESERVATION] Service result:', JSON.stringify(createResult, null, 2));
 
       if (!createResult.success || !createResult.data) {
         ReservationController.error(res, createResult.error || 'Reservation creation failed', 400, createResult.message);
