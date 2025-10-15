@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import slowDown from 'express-slow-down';
+// import slowDown from 'express-slow-down'; // Disabled
 
 import { config, validateConfig } from './config';
 import { initSentry, sentryMiddleware, flushSentry } from './config/sentry';
@@ -36,7 +36,26 @@ app.use(compression());
 
 // CORS middleware
 app.use(cors({
-  origin: config.cors.origin,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    const allowedOrigins = Array.isArray(config.cors.origin) 
+      ? config.cors.origin 
+      : [config.cors.origin];
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, allow localhost with any port
+    if (config.isDevelopment && origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
@@ -50,12 +69,13 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Skip rate limiting for localhost in development
-  skip: (req) => {
+  skip: (req): boolean => {
     return config.isDevelopment && (
       req.ip === '127.0.0.1' || 
       req.ip === '::1' || 
       req.ip === '::ffff:127.0.0.1' ||
-      req.headers.host?.includes('localhost')
+      req.headers.host?.includes('localhost') ||
+      false
     );
   },
 });
@@ -113,6 +133,8 @@ import documentRoutes from './routes/document.routes';
 import amenityRoutes from './routes/amenity.routes';
 import calendarRoutes from './routes/calendar.routes';
 import pricingCalendarRoutes from './routes/pricing-calendar.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import publicRoutes from './routes/public.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -131,13 +153,17 @@ app.get('/api/v2', (_req, res) => {
       financials: '/api/v2/financials',
       scheduler: '/api/v2/scheduler',
       webhooks: '/api/v2/webhooks',
-      files: '/api/v2/files'
+      files: '/api/v2/files',
+      public: '/api/v2/public'
     },
   });
 });
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
+
+// Mount PUBLIC routes FIRST (no authentication required)
+app.use('/api/v2/public', publicRoutes);
 
 // Mount API routes
 app.use('/api/v2/auth', authRoutes);
@@ -159,6 +185,7 @@ app.use('/api/v2/integrations/pricelabs', pricelabsRoutes);
 app.use('/api/v2/integrations/airbnb', airbnbRoutes);
 app.use('/api/v2/calendar', pricingCalendarRoutes);
 app.use('/api/v2/calendar', calendarRoutes);
+app.use('/api/v2/dashboard', dashboardRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler

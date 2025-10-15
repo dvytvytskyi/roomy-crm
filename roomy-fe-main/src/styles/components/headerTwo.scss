@@ -1,0 +1,234 @@
+.header-two {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 25px 64px;
+
+    transition: .5s;
+    border-bottom: 0.5px solid #E8E8E8;
+    z-index: 99;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      
+      a {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        text-decoration: none;
+        
+        &:hover {
+          opacity: 0.8;
+        }
+        
+        svg {
+          width: 140px;
+          height: auto;
+        }
+      }
+    }
+
+    .select {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: flex;
+      align-items: center;
+
+      transform: translate(-50%, -50%);
+
+      color: #0D0C22;
+      font-family: Onest;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: normal;
+
+      .town {
+        border-radius: 10px 0px 0px 10px;
+        border: 0.5px solid #E8E8E8;
+        background: #FFF;
+
+        padding: 13px 12px 13px 24px;
+      }
+
+      .date {
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+        background: #FFF;
+
+        padding: 13px 24px;
+      }
+
+      .guests {
+        border-radius: 0px 10px 10px 0px;
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+
+        padding: 13px 24px;
+        background: #FFF;
+      }
+    }
+
+    .search-main-block {
+      display: none;
+    }
+
+    .active-link {
+      display: none;
+    }
+
+    .MuiStack-root {
+      display: none;
+    }
+
+    &.active {
+      padding: 25px 64px 95px 64px !important;
+
+      .select {
+        display: none;
+      }
+
+      .MuiStack-root {
+        display: flex;
+        position: absolute;
+        height: 80px;
+        width: 487px;
+
+        left: 50%;
+        top: 10px;
+        transform: translate(-50%);
+        overflow: visible;
+        pointer-events: none;
+
+        .MuiFormControl-fullWidth {
+          opacity: 0;
+        }
+
+        p {
+          opacity: 0;
+        }
+
+        input {
+        }
+      }
+
+      .active-link {
+        position: absolute;
+        left: 50%;
+        top: 35px;
+        display: flex;
+        gap: 40px;
+
+        div {
+          color: #717171;
+          text-align: center;
+          font-family: Onest;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+          cursor: pointer;
+
+          a {
+            color: #717171;
+            text-decoration: none;
+            transition: color 0.2s ease;
+
+            &:hover {
+              color: #F88559;
+            }
+          }
+        }
+
+        transform: translate(-50%, -50%);
+      }
+
+      .search-main-block {
+        display: flex;
+        padding: 0px 0px 20px 0px;
+        left: 50%;
+        top: 75%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .log-sign {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .login-btn {
+        display: flex;
+        padding: 0px 23px;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        height: 40px;
+
+        color: #717171;
+        text-align: center;
+        font-family: Onest;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: normal;
+        text-decoration: none;
+        cursor: pointer;
+
+        border-radius: 30px;
+        background: #FFF;
+        border: 1px solid #E8E8E8;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #F8F8F8;
+          border-color: #F88559;
+          color: #F88559;
+        }
+      }
+
+      .log {
+        color: #0D0C22;
+        text-align: center;
+        font-family: Onest;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: normal;
+      }
+
+      .sign {
+        display: flex;
+        padding: 0px 23px;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        height: 40px;
+
+        color: #FFF;
+        text-align: center;
+        font-family: Onest;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: normal;
+
+        border-radius: 30px;
+        background: #F88559;
+
+        cursor: pointer;
+        transition: .3s;
+
+        &:hover {
+          background: #EB7B51;
+        }
+      }
+    }
+  }
+}

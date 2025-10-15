@@ -1,0 +1,84 @@
+.about-working {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 180px;
+  padding: 0px 0px 0px 0px;
+  position: relative;
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+    width: 28%;
+    padding: 0px 0px 37px 0px;
+
+    .title {
+      display: flex;
+      flex-direction: column;
+
+      div:first-child {
+        color: #0D0C22;
+        font-family: Onest;
+        font-size: 48px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: normal;
+      }
+
+      div:last-child {
+        color: #717171;
+        font-family: Onest;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+      }
+    }
+
+    .description {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+
+      div {
+        color: #717171;
+        font-family: Onest;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+      }
+    }
+  }
+
+  .image {
+    width: 520px;
+    height: 620px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+  }
+
+  .roomy {
+    position: absolute;
+    top: 0px;
+    width: 100%;
+    left: 0px;
+
+
+    z-index: -1;
+
+    svg:last-child {
+      position: absolute;
+    }
+
+    svg {
+      width: 100%;
+    }
+  }
+}

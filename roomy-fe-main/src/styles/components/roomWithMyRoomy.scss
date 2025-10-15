@@ -1,0 +1,55 @@
+.room-with-roomy {
+  display: flex;
+  flex-direction: column;
+  gap: 70px;
+  padding: 0px 64px 0px 64px;
+  overflow: hidden;
+
+  .room-title {
+    color: #0D0C22;
+    text-align: center;
+    font-family: Onest;
+    font-size: 48px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+  }
+
+  .phone-ava {
+    display: flex;
+    position: relative;
+
+    .people {
+      display: flex;
+      position: absolute;
+      object-fit: cover;
+      left: 50%;
+      transform: translate(-50%);
+      z-index: 2;
+    }
+
+    .phone {
+      object-fit: cover;
+      object-position: top;
+      width: 327px;
+      height: 477px;
+      margin: 0 auto;
+      z-index: 2;
+    }
+
+    .gradient-circle {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%);
+
+      width: 774px;
+      height: 287px;
+      flex-shrink: 0;
+
+      border-radius: 600px 600px 0px 0px;
+      background: rgba(217, 217, 217, 0.77);
+      filter: blur(150px);
+    }
+  }
+}

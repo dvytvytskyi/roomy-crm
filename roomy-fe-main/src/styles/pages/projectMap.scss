@@ -1,0 +1,95 @@
+.project-map {
+  display: flex;
+  flex-direction: column;
+
+  .header-two {
+    .header {
+      padding: 25px 22px;
+    }
+  }
+
+  .projects-map {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 22px 16px 22px;
+    gap: 28px;
+
+    .projects-pag {
+      display: flex;
+      flex-direction: column;
+      width: 48%;
+      position: relative;
+
+      .projects {
+        display: grid;
+
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+
+        grid-column-gap: 20px;
+        grid-row-gap: 20px;
+
+        padding-bottom: 20px;
+        overflow: auto;
+      }
+
+      ul {
+        display: flex;
+        list-style: none;
+        gap: 11px;
+        justify-content: center;
+
+        li {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          color: #000;
+          font-family: Onest;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 600;
+          line-height: normal;
+
+          width: 31px;
+          height: 31px;
+        }
+
+        .selected {
+          color: #FFF;
+          text-align: center;
+          font-family: Onest;
+          font-size: 16px;
+          font-style: normal;
+          font-weight: 600;
+          line-height: normal;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 100px;
+          background: #F88559;
+        }
+
+        .disabled {
+          svg {
+            path {
+              fill: #A5A5A5;
+            }
+          }
+        }
+      }
+    }
+
+    .map {
+      width: 50%;
+      height: 100vh;
+      position: sticky;
+      top: 68px;
+
+      .map-container {
+        width: 100%;
+        height: 100vh;
+      }
+    }
+  }
+}

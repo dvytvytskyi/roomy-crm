@@ -12,6 +12,10 @@ router.use(authenticateToken);
  * @desc    Get all properties with role-based access control
  * @access  Private (JWT required)
  * @query   page, limit, search, type, status, ownerId, agentId
+ * 
+ * ⚠️  PROTECTED ENDPOINT - DO NOT MODIFY STRUCTURE
+ * 🚫 Used by: CRM Dashboard, Public Website (with JWT)
+ * 🔒 Requires authentication for security
  */
 router.get('/', PropertyController.getAllProperties);
 
@@ -41,6 +45,10 @@ router.post('/', PropertyController.createProperty);
  * @desc    Get property by ID with role-based access control
  * @access  Private (JWT required)
  * @params  id - Property ID
+ * 
+ * ⚠️  PROTECTED ENDPOINT - DO NOT MODIFY STRUCTURE
+ * 🚫 Used by: CRM Dashboard, Public Website (with JWT)
+ * 🔒 Requires authentication for security
  */
 router.get('/:id', PropertyController.getPropertyById);
 

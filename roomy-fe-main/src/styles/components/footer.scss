@@ -1,0 +1,102 @@
+footer {
+  .logo-list {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 43px 64px 53px 64px;
+    gap: 11%;
+
+    border-top: 1px solid #EDEEEF;
+
+    .logo-sign  {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 24%;
+
+      .text {
+        color: #000;
+        font-family: Onest;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 300;
+        line-height: normal;
+      }
+
+      .sign-up {
+        display: flex;
+        width: fit-content;
+        padding: 11px 60px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+
+        color: #FFF;
+        text-align: center;
+        font-family: Onest;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+
+        border-radius: 10px;
+        background: #F88559;
+      }
+    }
+
+    .footer-nav {
+      display: flex;
+      gap: 80px;
+      flex: 1;
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+
+        .list-tilte {
+          color: #222;
+          font-family: Onest;
+          width: 70%;
+          font-size: 20px;
+          font-style: normal;
+          font-weight: 600;
+          line-height: 26px; /* 130% */
+        }
+
+        .list-subtilte {
+          color: #000;
+          font-family: Onest;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: normal;
+        }
+
+        .option {
+          color: #717171;
+          font-family: Onest;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+        }
+      }
+    }
+  }
+
+  .all-rights {
+    color: #F88559;
+    font-family: Onest;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px; /* 171.429% */
+    text-align: center;
+
+    padding: 15px 0px;
+    margin: 0px 64px;
+
+    border-top: 1px #EDEEEF solid;
+  }
+}

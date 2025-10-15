@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Save, User, Mail, Phone, Calendar, FileText, Trash2, Star, Crown } from 'lucide-react'
+import { X, Save, User, Mail, Phone, Calendar, FileText, Trash2 } from 'lucide-react'
 import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { showToast } from '@/lib/utils/toast'
 import { useGuestEvents } from '@/hooks/useEventBus'
@@ -23,15 +23,13 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
     nationality: '',
     dateOfBirth: '',
     comments: '',
-    starGuest: false,
-    primaryGuest: false,
-    loyaltyTier: 'Bronze',
     preferredLanguage: 'English',
     specialRequests: '',
     documents: [] as File[]
   })
   const [errors, setErrors] = useState<any>({})
   const [newComment, setNewComment] = useState('')
+  const [emailExists, setEmailExists] = useState(false)
   const [commentsHistory, setCommentsHistory] = useState<Array<{
     id: string
     text: string
@@ -45,12 +43,6 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
     'Russian', 'Egyptian', 'Saudi Arabian', 'Emirati', 'Turkish', 'Greek', 'Other'
   ]
 
-  const loyaltyTiers = [
-    { value: 'Bronze', label: 'Bronze', color: 'bg-orange-100 text-orange-800' },
-    { value: 'Silver', label: 'Silver', color: 'bg-gray-100 text-gray-800' },
-    { value: 'Gold', label: 'Gold', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'Platinum', label: 'Platinum', color: 'bg-purple-100 text-purple-800' }
-  ]
 
   const languages = [
     'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian',
@@ -68,9 +60,6 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
         nationality: guest.nationality || '',
         dateOfBirth: guest.dateOfBirth || '',
         comments: guest.comments || '',
-        starGuest: guest.starGuest || false,
-        primaryGuest: guest.primaryGuest || false,
-        loyaltyTier: guest.loyaltyTier || 'Bronze',
         preferredLanguage: guest.preferredLanguage || 'English',
         specialRequests: guest.specialRequests || '',
         documents: []
@@ -85,15 +74,23 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
         nationality: '',
         dateOfBirth: '',
         comments: '',
-        starGuest: false,
-        primaryGuest: false,
-        loyaltyTier: 'Bronze',
         preferredLanguage: 'English',
         specialRequests: '',
         documents: []
       })
     }
   }, [guest, isOpen])
+
+  // Check email exists when email changes (with debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.email && !guest) { // Only check for new guests, not when editing
+        checkEmailExists(formData.email)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [formData.email, guest])
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -155,6 +152,28 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
     })
   }
 
+  const checkEmailExists = async (email: string) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailExists(false)
+      return
+    }
+
+    try {
+      // Use search parameter instead of email parameter
+      const response = await userServiceAdapter.getUsers({ search: email })
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if any user in the results has the exact email
+        const exactMatch = response.data.some((user: any) => user.email === email)
+        setEmailExists(exactMatch)
+      } else {
+        setEmailExists(false)
+      }
+    } catch (error) {
+      console.error('Error checking email:', error)
+      setEmailExists(false)
+    }
+  }
+
   const validateForm = () => {
     const newErrors: any = {}
 
@@ -178,6 +197,8 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
+    } else if (emailExists && !guest) {
+      newErrors.email = 'Користувач з таким email вже існує. Використовуйте інший email.'
     }
 
     if (!formData.phone.trim()) {
@@ -241,7 +262,15 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
     } catch (error: any) {
       console.error('Error saving guest:', error)
       showToast.dismiss(loadingToast)
-      showToast.error(error.message || 'Failed to create guest. Please try again.')
+      
+      // Handle specific error cases
+      if (error.message && error.message.includes('User with this email already exists')) {
+        showToast.error('Користувач з таким email вже існує. Будь ласка, використовуйте інший email або оновіть існуючого користувача.')
+      } else if (error.message && error.message.includes('Conflict')) {
+        showToast.error('Email адреса вже використовується іншим користувачем. Будь ласка, введіть інший email.')
+      } else {
+        showToast.error(error.message || 'Не вдалося створити гостя. Спробуйте ще раз.')
+      }
     }
   }
 
@@ -373,20 +402,6 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
                 {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loyalty Tier
-                </label>
-                <select
-                  value={formData.loyaltyTier}
-                  onChange={(e) => handleChange('loyaltyTier', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  {loyaltyTiers.map(tier => (
-                    <option key={tier.value} value={tier.value}>{tier.label}</option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
 
@@ -408,11 +423,18 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
+                    errors.email ? 'border-red-300' : 
+                    emailExists ? 'border-yellow-300' : 
+                    'border-gray-300'
                   }`}
                   placeholder="guest@example.com"
                 />
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                {emailExists && !guest && (
+                  <p className="text-yellow-600 text-sm mt-1">
+                    ⚠️ Користувач з таким email вже існує в системі
+                  </p>
+                )}
               </div>
 
               <div>
@@ -434,39 +456,6 @@ export default function AddGuestModal({ isOpen, onClose, guest, onGuestUpdated }
             </div>
           </div>
 
-          {/* Guest Status */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-              <Star size={20} className="mr-2" />
-              Guest Status
-            </h3>
-              
-            <div className="space-y-4">
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.starGuest}
-                    onChange={(e) => handleChange('starGuest', e.target.checked)}
-                    className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                  />
-                  <Star size={16} className="text-yellow-500" />
-                  <span className="text-sm font-medium text-gray-700">Star Guest</span>
-                </label>
-                  
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.primaryGuest}
-                    onChange={(e) => handleChange('primaryGuest', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <Crown size={16} className="text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700">Primary Guest</span>
-                </label>
-              </div>
-            </div>
-          </div>
 
           {/* Comments */}
           <div className="bg-gray-50 p-4 rounded-lg">

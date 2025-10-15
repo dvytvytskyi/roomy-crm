@@ -1,0 +1,28 @@
+.map-page {
+
+  .header-two {
+    .header {
+      padding: 25px 22px;
+    }
+  }
+
+  .filter-areas {
+    padding: 12px 22px 16px 22px;
+
+    .types-row {
+      .type {
+        padding: 0px 27px 0px 30px;
+      }
+    }
+  }
+
+  .map {
+    width: 99vw;
+    height: 100vh;
+
+    .map-container {
+      height: 100%;
+      width: 99vw;
+    }
+  }
+}

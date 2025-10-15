@@ -1,0 +1,126 @@
+.properties {
+  display: flex;
+  flex-direction: column;
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #F88559;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    p {
+      color: #666;
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  header {
+    .header {
+      border-bottom: none;
+    }
+  }
+
+  .search-block {
+    display: flex;
+    justify-content: center;
+    padding: 0px 0px 20px 0px;
+    position: relative;
+
+    border-bottom: 0.5px solid #E8E8E8;
+    height: 100px;
+    z-index: 1;
+
+    .search-main-block {
+      top: 50%;
+      left: 50%;
+    }
+
+    .active-link {
+    }
+
+    .MuiStack-root {
+      display: flex;
+      position: absolute;
+      height: 80px;
+      width: 487px;
+
+      left: 50%;
+      top: 10px;
+      transform: translate(-50%);
+      overflow: visible;
+      pointer-events: none;
+
+      .MuiFormControl-fullWidth {
+        opacity: 0;
+      }
+
+      p {
+        opacity: 0;
+      }
+
+      input {
+      }
+    }
+
+  }
+
+  .projects {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+
+    grid-column-gap: 29px;
+    grid-row-gap: 45px;
+
+    padding: 20px 64px 14px 64px;
+
+    &.bottom-p {
+      padding: 20px 64px 55px 64px;
+    }
+  }
+
+  .show {
+    display: flex;
+    justify-content: center;
+    padding: 14px 64px 55px 64px;
+
+    .show-more {
+      display: flex;
+      width: 140px;
+      height: 46px;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+
+      color: #FFF;
+      text-align: center;
+      font-family: Onest;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: normal;
+
+      border-radius: 30px;
+      background: #F88559;
+
+      cursor: pointer;
+    }
+  }
+}

@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Wrench, Building, User, Calendar, AlertTriangle } from 'lucide-react'
+import { taskServiceV2 } from '@/lib/api/services/taskService-v2'
+import { propertyServiceV2 } from '@/lib/api/services/propertyService-v2'
+import { showToast } from '@/lib/utils/toast'
 
 interface AddMaintenanceModalProps {
   isOpen: boolean
@@ -11,7 +14,7 @@ interface AddMaintenanceModalProps {
 export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceModalProps) {
   const [formData, setFormData] = useState({
     title: '',
-    unit: '',
+    propertyId: '',
     technician: '',
     priority: 'Normal',
     type: 'General',
@@ -20,23 +23,78 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
     description: '',
     cost: ''
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [properties, setProperties] = useState<any[]>([])
+  const [loadingProperties, setLoadingProperties] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load properties when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadProperties()
+    }
+  }, [isOpen])
+
+  const loadProperties = async () => {
+    setLoadingProperties(true)
+    try {
+      const response = await propertyServiceV2.getAll({ limit: 100 })
+      if (response.success && response.data) {
+        setProperties(response.data.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error)
+    } finally {
+      setLoadingProperties(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Adding maintenance task:', formData)
-    onClose()
-    // Reset form
-    setFormData({
-      title: '',
-      unit: '',
-      technician: '',
-      priority: 'Normal',
-      type: 'General',
-      scheduledDate: '',
-      estimatedDuration: '2 hours',
-      description: '',
-      cost: ''
-    })
+    setIsLoading(true)
+    
+    try {
+      // Convert form data to API format
+      const taskData = {
+        title: formData.title,
+        description: formData.description,
+        type: 'MAINTENANCE' as const,
+        priority: formData.priority.toUpperCase() as 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT',
+        propertyId: formData.propertyId,
+        assignedTo: formData.technician,
+        scheduledDate: formData.scheduledDate ? new Date(formData.scheduledDate).toISOString() : undefined,
+        estimatedDuration: formData.estimatedDuration,
+        cost: formData.cost ? parseFloat(formData.cost) : undefined,
+        notes: `Type: ${formData.type}`
+      }
+      
+      console.log('Creating maintenance task:', taskData)
+      
+      const response = await taskServiceV2.create(taskData)
+      
+      if (response.success) {
+        showToast.success('Задачу обслуговування успішно створено!')
+        onClose()
+        // Reset form
+        setFormData({
+          title: '',
+          propertyId: '',
+          technician: '',
+          priority: 'Normal',
+          type: 'General',
+          scheduledDate: '',
+          estimatedDuration: '2 hours',
+          description: '',
+          cost: ''
+        })
+      } else {
+        showToast.error(response.message || 'Не вдалося створити задачу обслуговування')
+      }
+    } catch (error: any) {
+      console.error('Error creating maintenance task:', error)
+      showToast.error('Помилка при створенні задачі обслуговування')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleChange = (field: string, value: string) => {
@@ -88,25 +146,29 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
               />
             </div>
 
-            {/* Unit */}
+            {/* Property */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center">
                   <Building className="w-4 h-4 mr-2 text-gray-500" />
-                  Unit *
+                  Property *
                 </div>
               </label>
               <select
-                value={formData.unit}
-                onChange={(e) => handleChange('unit', e.target.value)}
+                value={formData.propertyId}
+                onChange={(e) => handleChange('propertyId', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
                 required
+                disabled={loadingProperties}
               >
-                <option value="">Select Unit</option>
-                <option value="Apartment Burj Khalifa 2">Apartment Burj Khalifa 2</option>
-                <option value="Marina View Studio">Marina View Studio</option>
-                <option value="Downtown Loft 2BR">Downtown Loft 2BR</option>
-                <option value="JBR Beach Apartment">JBR Beach Apartment</option>
+                <option value="">
+                  {loadingProperties ? 'Loading properties...' : 'Select Property'}
+                </option>
+                {properties.map((property) => (
+                  <option key={property.id} value={property.id}>
+                    {property.name} - {property.address}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -255,9 +317,10 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
             </button>
             <button
               type="submit"
-              className="px-6 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer"
+              disabled={isLoading}
+              className="px-6 py-2 text-sm bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors cursor-pointer"
             >
-              Create Task
+              {isLoading ? 'Creating...' : 'Create Task'}
             </button>
           </div>
         </form>

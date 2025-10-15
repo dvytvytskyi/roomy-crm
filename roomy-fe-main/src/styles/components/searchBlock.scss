@@ -1,0 +1,299 @@
+$gray-bg: #F1F1F1;
+$white-bg: #fff;
+
+.search-main-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+
+  transform: translate(-50%, -50%);
+
+  .search-bar {
+    display: flex;
+    cursor: pointer;
+
+    background: $gray-bg;
+    border-radius: 26px 40px 40px 25px;
+
+    // Стилі для dropdown
+    .dropdown-container {
+      position: relative;
+      width: 100%;
+      
+      .location-dropdown {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #E8E8E8;
+        border-radius: 8px;
+        background: white;
+        font-family: 'Onest', sans-serif;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #F88559;
+          background-color: #fafafa;
+        }
+        
+        &:focus {
+          outline: none;
+          border-color: #F88559;
+          box-shadow: 0 0 0 2px rgba(248, 133, 89, 0.2);
+          background-color: white;
+        }
+        
+        &:active {
+          transform: scale(0.98);
+        }
+        
+        option {
+          padding: 8px 12px;
+          font-size: 14px;
+          
+          &:hover {
+            background-color: #F88559;
+            color: white;
+          }
+        }
+      }
+    }
+
+    &.white {
+      background: #fff;
+      filter: drop-shadow(0px 0px 30px rgba(0, 0, 0, 0.05));
+
+      .subtitle {
+        color: #717171;
+        font-family: Onest;
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+      }
+
+      .check-search {
+        background: $white-bg;
+        border: 0.5px solid #E8E8E8;
+      }
+      .in {
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+        background: $white-bg;
+      }
+
+      .out{
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+        background: $white-bg;
+      }
+
+
+      .with-whom {
+        background: $white-bg;
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+        .people-pets {
+        }
+      }
+
+      .search-icon {
+        border-top: 0.5px solid #E8E8E8;
+        border-right: 0.5px solid #E8E8E8;
+        border-bottom: 0.5px solid #E8E8E8;
+        background: $white-bg;
+      }
+    }
+
+    .title {
+      color: #0D0C22;
+      font-family: Onest;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: normal;
+    }
+
+    .subtitle {
+      color: #717171;
+      font-family: Onest;
+      font-size: 13px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+    }
+
+    .check-search {
+      display: flex;
+      flex-direction: column;
+      padding: 13px 100px 13px 24px;
+      justify-content: space-between;
+
+      border-radius: 25px 0px 0px 25px;
+      background: $gray-bg;
+      position: relative;
+
+      &.active {
+        border-radius: 25px 40px 40px 25px;
+        background: #fff;
+      }
+
+      .search-by-neighborhood {
+        position: absolute;
+        top: 120%;
+        left: 0;
+        display: none;
+        flex-direction: column;
+        gap: 21px;
+
+        &.active {
+          display: flex;
+        }
+
+        .tilte {
+          color: #0D0C22;
+          font-family: Onest;
+          font-size: 12px;
+          font-style: normal;
+          font-weight: 600;
+          line-height: normal;
+        }
+
+        .container {
+          display: flex;
+          flex-wrap: wrap;
+          width: 412px;
+          gap: 15px;
+
+          .option {
+            display: inline-flex;
+            padding: 10px 20px;
+            justify-content: center;
+            align-items: center;
+
+            border-radius: 40px;
+            border: 1px solid $gray-bg;
+
+            color: #0D0C22;
+            font-family: Onest;
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;
+          }
+        }
+
+        padding: 25px;
+
+        border-radius: 24px;
+        background: #FFF;
+        box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.10);
+      }
+    }
+
+    .check {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 13px 24px;
+
+      background: $gray-bg;
+
+      &.active {
+        border-radius: 120px;
+        background: #FFF;
+      }
+    }
+
+    .with-whom {
+      padding: 13px 100px 13px 24px;
+
+      &.active {
+        border-radius: 120px 0px 0px 120px;
+        background: #FFF;
+        box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0.10);
+      }
+
+      .people-pets {
+        position: absolute;
+        top: 110%;
+        right: 0;
+
+        display: none;
+        flex-direction: column;
+        width: 317px;
+        padding: 20px 25px;
+        row-gap: 13px;
+        flex-wrap: wrap;
+
+        border-radius: 24px;
+        background: #FFF;
+        box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.10);
+
+        &.active {
+          display: flex;
+        }
+
+        .count {
+          display: flex;
+          justify-content: space-between;
+
+          color: #0D0C22;
+          font-family: Onest;
+          font-size: 14px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+
+          div {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+
+            svg {
+              flex-shrink: 0;
+            }
+          }
+        }
+      }
+    }
+
+    .search-icon {
+      display: flex;
+      flex-direction: column;
+      padding: 13px 17px;
+
+      border-radius: 0px 25px 25px 0px;
+      background: $gray-bg;
+
+      &.active {
+        background: #FFF;
+        box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0.10);
+      }
+
+      .icon {
+        display: flex;
+        width: 39px;
+        height: 39px;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+
+        border-radius: 100%;
+        background: #F88559;
+      }
+    }
+  }
+}
+

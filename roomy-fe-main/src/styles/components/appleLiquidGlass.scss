@@ -1,0 +1,271 @@
+// Apple Liquid Glass Styles
+// Inspired by Apple's Liquid Glass design principles
+
+.apple-liquid-glass {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Apple-style backdrop filter with dynamic properties
+  backdrop-filter: 
+    blur(var(--blur, 20px)) 
+    saturate(var(--saturation, 1.8))
+    brightness(var(--brightness, 1.1))
+    contrast(var(--contrast, 1.1));
+  
+  // Dynamic background with mouse tracking
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    
+    // Apple-style gradient background (no darkness, smooth appearance)
+    background: 
+      radial-gradient(
+        150px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+        rgba(255, 255, 255, calc(0.2 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.1 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.05 * var(--intensity, 1)))
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15),
+        rgba(255, 255, 255, 0.08),
+        rgba(255, 255, 255, 0.12)
+      );
+    
+    // Smooth transition for mouse effect
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    // Static positioning - no constant movement
+    transform: translateX(0) translateY(0);
+    
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  // Simple 1px border
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  
+  // Interactive states
+  &:hover {
+    transform: translateX(0) translateY(-2px);
+    box-shadow: 
+      0 8px 24px rgba(0, 0, 0, 0.1),
+      0 3px 8px rgba(0, 0, 0, 0.075);
+    
+    &::before {
+      background: 
+        radial-gradient(
+          180px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+          rgba(255, 255, 255, calc(0.2 * var(--intensity, 1))),
+          rgba(255, 255, 255, calc(0.1 * var(--intensity, 1))),
+          rgba(255, 255, 255, calc(0.05 * var(--intensity, 1)))
+        ),
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.15),
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.12)
+        );
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &::before {
+      background: 
+        radial-gradient(
+          120px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+          rgba(255, 255, 255, calc(0.2 * var(--intensity, 1))),
+          rgba(255, 255, 255, calc(0.1 * var(--intensity, 1))),
+          rgba(255, 255, 255, calc(0.05 * var(--intensity, 1)))
+        ),
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.15),
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.12)
+        );
+    }
+  }
+}
+
+// Fallback for browsers without backdrop-filter support
+.apple-liquid-glass-fallback {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Apple-style glassmorphism fallback (no darkness, smooth)
+  background: 
+    radial-gradient(
+      150px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+      rgba(255, 255, 255, calc(0.2 * var(--intensity, 1))),
+      rgba(255, 255, 255, calc(0.1 * var(--intensity, 1))),
+      rgba(255, 255, 255, calc(0.05 * var(--intensity, 1)))
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15),
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.12)
+    );
+  
+  // Smooth transition for mouse effect
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Subtle blur effect using box-shadow
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  
+  // Border effect
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  
+  // Static positioning - no constant movement
+  transform: translateX(0) translateY(0);
+  
+  // Interactive states
+  &:hover {
+    transform: translateX(0) translateY(-2px);
+    
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+      0 8px 24px rgba(0, 0, 0, 0.1),
+      0 3px 8px rgba(0, 0, 0, 0.075);
+    
+    background: 
+      radial-gradient(
+        180px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+        rgba(255, 255, 255, calc(0.25 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.12 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.08 * var(--intensity, 1)))
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.18),
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.15)
+      );
+  }
+  
+  &:active {
+    transform: translateY(0);
+    
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    background: 
+      radial-gradient(
+        120px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+        rgba(255, 255, 255, calc(0.3 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.15 * var(--intensity, 1))),
+        rgba(255, 255, 255, calc(0.1 * var(--intensity, 1)))
+      ),
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.18)
+      );
+  }
+}
+
+// Integration with existing search component
+.search.apple-liquid-glass,
+.search.apple-liquid-glass-fallback {
+  // Override existing search styles to work with Liquid Glass
+  background: transparent !important;
+  border: none !important;
+  // box-shadow: none !important; // Removed to allow hover shadows
+  
+  // Reset positioning to prevent unwanted shifts
+  position: absolute !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  
+  // White text and icons for dark background
+  color: white !important;
+  
+  // White text for all text elements - more specific selectors
+  * {
+    color: white !important;
+  }
+  
+  input, textarea, select, div, span, p, label {
+    color: white !important;
+    
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+  }
+  
+  // White icons - more specific
+  svg, .icon, path, g {
+    fill: white !important;
+    stroke: none !important;
+    color: white !important;
+  }
+  
+  // Specific for SVG paths and groups
+  svg path, svg g {
+    fill: white !important;
+    stroke: none !important;
+  }
+  
+  // White links and buttons
+  a, button, .button, .link {
+    color: white !important;
+    
+    &:hover, &:focus, &:active {
+      color: white !important;
+    }
+  }
+  
+  // Ensure content is above the glass effect
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  // Specific hover styles for search component
+  &:hover {
+    transform: translate(-50%, calc(-50% - 2px)) !important;
+    box-shadow: 
+      0 8px 24px rgba(0, 0, 0, 0.1),
+      0 3px 8px rgba(0, 0, 0, 0.075) !important;
+  }
+}
+
+// Responsive design for Apple-style consistency
+@media (max-width: 768px) {
+  .apple-liquid-glass,
+  .apple-liquid-glass-fallback {
+    border-radius: 12px;
+    
+    &::before {
+      background: 
+        radial-gradient(
+          400px circle at calc(var(--mouse-x) * 100%) calc(var(--mouse-y) * 100%),
+          rgba(255, 255, 255, calc(0.15 * var(--intensity, 1))),
+          rgba(255, 255, 255, calc(0.06 * var(--intensity, 1))),
+          rgba(0, 0, 0, calc(0.02 * var(--intensity, 1)))
+        ),
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.1),
+          rgba(255, 255, 255, 0.05),
+          rgba(0, 0, 0, 0.02)
+        );
+    }
+  }
+}

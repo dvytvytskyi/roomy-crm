@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { testApiConnection } from '../../lib/api/test'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin2@roomy.com')
+  const [email, setEmail] = useState('admin@roomy.com')
   const [password, setPassword] = useState('admin123')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')

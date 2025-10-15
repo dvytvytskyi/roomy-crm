@@ -1,0 +1,24 @@
+.protected {
+  display: flex;
+  padding: 36px 64px 28px;
+  justify-content: space-around;
+
+  .card {
+    display: flex;
+    flex-direction: column;
+
+    color: #000;
+    text-align: center;
+    font-family: Onest;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+
+    img {
+      width: 249px;
+
+
+    }
+  }
+}

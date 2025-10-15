@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, DollarSign, Sparkles, Wrench, User, Users, MessageSquare, BarChart3, BookOpen, TrendingUp, Settings, UserCheck, Calendar } from 'lucide-react'
+import { Home, DollarSign, Sparkles, Wrench, User, Users, BookOpen, TrendingUp, Settings, UserCheck, Calendar, BarChart3 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 const navItems = [
@@ -15,7 +15,6 @@ const navItems = [
   { icon: User, label: 'Owners', href: '/owners' },
   { icon: Users, label: 'Guests', href: '/guests' },
   { icon: UserCheck, label: 'Agents', href: '/agents' },
-  { icon: MessageSquare, label: 'Chat', href: '/chat' },
   { icon: Settings, label: 'Settings', href: '/settings' },
 ]
 

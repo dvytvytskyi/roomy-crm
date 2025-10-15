@@ -92,11 +92,11 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        nationality: formData.nationality,
-        dateOfBirth: formData.dateOfBirth,
+        password: 'temp_password_123', // Temporary password - should be changed by user on first login
         role: 'AGENT' as const,
         status: formData.status,
-        isVerified: formData.isVerified
+        country: formData.nationality || 'Ukraine', // Default to Ukraine if not specified
+        flag: '🇺🇦' // Default flag
       }
 
       let response
