@@ -1,17 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, Globe, Smartphone, Calendar } from 'lucide-react'
-import dynamic from 'next/dynamic'
-
-// Dynamically import MDEditor to avoid SSR issues
-const MDEditor = dynamic(
-  () => import('@uiw/react-md-editor'),
-  { 
-    ssr: false,
-    loading: () => <div className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
-  }
-)
+import { Save, Globe, Smartphone, Calendar, Link, Copy, Check } from 'lucide-react'
 
 interface MarketingTabProps {
   propertyData: any
@@ -28,16 +18,11 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
   })
   
   const [isLoading, setIsLoading] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
-  
-  // Handle client-side mounting
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const [copied, setCopied] = useState(false)
   
   // Load marketing data on mount
   useEffect(() => {
-    if (propertyData && isMounted) {
+    if (propertyData) {
       setMarketingData({
         title: propertyData.title || '',
         description: propertyData.description || '',
@@ -46,25 +31,7 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
         otherNotes: propertyData.otherNotes || ''
       })
     }
-  }, [propertyData, isMounted])
-
-  // Prevent SSR hydration issues
-  if (!isMounted) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 rounded mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-24 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  }, [propertyData])
 
   // Handle input changes
   const handleInputChange = (field: string, value: string) => {
@@ -89,6 +56,35 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
       alert('Error saving marketing data')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Generate iCal URL for Airbnb
+  const generateICalUrl = () => {
+    if (!propertyData?.id) return ''
+    return `https://luba-horoscopic-fragmentally.ngrok-free.dev/api/v2/calendar/properties/${propertyData.id}/calendar.ics`
+  }
+
+  // Copy iCal URL to clipboard
+  const copyICalUrl = async () => {
+    const url = generateICalUrl()
+    if (!url) return
+    
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = url
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -129,15 +125,13 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description (Опис)
             </label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <MDEditor
-                value={marketingData.description}
-                onChange={(value) => handleInputChange('description', value || '')}
-                data-color-mode="light"
-                height={300}
-                placeholder="Main detailed description of the property..."
-              />
-            </div>
+            <textarea
+              value={marketingData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Main detailed description of the property..."
+              rows={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            />
           </div>
 
           {/* The Space */}
@@ -145,15 +139,13 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
             <label className="block text-sm font-medium text-gray-700 mb-2">
               The Space (Простір)
             </label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <MDEditor
-                value={marketingData.spaceDescription}
-                onChange={(value) => handleInputChange('spaceDescription', value || '')}
-                data-color-mode="light"
-                height={200}
-                placeholder="Detailed description of the space itself..."
-              />
-            </div>
+            <textarea
+              value={marketingData.spaceDescription}
+              onChange={(e) => handleInputChange('spaceDescription', e.target.value)}
+              placeholder="Detailed description of the space itself..."
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            />
           </div>
 
           {/* Guest Access */}
@@ -161,15 +153,13 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Guest Access (Доступ для гостей)
             </label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <MDEditor
-                value={marketingData.guestAccess}
-                onChange={(value) => handleInputChange('guestAccess', value || '')}
-                data-color-mode="light"
-                height={150}
-                placeholder="Information about what areas guests have access to..."
-              />
-            </div>
+            <textarea
+              value={marketingData.guestAccess}
+              onChange={(e) => handleInputChange('guestAccess', e.target.value)}
+              placeholder="Information about what areas guests have access to..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            />
           </div>
 
           {/* Other Notes */}
@@ -177,15 +167,13 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Other Things to Note (Інші важливі деталі)
             </label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <MDEditor
-                value={marketingData.otherNotes}
-                onChange={(value) => handleInputChange('otherNotes', value || '')}
-                data-color-mode="light"
-                height={150}
-                placeholder="Additional important information..."
-              />
-            </div>
+            <textarea
+              value={marketingData.otherNotes}
+              onChange={(e) => handleInputChange('otherNotes', e.target.value)}
+              placeholder="Additional important information..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+            />
           </div>
         </div>
       </div>
@@ -208,11 +196,14 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                Not Connected
+              <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                Calendar Ready
               </span>
-              <button className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded">
-                Connect
+              <button 
+                onClick={copyICalUrl}
+                className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded"
+              >
+                {copied ? 'Copied!' : 'Get iCal URL'}
               </button>
             </div>
           </div>
@@ -257,6 +248,71 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
                 Manage
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar Integration Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Calendar className="text-orange-500" size={20} />
+          <h2 className="text-lg font-semibold text-gray-900">Calendar Integration</h2>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-medium text-blue-900 mb-2">Airbnb Calendar Sync</h3>
+                <p className="text-sm text-blue-700 mb-3">
+                  Use this iCal URL to sync your property's availability with Airbnb. 
+                  This will automatically block dates when you have reservations and keep your calendar up-to-date.
+                </p>
+                <div className="bg-white border border-blue-300 rounded-lg p-3 mb-3">
+                  <code className="text-xs text-gray-700 break-all">
+                    {generateICalUrl()}
+                  </code>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={copyICalUrl}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={16} />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={16} />
+                        <span>Copy URL</span>
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href={generateICalUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  >
+                    <Link size={16} />
+                    <span>Test URL</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">How to use:</h4>
+            <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Copy the iCal URL above</li>
+              <li>Go to your Airbnb listing → Calendar → Sync calendars</li>
+              <li>Click "Import calendar"</li>
+              <li>Paste the URL and click "Add calendar"</li>
+              <li>Your Airbnb calendar will now sync with your reservations</li>
+            </ol>
           </div>
         </div>
       </div>

@@ -8,3 +8,39 @@ a{
   text-decoration: none;
 }
 
+/* Стилі для білого овалу на датах календаря - більш специфічні селектори */
+.MuiDateRangePicker-root .MuiPickersDay-root:focus,
+.MuiDateRangePicker-root .MuiPickersDay-root:focus-visible,
+.MuiPickersCalendar-root .MuiPickersDay-root:focus,
+.MuiPickersCalendar-root .MuiPickersDay-root:focus-visible {
+  outline: 2px solid white !important;
+  outline-offset: 2px !important;
+  border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+  background-color: transparent !important;
+}
+
+.MuiDateRangePicker-root .MuiDateRangePickerDay-root:focus,
+.MuiDateRangePicker-root .MuiDateRangePickerDay-root:focus-visible {
+  outline: 2px solid white !important;
+  outline-offset: 2px !important;
+  border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Додаткові стилі для всіх можливих варіантів */
+[role="gridcell"] button:focus,
+[role="gridcell"] button:focus-visible,
+.MuiPickersDay-root[tabindex="0"]:focus,
+.MuiPickersDay-root[tabindex="0"]:focus-visible {
+  outline: 2px solid white !important;
+  outline-offset: 2px !important;
+  border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Стилі для check-in input (перший input) */
+.MuiDateRangePicker-root .MuiTextField-root:first-child input:focus,
+.MuiDateRangePicker-root .MuiTextField-root:first-child input:focus-visible {
+  outline: 2px solid white !important;
+  outline-offset: 2px !important;
+  border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+}
+

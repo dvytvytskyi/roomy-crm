@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
 import { BaseController } from './BaseController';
 import { CreateUserDto, UpdateUserDto, UserQueryParams, CreateBankAccountDto, UpdateBankAccountDto, CreateTransactionDto, UpdateTransactionDto, CreateDocumentDto, UpdateDocumentDto, CreateActivityLogDto } from '../types/dto';
-import { UserRole } from '@prisma/client';
+import { UserRole, PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
 
@@ -42,7 +42,14 @@ export class UserController extends BaseController {
         role,
         status,
         country,
-        flag
+        flag,
+        nationality,
+        dateOfBirth,
+        whatsapp,
+        telegram,
+        comments,
+        paymentPreferences,
+        personalStayDays
       } = req.body;
       
       // Validate required fields
@@ -61,7 +68,14 @@ export class UserController extends BaseController {
         role,
         status,
         country,
-        flag
+        flag,
+        nationality,
+        dateOfBirth,
+        whatsapp,
+        telegram,
+        comments,
+        paymentPreferences,
+        personalStayDays
       };
       
       // Call UserService.create
@@ -120,6 +134,9 @@ export class UserController extends BaseController {
         ...(status && { status }),
         ...(search && { search })
       };
+
+      logger.info(`[Get All Users] Query params:`, queryParams);
+
 
       // Get users with RBAC
       const usersResult = await UserService.findAll(currentUser, queryParams);
@@ -208,6 +225,9 @@ export class UserController extends BaseController {
 
       const { id } = req.params;
       const updateData = req.body;
+      
+      console.log('🔍 updateUser: Received update data:', updateData);
+      console.log('🔍 updateUser: Units in request:', updateData.units);
 
       if (!id) {
         UserController.validationError(res, [], 'User ID is required');
@@ -232,6 +252,31 @@ export class UserController extends BaseController {
         if (!emailRegex.test(updateData.email)) {
           UserController.validationError(res, [], 'Invalid email format');
           return;
+        }
+      }
+
+      // Validate date format if provided
+      if (updateData.dateOfBirth) {
+        const date = new Date(updateData.dateOfBirth);
+        if (isNaN(date.getTime())) {
+          UserController.validationError(res, [], 'Invalid date format');
+          return;
+        }
+      }
+
+      // Validate units if provided
+      if (updateData.units !== undefined) {
+        if (!Array.isArray(updateData.units)) {
+          UserController.validationError(res, [], 'Units must be an array');
+          return;
+        }
+        
+        // Validate each unit
+        for (const unit of updateData.units) {
+          if (!unit.id || !unit.name || !unit.propertyId) {
+            UserController.validationError(res, [], 'Each unit must have id, name, and propertyId');
+            return;
+          }
         }
       }
 

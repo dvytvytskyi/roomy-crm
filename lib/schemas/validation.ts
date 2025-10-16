@@ -67,60 +67,49 @@ export const createReservationSchema = z.object({
 
 export const updateReservationSchema = createReservationSchema.partial();
 
-// Owner-specific schema (extends user schema)
-export const createOwnerSchema = createUserSchema.extend({
-  role: z.literal('OWNER'),
+// Owner-specific schema (simplified)
+export const createOwnerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
   nationality: z.string().min(1, 'Nationality is required'),
-  country: z.string().min(1, 'Country is required'),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  whatsapp: z.string().optional(),
-  telegram: z.string().optional(),
-  comments: z.string().optional(),
-  paymentPreferences: z.string().optional(),
-  personalStayDays: z.number().optional(),
-}).omit({ password: true }).refine((data) => {
-  // Перевіряємо, що phone не пустий, якщо він переданий
-  return !data.phone || data.phone.trim().length > 0;
-}, {
-  message: 'Phone number is required',
-  path: ['phone'],
-}).refine((data) => {
-  // Валідація формату телефону
-  if (data.phone) {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    return phoneRegex.test(data.phone.replace(/[\s\-\(\)]/g, ''));
-  }
-  return true;
-}, {
-  message: 'Please enter a valid phone number',
-  path: ['phone'],
+  role: z.literal('OWNER').optional(),
 });
 
 // Guest-specific schema
-export const createGuestSchema = createUserSchema.extend({
-  role: z.literal('GUEST'),
-  nationality: z.string().optional(),
+export const createGuestSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
+  nationality: z.string().min(1, 'Nationality is required'),
+  email: z.string().email('Invalid email format'),
+  phone: z.string().min(1, 'Phone number is required'),
   dateOfBirth: z.string().optional(),
-  whatsapp: z.string().optional(),
-  telegram: z.string().optional(),
-  comments: z.string().optional(),
-  vipStatus: z.string().optional(),
-  preferences: z.string().optional(),
-  emergencyContact: z.string().optional(),
-  documents: z.array(z.string()).optional(),
-  notes: z.string().optional(),
+  preferredLanguage: z.string().optional(),
+  role: z.literal('GUEST').optional(),
 });
 
 // Agent-specific schema
-export const createAgentSchema = createUserSchema.extend({
-  role: z.literal('AGENT'),
-  nationality: z.string().optional(),
-  birthday: z.string().optional(),
+export const createAgentSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
+  nationality: z.string().min(1, 'Nationality is required'),
+  role: z.literal('AGENT').optional(),
+});
+
+// Agent update schema (for editing)
+export const updateAgentSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
+  nationality: z.string().min(1, 'Nationality is required'),
+  email: z.string().email('Invalid email format').optional(),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  role: z.literal('AGENT').optional(),
   unitsAttracted: z.array(z.object({
-    name: z.string(),
-    commission: z.string(),
+    propertyId: z.string(),
+    propertyName: z.string(),
+    commission: z.number().optional(),
   })).optional(),
-  notes: z.string().optional(),
 });
 
 // Type exports for TypeScript
@@ -133,3 +122,4 @@ export type UpdateReservationData = z.infer<typeof updateReservationSchema>;
 export type CreateOwnerData = z.infer<typeof createOwnerSchema>;
 export type CreateGuestData = z.infer<typeof createGuestSchema>;
 export type CreateAgentData = z.infer<typeof createAgentSchema>;
+export type UpdateAgentData = z.infer<typeof updateAgentSchema>;

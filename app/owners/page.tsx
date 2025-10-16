@@ -11,8 +11,7 @@ import { userServiceAdapted } from '../../lib/api'
 export default function OwnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
-    nationality: [] as string[],
-    status: ['Active'] as string[] // По умолчанию показываем только активных владельцев
+    nationality: [] as string[]
   })
   const [selectedOwners, setSelectedOwners] = useState<string[]>([])
   const [showAddOwnerModal, setShowAddOwnerModal] = useState(false)
@@ -47,8 +46,7 @@ export default function OwnersPage() {
       search: debouncedSearchTerm,
       page,
       limit,
-      nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
-      isActive: filters.status.includes('Active') ? true : filters.status.includes('Inactive') ? false : undefined
+      nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined
     }
     // console.log('🔍 Owners filter params:', params) // Disabled to reduce console spam
     return params
@@ -56,8 +54,7 @@ export default function OwnersPage() {
     debouncedSearchTerm, 
     page, 
     limit, 
-    filters.nationality, 
-    filters.status
+    filters.nationality
   ])
 
   // Load owners data from API
@@ -109,19 +106,6 @@ export default function OwnersPage() {
         limit,
         nationality: filters.nationality.length > 0 ? filters.nationality.join(',') : undefined,
         // Логика фильтрации по статусу:
-        // - Если выбраны оба фильтра (Active и Inactive) - показываем всех (не передаем status)
-        // - Если выбран только Active - показываем только активных
-        // - Если выбран только Inactive - показываем только неактивных
-        // - Если ничего не выбрано - показываем только активных по умолчанию
-        status: filters.status.length === 0 
-          ? 'ACTIVE' // По умолчанию только активные
-          : filters.status.length === 2 
-            ? undefined // Если выбраны оба - показываем всех
-            : filters.status.includes('Active') 
-              ? 'ACTIVE' 
-              : filters.status.includes('Inactive') 
-                ? 'INACTIVE' 
-                : undefined
       })
       
       console.log('🏠 Full response received:', response)

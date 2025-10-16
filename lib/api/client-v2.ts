@@ -24,13 +24,15 @@ class TokenManagerV2 {
 
   getToken(): string | null {
     if (!this.accessToken) {
-      // Check localStorage first
-      this.accessToken = localStorage.getItem('token');
+      // Check localStorage first - try both 'token' and 'accessToken'
+      this.accessToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
       
       // If not in localStorage, check cookies (for middleware compatibility)
       if (!this.accessToken && typeof document !== 'undefined') {
         const cookies = document.cookie.split(';');
-        const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
+        const tokenCookie = cookies.find(cookie => 
+          cookie.trim().startsWith('token=') || cookie.trim().startsWith('accessToken=')
+        );
         if (tokenCookie) {
           this.accessToken = tokenCookie.split('=')[1];
           // Store in localStorage for consistency
@@ -44,10 +46,12 @@ class TokenManagerV2 {
   clearToken() {
     this.accessToken = null;
     localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     
-    // Clear cookie
+    // Clear cookies
     if (typeof document !== 'undefined') {
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
   }
 

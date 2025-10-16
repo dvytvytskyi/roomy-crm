@@ -53,7 +53,27 @@ export class UserService extends BaseService {
       
       const user = await prisma.user.findUnique({
         where: { id },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          description: true,
+          role: true,
+          is_active: true,
+          avatar: true,
+          isVerified: true,
+          last_login: true,
+          nationality: true,
+          date_of_birth: true,
+          whatsapp: true,
+          telegram: true,
+          comments: true, // CRITICAL: Include comments field for units data
+          payment_preferences: true,
+          personal_stay_days: true,
+          createdAt: true,
+          updatedAt: true,
           // Include guest reservations for activity
           reservations_reservations_guest_idTousers: {
             include: {
@@ -85,6 +105,9 @@ export class UserService extends BaseService {
       if (!user) {
         return UserService.prototype.success(null);
       }
+
+      console.log('🔍 findById: Raw user from DB:', user);
+      console.log('🔍 findById: User comments from DB:', user.comments);
 
       const userResponse = UserService.mapToUserResponse(user);
       return UserService.prototype.success(userResponse);
@@ -258,6 +281,13 @@ export class UserService extends BaseService {
             role: data.role || 'GUEST',
             is_active: data.status === 'ACTIVE' || data.status === undefined,
             isVerified: false,
+            nationality: data.nationality || null,
+            date_of_birth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+            whatsapp: data.whatsapp || null,
+            telegram: data.telegram || null,
+            comments: data.comments || null,
+            payment_preferences: data.paymentPreferences || null,
+            personal_stay_days: data.personalStayDays || 30,
           },
         });
 
@@ -352,6 +382,25 @@ export class UserService extends BaseService {
       if (data.email !== undefined) updateData.email = data.email;
       if (data.phone !== undefined) updateData.phone = data.phone;
       if (data.description !== undefined) updateData.description = data.description;
+      if (data.nationality !== undefined) updateData.nationality = data.nationality;
+      if (data.dateOfBirth !== undefined) updateData.date_of_birth = new Date(data.dateOfBirth);
+      if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp;
+      if (data.telegram !== undefined) updateData.telegram = data.telegram;
+      if (data.comments !== undefined) updateData.comments = data.comments;
+      if (data.paymentPreferences !== undefined) updateData.paymentPreferences = data.paymentPreferences;
+      if (data.personalStayDays !== undefined) updateData.personalStayDays = data.personalStayDays;
+      
+      // Store units in comments field as JSON for agents
+      if (data.units !== undefined) {
+        console.log('🔍 update: Storing units for user:', id, 'units:', data.units);
+        if (data.units.length > 0) {
+          updateData.comments = JSON.stringify({ units: data.units });
+          console.log('🔍 update: Stored units in comments:', updateData.comments);
+        } else {
+          updateData.comments = null;
+          console.log('🔍 update: Cleared comments (no units)');
+        }
+      }
 
       // Only ADMIN can change role and status
       if (currentUser.role === 'ADMIN') {
@@ -363,6 +412,28 @@ export class UserService extends BaseService {
       const updatedUser = await prisma.user.update({
         where: { id },
         data: updateData,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          description: true,
+          role: true,
+          is_active: true,
+          avatar: true,
+          isVerified: true,
+          last_login: true,
+          nationality: true,
+          date_of_birth: true,
+          whatsapp: true,
+          telegram: true,
+          comments: true,
+          payment_preferences: true,
+          personal_stay_days: true,
+          createdAt: true,
+          updatedAt: true,
+        }
       });
 
       // Log audit action
@@ -471,8 +542,12 @@ export class UserService extends BaseService {
       }
 
       // Add additional filters
-      if (role) where.role = role;
+      if (role) {
+        where.role = role;
+        logger.info(`[Find All Users] Filtering by role: ${role}`);
+      }
       if (status) where.is_active = status === 'ACTIVE';
+      
       if (search) {
         where.OR = [
           ...(where.OR || []),
@@ -681,13 +756,36 @@ export class UserService extends BaseService {
       role: user.role,
       status: user.is_active ? 'ACTIVE' : 'INACTIVE',
       avatar: user.avatar,
-      country: user.country || undefined,
-      flag: user.flag || undefined,
       isVerified: user.isVerified,
       lastLoginAt: user.last_login || undefined,
+      nationality: user.nationality || undefined,
+      dateOfBirth: user.date_of_birth ? user.date_of_birth.toISOString().split('T')[0] : undefined,
+      whatsapp: user.whatsapp || undefined,
+      telegram: user.telegram || undefined,
+      comments: user.comments || undefined,
+      paymentPreferences: user.payment_preferences || undefined,
+      personalStayDays: user.personal_stay_days || undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+
+    // Parse units from comments field for agents
+    if (user.role === 'AGENT' && user.comments) {
+      console.log('🔍 mapToUserResponse: Parsing units for agent:', user.email, 'comments:', user.comments);
+      try {
+        const parsedComments = JSON.parse(user.comments);
+        console.log('🔍 mapToUserResponse: Parsed comments:', parsedComments);
+        if (parsedComments.units) {
+          (baseResponse as any).units = parsedComments.units;
+          console.log('🔍 mapToUserResponse: Added units to response:', parsedComments.units);
+        }
+      } catch (error) {
+        // If parsing fails, treat as regular comments
+        console.log('Failed to parse units from comments:', error);
+      }
+    } else if (user.role === 'AGENT') {
+      console.log('🔍 mapToUserResponse: Agent has no comments or not an agent:', user.role, 'comments:', user.comments);
+    }
 
     // Add related data if available
     if (user.reservations_reservations_guest_idTousers) {
@@ -851,10 +949,9 @@ export class UserService extends BaseService {
         return UserService.prototype.error('Not Found', 'Property not found');
       }
 
-      // Check if property is already owned by someone else
+      // Allow changing ownership - just log if property already has an owner
       if (property.owner_id && property.owner_id !== userId) {
-        await prisma.$disconnect();
-        return UserService.prototype.error('Conflict', 'Property is already owned by another user');
+        logger.info(`[Link Property] Changing ownership of property ${propertyId} from ${property.owner_id} to ${userId}`);
       }
 
       // Link property to user

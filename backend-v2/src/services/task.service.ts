@@ -645,6 +645,7 @@ export class TaskService extends BaseService {
         const updateData: any = {};
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
+        if (data.status !== undefined) updateData.status = data.status;
         if (data.priority !== undefined) updateData.priority = data.priority;
         if (data.assignedTo !== undefined) updateData.assigned_to = data.assignedTo;
         if (data.scheduledDate !== undefined) updateData.scheduled_date = data.scheduledDate ? new Date(data.scheduledDate) : null;

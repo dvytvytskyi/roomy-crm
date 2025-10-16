@@ -1,0 +1,148 @@
+// Глобальні стилі для Material-UI DatePicker
+
+// Приховуємо вотермарку MUI X
+.MuiDateRangePicker-root,
+.MuiDateRangePicker-root * {
+  &::before,
+  &::after {
+    content: none !important;
+  }
+}
+
+// Приховуємо всі елементи з текстом про ліцензію
+*[class*="watermark"],
+*[class*="license"],
+*[class*="demo"],
+*[class*="MuiX"],
+*[class*="Missing"],
+*[class*="key"],
+*[class*="MuiX-Missing"],
+*[class*="license-key"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+
+// Додаткові селектори для приховування вотермарки
+.MuiDateRangePicker-root *[style*="watermark"],
+.MuiDateRangePicker-root *[style*="license"],
+.MuiDateRangePicker-root *[style*="MuiX"],
+.MuiDateRangePicker-root *[style*="Missing"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+// Приховуємо псевдоелементи з вотермаркою
+.MuiDateRangePicker-root::before,
+.MuiDateRangePicker-root::after,
+.MuiDateRangePicker-root *::before,
+.MuiDateRangePicker-root *::after {
+  content: none !important;
+}
+
+// Додаткові стилі для приховування вотермарки
+.MuiDateRangePicker-root {
+  position: relative;
+  
+  &::before {
+    display: none !important;
+  }
+  
+  &::after {
+    display: none !important;
+  }
+}
+
+.MuiDateRangePicker-root {
+  // Стилі для білого овалу на датах
+  .MuiPickersDay-root {
+    position: relative;
+    
+    &:focus {
+      outline: 2px solid white !important;
+      outline-offset: 2px !important;
+      border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+      background-color: transparent !important;
+    }
+    
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.1) !important;
+    }
+    
+    &.Mui-selected {
+      background-color: #1976d2 !important;
+      color: white !important;
+      
+      &:focus {
+        outline: 2px solid white !important;
+        outline-offset: 2px !important;
+        border: 1px dashed rgba(255, 255, 255, 0.5) !important;
+      }
+    }
+    
+    &.MuiPickersDay-today {
+      border: 2px solid #1976d2 !important;
+      
+      &:focus {
+        outline: 2px solid white !important;
+        outline-offset: 2px !important;
+      }
+    }
+  }
+  
+  // Стилі для діапазону дат
+  .MuiDateRangePickerDay-root {
+    position: relative;
+    
+    &:focus {
+      outline: 2px solid white !important;
+      outline-offset: 2px !important;
+      border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    &.Mui-selected {
+      background-color: #1976d2 !important;
+      color: white !important;
+      
+      &:focus {
+        outline: 2px solid white !important;
+        outline-offset: 2px !important;
+        border: 1px dashed rgba(255, 255, 255, 0.5) !important;
+      }
+    }
+    
+    &.MuiDateRangePickerDay-rangeIntervalDayHighlight {
+      background-color: rgba(25, 118, 210, 0.1) !important;
+    }
+    
+    &.MuiDateRangePickerDay-rangeIntervalDayHighlightStart {
+      background-color: #1976d2 !important;
+      color: white !important;
+    }
+    
+    &.MuiDateRangePickerDay-rangeIntervalDayHighlightEnd {
+      background-color: #1976d2 !important;
+      color: white !important;
+    }
+  }
+}
+
+// Додаткові стилі для календаря
+.MuiPickersCalendarHeader-root {
+  .MuiPickersCalendarHeader-label {
+    color: #1976d2 !important;
+    font-weight: 600 !important;
+  }
+}
+
+.MuiPickersDay-root {
+  &:focus-visible {
+    outline: 2px solid white !important;
+    outline-offset: 2px !important;
+    border: 1px dashed rgba(0, 0, 0, 0.3) !important;
+  }
+}

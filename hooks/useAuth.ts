@@ -54,12 +54,14 @@ export function useAuth() {
         // Store token in cookie for middleware
         const token = response.data.token || response.data.accessToken;
         if (typeof document !== 'undefined' && token) {
-          // Set cookie with proper attributes
+          // Set cookies with proper attributes
           document.cookie = `accessToken=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax; Secure=false`;
-          console.log('🍪 Cookie set:', `accessToken=${token.substring(0, 20)}...`);
+          document.cookie = `token=${token}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax; Secure=false`;
+          console.log('🍪 Cookies set:', `accessToken=${token.substring(0, 20)}...`);
           
-          // Also store in localStorage for consistency
+          // Store in localStorage for consistency
           localStorage.setItem('accessToken', token);
+          localStorage.setItem('token', token);
           console.log('💾 Token stored in localStorage');
         }
         
@@ -105,9 +107,12 @@ export function useAuth() {
       setUser(null);
       setIsAuthenticated(false);
       
-      // Clear token from cookie
+      // Clear tokens from localStorage and cookies
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('token');
       if (typeof document !== 'undefined') {
         document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       }
     } catch (error) {
       console.error('Logout failed:', error);

@@ -29,7 +29,9 @@ export interface PropertyResponseDto {
   houseRules: string[];
   tags: string[];
   isActive: boolean;
+  is_active: boolean;
   isPublished: boolean;
+  is_published: boolean;
   primaryImage?: string;
   pricelabId?: string;
   createdAt: Date;
@@ -288,7 +290,9 @@ export class PropertyService extends BaseService {
         houseRules: property.house_rules,
         tags: property.tags,
         isActive: property.is_active,
+        is_active: property.is_active,
         isPublished: property.is_published,
+        is_published: property.is_published,
         primaryImage: property.primary_image || undefined,
         pricelabId: property.pricelab_id || undefined,
         createdAt: property.created_at,
@@ -562,7 +566,9 @@ export class PropertyService extends BaseService {
         houseRules: property.house_rules,
         tags: property.tags,
         isActive: property.is_active,
+        is_active: property.is_active,
         isPublished: property.is_published,
+        is_published: property.is_published,
         primaryImage: property.primary_image || undefined,
         pricelabId: property.pricelab_id || undefined,
         createdAt: property.created_at,
@@ -1273,6 +1279,10 @@ export class PropertyService extends BaseService {
         where: { id },
       });
 
+      if (existingProperty) {
+        logger.info(`[Property Deactivation] Property found with current status: ${existingProperty.is_active ? 'active' : 'deactivated'}`);
+      }
+
       if (!existingProperty) {
         await prisma.$disconnect();
         return PropertyService.prototype.error('Not Found', 'Property not found', 404);
@@ -1284,11 +1294,8 @@ export class PropertyService extends BaseService {
         return PropertyService.prototype.error('Forbidden', 'Only ADMIN and MANAGER can deactivate properties', 403);
       }
 
-      // Check if property is already deactivated
-      if (!existingProperty.is_active) {
-        await prisma.$disconnect();
-        return PropertyService.prototype.error('Bad Request', 'Property is already deactivated', 400);
-      }
+      // Allow deactivation of already deactivated properties
+      // (No need to check if property is already deactivated)
 
       // Deactivate property in transaction with audit logging
       const result = await prisma.$transaction(async (tx) => {
@@ -1352,14 +1359,15 @@ export class PropertyService extends BaseService {
         logger.info(`[Property Deactivation Step 3/3] Property not linked to PriceLabs, skipping deletion`);
       }
 
-      // Return the updated property with full details
-      const propertyResult = await PropertyService.findById(currentUser, id);
-      if (!propertyResult.success || !propertyResult.data) {
-        return PropertyService.prototype.error('Error', 'Failed to retrieve deactivated property', 500);
-      }
-
+      // Return success without trying to retrieve the deactivated property
+      // (since findById might filter out deactivated properties for some roles)
       logger.info(`Property deactivated successfully: ${result.name} by ${currentUser.email}`);
-      return PropertyService.prototype.success(propertyResult.data, 'Property deactivated successfully');
+      return PropertyService.prototype.success({ 
+        id: result.id, 
+        name: result.name, 
+        is_active: false,
+        message: 'Property deactivated successfully'
+      }, 'Property deactivated successfully');
     } catch (error) {
       logger.error('Error deactivating property:', error);
       return PropertyService.prototype.handleDatabaseError(error);
@@ -1620,13 +1628,13 @@ export class PropertyService extends BaseService {
   }
 
   /**
-   * Get available properties (without owners)
+   * Get all active properties
    */
   public static async getAvailableProperties(currentUser: CurrentUser): Promise<ServiceResponse<any[]>> {
     try {
       const prisma = new PrismaClient();
 
-      logger.info(`[Available Properties] Getting available properties by ${currentUser.email}`);
+      logger.info(`[Available Properties] Getting all active properties by ${currentUser.email}`);
 
       // RBAC: Only ADMIN and MANAGER can access
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER') {
@@ -1634,10 +1642,9 @@ export class PropertyService extends BaseService {
         return PropertyService.prototype.error('Forbidden', 'Only administrators and managers can view available properties');
       }
 
-      // Get properties without owners
+      // Get all active properties (not just those without owners)
       const properties = await prisma.properties.findMany({
         where: { 
-          owner_id: null,
           is_active: true
         },
         select: {
@@ -1669,8 +1676,9 @@ export class PropertyService extends BaseService {
 
       await prisma.$disconnect();
 
-      logger.info(`[Available Properties] Found ${properties.length} available properties`);
-      return PropertyService.prototype.success(properties, 'Available properties retrieved successfully');
+      logger.info(`[Available Properties] Found ${properties.length} active properties`);
+      logger.info(`[Available Properties] Properties:`, JSON.stringify(properties, null, 2));
+      return PropertyService.prototype.success(properties, 'All active properties retrieved successfully');
     } catch (error) {
       await prisma.$disconnect();
       logger.error('Error getting available properties:', error);

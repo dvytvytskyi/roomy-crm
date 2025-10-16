@@ -170,17 +170,35 @@ class PropertyServiceV2 {
     console.log('🏠 PropertyServiceV2: Query params:', params);
     
     try {
-      const response = await apiClientV2.get<PaginatedResponse<PropertyV2>>(
+      const response = await apiClientV2.get<any>(
         API_V2_ENDPOINTS.PROPERTIES.BASE,
         params
       );
       
-      console.log('🏠 PropertyServiceV2: API Response:', response);
-      console.log('🏠 PropertyServiceV2: Properties count:', response.data?.data?.length || 0);
+      console.log('🏠 PropertyServiceV2: Raw API Response:', response);
+      
+      // Handle the response structure - API returns { success, data: [], pagination: {} }
+      const propertiesData = response.data || [];
+      const paginationData = response.pagination || {
+        page: 1,
+        limit: 10,
+        total: propertiesData.length,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
+      
+      console.log('🏠 PropertyServiceV2: Properties count:', propertiesData.length);
+      console.log('🏠 PropertyServiceV2: Properties data:', propertiesData);
+      
+      const paginatedResponse: PaginatedResponse<PropertyV2> = {
+        data: propertiesData,
+        pagination: paginationData
+      };
       
       return {
         success: response.success,
-        data: response.data!,
+        data: paginatedResponse,
         message: response.message,
         timestamp: new Date().toISOString()
       };

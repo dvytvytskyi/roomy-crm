@@ -85,7 +85,11 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
   }
 
   const getStatus = (property: any) => {
-    return property.status || (property.is_active !== undefined ? (property.is_active ? 'Active' : 'Inactive') : 'Unknown')
+    if (property.status) return property.status;
+    if (property.is_active !== undefined) {
+      return property.is_active ? 'Active' : 'Deactivated';
+    }
+    return 'Unknown';
   }
 
   const getOwnerName = (property: any) => {
@@ -423,6 +427,15 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
               </div>
             </th>
             <th 
+              className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              onClick={() => handleSort('isPublished')}
+            >
+              <div className="flex items-center space-x-1">
+                <span>Published</span>
+                {getSortIcon('isPublished')}
+              </div>
+            </th>
+            <th 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('owner')}
             >
@@ -502,9 +515,20 @@ export default function PropertiesTable({ searchTerm, onDeleteProperty, selected
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                     getStatus(property) === 'Active' 
                       ? 'bg-green-100 text-green-800' 
+                      : getStatus(property) === 'Deactivated'
+                      ? 'bg-red-100 text-red-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
                     {getStatus(property)}
+                  </span>
+              </td>
+              <td className="px-3 py-4 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    property.isPublished || property.is_published
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {property.isPublished || property.is_published ? 'Yes' : 'No'}
                   </span>
               </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">

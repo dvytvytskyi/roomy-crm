@@ -59,7 +59,42 @@ export interface UsersResponse {
 export class UserServiceV2 {
   // Get all users with pagination and filtering
   async getUsers(params?: PaginationParams & FilterParams): Promise<ApiResponse<UsersResponse>> {
-    return apiClientV2.get(API_V2_ENDPOINTS.USERS.BASE, params);
+    console.log('👥 UserServiceV2: Fetching users from V2 API...');
+    console.log('👥 UserServiceV2: Query params:', params);
+    
+    try {
+      const response = await apiClientV2.get<any>(API_V2_ENDPOINTS.USERS.BASE, params);
+      console.log('👥 UserServiceV2: Raw API Response:', response);
+      
+      // Handle the response structure - API returns { success, data: [], pagination: {} }
+      const usersData = response.data || [];
+      const paginationData = response.pagination || {
+        page: 1,
+        limit: 10,
+        total: usersData.length,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      };
+      
+      console.log('👥 UserServiceV2: Users count:', usersData.length);
+      console.log('👥 UserServiceV2: Users data:', usersData);
+      
+      const usersResponse: UsersResponse = {
+        data: usersData,
+        pagination: paginationData
+      };
+      
+      return {
+        success: response.success,
+        data: usersResponse,
+        message: response.message,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('👥 UserServiceV2: Error fetching users:', error);
+      throw error;
+    }
   }
 
   // Get users by role (e.g., OWNER)

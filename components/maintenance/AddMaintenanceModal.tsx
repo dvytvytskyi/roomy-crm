@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { X, Wrench, Building, User, Calendar, AlertTriangle } from 'lucide-react'
 import { taskServiceV2 } from '@/lib/api/services/taskService-v2'
 import { propertyServiceV2 } from '@/lib/api/services/propertyService-v2'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { showToast } from '@/lib/utils/toast'
 
 interface AddMaintenanceModalProps {
@@ -12,6 +14,7 @@ interface AddMaintenanceModalProps {
 }
 
 export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceModalProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     title: '',
     propertyId: '',
@@ -25,26 +28,61 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
   })
   const [isLoading, setIsLoading] = useState(false)
   const [properties, setProperties] = useState<any[]>([])
+  const [technicians, setTechnicians] = useState<any[]>([])
   const [loadingProperties, setLoadingProperties] = useState(false)
+  const [loadingTechnicians, setLoadingTechnicians] = useState(false)
 
-  // Load properties when modal opens
+  // Load data when modal opens
   useEffect(() => {
     if (isOpen) {
       loadProperties()
+      loadTechnicians()
     }
   }, [isOpen])
 
   const loadProperties = async () => {
     setLoadingProperties(true)
     try {
+      console.log('🔍 Loading properties for maintenance modal...')
       const response = await propertyServiceV2.getAll({ limit: 100 })
+      console.log('🔍 Properties response:', response)
+      
       if (response.success && response.data) {
-        setProperties(response.data.data || [])
+        const propertiesList = response.data.data || []
+        console.log('🔍 Properties list:', propertiesList)
+        setProperties(propertiesList)
+      } else {
+        console.error('🔍 Failed to load properties:', response)
       }
     } catch (error) {
       console.error('Error loading properties:', error)
     } finally {
       setLoadingProperties(false)
+    }
+  }
+
+  const loadTechnicians = async () => {
+    setLoadingTechnicians(true)
+    try {
+      console.log('🔍 Loading technicians for maintenance modal...')
+      // Load users with AGENT role as technicians
+      const response = await userServiceAdapter.getUsers({ 
+        role: 'AGENT',
+        limit: 100 
+      })
+      console.log('🔍 Technicians response:', response)
+      
+      if (response.success && response.data) {
+        const techniciansList = response.data.data || []
+        console.log('🔍 Technicians list:', techniciansList)
+        setTechnicians(techniciansList)
+      } else {
+        console.error('🔍 Failed to load technicians:', response)
+      }
+    } catch (error) {
+      console.error('Error loading technicians:', error)
+    } finally {
+      setLoadingTechnicians(false)
     }
   }
 
@@ -71,9 +109,13 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
       
       const response = await taskServiceV2.create(taskData)
       
-      if (response.success) {
+      if (response.success && response.data) {
         showToast.success('Задачу обслуговування успішно створено!')
         onClose()
+        
+        // Navigate to the created task details page
+        router.push(`/maintenance/${response.data.id}`)
+        
         // Reset form
         setFormData({
           title: '',
@@ -185,12 +227,16 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
                 onChange={(e) => handleChange('technician', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
                 required
+                disabled={loadingTechnicians}
               >
-                <option value="">Select Technician</option>
-                <option value="Mike Johnson">Mike Johnson</option>
-                <option value="Sarah Wilson">Sarah Wilson</option>
-                <option value="David Chen">David Chen</option>
-                <option value="Alex Rodriguez">Alex Rodriguez</option>
+                <option value="">
+                  {loadingTechnicians ? 'Loading technicians...' : 'Select Technician'}
+                </option>
+                {technicians.map((technician) => (
+                  <option key={technician.id} value={technician.id}>
+                    {technician.firstName} {technician.lastName} ({technician.email})
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -18,10 +18,7 @@ export default function GuestsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState<any>(null)
   const [filters, setFilters] = useState<GuestFilters>({
-    nationality: [],
-    dateOfBirth: { from: '', to: '' },
-    reservationCount: { min: '', max: '' },
-    unit: []
+    nationality: []
   })
   
   const { onGuestUpdated, onGuestCreated, onGuestDeleted, onGuestRefresh } = useGuestEvents()
@@ -139,10 +136,7 @@ export default function GuestsPage() {
   const handleClearFilters = () => {
     console.log('👥 GuestsPage: Clearing filters')
     setFilters({
-      nationality: [],
-      dateOfBirth: { from: '', to: '' },
-      reservationCount: { min: '', max: '' },
-      unit: []
+      nationality: []
     })
   }
 
@@ -204,7 +198,7 @@ export default function GuestsPage() {
 
         {/* Stats Cards */}
         <div className="px-2 sm:px-3 lg:px-4 py-1.5 flex-shrink-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl border border-gray-200 p-3">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-50 rounded-lg">
@@ -213,30 +207,6 @@ export default function GuestsPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Total Guests</p>
                   <p className="text-2xl font-medium text-slate-900">{stats?.totalGuests || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <Star className="w-5 h-5 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-slate-600 text-xs mb-1">Star Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">{stats?.starGuests || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <Crown className="w-5 h-5 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-slate-600 text-xs mb-1">Primary Guests</p>
-                  <p className="text-2xl font-medium text-slate-900">{stats?.primaryGuests || 0}</p>
                 </div>
               </div>
             </div>

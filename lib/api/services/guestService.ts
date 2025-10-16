@@ -5,9 +5,6 @@ import { userServiceAdapter } from '../adapters/apiAdapter';
 
 export interface GuestFilters {
   nationality?: string[];
-  dateOfBirth?: { from?: string; to?: string };
-  reservationCount?: { min?: string; max?: string };
-  unit?: string[];
   searchTerm?: string;
 }
 
@@ -95,16 +92,17 @@ class GuestService {
     console.log('👥 GuestService: Fetching real guests data from API');
     
     try {
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-      queryParams.append('role', 'GUEST');
+      // Build query parameters as object
+      const queryParams: any = {
+        role: 'GUEST'
+      };
       
       if (filters?.searchTerm) {
-        queryParams.append('search', filters.searchTerm);
+        queryParams.search = filters.searchTerm;
       }
       
       // Use the userServiceAdapter to get guests
-      const response = await userServiceAdapter.getUsers(queryParams.toString());
+      const response = await userServiceAdapter.getUsers(queryParams);
       
       if (response.success && response.data) {
         // Transform the API response to match our Guest interface
@@ -182,6 +180,8 @@ class GuestService {
       
       if (response.success && response.data) {
         const user = response.data;
+        console.log('👤 Raw user data from API:', user);
+        console.log('👤 User guestReservations:', user.guestReservations);
         
         // Transform the API response to match our Guest interface
         const guest: Guest = {

@@ -182,9 +182,12 @@ export const agentService = {
     
     try {
       const response = await userServiceAdapter.getUserById(id)
+      console.log('👥 AgentService: Raw user response:', response)
       
       if (response.success && response.data) {
         const user = response.data
+        console.log('👥 AgentService: User data received:', user)
+        console.log('👥 AgentService: User units from backend:', user.units)
         const agent: Agent = {
           id: user.id,
           firstName: user.firstName,
@@ -206,15 +209,18 @@ export const agentService = {
           unitsAttracted: user._count?.properties || 0,
           totalPayouts: user.transactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0,
           lastPayoutDate: user.transactions?.[0]?.createdAt || null,
-          // Related data from API
-          units: user.properties || [],
+          // Related data from API - CRITICAL: Use units from backend response
+          units: user.units || [],
           payouts: user.transactions || [],
           documents: user.documents || [],
           auditLogs: user.activity_log || []
     }
 
-    return {
-      success: true,
+        console.log('👥 AgentService: Final agent object:', agent)
+        console.log('👥 AgentService: Final agent units:', agent.units)
+        
+        return {
+          success: true,
           data: agent
         }
       } else {

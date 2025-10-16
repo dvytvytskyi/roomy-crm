@@ -11,8 +11,7 @@ interface OwnersFiltersProps {
 
 export default function OwnersFilters({ filters, onApplyFilters, isSidebar = false }: OwnersFiltersProps) {
   const [openSections, setOpenSections] = useState({
-    nationality: true,
-    status: true
+    nationality: true
   })
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -56,7 +55,6 @@ export default function OwnersFilters({ filters, onApplyFilters, isSidebar = fal
   }
 
 
-  const statuses = ['Active', 'VIP', 'Inactive']
 
   // Debounce function for input fields
   const debounceTimeout = React.useRef<NodeJS.Timeout | null>(null)
@@ -69,12 +67,6 @@ export default function OwnersFilters({ filters, onApplyFilters, isSidebar = fal
         newFilters.nationality = newFilters.nationality.filter((item: string) => item !== value)
       } else {
         newFilters.nationality = [...newFilters.nationality, value]
-      }
-    } else if (filterType === 'status') {
-      if (newFilters.status.includes(value)) {
-        newFilters.status = newFilters.status.filter((item: string) => item !== value)
-      } else {
-        newFilters.status = [...newFilters.status, value]
       }
     } else {
       newFilters[filterType] = value
@@ -95,7 +87,6 @@ export default function OwnersFilters({ filters, onApplyFilters, isSidebar = fal
 
   const getSelectedCount = (filterType: string) => {
     if (filterType === 'nationality') return filters.nationality.length
-    if (filterType === 'status') return filters.status.length
     return 0
   }
 
@@ -133,35 +124,6 @@ export default function OwnersFilters({ filters, onApplyFilters, isSidebar = fal
       </div>
 
 
-      {/* Status */}
-      <div>
-        <button
-          onClick={() => toggleSection('status')}
-          className="flex items-center justify-between w-full text-left mb-2"
-        >
-          <label className="text-sm font-medium text-slate-700">Status</label>
-          {openSections.status ? (
-            <ChevronUp className="w-4 h-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-500" />
-          )}
-        </button>
-        {openSections.status && (
-          <div className="space-y-2">
-            {statuses.map(status => (
-              <label key={status} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={filters.status.includes(status)}
-                  onChange={() => handleFilterChange('status', status)}
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <span className="ml-2 text-sm text-slate-700">{status}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
 
 
 

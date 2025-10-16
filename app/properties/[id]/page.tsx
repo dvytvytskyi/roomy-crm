@@ -79,7 +79,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         <TopNavigation />
-        <div className="max-w-full px-8 py-8 mt-8">
+        <div className="max-w-full px-8 py-8 mt-14">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
@@ -93,7 +93,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         <TopNavigation />
-        <div className="max-w-full px-8 py-8 mt-8">
+        <div className="max-w-full px-8 py-8 mt-14">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <p className="text-red-600">{error}</p>
                       <button 
@@ -113,7 +113,7 @@ export default function PropertyDetailsPage({ params }: PropertyDetailsProps) {
       <TopNavigation />
       
       {/* Property Header with Background */}
-      <div className="bg-white border-b border-gray-200 shadow-sm mt-8">
+      <div className="bg-white border-b border-gray-200 shadow-sm mt-14">
         <div className="max-w-full px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">

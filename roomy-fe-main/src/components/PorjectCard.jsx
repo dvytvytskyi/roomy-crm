@@ -17,7 +17,7 @@ const PorjectCard = ({project, daysSelected, data}) => {
                 src={project.picture?.large || project.pictures?.[0]?.large || '/placeholder-image.svg'} 
                 alt={project.title}
                 onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x300/f0f0f0/999999?text=No+Image';
+                    e.target.src = '/placeholder-image.svg';
                 }}
             />
         </div>
@@ -78,7 +78,7 @@ const PorjectCard = ({project, daysSelected, data}) => {
                                     d="M10 8.71856C10.7939 8.71856 11.5553 8.41979 12.1166 7.88796C12.678 7.35614 12.9934 6.63483 12.9934 5.88272C12.9934 5.13061 12.678 4.4093 12.1166 3.87747C11.5553 3.34565 10.7939 3.04688 10 3.04688C9.2061 3.04688 8.44472 3.34565 7.88335 3.87747C7.32198 4.4093 7.00661 5.13061 7.00661 5.88272C7.00661 6.63483 7.32198 7.35614 7.88335 7.88796C8.44472 8.41979 9.2061 8.71856 10 8.71856ZM10 9.9645C6.02009 9.9645 3.46875 12.0452 3.46875 13.0583V14.9499H16.5312V13.0583C16.5312 11.8331 14.1159 9.9645 10 9.9645Z"
                                     fill="#717171"/>
                             </svg>
-                            {data.guest}
+                            {project.accommodates || 1}
                         </div>
                     </div>
                 </div>

@@ -31,12 +31,33 @@ export default function AgentDetailsPage({ params }: AgentDetailsPageProps) {
       try {
         setIsLoading(true)
         setError(null)
-        console.log('👤 Loading agent:', params.id)
+        console.log('🔍 loadAgent: Starting to load agent with ID:', params.id)
         
         const response = await agentService.getAgentById(params.id)
+        console.log('🔍 loadAgent: Raw API response:', response)
         
         if (response.success && response.data) {
           console.log('👤 Agent loaded:', response.data)
+          console.log('👤 Agent loaded units:', response.data.units)
+          console.log('👤 Agent loaded units length:', response.data.units?.length)
+          console.log('👤 Agent loaded comments:', response.data.comments)
+          
+          // Check if comments field exists and try to parse units from it
+          if (response.data.comments) {
+            try {
+              const parsedComments = JSON.parse(response.data.comments)
+              console.log('🔍 loadAgent: Parsed comments:', parsedComments)
+              if (parsedComments.units) {
+                console.log('🔍 loadAgent: Found units in comments:', parsedComments.units)
+                // Add units to the agent data if they exist in comments
+                response.data.units = parsedComments.units
+                console.log('🔍 loadAgent: Updated agent data with units:', response.data.units)
+              }
+            } catch (error) {
+              console.log('🔍 loadAgent: Failed to parse comments:', error)
+            }
+          }
+          
           setAgent(response.data)
         } else {
           setError('Failed to load agent')
@@ -74,18 +95,30 @@ export default function AgentDetailsPage({ params }: AgentDetailsPageProps) {
   }
 
   const handleAgentUpdated = (updatedAgent: any) => {
+    console.log('🔍 Agent updated, new data:', updatedAgent)
+    console.log('🔍 UpdatedAgent units:', updatedAgent.units)
+    console.log('🔍 UpdatedAgent units length:', updatedAgent.units?.length)
+    
     // Update the agent state with the new data
-    setAgent(prevAgent => ({
-      ...prevAgent,
-      ...updatedAgent,
-      firstName: updatedAgent.firstName,
-      lastName: updatedAgent.lastName,
-      email: updatedAgent.email,
-      phone: updatedAgent.phone,
-      nationality: updatedAgent.nationality,
-      dateOfBirth: updatedAgent.dateOfBirth,
-      status: updatedAgent.status
-    }))
+    setAgent(prevAgent => {
+      console.log('🔍 Previous agent units:', prevAgent?.units)
+      const newAgent = {
+        ...prevAgent,
+        ...updatedAgent,
+        firstName: updatedAgent.firstName,
+        lastName: updatedAgent.lastName,
+        email: updatedAgent.email,
+        phone: updatedAgent.phone,
+        nationality: updatedAgent.nationality,
+        dateOfBirth: updatedAgent.dateOfBirth,
+        units: updatedAgent.units !== undefined ? updatedAgent.units : prevAgent?.units,
+        status: updatedAgent.status
+      }
+      console.log('🔍 New agent state:', newAgent)
+      console.log('🔍 New agent units:', newAgent.units)
+      console.log('🔍 New agent units length:', newAgent.units?.length)
+      return newAgent
+    })
     
     // Emit event to notify other components about the update
     if (agent?.id) {
@@ -416,6 +449,7 @@ export default function AgentDetailsPage({ params }: AgentDetailsPageProps) {
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center space-x-2">
               <Building size={20} className="text-blue-600" />
               <span>Units Attracted ({agent.units?.length || 0})</span>
+              {console.log('🔍 Agent units on page:', agent.units)}
             </h3>
             {agent.units && agent.units.length > 0 ? (
               <div className="overflow-x-auto">

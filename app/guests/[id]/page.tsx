@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { 
-  User, Mail, Phone, Calendar, MapPin, Star, Crown, MessageSquare, 
+  User, Mail, Phone, Calendar, MapPin, MessageSquare, 
   Edit, Trash2, Plus, Eye, ArrowLeft, FileText, Download, Upload,
-  TrendingUp, Clock, DollarSign, Building, Users, Award
+  Building, Users
 } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import AddGuestModal from '@/components/guests/AddGuestModal'
 import { guestService, Guest, GuestDetailStats } from '@/lib/api/services/guestService'
+import { guestDocumentService, GuestDocument } from '@/lib/api/services/guestDocumentService'
+import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { useGuestEvents } from '@/hooks/useEventBus'
+import { showToast } from '@/lib/utils/toast'
 
 interface GuestDetailsPageProps {
   params: {
@@ -23,6 +26,10 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<GuestDetailStats | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAddingComment, setIsAddingComment] = useState(false)
+  const [newComment, setNewComment] = useState('')
+  const [documents, setDocuments] = useState<GuestDocument[]>([])
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false)
   const { emitGuestUpdated } = useGuestEvents()
 
   // Load guest data
@@ -36,12 +43,19 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
         const response = await guestService.getGuestById(params.id)
         if (response.success && response.data) {
           console.log('👤 Guest details loaded:', response.data)
+          console.log('👤 Guest reservations:', response.data.guestReservations)
           setGuest(response.data)
           
           // Load guest stats
           const statsResponse = await guestService.getGuestDetailStats(params.id)
           if (statsResponse.success && statsResponse.data) {
             setStats(statsResponse.data)
+          }
+
+          // Load guest documents
+          const documentsResponse = await guestDocumentService.getGuestDocuments(params.id)
+          if (documentsResponse.success) {
+            setDocuments(documentsResponse.data)
           }
         } else {
           setError('Guest not found')
@@ -134,6 +148,158 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
     setIsEditModalOpen(false)
   }
 
+  // Handle adding a new comment
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !guest) return
+
+    const loadingToast = showToast.loading('Adding comment...')
+
+    try {
+      const updatedComments = guest.comments 
+        ? `${guest.comments}\n\n${new Date().toLocaleDateString()} - ${newComment}`
+        : `${new Date().toLocaleDateString()} - ${newComment}`
+
+      const response = await userServiceAdapter.updateUser(guest.id, {
+        comments: updatedComments
+      })
+
+      if (response.success) {
+        setGuest(prev => prev ? { ...prev, comments: updatedComments } : null)
+        setNewComment('')
+        setIsAddingComment(false)
+        showToast.dismiss(loadingToast)
+        showToast.success('Comment added successfully!')
+        console.log('✅ Comment added successfully')
+      } else {
+        showToast.dismiss(loadingToast)
+        showToast.error('Failed to add comment')
+        console.error('❌ Failed to add comment:', response.error)
+      }
+    } catch (error) {
+      showToast.dismiss(loadingToast)
+      showToast.error('Error adding comment')
+      console.error('❌ Error adding comment:', error)
+    }
+  }
+
+  // Handle editing comments
+  const handleEditComments = async (updatedComments: string) => {
+    if (!guest) return
+
+    const loadingToast = showToast.loading('Updating comments...')
+
+    try {
+      const response = await userServiceAdapter.updateUser(guest.id, {
+        comments: updatedComments
+      })
+
+      if (response.success) {
+        setGuest(prev => prev ? { ...prev, comments: updatedComments } : null)
+        showToast.dismiss(loadingToast)
+        showToast.success('Comment deleted successfully!')
+        console.log('✅ Comments updated successfully')
+      } else {
+        showToast.dismiss(loadingToast)
+        showToast.error('Failed to delete comment')
+        console.error('❌ Failed to update comments:', response.error)
+      }
+    } catch (error) {
+      showToast.dismiss(loadingToast)
+      showToast.error('Error deleting comment')
+      console.error('❌ Error updating comments:', error)
+    }
+  }
+
+  // Handle document upload
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !guest) return
+
+    setIsUploadingDocument(true)
+    const loadingToast = showToast.loading('Uploading document...')
+
+    try {
+      const response = await guestDocumentService.uploadDocument(
+        guest.id,
+        file,
+        'OTHER',
+        file.name
+      )
+
+      if (response.success) {
+        // Reload documents
+        const documentsResponse = await guestDocumentService.getGuestDocuments(guest.id)
+        if (documentsResponse.success) {
+          setDocuments(documentsResponse.data)
+        }
+        
+        showToast.dismiss(loadingToast)
+        showToast.success('Document uploaded successfully!')
+        console.log('✅ Document uploaded successfully')
+      } else {
+        showToast.dismiss(loadingToast)
+        showToast.error(response.error || 'Failed to upload document')
+        console.error('❌ Failed to upload document:', response.error)
+      }
+    } catch (error) {
+      showToast.dismiss(loadingToast)
+      showToast.error('Error uploading document')
+      console.error('❌ Error uploading document:', error)
+    } finally {
+      setIsUploadingDocument(false)
+      // Reset file input
+      event.target.value = ''
+    }
+  }
+
+  // Handle document download
+  const handleDocumentDownload = async (document: GuestDocument) => {
+    if (!guest) return
+
+    try {
+      const response = await guestDocumentService.getDownloadUrl(guest.id, document.id)
+      
+      if (response.success && response.data) {
+        // Open download URL in new tab
+        window.open(response.data.url, '_blank')
+        console.log('✅ Document download initiated')
+      } else {
+        showToast.error('Failed to get download URL')
+        console.error('❌ Failed to get download URL:', response.error)
+      }
+    } catch (error) {
+      showToast.error('Error downloading document')
+      console.error('❌ Error downloading document:', error)
+    }
+  }
+
+  // Handle document deletion
+  const handleDocumentDelete = async (document: GuestDocument) => {
+    if (!guest) return
+
+    const loadingToast = showToast.loading('Deleting document...')
+
+    try {
+      const response = await guestDocumentService.deleteDocument(guest.id, document.id)
+      
+      if (response.success) {
+        // Remove document from state
+        setDocuments(prev => prev.filter(doc => doc.id !== document.id))
+        showToast.dismiss(loadingToast)
+        showToast.success('Document deleted successfully!')
+        console.log('✅ Document deleted successfully')
+      } else {
+        showToast.dismiss(loadingToast)
+        showToast.error(response.error || 'Failed to delete document')
+        console.error('❌ Failed to delete document:', response.error)
+      }
+    } catch (error) {
+      showToast.dismiss(loadingToast)
+      showToast.error('Error deleting document')
+      console.error('❌ Error deleting document:', error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen bg-slate-50 overflow-hidden flex flex-col">
@@ -206,58 +372,6 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="px-4 py-3">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <Building className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-600 text-xs mb-1">Total Reservations</p>
-                  <p className="text-2xl font-medium text-slate-900">{stats?.totalReservations || guest.reservationCount}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-600 text-xs mb-1">Total Nights</p>
-                  <p className="text-2xl font-medium text-slate-900">{stats?.totalNights || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-600 text-xs mb-1">Lifetime Value</p>
-                  <p className="text-2xl font-medium text-slate-900">AED {stats?.lifetimeValue?.toLocaleString() || '0'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-slate-600 text-xs mb-1">Avg Booking Value</p>
-                  <p className="text-2xl font-medium text-slate-900">AED {stats?.averageBookingValue?.toLocaleString() || '0'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex gap-4 px-4 py-3 min-h-0 overflow-hidden">
@@ -318,43 +432,6 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
               </div>
 
-              {/* Guest Categories */}
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-3">Categories</h3>
-                <div className="space-y-2">
-                  {guest.customCategories.map((category, index) => (
-                    <span 
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Guest Status */}
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-3">Status</h3>
-                <div className="space-y-2">
-                  {guest.starGuest && (
-                    <div className="flex items-center space-x-2">
-                      <Star size={16} className="text-yellow-500" />
-                      <span className="text-sm text-slate-900">Star Guest</span>
-                    </div>
-                  )}
-                  {guest.primaryGuest && (
-                    <div className="flex items-center space-x-2">
-                      <Crown size={16} className="text-orange-500" />
-                      <span className="text-sm text-slate-900">Primary Guest</span>
-                    </div>
-                  )}
-                  <div className="flex items-center space-x-2">
-                    <Award size={16} className="text-blue-500" />
-                    <span className="text-sm text-slate-900">{guest.loyaltyTier || 'Bronze'} Tier</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -363,9 +440,76 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
             <div className="bg-white rounded-xl border border-gray-200 h-full overflow-y-auto custom-scrollbar p-4">
               {/* Comments */}
               <div className="mb-6">
-                <h2 className="text-lg font-medium text-slate-900 mb-4">Comments</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-medium text-slate-900">Comments</h2>
+                  <button
+                    onClick={() => setIsAddingComment(true)}
+                    className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2"
+                  >
+                    <Plus size={14} />
+                    <span>Add Comment</span>
+                  </button>
+                </div>
+                
+                {/* Add Comment Form */}
+                {isAddingComment && (
+                  <div className="mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a new comment..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                      rows={3}
+                    />
+                    <div className="flex justify-end space-x-2 mt-3">
+                      <button
+                        onClick={() => {
+                          setIsAddingComment(false)
+                          setNewComment('')
+                        }}
+                        className="px-3 py-1 text-gray-600 hover:text-gray-800 text-sm"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddComment}
+                        disabled={!newComment.trim()}
+                        className="px-3 py-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium cursor-pointer"
+                      >
+                        Add Comment
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Comments Display */}
                 <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-sm text-slate-600">{guest.comments || 'No comments available'}</p>
+                  {guest.comments ? (
+                    <div className="space-y-3">
+                      {guest.comments.split('\n\n').map((comment, index) => (
+                        <div key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
+                          <div className="flex items-start justify-between">
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment}</p>
+                            <button
+                              onClick={() => {
+                                const updatedComments = guest.comments
+                                  ?.split('\n\n')
+                                  .filter((_, i) => i !== index)
+                                  .join('\n\n') || ''
+                                handleEditComments(updatedComments)
+                              }}
+                              className="ml-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                              title="Delete comment"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-600">No comments available</p>
+                  )}
                 </div>
               </div>
 
@@ -379,69 +523,59 @@ export default function GuestDetailsPage({ params }: GuestDetailsPageProps) {
                 </div>
               )}
 
-              {/* Current Unit */}
-              {guest.unit && (
-                <div className="mb-6">
-                  <h2 className="text-lg font-medium text-slate-900 mb-4">Current Unit</h2>
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <Building size={16} className="text-orange-500" />
-                      <span className="text-sm text-slate-900">{guest.unit}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Documents */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-medium text-slate-900">Documents</h2>
-                  <button className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2">
-                    <Upload size={14} />
-                    <span>Upload Document</span>
-                  </button>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="document-upload"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
+                      onChange={handleDocumentUpload}
+                      disabled={isUploadingDocument}
+                    />
+                    <label
+                      htmlFor="document-upload"
+                      className={`px-3 py-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium cursor-pointer flex items-center space-x-2 ${isUploadingDocument ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Upload size={14} />
+                      <span>{isUploadingDocument ? 'Uploading...' : 'Upload Document'}</span>
+                    </label>
+                  </div>
                 </div>
                 <div className="space-y-3">
-                  {guest.documents && guest.documents.length > 0 ? (
-                    guest.documents.map((doc, index) => (
-                      <div key={doc.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  {documents && documents.length > 0 ? (
+                    documents.map((doc) => (
+                      <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <FileText size={16} className="text-gray-400" />
                             <div>
-                              <h3 className="font-medium text-slate-900">{doc.name || doc.filename}</h3>
+                              <h3 className="font-medium text-slate-900">{doc.title}</h3>
                               <div className="flex items-center space-x-3 text-sm text-gray-500">
                                 <span>{doc.type}</span>
-                                <span>{doc.size}</span>
-                                <span>{formatDate(doc.created_at || doc.createdAt)}</span>
+                                <span>{doc.fileSize}</span>
+                                <span>{formatDate(doc.uploadDate)}</span>
+                                <span>by {doc.uploadedBy}</span>
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-1">
-                            {doc.s3_url && (
-                              <button 
-                                className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" 
-                                title="View document"
-                                onClick={() => window.open(doc.s3_url, '_blank')}
-                              >
-                                <Eye size={14} />
-                              </button>
-                            )}
-                            {doc.s3_url && (
-                              <button 
-                                className="p-1 text-slate-600 hover:bg-gray-100 rounded cursor-pointer" 
-                                title="Download document"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = doc.s3_url;
-                                  link.download = doc.name || doc.filename;
-                                  link.click();
-                                }}
-                              >
-                                <Download size={14} />
-                              </button>
-                            )}
-                            <button className="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer" title="Delete document">
+                            <button
+                              onClick={() => handleDocumentDownload(doc)}
+                              className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
+                              title="Download document"
+                            >
+                              <Download size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDocumentDelete(doc)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded cursor-pointer"
+                              title="Delete document"
+                            >
                               <Trash2 size={14} />
                             </button>
                           </div>

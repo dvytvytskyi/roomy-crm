@@ -277,18 +277,29 @@ class TaskServiceV2 {
    */
   async updateStatus(id: string, data: UpdateTaskStatusDtoV2): Promise<ApiResponseV2<TaskWithDetailsV2>> {
     try {
+      console.log('🔄 TaskServiceV2: Updating task status...');
+      console.log('🔄 TaskServiceV2: Task ID:', id);
+      console.log('🔄 TaskServiceV2: Status data:', data);
+      
       const response = await apiClientV2.put(`/tasks/${id}/status`, data);
+      console.log('🔄 TaskServiceV2: Raw API Response:', response);
+      
+      // The response.data contains the actual API response from backend
+      // Backend returns: { success: true, data: TaskWithDetailsV2, message: string }
+      const apiResponse = response.data;
+      console.log('🔄 TaskServiceV2: API Response data:', apiResponse);
       
       return {
-        success: true,
-        data: response.data.data!,
-        message: response.data.message || 'Task status updated successfully',
-        timestamp: new Date().toISOString()
+        success: apiResponse.success,
+        data: apiResponse.data,
+        message: apiResponse.message || 'Task status updated successfully',
+        timestamp: apiResponse.timestamp || new Date().toISOString()
       };
     } catch (error: any) {
+      console.error('🔄 TaskServiceV2: Error updating task status:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Unknown error',
+        error: error.response?.data?.error || error.message || 'Unknown error',
         message: error.response?.data?.message || 'Failed to update task status',
         timestamp: new Date().toISOString()
       };

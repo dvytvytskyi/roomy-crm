@@ -4,6 +4,7 @@ import { calendarController } from '../controllers/calendar.controller';
 const router = Router();
 
 // Calendar export routes
+router.options('/properties/:propertyId/calendar.ics', calendarController.handleOptions.bind(calendarController));
 router.get('/properties/:propertyId/calendar.ics', calendarController.exportPropertyCalendar.bind(calendarController));
 
 // Calendar management routes (require authentication in production)

@@ -22,6 +22,14 @@ const router = Router();
 router.get('/properties', PublicController.getPublicProperties);
 
 /**
+ * @route   GET /api/v2/public/properties-debug
+ * @desc    DEBUG: Get all properties without filters (temporary)
+ * @access  Public (no authentication required)
+ * @security Returns all properties with their active/published status for debugging
+ */
+router.get('/properties-debug', PublicController.getAllPropertiesDebug);
+
+/**
  * @route   GET /api/v2/public/properties/:id
  * @desc    Get property details by ID for public view
  * @access  Public (no authentication required)

@@ -5,6 +5,7 @@ import { X, Save, User, Mail, Phone, Calendar, FileText, Trash2, Star, Crown } f
 import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
 import { showToast } from '@/lib/utils/toast'
 import { useAgentEvents } from '@/hooks/useEventBus'
+import { propertyServiceV2 } from '@/lib/api/services/propertyService-v2'
 
 interface AddAgentModalProps {
   isOpen: boolean
@@ -23,15 +24,133 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
     nationality: '',
     dateOfBirth: '',
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
-    isVerified: false
+    unitsAttracted: [] as Array<{ propertyId: string; propertyName: string; commission?: number }>
   })
+  
+  // Separate state for date inputs to avoid lag
+  const [dateInputs, setDateInputs] = useState({
+    day: '',
+    month: '',
+    year: ''
+  })
+  
+  // State for available properties and units attracted management
+  const [availableProperties, setAvailableProperties] = useState<any[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string) => {
+    if (!dateOfBirth) return null
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Helper function to parse date for display (YYYY-MM-DD to DD MM YYYY)
+  const parseDateForDisplay = (dateString: string) => {
+    if (!dateString || dateString === '1900-01-01') return { day: '', month: '', year: '' }
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return { day: '', month: '', year: '' }
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear().toString()
+      return { day, month, year }
+    } catch (error) {
+      return { day: '', month: '', year: '' }
+    }
+  }
+
+  // Function to update dateOfBirth when dateInputs change
+  const updateDateOfBirth = (newDateInputs: { day: string; month: string; year: string }) => {
+    const { day, month, year } = newDateInputs
+    if (day && month && year) {
+      const dateOfBirth = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      setFormData(prev => ({ ...prev, dateOfBirth }))
+    } else {
+      setFormData(prev => ({ ...prev, dateOfBirth: '' }))
+    }
+  }
+
+  // Function to load available properties
+  const loadAvailableProperties = async () => {
+    try {
+      setIsLoadingProperties(true)
+      console.log('🔍 Loading properties...')
+      
+      const response = await propertyServiceV2.getAll()
+      console.log('🔍 Properties response:', response)
+      
+      if (response.success && response.data) {
+        // response.data is PaginatedResponse, so we need response.data.data
+        const properties = response.data.data || response.data
+        setAvailableProperties(properties)
+        console.log('🔍 Properties loaded:', properties.length)
+      } else {
+        console.log('🔍 No properties found or error:', response.error)
+        setAvailableProperties([])
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error)
+      setAvailableProperties([])
+    } finally {
+      setIsLoadingProperties(false)
+    }
+  }
+
+  // Function to add property to units attracted
+  const addPropertyToUnitsAttracted = (property: any) => {
+    console.log('🔍 Adding property to units attracted:', property)
+    const newUnit = {
+      id: property.id,
+      name: property.name,
+      propertyId: property.id,
+      commission: 0,
+      status: 'Active' as const,
+      referralDate: new Date().toISOString()
+    }
+    console.log('🔍 New unit created:', newUnit)
+    setFormData(prev => {
+      const newUnitsAttracted = [...prev.unitsAttracted, newUnit]
+      console.log('🔍 Updated unitsAttracted:', newUnitsAttracted)
+      return {
+        ...prev,
+        unitsAttracted: newUnitsAttracted
+      }
+    })
+  }
+
+  // Function to remove property from units attracted
+  const removePropertyFromUnitsAttracted = (unitId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      unitsAttracted: prev.unitsAttracted.filter(unit => unit.id !== unitId)
+    }))
+  }
+
+  // Function to update commission for a unit
+  const updateUnitCommission = (unitId: string, commission: number) => {
+    setFormData(prev => ({
+      ...prev,
+      unitsAttracted: prev.unitsAttracted.map(unit =>
+        unit.id === unitId ? { ...unit, commission } : unit
+      )
+    }))
+  }
 
   // Populate form data when agent prop changes (for editing)
   useEffect(() => {
     if (agent && isOpen) {
-      setFormData({
+      console.log('🔍 AddAgentModal: Loading agent data:', agent)
+      console.log('🔍 AddAgentModal: Agent dateOfBirth:', agent.dateOfBirth)
+      const newFormData = {
         firstName: agent.firstName || '',
         lastName: agent.lastName || '',
         email: agent.email || '',
@@ -39,8 +158,19 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
         nationality: agent.nationality || '',
         dateOfBirth: agent.dateOfBirth || '',
         status: agent.status || 'ACTIVE',
-        isVerified: agent.isVerified || false
-      })
+        unitsAttracted: agent.units || []
+      }
+      console.log('🔍 AddAgentModal: Setting formData:', newFormData)
+      console.log('🔍 AddAgentModal: Agent units from API:', agent.units)
+      setFormData(newFormData)
+      
+      // Set date inputs from agent data
+      if (agent.dateOfBirth) {
+        const { day, month, year } = parseDateForDisplay(agent.dateOfBirth)
+        setDateInputs({ day, month, year })
+      } else {
+        setDateInputs({ day: '', month: '', year: '' })
+      }
     } else if (!agent && isOpen) {
       // Reset form for new agent
       setFormData({
@@ -51,10 +181,25 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
         nationality: '',
         dateOfBirth: '',
         status: 'ACTIVE',
-        isVerified: false
+        unitsAttracted: []
       })
+      setDateInputs({ day: '', month: '', year: '' })
     }
   }, [agent, isOpen])
+
+  // Load properties when modal opens for editing
+  useEffect(() => {
+    if (isOpen && agent) {
+      loadAvailableProperties()
+    }
+  }, [isOpen, agent])
+
+  // Auto-load properties when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadAvailableProperties()
+    }
+  }, [isOpen])
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
@@ -67,9 +212,12 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
       newErrors.lastName = 'Last name is required'
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!formData.nationality.trim()) {
+      newErrors.nationality = 'Nationality is required'
+    }
+
+    // For editing, validate email if provided
+    if (agent && formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid'
     }
 
@@ -79,24 +227,54 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔍 handleSubmit called!')
     
     if (!validateForm()) {
+      console.log('🔍 Form validation failed!')
       return
     }
+    
+    console.log('🔍 Form validation passed, proceeding with submit...')
 
     setIsSubmitting(true)
     
     try {
-      const agentData = {
+      let agentData: any = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        password: 'temp_password_123', // Temporary password - should be changed by user on first login
-        role: 'AGENT' as const,
-        status: formData.status,
-        country: formData.nationality || 'Ukraine', // Default to Ukraine if not specified
-        flag: '🇺🇦' // Default flag
+        nationality: formData.nationality,
+        role: 'AGENT' as const
+      }
+
+      if (agent) {
+        // For editing - include all fields
+        agentData = {
+          ...agentData,
+          email: formData.email,
+          phone: formData.phone,
+          dateOfBirth: formData.dateOfBirth,
+          status: formData.status,
+          units: formData.unitsAttracted
+        }
+        console.log('🔍 Agent data to save:', agentData)
+        console.log('🔍 Units to save:', formData.unitsAttracted)
+        console.log('🔍 Units structure check:', formData.unitsAttracted.map(unit => ({
+          hasId: !!unit.id,
+          hasName: !!unit.name,
+          hasPropertyId: !!unit.propertyId,
+          unit: unit
+        })))
+      } else {
+        // For creating - generate email and password automatically
+        const email = `${formData.firstName.toLowerCase()}.${formData.lastName.toLowerCase()}@agent.com`
+        const password = 'temp_password_123'
+        
+        agentData = {
+          ...agentData,
+          email: email,
+          password: password,
+          status: 'ACTIVE' as const
+        }
       }
 
       let response
@@ -126,6 +304,7 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
 
   const handleSave = (agentData: any) => {
     console.log('Agent saved:', agentData)
+    console.log('Agent saved units:', agentData.units)
     
     // Emit appropriate event based on whether we're creating or updating
     if (agent) {
@@ -139,6 +318,8 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
     }
     
     if (onAgentUpdated) {
+      console.log('🔍 Calling onAgentUpdated with:', agentData)
+      console.log('🔍 onAgentUpdated units:', agentData.units)
       onAgentUpdated(agentData)
     }
     
@@ -181,6 +362,33 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-slate-900">Personal Information</h3>
             
+            {/* Display Date of Birth and Age for editing */}
+            {agent && (
+              <div className="bg-slate-50 rounded-lg p-4">
+                {console.log('🔍 AddAgentModal: Rendering Personal Information, agent:', !!agent, 'formData.dateOfBirth:', formData.dateOfBirth)}
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-700">Date of Birth:</span>
+                    <span className="text-sm text-slate-600">
+                      {formData.dateOfBirth ? (
+                        `${parseDateForDisplay(formData.dateOfBirth).day} / ${parseDateForDisplay(formData.dateOfBirth).month} / ${parseDateForDisplay(formData.dateOfBirth).year}`
+                      ) : (
+                        'Not set'
+                      )}
+                    </span>
+                  </div>
+                  {formData.dateOfBirth && calculateAge(formData.dateOfBirth) && (
+                    <div className="flex items-center space-x-2">
+                      <User className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm font-medium text-slate-700">Age:</span>
+                      <span className="text-sm text-slate-600">{calculateAge(formData.dateOfBirth)} years old</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -221,95 +429,246 @@ export default function AddAgentModal({ isOpen, onClose, agent, onAgentUpdated }
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Email Address *
+                Nationality *
               </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              <select
+                value={formData.nationality}
+                onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-                  errors.email ? 'border-red-300' : 'border-gray-300'
+                  errors.nationality ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Enter email address"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              >
+                <option value="">Select nationality</option>
+                <option value="Emirati">🇦🇪 Emirati</option>
+                <option value="British">🇬🇧 British</option>
+                <option value="Canadian">🇨🇦 Canadian</option>
+                <option value="American">🇺🇸 American</option>
+                <option value="Indian">🇮🇳 Indian</option>
+                <option value="Pakistani">🇵🇰 Pakistani</option>
+                <option value="Filipino">🇵🇭 Filipino</option>
+                <option value="Egyptian">🇪🇬 Egyptian</option>
+                <option value="Saudi Arabian">🇸🇦 Saudi Arabian</option>
+                <option value="Kuwaiti">🇰🇼 Kuwaiti</option>
+                <option value="Qatari">🇶🇦 Qatari</option>
+                <option value="Bahraini">🇧🇭 Bahraini</option>
+                <option value="Omani">🇴🇲 Omani</option>
+                <option value="Jordanian">🇯🇴 Jordanian</option>
+                <option value="Lebanese">🇱🇧 Lebanese</option>
+                <option value="Syrian">🇸🇾 Syrian</option>
+                <option value="Iraqi">🇮🇶 Iraqi</option>
+                <option value="Iranian">🇮🇷 Iranian</option>
+                <option value="Turkish">🇹🇷 Turkish</option>
+                <option value="Chinese">🇨🇳 Chinese</option>
+                <option value="Japanese">🇯🇵 Japanese</option>
+                <option value="Korean">🇰🇷 Korean</option>
+                <option value="French">🇫🇷 French</option>
+                <option value="German">🇩🇪 German</option>
+                <option value="Italian">🇮🇹 Italian</option>
+                <option value="Spanish">🇪🇸 Spanish</option>
+                <option value="Russian">🇷🇺 Russian</option>
+                <option value="Ukrainian">🇺🇦 Ukrainian</option>
+                <option value="Brazilian">🇧🇷 Brazilian</option>
+                <option value="Argentinian">🇦🇷 Argentinian</option>
+                <option value="Mexican">🇲🇽 Mexican</option>
+                <option value="Australian">🇦🇺 Australian</option>
+                <option value="South African">🇿🇦 South African</option>
+                <option value="Nigerian">🇳🇬 Nigerian</option>
+                <option value="Kenyan">🇰🇪 Kenyan</option>
+                <option value="Moroccan">🇲🇦 Moroccan</option>
+                <option value="Algerian">🇩🇿 Algerian</option>
+                <option value="Tunisian">🇹🇳 Tunisian</option>
+                <option value="Other">🌍 Other</option>
+              </select>
+              {errors.nationality && (
+                <p className="text-red-500 text-sm mt-1">{errors.nationality}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  placeholder="Enter phone number"
-                />
-              </div>
+            {/* Additional fields for editing */}
+            {agent && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                      errors.email ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter email address"
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nationality
-                </label>
-                <input
-                  type="text"
-                  value={formData.nationality}
-                  onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  placeholder="Enter nationality"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                    </select>
+                  </div>
+                </div>
 
-          {/* Status and Verification */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-slate-900">Status & Verification</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Date of Birth
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="DD"
+                        maxLength={2}
+                        value={dateInputs.day}
+                        onChange={(e) => {
+                          const day = e.target.value.replace(/\D/g, '').slice(0, 2)
+                          const newDateInputs = { ...dateInputs, day }
+                          setDateInputs(newDateInputs)
+                          updateDateOfBirth(newDateInputs)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="MM"
+                        maxLength={2}
+                        value={dateInputs.month}
+                        onChange={(e) => {
+                          const month = e.target.value.replace(/\D/g, '').slice(0, 2)
+                          const newDateInputs = { ...dateInputs, month }
+                          setDateInputs(newDateInputs)
+                          updateDateOfBirth(newDateInputs)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="YYYY"
+                        maxLength={4}
+                        value={dateInputs.year}
+                        onChange={(e) => {
+                          const year = e.target.value.replace(/\D/g, '').slice(0, 4)
+                          const newDateInputs = { ...dateInputs, year }
+                          setDateInputs(newDateInputs)
+                          updateDateOfBirth(newDateInputs)
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                  </div>
+                  {formData.dateOfBirth && calculateAge(formData.dateOfBirth) && (
+                    <p className="text-sm text-slate-600 mt-2">
+                      Age: {calculateAge(formData.dateOfBirth)} years old
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex items-center space-x-3 pt-8">
-                <input
-                  type="checkbox"
-                  id="isVerified"
-                  checked={formData.isVerified}
-                  onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <label htmlFor="isVerified" className="text-sm font-medium text-slate-700">
-                  Verified Agent
-                </label>
-              </div>
-            </div>
+                {/* Units Attracted Section */}
+                <div>
+                  <h4 className="text-md font-medium text-slate-900 mb-3">Units Attracted</h4>
+                  
+                  {/* Current Units Attracted */}
+                  {console.log('🔍 Rendering Units Attracted, count:', formData.unitsAttracted.length, 'units:', formData.unitsAttracted)}
+                  {formData.unitsAttracted.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      {formData.unitsAttracted.map((unit, index) => (
+                        <div key={unit.id} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-slate-700">{unit.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="number"
+                              placeholder="Commission %"
+                              value={unit.commission || ''}
+                              onChange={(e) => updateUnitCommission(unit.id, parseFloat(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            />
+                            <span className="text-xs text-slate-500">%</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removePropertyFromUnitsAttracted(unit.id)}
+                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add Property Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-sm font-medium text-slate-700">Available Properties</h5>
+                      <button
+                        type="button"
+                        onClick={loadAvailableProperties}
+                        disabled={isLoadingProperties}
+                        className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
+                      >
+                        {isLoadingProperties ? 'Loading...' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {/* Available Properties Dropdown */}
+                    <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg">
+                      {availableProperties.length === 0 ? (
+                        <div className="p-3 text-center text-sm text-slate-500">
+                          {isLoadingProperties ? 'Loading properties...' : 'No properties available'}
+                        </div>
+                      ) : (
+                        availableProperties
+                          .filter(property => !formData.unitsAttracted.some(unit => unit.id === property.id))
+                          .map(property => (
+                            <button
+                              key={property.id}
+                              type="button"
+                              onClick={() => addPropertyToUnitsAttracted(property)}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-200 last:border-b-0"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{property.name}</span>
+                                <span className="text-xs text-slate-500">{property.type}</span>
+                              </div>
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Action Buttons */}

@@ -1,6 +1,8 @@
 .properties {
   display: flex;
   flex-direction: column;
+  background-color: white;
+  min-height: 100vh;
 
   .loading-container {
     display: flex;
@@ -25,13 +27,55 @@
       margin: 0;
     }
   }
+
+  .no-projects {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    
+    h3 {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+    }
+    
+    p {
+      color: #666;
+      font-size: 16px;
+      margin: 0;
+      max-width: 400px;
+    }
+  }
   
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+  
+  // Стилі для кнопки Search
+  .search-button {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    
+    &:hover {
+      transform: scale(1.01);
+      background: #E6764A !important;
+      box-shadow: 0 4px 12px rgba(248, 133, 89, 0.3);
+    }
+    
+    &:active {
+      transform: scale(0.99);
+      background: #D5673B !important;
+    }
+  }
 
   header {
+    background-color: #f8f8f8;
+    
     .header {
       border-bottom: none;
     }
@@ -42,6 +86,8 @@
     justify-content: center;
     padding: 0px 0px 20px 0px;
     position: relative;
+    margin-top: -20px;
+    background-color: #f8f8f8;
 
     border-bottom: 0.5px solid #E8E8E8;
     height: 100px;
@@ -50,6 +96,11 @@
     .search-main-block {
       top: 50%;
       left: 50%;
+      transition: transform 0.3s ease;
+      
+      &:hover {
+        transform: translate(-50%, calc(-50% - 2px));
+      }
     }
 
     .active-link {
@@ -89,6 +140,7 @@
     grid-row-gap: 45px;
 
     padding: 20px 64px 14px 64px;
+    background-color: white;
 
     &.bottom-p {
       padding: 20px 64px 55px 64px;

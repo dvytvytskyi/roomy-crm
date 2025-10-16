@@ -336,7 +336,11 @@ export class TaskController {
 
       logger.info(`Updating task ${taskId} status to ${status} for user ${currentUser.email}`);
 
-      const result = await TaskStateMachineService.updateStatus(currentUser, taskId, status, notes);
+      // Use TaskService.update instead of TaskStateMachineService for now
+      const result = await TaskService.update(currentUser, taskId, { 
+        status: status as 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD',
+        notes: notes 
+      });
 
       if (!result.success) {
         res.status(result.statusCode || 500).json({

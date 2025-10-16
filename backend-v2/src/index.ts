@@ -119,6 +119,7 @@ import propertyRoutes from './routes/property.routes';
 import reservationRoutes from './routes/reservation.routes';
 import orchestratorRoutes from './routes/orchestrator.routes';
 import taskRoutes from './routes/task.routes';
+import taskPhotoRoutes from './routes/task-photo.routes';
 import financialRoutes from './routes/financial.routes';
 import schedulerRoutes from './routes/scheduler.routes';
 import settingsRoutes from './routes/settings.routes';
@@ -130,6 +131,7 @@ import airbnbRoutes from './routes/airbnb.routes';
 import expenseRoutes from './routes/expense.routes';
 import photoRoutes from './routes/photo.routes';
 import documentRoutes from './routes/document.routes';
+import guestDocumentRoutes from './routes/guest-document.routes';
 import amenityRoutes from './routes/amenity.routes';
 import calendarRoutes from './routes/calendar.routes';
 import pricingCalendarRoutes from './routes/pricing-calendar.routes';
@@ -168,6 +170,7 @@ app.use('/api/v2/public', publicRoutes);
 // Mount API routes
 app.use('/api/v2/auth', authRoutes);
 app.use('/api/v2/users', userRoutes);
+app.use('/api/v2/guests', guestDocumentRoutes); // Guest document routes
 app.use('/api/v2/properties', propertyRoutes);
 app.use('/api/v2/properties', expenseRoutes); // Expense routes nested under properties
 app.use('/api/v2/properties', photoRoutes); // Photo routes nested under properties
@@ -176,6 +179,7 @@ app.use('/api/v2/amenities', amenityRoutes);
 app.use('/api/v2/reservations', reservationRoutes);
 app.use('/api/v2/orchestrator', orchestratorRoutes);
 app.use('/api/v2/tasks', taskRoutes);
+app.use('/api/v2/tasks', taskPhotoRoutes);
 app.use('/api/v2/financials', financialRoutes);
 app.use('/api/v2/scheduler', schedulerRoutes);
 app.use('/api/v2/settings', settingsRoutes);

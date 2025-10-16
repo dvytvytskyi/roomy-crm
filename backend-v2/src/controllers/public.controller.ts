@@ -30,6 +30,9 @@ export class PublicController {
         is_active: true,
         is_published: true,
       };
+      
+      console.log(`🔍 Backend: Фільтруємо тільки активні та опубліковані проекти`);
+      console.log(`🔍 Backend: Query params:`, { page, limit, checkIn, checkOut, minOccupancy, search, type, location });
 
       // Об'єднуємо search та location фільтри
       const searchFilters = [];
@@ -60,6 +63,9 @@ export class PublicController {
 
       if (minOccupancy) {
         where.capacity = { gte: parseInt(minOccupancy as string) };
+      } else {
+        // Додаткова перевірка для capacity - виключаємо проекти з capacity = 0 або null
+        where.capacity = { gte: 1 };
       }
 
       // Fetch properties with SAFE fields only
@@ -113,6 +119,37 @@ export class PublicController {
         prisma.properties.count({ where }),
       ]);
 
+      // Log the results for debugging
+      logger.info(`Found ${properties.length} properties out of ${total} total`);
+      console.log(`🔍 Backend: Found ${properties.length} properties, total in DB: ${total}`);
+      
+      // Додаткове логування для дебагу
+      console.log(`🔍 Backend: Where conditions:`, JSON.stringify(where, null, 2));
+      
+      // Перевіримо скільки всього проектів в базі (без фільтрів)
+      const totalInDB = await prisma.properties.count();
+      console.log(`🔍 Backend: Total properties in DB (no filters): ${totalInDB}`);
+      
+      // Перевіримо проекти з різними статусами
+      const inactiveCount = await prisma.properties.count({ where: { is_active: false } });
+      const unpublishedCount = await prisma.properties.count({ where: { is_published: false } });
+      const activeCount = await prisma.properties.count({ where: { is_active: true } });
+      const publishedCount = await prisma.properties.count({ where: { is_published: true } });
+      console.log(`🔍 Backend: Inactive properties: ${inactiveCount}, Unpublished properties: ${unpublishedCount}`);
+      console.log(`🔍 Backend: Active properties: ${activeCount}, Published properties: ${publishedCount}`);
+      
+      // Перевіримо всі проекти з їх статусами
+      const allProperties = await prisma.properties.findMany({
+        select: {
+          id: true,
+          name: true,
+          is_active: true,
+          is_published: true,
+          capacity: true
+        }
+      });
+      console.log(`🔍 Backend: All properties with status:`, allProperties);
+      
       // Format response to match expected structure (same as before)
       const results = properties.map((property) => ({
         _id: property.id,
@@ -465,6 +502,44 @@ export class PublicController {
         success: false,
         error: 'Internal Server Error',
         message: 'Failed to check availability',
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+  /**
+   * DEBUG: Get all properties without filters (temporary endpoint)
+   */
+  public static async getAllPropertiesDebug(req: Request, res: Response): Promise<void> {
+    const prisma = new PrismaClient();
+    try {
+      const allProperties = await prisma.properties.findMany({
+        select: {
+          id: true,
+          name: true,
+          is_active: true,
+          is_published: true,
+          created_at: true,
+        },
+        orderBy: { created_at: 'desc' },
+      });
+
+      console.log(`🔍 DEBUG: All properties in DB:`, allProperties);
+
+      res.status(200).json({
+        success: true,
+        data: allProperties,
+        total: allProperties.length,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error('Error in getAllPropertiesDebug:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'Failed to fetch all properties',
         timestamp: new Date().toISOString(),
       });
     } finally {

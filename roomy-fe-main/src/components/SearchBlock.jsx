@@ -3,17 +3,131 @@ import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {DateRangePicker} from "@mui/x-date-pickers-pro";
 import {DemoContainer} from "@mui/x-date-pickers/internals/demo/index.js";
 import React, {useEffect, useRef, useState} from "react";
+import { Link } from "react-router-dom";
 import "../styles/components/searchBlock.scss"
+import "../styles/components/datePicker.scss"
+import "../styles/test-calendar.css"
 import dayjs from "dayjs";
 
-const SearchBlock = ({data, setData, setShowSelect}) => {
+const SearchBlock = ({data, setData, setShowSelect, loading = false}) => {
     const [selectedParam, setSelectedParam] = useState(null)
     const [openCalendar, setOpenCalendar] = useState(false)
+    const [searchUrl, setSearchUrl] = useState('/properties')
     const dropdownRef = useRef(null)
+    const calendarRef = useRef(null)
+
+    // Функція для пошуку
+    const handleSearch = () => {
+        console.log('🔍 handleSearch викликано!')
+        console.log('📊 Поточні дані:', data)
+        console.log('🎛️ selectedParam:', selectedParam)
+        
+        // Закриваємо всі модалки
+        console.log('🔒 Закриваємо модалки...')
+        setSelectedParam(null) // Спочатку закриваємо всі модалки
+        setOpenCalendar(false) // Закриваємо календар
+        setShowSelect(false)
+        console.log('✅ Модалки закрито')
+        
+        // Перевіряємо, чи є всі необхідні параметри
+        if (!data.neigh) {
+            console.log('❌ Район не вибрано')
+            return
+        }
+        
+        if (!data.value || data.value.length < 2 || !data.value[0] || !data.value[1]) {
+            console.log('❌ Дати не вибрані')
+            return
+        }
+        
+        // Встановлюємо мінімальну кількість гостей якщо не вибрано
+        const minGuests = data.minGuests || 1
+        
+        // Формуємо URL для пошуку
+        const checkIn = data.value[0] ? dayjs(data.value[0].$d).format('YYYY-MM-DD') : ''
+        const checkOut = data.value[1] ? dayjs(data.value[1].$d).format('YYYY-MM-DD') : ''
+        const location = encodeURIComponent(data.neigh)
+        
+        console.log('📅 checkIn:', checkIn)
+        console.log('📅 checkOut:', checkOut)
+        console.log('📍 location:', location)
+        console.log('👥 minGuests:', minGuests)
+        console.log('👥 data.minGuests:', data.minGuests)
+        
+        // Формуємо URL для пошуку
+        const newSearchUrl = `/properties?checkIn=${checkIn}&checkOut=${checkOut}&location=${location}&minGuests=${minGuests}`
+        console.log('🔗 URL пошуку:', newSearchUrl)
+        
+        // Оновлюємо стан URL
+        setSearchUrl(newSearchUrl)
+        
+        // Перенаправляємо на сторінку Properties з параметрами
+        setTimeout(() => {
+            window.location.href = newSearchUrl
+        }, 100)
+    }
+
+    // Додаємо стилі динамічно після відкриття календаря
+    useEffect(() => {
+        if (openCalendar) {
+            const addFocusStyles = () => {
+                const style = document.createElement('style')
+                style.textContent = `
+                    .MuiPickersDay-root:focus,
+                    .MuiPickersDay-root:focus-visible {
+                        outline: 3px solid white !important;
+                        outline-offset: 3px !important;
+                        border: 2px dashed rgba(0, 0, 0, 0.5) !important;
+                        background-color: rgba(255, 255, 255, 0.1) !important;
+                        box-shadow: 0 0 0 1px white !important;
+                    }
+                `
+                document.head.appendChild(style)
+                
+                // Видаляємо стилі через 10 секунд
+                setTimeout(() => {
+                    document.head.removeChild(style)
+                }, 10000)
+            }
+            
+            setTimeout(addFocusStyles, 500)
+        }
+    }, [openCalendar])
 
     const selectNeigborhood = (neighborhood) => {
-        setData({...data, neigh: neighborhood})
-        setSelectedParam('checkIn')
+        // Якщо натискаємо на вже вибрану локацію - unselect її
+        if (data.neigh === neighborhood) {
+            setData({...data, neigh: ''})
+            setSelectedParam(null) // Закриваємо список після unselect
+        } else {
+            // Інакше - вибираємо нову локацію
+            setData({...data, neigh: neighborhood})
+            setSelectedParam(null) // Закриваємо список після вибору
+            
+            // Автоматично відкриваємо календар check-in після вибору району
+            setTimeout(() => {
+                setOpenCalendar(true)
+                // Додаємо фокус на календар після відкриття
+                setTimeout(() => {
+                    // Спочатку спробуємо знайти check-in input (перший input)
+                    if (calendarRef.current) {
+                        const inputElements = calendarRef.current.querySelectorAll('input')
+                        if (inputElements.length > 0) {
+                            // Фокус на перший input (check-in)
+                            inputElements[0].focus()
+                        }
+                    }
+                    
+                    // Якщо не знайшли input, спробуємо кнопку дня
+                    setTimeout(() => {
+                        const dayButton = document.querySelector('.MuiPickersDay-root[tabindex="0"]')
+                        if (dayButton) {
+                            dayButton.focus()
+                        }
+                    }, 100)
+                }, 300) // Збільшена затримка для рендерингу календаря
+            }, 100) // Невелика затримка для плавного переходу
+        }
     }
 
     // Реальні райони з CRM
@@ -68,21 +182,7 @@ const SearchBlock = ({data, setData, setShowSelect}) => {
         selectedParam === 'checkIn' ? setOpenCalendar(true) : null
         selectedParam === 'checkOut' ? setOpenCalendar(true) : null
         
-        // Автоматично відкриваємо dropdown при виборі 'select'
-        if (selectedParam === 'select') {
-            setTimeout(() => {
-                if (dropdownRef.current) {
-                    dropdownRef.current.focus();
-                    // Спробуємо відкрити dropdown програмно
-                    const event = new MouseEvent('mousedown', {
-                        view: window,
-                        bubbles: true,
-                        cancelable: true,
-                    });
-                    dropdownRef.current.dispatchEvent(event);
-                }
-            }, 100);
-        }
+        // Для 'select' не відкриваємо dropdown - одразу показуємо список районів
     }, [selectedParam])
 
     const handleChoosMenuParam = (param) => {
@@ -94,16 +194,16 @@ const SearchBlock = ({data, setData, setShowSelect}) => {
     }
 
     const handleDateChange = (newValue) => {
-        if (newValue[0]) {
+        if (newValue && newValue[0]) {
             setSelectedParam('checkOut');
         }
-        if (newValue[1].diff(newValue[0], 'day') >= 2) {
+        if (newValue && newValue[0] && newValue[1] && newValue[1].diff(newValue[0], 'day') >= 2) {
             setData({ ...data, value: newValue })
-        } else {
+        } else if (newValue && newValue[0] && newValue[1]) {
             console.log("Виберіть діапазон тривалістю не менше 3 днів");
         }
     };
-    let dataValueDayjs = data.value.map(obj => dayjs(obj.$d));
+    let dataValueDayjs = data.value?.map(obj => dayjs(obj?.$d)) || [null, null];
     const onCalendarClose = () => {
         setOpenCalendar(false)
         setSelectedParam('with')
@@ -160,52 +260,29 @@ const SearchBlock = ({data, setData, setShowSelect}) => {
                  className={`with-whom check ${selectedParam === 'with' ? 'active' : ''}`}>
             <div className="title">With whom</div>
                 <div className="subtitle">
-                    {`${data.guest ? data.guest + ' Guests' : 'Add guests'}`}
+                    {data.minGuests ? `Min ${data.minGuests} Guests` : 'Min 1 Guests'}
                 </div>
 
                 <div className={`people-pets ${selectedParam === 'with' ? 'active' : ''}`}>
                     <div className="count">
-                        Guests
+                        Minimum Guests
                         <div>
-                            <svg onClick={(event) => {
-                                event.stopPropagation();
-                                data.guest > 0 && setData({...data, guest: data.guest - 1})
-                            }}
+                        <svg onClick={(event) => {
+                            event.stopPropagation();
+                            if (data.minGuests && data.minGuests > 1) {
+                                setData({...data, minGuests: data.minGuests - 1})
+                            }
+                        }}
                                  xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"
                                  fill="none">
                                 <rect x="0.5" y="0.5" width="31" height="31" rx="15.5" stroke="#F1F1F1"/>
                                 <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2" stroke-linecap="round"/>
                             </svg>
-                            {`${data.guest ? data.guest : '0'}`}
+                            {data.minGuests || 1}
                             <svg onClick={(event) => {
                                 event.stopPropagation();
-                                setData({...data, guest: data.guest + 1})
-                            }}
-                                 xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"
-                                 fill="none">
-                                <rect x="0.5" y="0.5" width="31" height="31" rx="15.5" stroke="#F1F1F1"/>
-                                <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M16.25 10.75L16.25 21.25" stroke="#F1F1F1" stroke-width="2"
-                                      stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="count">
-                        Pets
-                        <div>
-                            <svg onClick={(event) => {
-                                event.stopPropagation();
-                                data.pets > 0 && setData({...data, pets: data.pets - 1})
-                            }}
-                                 xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"
-                                 fill="none">
-                                <rect x="0.5" y="0.5" width="31" height="31" rx="15.5" stroke="#F1F1F1"/>
-                                <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            {`${data.pets ? data.pets : '0'}`}
-                            <svg onClick={(event) => {
-                                event.stopPropagation();
-                                setData({...data, pets: data.pets + 1})
+                                const minGuests = Math.min(20, (data.minGuests || 1) + 1);
+                                setData({...data, minGuests: minGuests})
                             }}
                                  xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"
                                  fill="none">
@@ -220,30 +297,78 @@ const SearchBlock = ({data, setData, setShowSelect}) => {
             </div>
 
             <div className={`search-icon ${selectedParam === 'with' ? 'active' : ''}`}>
-                <div className="icon" onClick={() => setShowSelect(false)}>
+                <button className="icon" onClick={handleSearch} title="Пошук нерухомості" type="button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="19" height="18" viewBox="0 0 19 18"
-                         fill="none">
+                         fill="none" style={{ cursor: 'pointer' }}>
                         <circle cx="8.16656" cy="7.66656" r="6.66656" stroke="white" stroke-width="2"/>
                         <path d="M13.0547 12.5547L17.4991 16.9991" stroke="white" stroke-width="2"
                               stroke-linecap="round"/>
                     </svg>
-                </div>
+                </button>
             </div>
         </div>
 
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DemoContainer components={['DateRangePicker']}>
-                <DateRangePicker
-                    open={openCalendar}
-                    onClose={onCalendarClose}
-                    value={dataValueDayjs}
-                    onChange={handleDateChange}
-                    minDate={dayjs()}
-                    disablePast
-                >
-                </DateRangePicker>
+                <div ref={calendarRef} style={{
+                    '--mui-pickers-day-focus-outline': '2px solid white',
+                    '--mui-pickers-day-focus-outline-offset': '2px',
+                    '--mui-pickers-day-focus-border': '1px dashed rgba(0, 0, 0, 0.3)'
+                }}>
+                    <DateRangePicker
+                        open={openCalendar}
+                        onClose={onCalendarClose}
+                        value={dataValueDayjs}
+                        onChange={handleDateChange}
+                        minDate={dayjs()}
+                        disablePast
+                        slotProps={{
+                            day: {
+                                sx: {
+                                    '&:focus': {
+                                        outline: '2px solid white !important',
+                                        outlineOffset: '2px !important',
+                                        border: '1px dashed rgba(0, 0, 0, 0.3) !important'
+                                    },
+                                    '&:focus-visible': {
+                                        outline: '2px solid white !important',
+                                        outlineOffset: '2px !important',
+                                        border: '1px dashed rgba(0, 0, 0, 0.3) !important'
+                                    }
+                                }
+                            },
+                            textField: {
+                                sx: {
+                                    '&:first-child input:focus': {
+                                        outline: '2px solid white !important',
+                                        outlineOffset: '2px !important',
+                                        border: '1px dashed rgba(0, 0, 0, 0.3) !important'
+                                    }
+                                }
+                            }
+                        }}
+                    >
+                    </DateRangePicker>
+                </div>
             </DemoContainer>
         </LocalizationProvider>
+        
+        {/* Список районів як кнопки */}
+        {selectedParam === 'select' && (
+            <div className="neighborhoods-list">
+                <div className="neighborhoods-grid">
+                    {neighborhoods.map((neighborhood, index) => (
+                        <button
+                            key={index}
+                            className={`neighborhood-btn ${data.neigh === neighborhood ? 'selected' : ''}`}
+                            onClick={() => selectNeigborhood(neighborhood)}
+                        >
+                            {neighborhood}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
     </div>)
 }
 

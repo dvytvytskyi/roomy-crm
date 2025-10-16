@@ -1,0 +1,33 @@
+/* Тестові стилі для календаря - дуже специфічні селектори */
+
+/* Всі можливі варіанти селекторів для дат */
+.MuiDateRangePicker-root .MuiPickersCalendar-root .MuiPickersDay-root:focus,
+.MuiDateRangePicker-root .MuiPickersCalendar-root .MuiPickersDay-root:focus-visible,
+.MuiDateRangePicker-root .MuiPickersCalendar-root .MuiPickersDay-root[tabindex="0"]:focus,
+.MuiDateRangePicker-root .MuiPickersCalendar-root .MuiPickersDay-root[tabindex="0"]:focus-visible,
+.MuiDateRangePicker-root .MuiPickersCalendar-root [role="gridcell"] button:focus,
+.MuiDateRangePicker-root .MuiPickersCalendar-root [role="gridcell"] button:focus-visible,
+.MuiDateRangePicker-root .MuiPickersCalendar-root [role="gridcell"] button[tabindex="0"]:focus,
+.MuiDateRangePicker-root .MuiPickersCalendar-root [role="gridcell"] button[tabindex="0"]:focus-visible {
+  outline: 3px solid white !important;
+  outline-offset: 3px !important;
+  border: 2px dashed rgba(0, 0, 0, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 0 0 1px white !important;
+}
+
+/* Альтернативні селектори */
+.MuiPickersDay-root:focus,
+.MuiPickersDay-root:focus-visible,
+.MuiPickersDay-root[tabindex="0"]:focus,
+.MuiPickersDay-root[tabindex="0"]:focus-visible,
+[role="gridcell"] button:focus,
+[role="gridcell"] button:focus-visible,
+[role="gridcell"] button[tabindex="0"]:focus,
+[role="gridcell"] button[tabindex="0"]:focus-visible {
+  outline: 3px solid white !important;
+  outline-offset: 3px !important;
+  border: 2px dashed rgba(0, 0, 0, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 0 0 1px white !important;
+}

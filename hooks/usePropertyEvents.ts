@@ -7,46 +7,52 @@ import { eventBus, PROPERTY_EVENTS } from '@/lib/utils/eventBus'
 export const usePropertyEvents = () => {
   // Listen for property events and trigger callbacks
   const onPropertyCreated = useCallback((callback: (propertyData: any) => void) => {
-    const handlePropertyCreated = (event: CustomEvent) => {
-      console.log('📡 usePropertyEvents: Property created event received:', event.detail)
-      callback(event.detail)
+    const handlePropertyCreated = (data: any) => {
+      console.log('📡 usePropertyEvents: Property created event received:', data)
+      callback(data)
     }
 
     eventBus.on(PROPERTY_EVENTS.CREATED, handlePropertyCreated)
     
     return () => {
-      eventBus.off(PROPERTY_EVENTS.CREATED, handlePropertyCreated)
+      eventBus.off(PROPERTY_EVENTS.CREATED)
     }
   }, [])
 
   const onPropertyUpdated = useCallback((callback: (propertyId: string, propertyData: any) => void) => {
-    const handlePropertyUpdated = (event: CustomEvent) => {
-      console.log('📡 usePropertyEvents: Property updated event received:', event.detail)
-      callback(event.detail.propertyId, event.detail.propertyData)
+    const handlePropertyUpdated = (data: any) => {
+      console.log('📡 usePropertyEvents: Property updated event received:', data)
+      callback(data.propertyId, data.propertyData)
     }
 
     eventBus.on(PROPERTY_EVENTS.UPDATED, handlePropertyUpdated)
     
     return () => {
-      eventBus.off(PROPERTY_EVENTS.UPDATED, handlePropertyUpdated)
+      eventBus.off(PROPERTY_EVENTS.UPDATED)
     }
   }, [])
 
   const onPropertyDeleted = useCallback((callback: (propertyId: string) => void) => {
-    const handlePropertyDeleted = (event: CustomEvent) => {
-      console.log('📡 usePropertyEvents: Property deleted event received:', event.detail)
-      callback(event.detail.propertyId)
+    const handlePropertyDeleted = (data: any) => {
+      console.log('📡 usePropertyEvents: Property deleted event received:', data)
+      // Handle both direct propertyId and object with propertyId
+      const propertyId = typeof data === 'string' ? data : data?.propertyId
+      if (propertyId) {
+        callback(propertyId)
+      } else {
+        console.error('📡 usePropertyEvents: Invalid property deleted event data:', data)
+      }
     }
 
     eventBus.on(PROPERTY_EVENTS.DELETED, handlePropertyDeleted)
     
     return () => {
-      eventBus.off(PROPERTY_EVENTS.DELETED, handlePropertyDeleted)
+      eventBus.off(PROPERTY_EVENTS.DELETED)
     }
   }, [])
 
   const onPropertyRefresh = useCallback((callback: () => void) => {
-    const handlePropertyRefresh = (event: CustomEvent) => {
+    const handlePropertyRefresh = (data: any) => {
       console.log('📡 usePropertyEvents: Property refresh event received')
       callback()
     }
@@ -54,7 +60,7 @@ export const usePropertyEvents = () => {
     eventBus.on(PROPERTY_EVENTS.REFRESH, handlePropertyRefresh)
     
     return () => {
-      eventBus.off(PROPERTY_EVENTS.REFRESH, handlePropertyRefresh)
+      eventBus.off(PROPERTY_EVENTS.REFRESH)
     }
   }, [])
 

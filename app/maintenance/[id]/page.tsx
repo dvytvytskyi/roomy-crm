@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TopNavigation from '../../../components/TopNavigation'
-import { ArrowLeft, Edit, Trash2, Download, Upload, Eye, CheckCircle, XCircle, Clock, User, Building, DollarSign, FileText, Camera, MessageSquare, Wrench } from 'lucide-react'
-import { maintenanceService, MaintenanceTask, MaintenanceComment, MaintenanceAttachment, MaintenancePhoto } from '../../../lib/api/services/maintenanceService'
+import { ArrowLeft, Edit, Trash2, Download, Upload, Eye, CheckCircle, XCircle, Clock, User, Building, DollarSign, FileText, Camera, MessageSquare, Wrench, Image as ImageIcon, X } from 'lucide-react'
+import { taskServiceV2, TaskWithDetailsV2, TaskCommentV2, TaskAttachmentV2 } from '../../../lib/api/services/taskService-v2'
+import { taskPhotoService, TaskPhoto } from '../../../lib/api/services/taskPhotoService'
+import { showToast } from '../../../lib/utils/toast'
 
 export default function MaintenanceTaskDetailsPage() {
   const params = useParams()
@@ -21,53 +23,36 @@ export default function MaintenanceTaskDetailsPage() {
   })
   const [editValue, setEditValue] = useState('')
   const [uploadingFile, setUploadingFile] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
 
   const [loading, setLoading] = useState(true)
-  const [task, setTask] = useState<MaintenanceTask | null>(null)
-  const [comments, setComments] = useState<MaintenanceComment[]>([])
-  const [attachments, setAttachments] = useState<MaintenanceAttachment[]>([])
-  const [beforePhotos, setBeforePhotos] = useState<MaintenancePhoto[]>([])
-  const [afterPhotos, setAfterPhotos] = useState<MaintenancePhoto[]>([])
+  const [task, setTask] = useState<TaskWithDetailsV2 | null>(null)
+  const [comments, setComments] = useState<TaskCommentV2[]>([])
+  const [attachments, setAttachments] = useState<TaskAttachmentV2[]>([])
+  const [photos, setPhotos] = useState<TaskPhoto[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   // Load task data
   useEffect(() => {
     const loadTaskData = async () => {
       try {
         setLoading(true)
-        const taskId = parseInt(params.id as string)
+        const taskId = params.id as string
         
         // Load task details
-        const taskResponse = await maintenanceService.getMaintenanceTask(taskId)
-        if (taskResponse.success) {
+        const taskResponse = await taskServiceV2.getById(taskId)
+        if (taskResponse.success && taskResponse.data) {
           setTask(taskResponse.data)
+          // Comments and attachments are included in the task response
+          setComments(taskResponse.data.comments || [])
+          setAttachments(taskResponse.data.attachments || [])
         }
-        
-        // Load comments
-        const commentsResponse = await maintenanceService.getMaintenanceComments(taskId)
-        if (commentsResponse.success) {
-          setComments(commentsResponse.data)
-        }
-        
-        // Load attachments
-        const attachmentsResponse = await maintenanceService.getMaintenanceAttachments(taskId)
-        if (attachmentsResponse.success) {
-          setAttachments(attachmentsResponse.data)
-        }
-        
-        // Load before photos
-        const beforePhotosResponse = await maintenanceService.getMaintenancePhotos(taskId, 'before')
-        if (beforePhotosResponse.success) {
-          console.log('Before photos loaded:', beforePhotosResponse.data)
-          setBeforePhotos(beforePhotosResponse.data)
-        }
-        
-        // Load after photos
-        const afterPhotosResponse = await maintenanceService.getMaintenancePhotos(taskId, 'after')
-        if (afterPhotosResponse.success) {
-          console.log('After photos loaded:', afterPhotosResponse.data)
-          setAfterPhotos(afterPhotosResponse.data)
+
+        // Load photos
+        const photosResponse = await taskPhotoService.getTaskPhotos(taskId)
+        if (photosResponse.success && photosResponse.data) {
+          setPhotos(photosResponse.data)
         }
         
       } catch (error) {
@@ -185,61 +170,127 @@ export default function MaintenanceTaskDetailsPage() {
     }
   }
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
-    if (!task || !event.target.files) return
+  const handleStatusChange = async (newStatus: string) => {
+    if (!task) return
+    
+    setUpdatingStatus(true)
+    try {
+      console.log('🔄 Updating task status to:', newStatus)
+      
+      const response = await taskServiceV2.updateStatus(task.id, {
+        status: newStatus as 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD',
+        notes: `Status changed to ${newStatus}`
+      })
+      
+      console.log('🔄 Full response object:', response)
+      console.log('🔄 Response success:', response.success)
+      console.log('🔄 Response data:', response.data)
+      console.log('🔄 Response message:', response.message)
+      
+      if (response.success && response.data) {
+        console.log('✅ Status updated successfully:', response.data)
+        setTask(response.data)
+        showToast.success(`Status updated to ${newStatus}`)
+      } else {
+        console.error('❌ Failed to update status:', response)
+        showToast.error(response.message || 'Failed to update status')
+      }
+    } catch (error) {
+      console.error('❌ Error updating status:', error)
+      showToast.error('Error updating status')
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!task || !event.target.files || event.target.files.length === 0) return
     
     const file = event.target.files[0]
-    if (!file) return
+    
+    // Validate file
+    const validation = taskPhotoService.validateImageFile(file)
+    if (!validation.isValid) {
+      showToast.error(validation.error || 'Invalid file')
+      return
+    }
     
     setUploadingPhoto(true)
     try {
-      // Upload to S3
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', `maintenance/${task.id}/${type}`)
+      const response = await taskPhotoService.uploadPhoto(task.id, file)
       
-      const uploadResponse = await fetch('http://localhost:3002/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-      
-      if (uploadResponse.ok) {
-        const uploadData = await uploadResponse.json()
-        
-        // Add to maintenance task
-        const response = await maintenanceService.addMaintenancePhoto(task.id, {
-          name: file.name,
-          size: `${(file.size / 1024).toFixed(1)} KB`,
-          type,
-          s3Key: uploadData.s3Key,
-          s3Url: uploadData.s3Url
-        })
-        
-        if (response.success) {
-          if (type === 'before') {
-            setBeforePhotos(prev => [...prev, response.data])
-          } else {
-            setAfterPhotos(prev => [...prev, response.data])
-          }
+      if (response.success && response.data) {
+        // Reload photos
+        const photosResponse = await taskPhotoService.getTaskPhotos(task.id)
+        if (photosResponse.success && photosResponse.data) {
+          setPhotos(photosResponse.data)
         }
+        showToast.success('Photo uploaded successfully')
+      } else {
+        showToast.error(response.message || 'Failed to upload photo')
       }
     } catch (error) {
       console.error('Error uploading photo:', error)
+      showToast.error('Error uploading photo')
     } finally {
       setUploadingPhoto(false)
+      // Reset file input
+      event.target.value = ''
+    }
+  }
+
+  const handlePhotoDelete = async (photoId: string) => {
+    if (!task) return
+    
+    try {
+      const response = await taskPhotoService.deletePhoto(task.id, photoId)
+      
+      if (response.success) {
+        // Remove photo from state
+        setPhotos(prev => prev.filter(photo => photo.id !== photoId))
+        showToast.success('Photo deleted successfully')
+      } else {
+        showToast.error(response.message || 'Failed to delete photo')
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      showToast.error('Error deleting photo')
+    }
+  }
+
+  const handlePhotoDownload = async (photo: TaskPhoto) => {
+    try {
+      const response = await taskPhotoService.getDownloadUrl(task!.id, photo.id)
+      
+      if (response.success && response.data) {
+        // Create download link
+        const link = document.createElement('a')
+        link.href = response.data.downloadUrl
+        link.download = photo.originalName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        showToast.error(response.message || 'Failed to get download URL')
+      }
+    } catch (error) {
+      console.error('Error downloading photo:', error)
+      showToast.error('Error downloading photo')
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Completed':
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800'
-      case 'In Progress':
+      case 'IN_PROGRESS':
         return 'bg-blue-100 text-blue-800'
-      case 'Pending':
+      case 'SCHEDULED':
         return 'bg-yellow-100 text-yellow-800'
-      case 'Awaiting Approval':
-        return 'bg-purple-100 text-purple-800'
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800'
+      case 'ON_HOLD':
+        return 'bg-gray-100 text-gray-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -247,13 +298,15 @@ export default function MaintenanceTaskDetailsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Completed':
+      case 'COMPLETED':
         return <CheckCircle className="w-4 h-4" />
-      case 'In Progress':
+      case 'IN_PROGRESS':
         return <Clock className="w-4 h-4" />
-      case 'Pending':
+      case 'SCHEDULED':
         return <Clock className="w-4 h-4" />
-      case 'Awaiting Approval':
+      case 'CANCELLED':
+        return <XCircle className="w-4 h-4" />
+      case 'ON_HOLD':
         return <User className="w-4 h-4" />
       default:
         return <Clock className="w-4 h-4" />
@@ -315,10 +368,25 @@ export default function MaintenanceTaskDetailsPage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(task.status)}`}>
-              {getStatusIcon(task.status)}
-              <span className="ml-2">{task.status}</span>
-            </span>
+            <div className="relative">
+              <select
+                value={task.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={updatingStatus}
+                className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-orange-500 ${getStatusColor(task.status)} ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <option value="SCHEDULED">Scheduled</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="ON_HOLD">On Hold</option>
+              </select>
+              {updatingStatus && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                </div>
+              )}
+            </div>
                 <button
                   onClick={() => setShowDeleteModal(true)}
                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center"
@@ -338,11 +406,26 @@ export default function MaintenanceTaskDetailsPage() {
           <div className="w-80 flex-shrink-0">
             {/* Task Photo/Icon */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-              <div className="aspect-video bg-gradient-to-br from-orange-400 to-red-500 rounded-lg mb-3 relative flex items-center justify-center">
+              <div className="aspect-video rounded-lg mb-3 relative overflow-hidden">
+                {photos.length > 0 ? (
+                  <img
+                    src={photos[0].s3Url}
+                    alt="Maintenance task photo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
                 <Wrench className="w-12 h-12 text-white" />
+                  </div>
+                )}
                 <span className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
                   Maintenance
                 </span>
+                {photos.length > 0 && (
+                  <span className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                    {photos.length} photo{photos.length !== 1 ? 's' : ''}
+                  </span>
+                )}
               </div>
               
               {/* Task Title */}
@@ -351,10 +434,25 @@ export default function MaintenanceTaskDetailsPage() {
                   <h3 className="text-lg font-medium text-slate-900">{task.type}</h3>
                   <p className="text-sm text-slate-500">{task.unit}</p>
                 </div>
-                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
-                  {getStatusIcon(task.status)}
-                  <span className="ml-1">{task.status}</span>
-                </span>
+                <div className="relative">
+                  <select
+                    value={task.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    disabled={updatingStatus}
+                    className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-orange-500 ${getStatusColor(task.status)} ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                    <option value="ON_HOLD">On Hold</option>
+                  </select>
+                  {updatingStatus && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                    </div>
+                  )}
+                </div>
               </div>
                 </div>
 
@@ -483,6 +581,86 @@ export default function MaintenanceTaskDetailsPage() {
             </div>
           </div>
 
+            {/* Photos */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+              <h2 className="text-lg font-medium text-slate-900 mb-4 flex items-center space-x-2">
+                <ImageIcon className="w-5 h-5 text-blue-600" />
+                <span>Photos</span>
+              </h2>
+              
+              {/* Upload Photo */}
+              <div className="mb-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition-colors ${uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
+                </label>
+              </div>
+
+              {/* Photos Grid */}
+              {photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={photo.s3Url}
+                          alt={photo.originalName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      {/* Overlay with actions */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handlePhotoDownload(photo)}
+                            className="p-2 bg-white rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handlePhotoDelete(photo.id)}
+                            className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Photo info */}
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-600 truncate" title={photo.originalName}>
+                          {photo.originalName}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {taskPhotoService.formatFileSize(photo.fileSize)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No photos uploaded yet</p>
+                  <p className="text-sm text-gray-400">Upload photos to document the maintenance task</p>
+                </div>
+              )}
+          </div>
+
             {/* File Attachments */}
                 <div>
               <h2 className="text-lg font-medium text-slate-900 mb-4">File Attachments</h2>
@@ -539,157 +717,7 @@ export default function MaintenanceTaskDetailsPage() {
               </div>
             </div>
 
-            {/* Before Photos */}
-            <div>
-              <h2 className="text-lg font-medium text-slate-900 mb-4">Before Photos</h2>
-              <div className="grid grid-cols-4 gap-3">
-                {beforePhotos.map((photo) => {
-                  console.log('Rendering before photo:', photo)
-                  return (
-                    <div key={photo.id} className="relative group">
-                      <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
-                        {photo.s3Url ? (
-                          <img 
-                            src={photo.s3Url} 
-                            alt={photo.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log('Image failed to load:', photo.s3Url)
-                              // Fallback to camera icon if image fails to load
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              const parent = target.parentElement
-                              if (parent) {
-                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Camera className="w-6 h-6 text-slate-400" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={() => {
-                            if (photo.s3Url) {
-                              window.open(photo.s3Url, '_blank')
-                            } else {
-                              console.log('View photo:', photo.name)
-                            }
-                          }}
-                          className="text-white hover:text-orange-300 cursor-pointer"
-                        >
-                          <Eye size={16} />
-                        </button>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1 truncate">{photo.name}</p>
-                    </div>
-                  )
-                })}
-                <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                  {uploadingPhoto ? (
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mx-auto mb-1"></div>
-                      <p className="text-xs text-gray-600">Uploading...</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Add Photo</p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        id="before-photo-upload"
-                        onChange={(e) => handlePhotoUpload(e, 'before')}
-                      />
-                      <label
-                        htmlFor="before-photo-upload"
-                        className="text-orange-500 hover:text-orange-600 text-xs cursor-pointer"
-                      >
-                        Choose
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
 
-                {/* After Photos */}
-                <div>
-                  <h2 className="text-lg font-medium text-slate-900 mb-4">After Photos</h2>
-                  <div className="grid grid-cols-4 gap-3">
-                {afterPhotos.map((photo) => (
-                  <div key={photo.id} className="relative group">
-                    <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
-                      {photo.s3Url ? (
-                        <img 
-                          src={photo.s3Url} 
-                          alt={photo.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to camera icon if image fails to load
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const parent = target.parentElement
-                            if (parent) {
-                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Camera className="w-6 h-6 text-slate-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => {
-                          if (photo.s3Url) {
-                            window.open(photo.s3Url, '_blank')
-                          } else {
-                            console.log('View photo:', photo.name)
-                          }
-                        }}
-                        className="text-white hover:text-orange-300 cursor-pointer"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1 truncate">{photo.name}</p>
-                  </div>
-                ))}
-                <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                  {uploadingPhoto ? (
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mx-auto mb-1"></div>
-                      <p className="text-xs text-gray-600">Uploading...</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Add Photo</p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        id="after-photo-upload"
-                        onChange={(e) => handlePhotoUpload(e, 'after')}
-                      />
-                      <label
-                        htmlFor="after-photo-upload"
-                        className="text-orange-500 hover:text-orange-600 text-xs cursor-pointer"
-                      >
-                        Choose
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
             </div>

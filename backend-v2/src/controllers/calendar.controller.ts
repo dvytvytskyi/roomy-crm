@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 
 export class CalendarController {
   /**
+   * Обробляє OPTIONS запити для CORS
+   * OPTIONS /api/properties/:propertyId/calendar.ics
+   */
+  public async handleOptions(req: Request, res: Response): Promise<void> {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(200).send();
+  }
+
+  /**
    * Експортує календар доступності для квартири в форматі iCal
    * GET /api/properties/:propertyId/calendar.ics
    */
@@ -67,12 +78,36 @@ export class CalendarController {
         event.uid(reservation.external_id || reservation.id);
       });
 
+      // Якщо немає резервацій, додаємо тестову подію для валідності календаря
+      if (reservations.length === 0) {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        calendar.createEvent({
+          id: 'test-event-' + propertyId,
+          start: today,
+          end: tomorrow,
+          summary: 'Calendar Sync Test',
+          description: 'This is a test event to ensure calendar validity. This event will not block any dates.',
+          status: 'TENTATIVE',
+          busyStatus: 'FREE',
+          transparency: 'TRANSPARENT'
+        });
+      }
+
       // Встановлюємо заголовки для iCal файлу
       res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${property.name.replace(/[^a-zA-Z0-9]/g, '_')}_calendar.ics"`);
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('ngrok-skip-browser-warning', 'true');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
       // Відправляємо iCal файл
       const icalString = calendar.toString();

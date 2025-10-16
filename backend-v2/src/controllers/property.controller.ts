@@ -47,8 +47,13 @@ export class PropertyController extends BaseController {
         return;
       }
 
-      // Log properties retrieval
+      // Log properties retrieval with detailed info
       logger.info(`Properties retrieved: ${propertiesResult.data.data.length} properties, page ${page}`);
+      
+      // Debug: Log each property's is_active status
+      propertiesResult.data.data.forEach((property, index) => {
+        logger.info(`Property ${index + 1}: ${property.name} - is_active: ${property.is_active} (type: ${typeof property.is_active})`);
+      });
 
       // Return properties with pagination
       PropertyController.paginated(

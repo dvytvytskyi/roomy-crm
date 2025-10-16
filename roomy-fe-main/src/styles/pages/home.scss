@@ -267,8 +267,19 @@
 
                   border-radius: 90px;
                   background: #F88559;
-
+                  transition: all 0.3s ease;
                   cursor: pointer;
+                  
+                  &:hover {
+                    transform: scale(1.01);
+                    background: #E6764A;
+                    box-shadow: 0 4px 12px rgba(248, 133, 89, 0.3);
+                  }
+                  
+                  &:active {
+                    transform: scale(0.99);
+                    background: #D5673B;
+                  }
                 }
               }
             }

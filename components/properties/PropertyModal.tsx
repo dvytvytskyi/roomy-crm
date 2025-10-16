@@ -36,7 +36,8 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
     selectedOwnerId: '',
     price_per_night: DEFAULT_PROPERTY_VALUES.pricePerNight,
     status: 'active' as PropertyStatus,
-    pricelabId: '' // Додали PriceLabs ID
+    pricelabId: '', // Додали PriceLabs ID
+    isPublished: false // Додали поле для керування публікацією
   })
 
   // Owner selection states
@@ -170,7 +171,8 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
           selectedOwnerId: property.ownerId || property.selectedOwnerId || '',
           price_per_night: property.price_per_night || 100,
           status: property.status || 'active',
-          pricelabId: property.pricelabId || ''
+          pricelabId: property.pricelabId || '',
+          isPublished: property.isPublished || property.is_published || false
         })
         
         // Set selected owner if ownerId exists
@@ -189,7 +191,8 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
           selectedOwnerId: '',
           price_per_night: 100,
           status: 'active',
-          pricelabId: ''
+          pricelabId: '',
+          isPublished: false
         })
         setSelectedOwner(null)
         setSelectedPricelabsListing(null)
@@ -282,7 +285,7 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
         ownerId: formData.selectedOwnerId, // Send single owner ID, not array
         pricelabId: formData.pricelabId || undefined, // Додали PriceLabs ID
         isActive: formData.status === 'active',
-        isPublished: false
+        isPublished: formData.isPublished
       }
       
       console.log('Property data:', finalPropertyData)
@@ -413,6 +416,22 @@ export default function PropertyModal({ isOpen, onClose, property, onShowToast, 
                         placeholder="0"
                       />
                     </div>
+                  </div>
+
+                  {/* Published Status */}
+                  <div>
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isPublished}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isPublished: e.target.checked }))}
+                        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-700">Published on Website</span>
+                        <p className="text-xs text-slate-500">Check this to make the property visible to customers on the public website</p>
+                      </div>
+                    </label>
                   </div>
                 </div>
               </div>

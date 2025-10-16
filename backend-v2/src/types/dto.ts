@@ -13,6 +13,13 @@ export interface CreateUserDto {
   description?: string;
   role?: UserRole;
   status?: string;
+  nationality?: string;
+  dateOfBirth?: string;
+  whatsapp?: string;
+  telegram?: string;
+  comments?: string;
+  paymentPreferences?: string;
+  personalStayDays?: number;
 }
 
 export interface UpdateUserDto {
@@ -23,6 +30,21 @@ export interface UpdateUserDto {
   description?: string;
   role?: UserRole;
   status?: string;
+  nationality?: string;
+  dateOfBirth?: string;
+  whatsapp?: string;
+  telegram?: string;
+  comments?: string;
+  paymentPreferences?: string;
+  personalStayDays?: number;
+  units?: Array<{
+    id: string;
+    name: string;
+    propertyId: string;
+    commission?: number;
+    status?: string;
+    referralDate?: string;
+  }>;
 }
 
 export interface UserResponseDto {
@@ -39,6 +61,13 @@ export interface UserResponseDto {
   flag?: string;
   isVerified: boolean;
   lastLoginAt?: string;
+  nationality?: string;
+  dateOfBirth?: string;
+  whatsapp?: string;
+  telegram?: string;
+  comments?: string;
+  paymentPreferences?: string;
+  personalStayDays?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -367,6 +396,7 @@ export interface CreateTaskDto {
 export interface UpdateTaskDto {
   title?: string;
   description?: string;
+  status?: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD';
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   assignedTo?: string;
   scheduledDate?: string;

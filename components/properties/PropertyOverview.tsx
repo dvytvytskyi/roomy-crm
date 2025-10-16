@@ -205,7 +205,8 @@ export default function PropertyOverview({
     bathrooms: '',
     pricePerNight: '',
     typeOfUnit: '',
-    country: ''
+    country: '',
+    isPublished: false
   });
 
   const [descriptionForm, setDescriptionForm] = useState('');
@@ -250,13 +251,14 @@ export default function PropertyOverview({
         bathrooms: property.bathrooms?.toString() || '',
         pricePerNight: property.pricePerNight?.toString() || '',
         typeOfUnit: property.typeOfUnit || '',
-        country: property.country || ''
+        country: property.country || '',
+        isPublished: property.isPublished || property.is_published || false
       });
     }
     setShowGeneralInfoModal(true);
   };
 
-  const handleGeneralInfoChange = (field: string, value: string) => {
+  const handleGeneralInfoChange = (field: string, value: string | boolean) => {
     setGeneralInfoForm(prev => ({
       ...prev,
       [field]: value
@@ -277,7 +279,8 @@ export default function PropertyOverview({
         bathrooms: parseInt(generalInfoForm.bathrooms) || 0,
         pricePerNight: parseFloat(generalInfoForm.pricePerNight) || 0,
         typeOfUnit: generalInfoForm.typeOfUnit as any,
-        country: generalInfoForm.country
+        country: generalInfoForm.country,
+        isPublished: generalInfoForm.isPublished
       };
 
       const success = await onPropertyUpdate(updateData);
@@ -533,7 +536,8 @@ export default function PropertyOverview({
         )}
       </div>
 
-      {/* Income Distribution */}
+      {/* Income Distribution - COMMENTED OUT */}
+      {/*
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Income Distribution</h2>
@@ -581,6 +585,7 @@ export default function PropertyOverview({
             </div>
             
             {/* Calculation Breakdown */}
+            {/*
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h4 className="text-sm font-medium text-gray-900 mb-3">Calculation Breakdown</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -610,6 +615,7 @@ export default function PropertyOverview({
           </div>
         )}
       </div>
+      */}
 
       {/* General Information */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -903,6 +909,21 @@ export default function PropertyOverview({
                     onChange={(e) => handleGeneralInfoChange('country', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
+                </div>
+
+                <div>
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={generalInfoForm.isPublished}
+                      onChange={(e) => handleGeneralInfoChange('isPublished', e.target.checked)}
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Published on Website</span>
+                      <p className="text-xs text-gray-500">Check this to make the property visible to customers on the public website</p>
+                    </div>
+                  </label>
                 </div>
 
                 <div>

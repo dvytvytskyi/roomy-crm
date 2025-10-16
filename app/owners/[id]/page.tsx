@@ -107,27 +107,332 @@ interface ExtendedOwner {
 // Function to get country flag emoji
 const getCountryFlag = (nationality: string) => {
   const flagMap: { [key: string]: string } = {
+    // Middle East & Gulf
     'Emirati': '🇦🇪',
-    'British': '🇬🇧',
-    'Canadian': '🇨🇦',
-    'French': '🇫🇷',
-    'German': '🇩🇪',
-    'Italian': '🇮🇹',
-    'Spanish': '🇪🇸',
-    'Chinese': '🇨🇳',
-    'Japanese': '🇯🇵',
-    'Korean': '🇰🇷',
-    'Indian': '🇮🇳',
-    'Australian': '🇦🇺',
-    'Brazilian': '🇧🇷',
-    'Egyptian': '🇪🇬',
+    'United Arab Emirates': '🇦🇪',
+    'UAE': '🇦🇪',
     'Saudi Arabian': '🇸🇦',
-    'Turkish': '🇹🇷',
+    'Saudi Arabia': '🇸🇦',
+    'Kuwaiti': '🇰🇼',
+    'Kuwait': '🇰🇼',
+    'Qatari': '🇶🇦',
+    'Qatar': '🇶🇦',
+    'Bahraini': '🇧🇭',
+    'Bahrain': '🇧🇭',
+    'Omani': '🇴🇲',
+    'Oman': '🇴🇲',
+    'Yemeni': '🇾🇪',
+    'Yemen': '🇾🇪',
+    'Iraqi': '🇮🇶',
+    'Iraq': '🇮🇶',
+    'Iranian': '🇮🇷',
+    'Iran': '🇮🇷',
+    'Jordanian': '🇯🇴',
+    'Jordan': '🇯🇴',
+    'Lebanese': '🇱🇧',
+    'Lebanon': '🇱🇧',
+    'Syrian': '🇸🇾',
+    'Syria': '🇸🇾',
+    'Palestinian': '🇵🇸',
+    'Palestine': '🇵🇸',
+    'Israeli': '🇮🇱',
+    'Israel': '🇮🇱',
+    
+    // North Africa
+    'Egyptian': '🇪🇬',
+    'Egypt': '🇪🇬',
+    'Moroccan': '🇲🇦',
+    'Morocco': '🇲🇦',
+    'Tunisian': '🇹🇳',
+    'Tunisia': '🇹🇳',
+    'Algerian': '🇩🇿',
+    'Algeria': '🇩🇿',
+    'Libyan': '🇱🇾',
+    'Libya': '🇱🇾',
+    'Sudanese': '🇸🇩',
+    'Sudan': '🇸🇩',
+    'South Sudanese': '🇸🇸',
+    'South Sudan': '🇸🇸',
+    
+    // Europe
+    'British': '🇬🇧',
+    'United Kingdom': '🇬🇧',
+    'UK': '🇬🇧',
+    'French': '🇫🇷',
+    'France': '🇫🇷',
+    'German': '🇩🇪',
+    'Germany': '🇩🇪',
+    'Italian': '🇮🇹',
+    'Italy': '🇮🇹',
+    'Spanish': '🇪🇸',
+    'Spain': '🇪🇸',
+    'Portuguese': '🇵🇹',
+    'Portugal': '🇵🇹',
+    'Dutch': '🇳🇱',
+    'Netherlands': '🇳🇱',
+    'Belgian': '🇧🇪',
+    'Belgium': '🇧🇪',
+    'Swiss': '🇨🇭',
+    'Switzerland': '🇨🇭',
+    'Austrian': '🇦🇹',
+    'Austria': '🇦🇹',
+    'Swedish': '🇸🇪',
+    'Sweden': '🇸🇪',
+    'Norwegian': '🇳🇴',
+    'Norway': '🇳🇴',
+    'Danish': '🇩🇰',
+    'Denmark': '🇩🇰',
+    'Finnish': '🇫🇮',
+    'Finland': '🇫🇮',
+    'Polish': '🇵🇱',
+    'Poland': '🇵🇱',
+    'Czech': '🇨🇿',
+    'Czech Republic': '🇨🇿',
+    'Hungarian': '🇭🇺',
+    'Hungary': '🇭🇺',
+    'Romanian': '🇷🇴',
+    'Romania': '🇷🇴',
+    'Bulgarian': '🇧🇬',
+    'Bulgaria': '🇧🇬',
+    'Croatian': '🇭🇷',
+    'Croatia': '🇭🇷',
+    'Serbian': '🇷🇸',
+    'Serbia': '🇷🇸',
     'Greek': '🇬🇷',
+    'Greece': '🇬🇷',
     'Russian': '🇷🇺',
+    'Russia': '🇷🇺',
+    'Ukrainian': '🇺🇦',
+    'Ukraine': '🇺🇦',
+    'Belarusian': '🇧🇾',
+    'Belarus': '🇧🇾',
+    'Lithuanian': '🇱🇹',
+    'Lithuania': '🇱🇹',
+    'Latvian': '🇱🇻',
+    'Latvia': '🇱🇻',
+    'Estonian': '🇪🇪',
+    'Estonia': '🇪🇪',
+    
+    // Americas
     'American': '🇺🇸',
-    'Other': '🌍'
+    'United States': '🇺🇸',
+    'USA': '🇺🇸',
+    'Canadian': '🇨🇦',
+    'Canada': '🇨🇦',
+    'Mexican': '🇲🇽',
+    'Mexico': '🇲🇽',
+    'Brazilian': '🇧🇷',
+    'Brazil': '🇧🇷',
+    'Argentinian': '🇦🇷',
+    'Argentina': '🇦🇷',
+    'Chilean': '🇨🇱',
+    'Chile': '🇨🇱',
+    'Colombian': '🇨🇴',
+    'Colombia': '🇨🇴',
+    'Peruvian': '🇵🇪',
+    'Peru': '🇵🇪',
+    'Venezuelan': '🇻🇪',
+    'Venezuela': '🇻🇪',
+    'Ecuadorian': '🇪🇨',
+    'Ecuador': '🇪🇨',
+    'Bolivian': '🇧🇴',
+    'Bolivia': '🇧🇴',
+    'Paraguayan': '🇵🇾',
+    'Paraguay': '🇵🇾',
+    'Uruguayan': '🇺🇾',
+    'Uruguay': '🇺🇾',
+    'Guyanese': '🇬🇾',
+    'Guyana': '🇬🇾',
+    'Surinamese': '🇸🇷',
+    'Suriname': '🇸🇷',
+    
+    // Asia
+    'Chinese': '🇨🇳',
+    'China': '🇨🇳',
+    'Japanese': '🇯🇵',
+    'Japan': '🇯🇵',
+    'Korean': '🇰🇷',
+    'South Korea': '🇰🇷',
+    'North Korean': '🇰🇵',
+    'North Korea': '🇰🇵',
+    'Indian': '🇮🇳',
+    'India': '🇮🇳',
+    'Pakistani': '🇵🇰',
+    'Pakistan': '🇵🇰',
+    'Bangladeshi': '🇧🇩',
+    'Bangladesh': '🇧🇩',
+    'Sri Lankan': '🇱🇰',
+    'Sri Lanka': '🇱🇰',
+    'Nepalese': '🇳🇵',
+    'Nepal': '🇳🇵',
+    'Bhutanese': '🇧🇹',
+    'Bhutan': '🇧🇹',
+    'Maldivian': '🇲🇻',
+    'Maldives': '🇲🇻',
+    'Afghan': '🇦🇫',
+    'Afghanistan': '🇦🇫',
+    'Kazakhstani': '🇰🇿',
+    'Kazakhstan': '🇰🇿',
+    'Uzbekistani': '🇺🇿',
+    'Uzbekistan': '🇺🇿',
+    'Kyrgyzstani': '🇰🇬',
+    'Kyrgyzstan': '🇰🇬',
+    'Tajikistani': '🇹🇯',
+    'Tajikistan': '🇹🇯',
+    'Turkmenistani': '🇹🇲',
+    'Turkmenistan': '🇹🇲',
+    'Mongolian': '🇲🇳',
+    'Mongolia': '🇲🇳',
+    'Thai': '🇹🇭',
+    'Thailand': '🇹🇭',
+    'Vietnamese': '🇻🇳',
+    'Vietnam': '🇻🇳',
+    'Cambodian': '🇰🇭',
+    'Cambodia': '🇰🇭',
+    'Laotian': '🇱🇦',
+    'Laos': '🇱🇦',
+    'Myanmar': '🇲🇲',
+    'Burmese': '🇲🇲',
+    'Malaysian': '🇲🇾',
+    'Malaysia': '🇲🇾',
+    'Singaporean': '🇸🇬',
+    'Singapore': '🇸🇬',
+    'Indonesian': '🇮🇩',
+    'Indonesia': '🇮🇩',
+    'Filipino': '🇵🇭',
+    'Philippines': '🇵🇭',
+    'Bruneian': '🇧🇳',
+    'Brunei': '🇧🇳',
+    'East Timorese': '🇹🇱',
+    'East Timor': '🇹🇱',
+    
+    // Africa
+    'South African': '🇿🇦',
+    'South Africa': '🇿🇦',
+    'Nigerian': '🇳🇬',
+    'Nigeria': '🇳🇬',
+    'Kenyan': '🇰🇪',
+    'Kenya': '🇰🇪',
+    'Ethiopian': '🇪🇹',
+    'Ethiopia': '🇪🇹',
+    'Ghanaian': '🇬🇭',
+    'Ghana': '🇬🇭',
+    'Senegalese': '🇸🇳',
+    'Senegal': '🇸🇳',
+    'Ivory Coast': '🇨🇮',
+    'Ivorian': '🇨🇮',
+    'Cameroonian': '🇨🇲',
+    'Cameroon': '🇨🇲',
+    'Ugandan': '🇺🇬',
+    'Uganda': '🇺🇬',
+    'Tanzanian': '🇹🇿',
+    'Tanzania': '🇹🇿',
+    'Zimbabwean': '🇿🇼',
+    'Zimbabwe': '🇿🇼',
+    'Botswanan': '🇧🇼',
+    'Botswana': '🇧🇼',
+    'Namibian': '🇳🇦',
+    'Namibia': '🇳🇦',
+    'Zambian': '🇿🇲',
+    'Zambia': '🇿🇲',
+    'Malawian': '🇲🇼',
+    'Malawi': '🇲🇼',
+    'Mozambican': '🇲🇿',
+    'Mozambique': '🇲🇿',
+    'Angolan': '🇦🇴',
+    'Angola': '🇦🇴',
+    'Congolese': '🇨🇩',
+    'Democratic Republic of Congo': '🇨🇩',
+    'Rwandan': '🇷🇼',
+    'Rwanda': '🇷🇼',
+    'Burundian': '🇧🇮',
+    'Burundi': '🇧🇮',
+    'Malagasy': '🇲🇬',
+    'Madagascar': '🇲🇬',
+    'Mauritian': '🇲🇺',
+    'Mauritius': '🇲🇺',
+    'Seychellois': '🇸🇨',
+    'Seychelles': '🇸🇨',
+    'Comorian': '🇰🇲',
+    'Comoros': '🇰🇲',
+    'Djiboutian': '🇩🇯',
+    'Djibouti': '🇩🇯',
+    'Eritrean': '🇪🇷',
+    'Eritrea': '🇪🇷',
+    'Somalian': '🇸🇴',
+    'Somalia': '🇸🇴',
+    'Chadian': '🇹🇩',
+    'Chad': '🇹🇩',
+    'Nigerien': '🇳🇪',
+    'Niger': '🇳🇪',
+    'Malian': '🇲🇱',
+    'Mali': '🇲🇱',
+    'Burkina Faso': '🇧🇫',
+    'Burkinabe': '🇧🇫',
+    'Beninese': '🇧🇯',
+    'Benin': '🇧🇯',
+    'Togolese': '🇹🇬',
+    'Togo': '🇹🇬',
+    'Liberian': '🇱🇷',
+    'Liberia': '🇱🇷',
+    'Sierra Leonean': '🇸🇱',
+    'Sierra Leone': '🇸🇱',
+    'Guinean': '🇬🇳',
+    'Guinea': '🇬🇳',
+    'Guinea-Bissau': '🇬🇼',
+    'Bissau-Guinean': '🇬🇼',
+    'Cape Verdean': '🇨🇻',
+    'Cape Verde': '🇨🇻',
+    'Gambian': '🇬🇲',
+    'Gambia': '🇬🇲',
+    'Mauritanian': '🇲🇷',
+    'Mauritania': '🇲🇷',
+    'Equatorial Guinean': '🇬🇶',
+    'Equatorial Guinea': '🇬🇶',
+    'São Toméan': '🇸🇹',
+    'São Tomé and Príncipe': '🇸🇹',
+    'Central African': '🇨🇫',
+    'Central African Republic': '🇨🇫',
+    'Gabonese': '🇬🇦',
+    'Gabon': '🇬🇦',
+    'Republic of Congo': '🇨🇬',
+    'Congo': '🇨🇬',
+    
+    // Oceania
+    'Australian': '🇦🇺',
+    'Australia': '🇦🇺',
+    'New Zealander': '🇳🇿',
+    'New Zealand': '🇳🇿',
+    'Fijian': '🇫🇯',
+    'Fiji': '🇫🇯',
+    'Papua New Guinean': '🇵🇬',
+    'Papua New Guinea': '🇵🇬',
+    'Solomon Islander': '🇸🇧',
+    'Solomon Islands': '🇸🇧',
+    'Vanuatuan': '🇻🇺',
+    'Vanuatu': '🇻🇺',
+    'Samoan': '🇼🇸',
+    'Samoa': '🇼🇸',
+    'Tongan': '🇹🇴',
+    'Tonga': '🇹🇴',
+    'Kiribati': '🇰🇮',
+    'Tuvaluan': '🇹🇻',
+    'Tuvalu': '🇹🇻',
+    'Nauruan': '🇳🇷',
+    'Nauru': '🇳🇷',
+    'Palauan': '🇵🇼',
+    'Palau': '🇵🇼',
+    'Marshallese': '🇲🇭',
+    'Marshall Islands': '🇲🇭',
+    'Micronesian': '🇫🇲',
+    'Micronesia': '🇫🇲',
+    
+    // Other
+    'Other': '🌍',
+    'Unknown': '🌍',
+    'Mixed': '🌍'
   }
+  
   return flagMap[nationality] || '🌍'
 }
 
@@ -170,6 +475,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
   const [properties, setProperties] = useState([])
   const [availableProperties, setAvailableProperties] = useState([])
   const [showLinkPropertyModal, setShowLinkPropertyModal] = useState(false)
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([])
 
   // Load owner data
   useEffect(() => {
@@ -265,7 +571,9 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
           if (response.success && response.data) {
             console.log('🏠 Available properties loaded:', response.data)
             console.log('🏠 Setting availableProperties to:', response.data)
+            console.log('🏠 Properties count:', response.data.length)
             setAvailableProperties(response.data)
+            console.log('🏠 State updated, availableProperties should now be:', response.data)
           } else {
             console.error('🏠 Failed to load available properties:', response.error)
             setAvailableProperties([])
@@ -314,59 +622,6 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
     })
   }
 
-  const getCountryFlag = (country: string) => {
-    const flags: { [key: string]: string } = {
-      'United Arab Emirates': '🇦🇪',
-      'UAE': '🇦🇪',
-      'Emirati': '🇦🇪',
-      'Saudi Arabia': '🇸🇦',
-      'Kuwait': '🇰🇼',
-      'Qatar': '🇶🇦',
-      'Bahrain': '🇧🇭',
-      'Oman': '🇴🇲',
-      'Egypt': '🇪🇬',
-      'Jordan': '🇯🇴',
-      'Lebanon': '🇱🇧',
-      'Syria': '🇸🇾',
-      'Iraq': '🇮🇶',
-      'Iran': '🇮🇷',
-      'Turkey': '🇹🇷',
-      'India': '🇮🇳',
-      'Pakistan': '🇵🇰',
-      'Bangladesh': '🇧🇩',
-      'Sri Lanka': '🇱🇰',
-      'Philippines': '🇵🇭',
-      'Indonesia': '🇮🇩',
-      'Malaysia': '🇲🇾',
-      'Thailand': '🇹🇭',
-      'Vietnam': '🇻🇳',
-      'China': '🇨🇳',
-      'Japan': '🇯🇵',
-      'South Korea': '🇰🇷',
-      'United States': '🇺🇸',
-      'USA': '🇺🇸',
-      'United Kingdom': '🇬🇧',
-      'UK': '🇬🇧',
-      'Germany': '🇩🇪',
-      'France': '🇫🇷',
-      'Italy': '🇮🇹',
-      'Spain': '🇪🇸',
-      'Netherlands': '🇳🇱',
-      'Canada': '🇨🇦',
-      'Australia': '🇦🇺',
-      'Russia': '🇷🇺',
-      'Brazil': '🇧🇷',
-      'Argentina': '🇦🇷',
-      'Mexico': '🇲🇽',
-      'South Africa': '🇿🇦',
-      'Nigeria': '🇳🇬',
-      'Kenya': '🇰🇪',
-      'Morocco': '🇲🇦',
-      'Algeria': '🇩🇿',
-      'Tunisia': '🇹🇳'
-    }
-    return flags[country] || '🏳️'
-  }
 
   const formatDateTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleString('en-US', {
@@ -561,10 +816,24 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         [editModal.field]: newValue
       }
       
+      // Якщо змінюємо статус, також оновлюємо isActive
+      if (editModal.field === 'status') {
+        updateData.isActive = newValue === 'ACTIVE' || newValue === 'VIP'
+        updateData.status = newValue
+      }
+      
       const response = await userServiceAdapter.updateUser(owner.id, updateData)
       if (response.success && response.data) {
         // Update the local state with the new value
-        setOwner(prev => prev ? { ...prev, [editModal.field]: newValue } : null)
+        setOwner(prev => prev ? { 
+          ...prev, 
+          [editModal.field]: newValue,
+          // Якщо змінюємо статус, також оновлюємо isActive
+          ...(editModal.field === 'status' ? { 
+            isActive: newValue === 'ACTIVE' || newValue === 'VIP',
+            status: newValue 
+          } : {})
+        } : null)
         console.log(`Updated ${editModal.field} to:`, newValue)
       } else {
         console.error('Failed to update owner')
@@ -954,10 +1223,14 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(currentOwner.isActive ? 'Active' : 'Inactive')}`}>
+              <button 
+                onClick={() => handleEditField('status', currentOwner.status || (currentOwner.isActive ? 'Active' : 'Inactive'), 'Status', 'select')}
+                className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full hover:opacity-80 transition-opacity cursor-pointer ${getStatusColor(currentOwner.isActive ? 'Active' : 'Inactive')}`}
+              >
                 {currentOwner.comments?.includes('VIP') && <Star size={16} className="mr-2 text-yellow-500" />}
                 <span>{currentOwner.isActive ? 'Active' : 'Inactive'}</span>
-              </span>
+                <Edit size={12} className="ml-1" />
+              </button>
               <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium cursor-pointer flex items-center">
                 <Trash2 size={16} className="mr-2" />
                 Delete
@@ -1062,7 +1335,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-slate-900">{currentOwner.dateOfBirth ? formatDate(currentOwner.dateOfBirth) : 'n/a'}</span>
                       <button 
-                        onClick={() => handleEditField('dateOfBirth', currentOwner.dateOfBirth, 'Birth Date', 'date')}
+                        onClick={() => handleEditField('dateOfBirth', currentOwner.dateOfBirth, 'Birth Date', 'date-parts')}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded cursor-pointer"
                       >
                         <Edit size={14} />
@@ -1127,6 +1400,7 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                         console.log('🏠 Immediate API response:', response)
                         if (response.success && response.data) {
                           console.log('🏠 Setting availableProperties immediately:', response.data)
+                          console.log('🏠 Response data length:', response.data.length)
                           setAvailableProperties(response.data)
                         } else {
                           console.error('🏠 Failed to load available properties immediately:', response.error)
@@ -1585,16 +1859,96 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                     defaultValue={editModal.currentValue}
                     className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
-                    <option value="Emirati">Emirati</option>
-                    <option value="British">British</option>
-                    <option value="Canadian">Canadian</option>
-                    <option value="American">American</option>
-                    <option value="Indian">Indian</option>
-                    <option value="Pakistani">Pakistani</option>
-                    <option value="Filipino">Filipino</option>
-                    <option value="Egyptian">Egyptian</option>
-                    <option value="Other">Other</option>
+                    {editModal.field === 'status' ? (
+                      <>
+                        <option value="ACTIVE">Active</option>
+                        <option value="VIP">VIP</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="SUSPENDED">Suspended</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Emirati">🇦🇪 Emirati</option>
+                        <option value="British">🇬🇧 British</option>
+                        <option value="Canadian">🇨🇦 Canadian</option>
+                        <option value="American">🇺🇸 American</option>
+                        <option value="Indian">🇮🇳 Indian</option>
+                        <option value="Pakistani">🇵🇰 Pakistani</option>
+                        <option value="Filipino">🇵🇭 Filipino</option>
+                        <option value="Egyptian">🇪🇬 Egyptian</option>
+                        <option value="Saudi Arabian">🇸🇦 Saudi Arabian</option>
+                        <option value="Kuwaiti">🇰🇼 Kuwaiti</option>
+                        <option value="Qatari">🇶🇦 Qatari</option>
+                        <option value="Bahraini">🇧🇭 Bahraini</option>
+                        <option value="Omani">🇴🇲 Omani</option>
+                        <option value="Jordanian">🇯🇴 Jordanian</option>
+                        <option value="Lebanese">🇱🇧 Lebanese</option>
+                        <option value="Syrian">🇸🇾 Syrian</option>
+                        <option value="Iraqi">🇮🇶 Iraqi</option>
+                        <option value="Iranian">🇮🇷 Iranian</option>
+                        <option value="Turkish">🇹🇷 Turkish</option>
+                        <option value="Chinese">🇨🇳 Chinese</option>
+                        <option value="Japanese">🇯🇵 Japanese</option>
+                        <option value="Korean">🇰🇷 Korean</option>
+                        <option value="French">🇫🇷 French</option>
+                        <option value="German">🇩🇪 German</option>
+                        <option value="Italian">🇮🇹 Italian</option>
+                        <option value="Spanish">🇪🇸 Spanish</option>
+                        <option value="Russian">🇷🇺 Russian</option>
+                        <option value="Ukrainian">🇺🇦 Ukrainian</option>
+                        <option value="Brazilian">🇧🇷 Brazilian</option>
+                        <option value="Argentinian">🇦🇷 Argentinian</option>
+                        <option value="Mexican">🇲🇽 Mexican</option>
+                        <option value="Australian">🇦🇺 Australian</option>
+                        <option value="South African">🇿🇦 South African</option>
+                        <option value="Nigerian">🇳🇬 Nigerian</option>
+                        <option value="Kenyan">🇰🇪 Kenyan</option>
+                        <option value="Moroccan">🇲🇦 Moroccan</option>
+                        <option value="Algerian">🇩🇿 Algerian</option>
+                        <option value="Tunisian">🇹🇳 Tunisian</option>
+                        <option value="Other">🌍 Other</option>
+                      </>
+                    )}
                   </select>
+                ) : editModal.inputType === 'date-parts' ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Day</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        placeholder="DD"
+                        id="birthDay"
+                        defaultValue={editModal.currentValue ? new Date(editModal.currentValue).getDate().toString() : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Month</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        placeholder="MM"
+                        id="birthMonth"
+                        defaultValue={editModal.currentValue ? (new Date(editModal.currentValue).getMonth() + 1).toString() : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Year</label>
+                      <input
+                        type="number"
+                        min="1900"
+                        max={new Date().getFullYear()}
+                        placeholder="YYYY"
+                        id="birthYear"
+                        defaultValue={editModal.currentValue ? new Date(editModal.currentValue).getFullYear().toString() : ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <input
                     type={editModal.inputType}
@@ -1614,9 +1968,26 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
                 </button>
                 <button
                   onClick={() => {
-                    const input = document.querySelector('input, textarea, select') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-                    if (input && input.value.trim()) {
-                      handleSaveEdit(input.value.trim())
+                    if (editModal.inputType === 'date-parts') {
+                      const dayInput = document.getElementById('birthDay') as HTMLInputElement
+                      const monthInput = document.getElementById('birthMonth') as HTMLInputElement
+                      const yearInput = document.getElementById('birthYear') as HTMLInputElement
+                      
+                      if (dayInput && monthInput && yearInput && 
+                          dayInput.value && monthInput.value && yearInput.value) {
+                        const day = dayInput.value.padStart(2, '0')
+                        const month = monthInput.value.padStart(2, '0')
+                        const year = yearInput.value
+                        const dateString = `${year}-${month}-${day}`
+                        handleSaveEdit(dateString)
+                      } else {
+                        alert('Please fill in all date fields')
+                      }
+                    } else {
+                      const input = document.querySelector('input, textarea, select') as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+                      if (input && input.value.trim()) {
+                        handleSaveEdit(input.value.trim())
+                      }
                     }
                   }}
                   className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors cursor-pointer"
@@ -1662,6 +2033,8 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             {console.log('🏠 Modal rendering with availableProperties:', availableProperties)}
+            {console.log('🏠 Modal rendering - availableProperties length:', availableProperties.length)}
+            {console.log('🏠 Modal rendering - availableProperties type:', typeof availableProperties)}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-slate-900">Link Property to Owner</h3>
               <button 
@@ -1674,32 +2047,59 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
             
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Select a property to link to this owner. Only properties without an owner can be linked.
+                Select properties to link to this owner. You can change ownership of properties that already have an owner.
               </p>
               
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Available Properties</label>
                 <div className="text-xs text-gray-500 mb-2">
-                  Debug: {availableProperties.length} properties loaded
+                  {availableProperties.length} properties loaded
                 </div>
-                <select 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleLinkProperty(e.target.value)
-                    }
-                  }}
-                >
-                  <option value="">Select a property...</option>
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg">
                   {availableProperties.map((property) => {
-                    console.log('🏠 Rendering property option:', property)
+                    const isSelected = selectedProperties.includes(property.id)
                     return (
-                      <option key={property.id} value={property.id}>
-                        {property.name} - {property.address}
-                      </option>
+                      <div
+                        key={property.id}
+                        className={`p-3 border-b border-gray-200 last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                          isSelected ? 'bg-orange-50 border-orange-200' : ''
+                        }`}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedProperties(prev => prev.filter(id => id !== property.id))
+                          } else {
+                            setSelectedProperties(prev => [...prev, property.id])
+                          }
+                        }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}} // Handled by onClick on parent div
+                            className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">
+                              {property.name || property.title || 'Unknown'}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {property.address || property.location || 'No address'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {property.type} • {property.city}, {property.country}
+                              {property.owner_id && (
+                                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                                  Has Owner
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )
                   })}
-                </select>
+                </div>
               </div>
               
               {availableProperties.length === 0 && (
@@ -1712,10 +2112,36 @@ export default function OwnerDetailsPage({ params }: OwnerDetailsPageProps) {
             
             <div className="flex justify-end space-x-3 mt-6">
               <button 
-                onClick={() => setShowLinkPropertyModal(false)}
+                onClick={() => {
+                  setShowLinkPropertyModal(false)
+                  setSelectedProperties([])
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  if (selectedProperties.length === 0) {
+                    alert('Please select at least one property')
+                    return
+                  }
+                  
+                  try {
+                    console.log('🔗 Linking multiple properties to owner...')
+                    for (const propertyId of selectedProperties) {
+                      await handleLinkProperty(propertyId)
+                    }
+                    setShowLinkPropertyModal(false)
+                    setSelectedProperties([])
+                  } catch (error) {
+                    console.error('🔗 Error linking properties:', error)
+                  }
+                }}
+                disabled={selectedProperties.length === 0}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Link {selectedProperties.length} Properties
               </button>
             </div>
           </div>

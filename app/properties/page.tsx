@@ -103,9 +103,23 @@ export default function PropertiesPage() {
           propertiesData = response.data.data
         }
         
-        console.log('✅ Properties loaded successfully:', propertiesData)
-        console.log('✅ Properties count:', propertiesData.length)
-        setProperties(propertiesData)
+        // Debug: Log all properties with their is_active status
+        console.log('🔍 All properties with is_active status:')
+        propertiesData.forEach((p, index) => {
+          console.log(`Property ${index + 1}: ${p.name} - is_active: ${p.is_active} (type: ${typeof p.is_active})`)
+        })
+        
+        // Filter out deactivated properties for display
+        const activeProperties = propertiesData.filter(p => {
+          const isActive = p.is_active !== false
+          console.log(`Filtering ${p.name}: is_active=${p.is_active}, result=${isActive}`)
+          return isActive
+        })
+        
+        console.log('✅ Properties loaded successfully:', activeProperties)
+        console.log('✅ Active properties count:', activeProperties.length)
+        console.log('✅ Total properties (including deactivated):', propertiesData.length)
+        setProperties(activeProperties)
         console.log('✅ Properties state updated')
       } else {
         console.error('❌ Failed to load properties:', (response as any).error)
@@ -174,7 +188,7 @@ export default function PropertiesPage() {
     })
     
     const unsubscribeDeleted = onPropertyDeleted((propertyId) => {
-      console.log('📡 PropertiesPage: Property deleted event received, refreshing list')
+      console.log('📡 PropertiesPage: Property deleted event received for property:', propertyId, 'refreshing list')
       loadProperties()
     })
     
@@ -195,22 +209,50 @@ export default function PropertiesPage() {
   const handleDeleteProperty = async (property: any) => {
     try {
       console.log('🗑️ Deleting property:', property.id)
+      console.log('🗑️ Property object:', property)
       
       // Call delete API
-      await propertyServiceAdapted.delete(property.id)
+      const result = await propertyServiceAdapted.delete(property.id)
+      console.log('🗑️ Delete API result:', result)
       
-      // Emit property deleted event
-      emitPropertyDeleted(property.id)
-      console.log('📡 Property deleted event emitted for:', property.id)
-      
-      // Show success message
-      setToastMessage('Property deleted successfully')
-      setShowToast(true)
-      
-      console.log('✅ Property deleted successfully')
+      // Check if deletion was successful
+      if (result.success) {
+        // Show success message
+        setToastMessage('Property deleted successfully')
+        setShowToast(true)
+        
+        // Emit property deleted event
+        emitPropertyDeleted(property.id)
+        console.log('📡 Property deleted event emitted for:', property.id)
+        
+        // Reload properties to reflect changes
+        console.log('🔄 Reloading properties after successful deletion...')
+        await loadProperties()
+        console.log('✅ Properties reloaded after deletion')
+        
+        console.log('✅ Property deleted successfully')
+      } else {
+        console.error('❌ Delete API returned unsuccessful result:', result)
+        const errorMessage = result.error?.message || result.message || 'Unknown error'
+        setToastMessage(`Failed to delete property: ${errorMessage}`)
+        setShowToast(true)
+      }
     } catch (error) {
       console.error('❌ Error deleting property:', error)
-      setToastMessage('Failed to delete property')
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      })
+      
+      let errorMessage = 'Failed to delete property'
+      if (error.response?.data?.message) {
+        errorMessage = `Failed to delete property: ${error.response.data.message}`
+      } else if (error.message) {
+        errorMessage = `Failed to delete property: ${error.message}`
+      }
+      
+      setToastMessage(errorMessage)
       setShowToast(true)
     }
   }
@@ -294,7 +336,7 @@ export default function PropertiesPage() {
                 <div>
                   <p className="text-slate-600 text-xs mb-1">Active Properties</p>
                   <p className="text-2xl font-medium text-slate-900">
-                    {properties.filter(p => p.status === 'Active' || p.is_active === true || p.status === 'active').length}
+                    {properties.length}
                   </p>
                 </div>
               </div>

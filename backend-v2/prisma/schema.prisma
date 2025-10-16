@@ -20,6 +20,16 @@ model User {
   is_active                                 Boolean        @default(true)
   isVerified                                Boolean        @default(false) @map("is_verified")
   last_login                                DateTime?
+  
+  // Owner-specific fields
+  nationality                               String?
+  date_of_birth                            DateTime?       @map("date_of_birth")
+  whatsapp                                  String?
+  telegram                                  String?
+  comments                                  String?
+  payment_preferences                       String?        @map("payment_preferences")
+  personal_stay_days                        Int?           @default(30) @map("personal_stay_days")
+  
   createdAt                                 DateTime       @default(now()) @map("created_at")
   updatedAt                                 DateTime       @updatedAt @map("updated_at")
   audit_logs                                audit_logs[]
@@ -37,6 +47,7 @@ model User {
   created_tasks                             tasks[]        @relation("TaskCreator")
   task_comments                             task_comments[]
   task_attachments                          task_attachments[] @relation("TaskAttachmentUploader")
+  task_photos                               task_photos[]  @relation("TaskPhotoUploader")
 
   @@map("users")
 }
@@ -361,6 +372,7 @@ model tasks {
   comments          task_comments[]
   checklist_items   task_checklist_items[]
   attachments       task_attachments[]
+  photos            task_photos[]
 
   @@map("tasks")
 }
@@ -410,6 +422,28 @@ model task_attachments {
   user        User     @relation("TaskAttachmentUploader", fields: [uploaded_by], references: [id])
 
   @@map("task_attachments")
+}
+
+model task_photos {
+  id            String    @id @default(cuid())
+  task_id       String
+  file_name     String
+  original_name String
+  file_size     Int
+  mime_type     String
+  s3_key        String
+  s3_url        String
+  uploaded_by   String
+  uploaded_at   DateTime  @default(now())
+  is_active     Boolean   @default(true)
+  deleted_at    DateTime?
+  deleted_by    String?
+  
+  // Relations
+  task          tasks     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  uploaded_by_user User   @relation("TaskPhotoUploader", fields: [uploaded_by], references: [id])
+
+  @@map("task_photos")
 }
 
 model manual_blocks {

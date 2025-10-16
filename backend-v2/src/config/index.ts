@@ -23,7 +23,11 @@ export const config = {
 
   // CORS Configuration
   cors: {
-    origin: process.env['CORS_ORIGIN'] || ['http://localhost:3000', 'http://localhost:5173'],
+    origin: process.env['CORS_ORIGIN'] || [
+      'http://localhost:3000', 
+      'http://localhost:5173',
+      'https://luba-horoscopic-fragmentally.ngrok-free.dev'
+    ],
   },
 
   // Rate Limiting Configuration
