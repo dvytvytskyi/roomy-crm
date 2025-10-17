@@ -21,11 +21,17 @@ export default function AnalyticsOverview({ selectedPeriod, dateRange, onDateRan
     const loadAnalyticsData = async () => {
       try {
         setLoading(true)
-        const response = await analyticsService.getAnalyticsOverview({
-          period: selectedPeriod as any,
-          dateFrom: dateRange.from || undefined,
-          dateTo: dateRange.to || undefined
-        })
+        
+        // If custom period, use dateFrom/dateTo, otherwise use period
+        const filters: any = {}
+        if (selectedPeriod === 'custom') {
+          filters.dateFrom = dateRange.from || undefined
+          filters.dateTo = dateRange.to || undefined
+        } else {
+          filters.period = selectedPeriod
+        }
+        
+        const response = await analyticsService.getAnalyticsOverview(filters)
         setKeyMetrics(response.data)
       } catch (error) {
         console.error('Error loading analytics overview:', error)

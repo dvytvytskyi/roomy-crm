@@ -136,6 +136,7 @@ import amenityRoutes from './routes/amenity.routes';
 import calendarRoutes from './routes/calendar.routes';
 import pricingCalendarRoutes from './routes/pricing-calendar.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import publicRoutes from './routes/public.routes';
 
 // API routes
@@ -154,6 +155,7 @@ app.get('/api/v2', (_req, res) => {
       tasks: '/api/v2/tasks',
       financials: '/api/v2/financials',
       scheduler: '/api/v2/scheduler',
+      analytics: '/api/v2/analytics',
       webhooks: '/api/v2/webhooks',
       files: '/api/v2/files',
       public: '/api/v2/public'
@@ -190,6 +192,7 @@ app.use('/api/v2/integrations/airbnb', airbnbRoutes);
 app.use('/api/v2/calendar', pricingCalendarRoutes);
 app.use('/api/v2/calendar', calendarRoutes);
 app.use('/api/v2/dashboard', dashboardRoutes);
+app.use('/api/v2/analytics', analyticsRoutes);
 app.use('/health', healthRoutes);
 
 // 404 handler

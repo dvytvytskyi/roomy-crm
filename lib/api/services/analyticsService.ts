@@ -1,4 +1,4 @@
-import { apiClient } from '../client'
+import { apiClient } from '../client-v2'
 
 export interface AnalyticsOverview {
   totalRevenue: number
@@ -127,6 +127,7 @@ export interface AnalyticsFilters {
   period?: 'week' | 'month' | 'quarter' | 'year' | 'custom'
   dateFrom?: string
   dateTo?: string
+  propertyId?: string
   viewMode?: 'chart' | 'table'
   dataType?: string
   format?: 'csv' | 'pdf' | 'excel'
@@ -135,7 +136,7 @@ export interface AnalyticsFilters {
 class AnalyticsService {
   async getAnalyticsOverview(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: AnalyticsOverview }> {
     try {
-      const response = await apiClient.get('/api/analytics/overview', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/overview', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching analytics overview:', error)
@@ -164,7 +165,7 @@ class AnalyticsService {
 
   async getFinancialAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: FinancialAnalytics }> {
     try {
-      const response = await apiClient.get('/api/analytics/financials', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/financials', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching financial analytics:', error)
@@ -223,7 +224,7 @@ class AnalyticsService {
 
   async getUnitsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: UnitAnalytics }> {
     try {
-      const response = await apiClient.get('/api/analytics/units', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/units', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching units analytics:', error)
@@ -273,7 +274,7 @@ class AnalyticsService {
 
   async getOwnersAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: OwnerAnalytics }> {
     try {
-      const response = await apiClient.get('/api/analytics/owners', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/owners', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching owners analytics:', error)
@@ -323,7 +324,7 @@ class AnalyticsService {
 
   async getReservationsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: ReservationAnalytics }> {
     try {
-      const response = await apiClient.get('/api/analytics/reservations', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/reservations', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching reservations analytics:', error)
@@ -357,7 +358,7 @@ class AnalyticsService {
 
   async getAgentsAnalytics(filters: AnalyticsFilters = {}): Promise<{ success: boolean; data: AgentAnalytics }> {
     try {
-      const response = await apiClient.get('/api/analytics/agents', { params: filters })
+      const response = await apiClient.get('/api/v2/analytics/agents', { params: filters })
       return response.data
     } catch (error) {
       console.error('Error fetching agents analytics:', error)
@@ -407,7 +408,7 @@ class AnalyticsService {
 
   async getReports(): Promise<{ success: boolean; data: AnalyticsReport[] }> {
     try {
-      const response = await apiClient.get('/api/analytics/reports')
+      const response = await apiClient.get('/api/v2/analytics/reports')
       return response.data
     } catch (error) {
       console.error('Error fetching reports:', error)
@@ -459,7 +460,7 @@ class AnalyticsService {
     exportFormat?: string
   }): Promise<{ success: boolean; data: any; message: string }> {
     try {
-      const response = await apiClient.post('/api/analytics/reports/generate', reportData)
+      const response = await apiClient.post('/api/v2/analytics/reports/generate', reportData)
       return response.data
     } catch (error) {
       console.error('Error generating report:', error)
@@ -474,7 +475,7 @@ class AnalyticsService {
     filters?: any
   }): Promise<Blob | { success: boolean; data: any; message: string }> {
     try {
-      const response = await apiClient.post('/api/analytics/export', exportData, {
+      const response = await apiClient.post('/api/v2/analytics/export', exportData, {
         responseType: exportData.format === 'csv' ? 'blob' : 'json'
       })
       return response.data
