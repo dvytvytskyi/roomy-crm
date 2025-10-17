@@ -41,6 +41,13 @@ export class FileService extends BaseService {
   }
 
   /**
+   * Get file extension from filename
+   */
+  public static getFileExtension(filename: string): string {
+    return path.extname(filename).toLowerCase();
+  }
+
+  /**
    * Save file upload record to database
    */
   public static async saveFileUpload(

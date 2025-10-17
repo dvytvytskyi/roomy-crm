@@ -1,4 +1,4 @@
-import { apiClient } from '../config'
+import { apiClient } from '../client'
 
 export interface CleaningComment {
   id: number
@@ -15,7 +15,7 @@ export interface CleaningChecklistItem {
 }
 
 export interface CleaningTask {
-  id: number
+  id: string
   unit: string
   unitId: string
   type: 'Regular Clean' | 'Deep Clean' | 'Office Clean' | 'Post-Checkout' | 'Pre-Arrival' | 'Mid-Stay'
@@ -139,7 +139,7 @@ class CleaningService {
       // Return mock data on error
       const mockTasks: CleaningTask[] = [
         {
-          id: 1,
+          id: '1',
           unit: 'Luxury Apartment Downtown Dubai',
           unitId: 'prop_1',
           type: 'Deep Clean',
@@ -160,7 +160,7 @@ class CleaningService {
           linenComments: 'Bed sheets and towels need special care due to guest allergies'
         },
         {
-          id: 2,
+          id: '2',
           unit: 'Luxury Apartment Downtown Dubai',
           unitId: 'prop_1',
           type: 'Regular Clean',
@@ -181,7 +181,7 @@ class CleaningService {
           linenComments: ''
         },
         {
-          id: 3,
+          id: '3',
           unit: 'Luxury Apartment Downtown Dubai',
           unitId: 'prop_1',
           type: 'Deep Clean',
@@ -237,7 +237,7 @@ class CleaningService {
   }
 
   // Get single cleaning task
-  async getCleaningTask(id: number): Promise<CleaningSingleResponse> {
+  async getCleaningTask(id: string): Promise<CleaningSingleResponse> {
     try {
       const response = await apiClient.get(`/api/cleaning/${id}`)
       return response.data
@@ -246,7 +246,7 @@ class CleaningService {
       
       // Return mock data on error
       const mockTask: CleaningTask = {
-        id: id,
+        id: id.toString(),
         unit: 'Luxury Apartment Downtown Dubai',
         unitId: 'prop_1',
         type: 'Deep Clean',
@@ -281,13 +281,13 @@ class CleaningService {
   }
 
   // Update cleaning task
-  async updateCleaningTask(id: number, data: CleaningUpdateRequest): Promise<CleaningSingleResponse> {
+  async updateCleaningTask(id: string, data: CleaningUpdateRequest): Promise<CleaningSingleResponse> {
     const response = await apiClient.put(`/cleaning/${id}`, data)
     return response.data
   }
 
   // Delete cleaning task
-  async deleteCleaningTask(id: number): Promise<CleaningDeleteResponse> {
+  async deleteCleaningTask(id: string): Promise<CleaningDeleteResponse> {
     const response = await apiClient.delete(`/cleaning/${id}`)
     return response.data
   }
@@ -295,7 +295,7 @@ class CleaningService {
   // ==================== COMMENTS ====================
   
   // Get comments for a cleaning task
-  async getCleaningComments(id: number): Promise<{ success: boolean; data: CleaningComment[] }> {
+  async getCleaningComments(id: string): Promise<{ success: boolean; data: CleaningComment[] }> {
     try {
       const response = await apiClient.get(`/api/cleaning/${id}/comments`)
       return response.data
@@ -305,21 +305,21 @@ class CleaningService {
       // Return mock data on error
       const mockComments: CleaningComment[] = [
         {
-          id: 1,
+          id: '1',
           author: 'Clean Pro Services',
           date: '2024-01-15T10:30:00.000Z',
           text: 'Started deep cleaning - all surfaces sanitized with eco-friendly products',
           type: 'cleaner'
         },
         {
-          id: 2,
+          id: '2',
           author: 'Clean Pro Services',
           date: '2024-01-15T11:15:00.000Z',
           text: 'Kitchen and bathroom deep cleaning completed. Moving to bedroom area.',
           type: 'cleaner'
         },
         {
-          id: 3,
+          id: '3',
           author: 'Clean Pro Services',
           date: '2024-01-15T13:00:00.000Z',
           text: 'Deep cleaning completed successfully. All checklist items done. Special attention paid to allergen removal.',
@@ -335,7 +335,7 @@ class CleaningService {
   }
 
   // Add comment to a cleaning task
-  async addCleaningComment(id: number, data: { text: string; type?: string }): Promise<{ success: boolean; data: CleaningComment; message: string }> {
+  async addCleaningComment(id: string, data: { text: string; type?: string }): Promise<{ success: boolean; data: CleaningComment; message: string }> {
     const response = await apiClient.post(`/cleaning/${id}/comments`, data)
     return response.data
   }
@@ -354,42 +354,42 @@ class CleaningService {
       const mockChecklistData = {
         checklist: [
           {
-            id: 1,
+            id: '1',
             item: 'Kitchen appliances cleaned',
             completed: true
           },
           {
-            id: 2,
+            id: '2',
             item: 'Bathroom sanitized',
             completed: true
           },
           {
-            id: 3,
+            id: '3',
             item: 'Carpet cleaning',
             completed: true
           },
           {
-            id: 4,
+            id: '4',
             item: 'Bed linens changed',
             completed: true
           },
           {
-            id: 5,
+            id: '5',
             item: 'Towels replaced',
             completed: true
           },
           {
-            id: 6,
+            id: '6',
             item: 'Windows cleaned',
             completed: true
           },
           {
-            id: 7,
+            id: '7',
             item: 'Air vents cleaned',
             completed: true
           },
           {
-            id: 8,
+            id: '8',
             item: 'Allergen removal treatment',
             completed: true
           }
@@ -431,7 +431,7 @@ class CleaningService {
   // ==================== NOTES ====================
   
   // Update notes for a cleaning task
-  async updateCleaningNotes(id: number, data: { notes: string }): Promise<{ success: boolean; data: CleaningTask; message: string }> {
+  async updateCleaningNotes(id: string, data: { notes: string }): Promise<{ success: boolean; data: CleaningTask; message: string }> {
     const response = await apiClient.put(`/cleaning/${id}/notes`, data)
     return response.data
   }

@@ -26,6 +26,8 @@ export interface DashboardStatsV2 {
   alerts: {
     dtcmPermitsExpiring: number;
     utilitiesReminders: number;
+    dtcmExpiringUnits: string[];
+    utilitiesPaymentReminders: string[];
   };
 }
 

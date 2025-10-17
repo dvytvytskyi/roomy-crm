@@ -7,6 +7,7 @@ const publicRoutes = ['/login', '/register']
 // Define protected routes that require authentication
 const protectedRoutes = [
   '/',
+  '/dashboard',
   '/properties',
   '/reservations', 
   '/owners',

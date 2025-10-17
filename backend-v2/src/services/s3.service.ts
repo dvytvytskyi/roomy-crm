@@ -33,8 +33,10 @@ export class S3Service {
     return S3Service.instance;
   }
 
-  private getS3Client(): S3Client {
-    if (!this.s3Client) {
+  private static s3Client: S3Client | null = null;
+
+  private static getS3Client(): S3Client {
+    if (!S3Service.s3Client) {
       // ✅ Додайте лог для перевірки, чи читаються змінні
       logger.debug('[S3Service] Initializing S3 Client with region:', config.aws.region);
       if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
@@ -54,7 +56,7 @@ export class S3Service {
         bucket: config.aws.s3BucketName
       });
       
-      this.s3Client = new S3Client({
+      S3Service.s3Client = new S3Client({
         region: config.aws.region,
         credentials: {
           accessKeyId: config.aws.accessKeyId,
@@ -62,13 +64,13 @@ export class S3Service {
         },
       });
     }
-    return this.s3Client;
+    return S3Service.s3Client;
   }
 
   /**
    * Upload file to S3
    */
-  public async uploadFile(
+  public static async uploadFile(
     file: Buffer | Uint8Array | string,
     key: string,
     options: S3UploadOptions = {}
@@ -99,7 +101,7 @@ export class S3Service {
       });
 
       logger.info('[S3Service] Sending PutObjectCommand...');
-      const result = await this.getS3Client().send(command);
+      const result = await S3Service.getS3Client().send(command);
       logger.info('[S3Service] PutObjectCommand result:', result);
 
       const url = options.isPublic 

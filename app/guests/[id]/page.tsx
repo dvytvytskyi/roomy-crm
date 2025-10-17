@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { 
   User, Mail, Phone, Calendar, MapPin, MessageSquare, 
   Edit, Trash2, Plus, Eye, ArrowLeft, FileText, Download, Upload,
-  Building, Users
+  Building, Users, Star, Crown, DollarSign
 } from 'lucide-react'
 import TopNavigation from '@/components/TopNavigation'
 import AddGuestModal from '@/components/guests/AddGuestModal'

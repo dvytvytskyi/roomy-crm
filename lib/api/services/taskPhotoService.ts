@@ -74,11 +74,7 @@ class TaskPhotoService {
       const formData = new FormData();
       formData.append('photo', photoFile);
       
-      const response = await apiClientV2.post(`/tasks/${taskId}/photos`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClientV2.post(`/tasks/${taskId}/photos`, formData);
       
       console.log('📸 TaskPhotoService: Upload response:', response);
       

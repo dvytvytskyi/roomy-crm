@@ -18,6 +18,19 @@ export const getApiUrl = () => {
   return isProductionMode() ? API_CONFIG.PRODUCTION_URL : API_CONFIG.BASE_URL;
 };
 
+// Get the base URL for calendar exports (without /api suffix)
+export const getCalendarBaseUrl = () => {
+  const baseUrl = getApiUrl();
+  // Remove /api suffix if present
+  return baseUrl.replace(/\/api$/, '');
+};
+
+// Generate calendar export URL for a property
+export const getCalendarExportUrl = (propertyId: string) => {
+  const baseUrl = getCalendarBaseUrl();
+  return `${baseUrl}/api/v2/calendar/properties/${propertyId}/calendar.ics`;
+};
+
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth

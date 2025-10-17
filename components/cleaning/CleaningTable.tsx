@@ -3,130 +3,15 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Edit, Trash2, Eye, ChevronUp, ChevronDown, Clock, CheckCircle, Calendar, XCircle } from 'lucide-react'
-import { CleaningTask } from '../../lib/api/services/cleaningService'
+import { TaskWithDetailsV2 } from '../../lib/api/services/taskService-v2'
 
 interface CleaningTableProps {
-  tasks: CleaningTask[]
+  tasks: TaskWithDetailsV2[]
   loading: boolean
   selectedCleaning: number[]
   onSelectionChange: (selected: number[]) => void
 }
 
-// Mock data for cleaning tasks
-const mockCleaning = [
-  {
-    id: 1,
-    date: '2024-01-15',
-    time: '10:00',
-    unit: 'Apartment Burj Khalifa 2',
-    type: 'Deep Clean',
-    contractor: 'Clean Pro Services',
-    duration: '3 hours',
-    status: 'Completed',
-    notes: 'Post-checkout cleaning after guest departure',
-    includesLaundry: true,
-    laundryCount: 12,
-    linenComments: 'Bed sheets and towels need special care due to guest allergies'
-  },
-  {
-    id: 2,
-    date: '2024-01-15',
-    time: '14:00',
-    unit: 'Marina View Studio',
-    type: 'Regular Clean',
-    contractor: 'Sparkle Clean',
-    duration: '2 hours',
-    status: 'Scheduled',
-    notes: 'Weekly maintenance cleaning',
-    includesLaundry: false,
-    laundryCount: 0,
-    linenComments: ''
-  },
-  {
-    id: 3,
-    date: '2024-01-16',
-    time: '09:00',
-    unit: 'Downtown Loft 2BR',
-    type: 'Deep Clean',
-    contractor: 'Clean Pro Services',
-    duration: '4 hours',
-    status: 'Scheduled',
-    notes: 'Pre-arrival deep cleaning',
-    includesLaundry: true,
-    laundryCount: 8,
-    linenComments: 'Standard cleaning for new guest arrival'
-  },
-  {
-    id: 4,
-    date: '2024-01-16',
-    time: '11:30',
-    unit: 'JBR Beach Apartment',
-    type: 'Regular Clean',
-    contractor: 'Sparkle Clean',
-    duration: '2.5 hours',
-    status: 'Scheduled',
-    notes: 'Mid-stay cleaning for long-term guest',
-    includesLaundry: false,
-    laundryCount: 0,
-    linenComments: ''
-  },
-  {
-    id: 5,
-    date: '2024-01-14',
-    time: '16:00',
-    unit: 'Business Bay Office',
-    type: 'Office Clean',
-    contractor: 'Professional Cleaners',
-    duration: '2 hours',
-    status: 'Completed',
-    notes: 'End of week office cleaning',
-    includesLaundry: false,
-    laundryCount: 0,
-    linenComments: ''
-  },
-  {
-    id: 6,
-    date: '2024-01-17',
-    time: '08:00',
-    unit: 'DIFC Penthouse',
-    type: 'Deep Clean',
-    contractor: 'Clean Pro Services',
-    duration: '5 hours',
-    status: 'Scheduled',
-    notes: 'Monthly deep cleaning service',
-    includesLaundry: true,
-    laundryCount: 15,
-    linenComments: 'Premium linen service for penthouse'
-  },
-  {
-    id: 7,
-    date: '2024-01-15',
-    time: '13:00',
-    unit: 'JLT Studio',
-    type: 'Regular Clean',
-    contractor: 'Sparkle Clean',
-    duration: '1.5 hours',
-    status: 'Scheduled',
-    notes: 'Quick turnover cleaning',
-    includesLaundry: false,
-    laundryCount: 0,
-    linenComments: ''
-  },
-  {
-    id: 8,
-    date: '2024-01-14',
-    time: '15:30',
-    unit: 'Arabian Ranches Villa',
-    type: 'Deep Clean',
-    contractor: 'Professional Cleaners',
-    duration: '6 hours',
-    status: 'Completed',
-    notes: 'Post-event cleaning after party',
-    includesLaundry: true,
-    laundryCount: 20,
-    linenComments: 'Heavy duty cleaning after party event'
-  }
-]
 
 export default function CleaningTable({ tasks, loading, selectedCleaning, onSelectionChange }: CleaningTableProps) {
   const router = useRouter()
@@ -138,8 +23,34 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
 
   // Sort data (filtering is now handled by API)
   const sortedCleaning = [...tasks].sort((a, b) => {
-    const aValue = a[sortField as keyof typeof a]
-    const bValue = b[sortField as keyof typeof b]
+    let aValue: any
+    let bValue: any
+    
+    switch (sortField) {
+      case 'scheduledDate':
+        aValue = a.scheduledDate
+        bValue = b.scheduledDate
+        break
+      case 'unit':
+        aValue = a.property?.name || ''
+        bValue = b.property?.name || ''
+        break
+      case 'type':
+        aValue = a.title || ''
+        bValue = b.title || ''
+        break
+      case 'cleaner':
+        aValue = a.assignedToUser ? `${a.assignedToUser.firstName} ${a.assignedToUser.lastName}` : ''
+        bValue = b.assignedToUser ? `${b.assignedToUser.firstName} ${b.assignedToUser.lastName}` : ''
+        break
+      case 'status':
+        aValue = a.status
+        bValue = b.status
+        break
+      default:
+        aValue = a[sortField as keyof typeof a]
+        bValue = b[sortField as keyof typeof b]
+    }
     
     if (sortField === 'scheduledDate') {
       return sortDirection === 'asc' 
@@ -325,9 +236,11 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <span className="text-sm text-slate-900">
-                      {new Date(task.scheduledDate).toLocaleDateString()}
+                      {task.scheduledDate ? new Date(task.scheduledDate).toLocaleDateString() : 'N/A'}
                     </span>
-                    <div className="text-xs text-slate-500">{task.scheduledTime}</div>
+                    <div className="text-xs text-slate-500">
+                      {task.scheduledDate ? new Date(task.scheduledDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -335,20 +248,22 @@ export default function CleaningTable({ tasks, loading, selectedCleaning, onSele
                     onClick={() => router.push(`/cleaning/${task.id}`)}
                     className="text-sm font-medium text-slate-900 hover:text-orange-600 hover:underline cursor-pointer text-left"
                   >
-                    {task.unit}
+                    {task.property?.name || 'N/A'}
                   </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-slate-900 capitalize">{task.type}</span>
+                  <span className="text-sm text-slate-900 capitalize">{task.title || 'CLEANING'}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-slate-900">{task.cleaner}</span>
+                  <span className="text-sm text-slate-900">
+                    {task.assignedToUser ? `${task.assignedToUser.firstName} ${task.assignedToUser.lastName}` : 'N/A'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-slate-900">{task.duration}</span>
+                  <span className="text-sm text-slate-900">{task.estimatedDuration || 'N/A'}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {task.includesLaundry ? (
+                  {task.notes?.includes('Linen service') ? (
                     <span className="text-sm text-slate-900">Yes</span>
                   ) : (
                     <span className="text-sm text-slate-500">No</span>

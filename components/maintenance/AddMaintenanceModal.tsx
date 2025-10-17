@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, Wrench, Building, User, Calendar, AlertTriangle } from 'lucide-react'
+import { X, Wrench, Building, User, Calendar, AlertTriangle, ChevronDown } from 'lucide-react'
 import { taskServiceV2 } from '@/lib/api/services/taskService-v2'
 import { propertyServiceV2 } from '@/lib/api/services/propertyService-v2'
 import { userServiceAdapter } from '@/lib/api/adapters/apiAdapter'
@@ -196,22 +196,27 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
                   Property *
                 </div>
               </label>
-              <select
-                value={formData.propertyId}
-                onChange={(e) => handleChange('propertyId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
-                required
-                disabled={loadingProperties}
-              >
-                <option value="">
-                  {loadingProperties ? 'Loading properties...' : 'Select Property'}
-                </option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name} - {property.address}
+              <div className="relative">
+                <select
+                  value={formData.propertyId}
+                  onChange={(e) => handleChange('propertyId', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white pr-10"
+                  required
+                  disabled={loadingProperties}
+                >
+                  <option value="">
+                    {loadingProperties ? 'Loading properties...' : 'Select Property'}
                   </option>
-                ))}
-              </select>
+                  {properties.map((property) => (
+                    <option key={property.id} value={property.id}>
+                      {property.name} - {property.address}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             {/* Technician */}
@@ -222,22 +227,27 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
                   Technician *
                 </div>
               </label>
-              <select
-                value={formData.technician}
-                onChange={(e) => handleChange('technician', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
-                required
-                disabled={loadingTechnicians}
-              >
-                <option value="">
-                  {loadingTechnicians ? 'Loading technicians...' : 'Select Technician'}
-                </option>
-                {technicians.map((technician) => (
-                  <option key={technician.id} value={technician.id}>
-                    {technician.firstName} {technician.lastName} ({technician.email})
+              <div className="relative">
+                <select
+                  value={formData.technician}
+                  onChange={(e) => handleChange('technician', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white pr-10"
+                  required
+                  disabled={loadingTechnicians}
+                >
+                  <option value="">
+                    {loadingTechnicians ? 'Loading technicians...' : 'Select Technician'}
                   </option>
-                ))}
-              </select>
+                  {technicians.map((technician) => (
+                    <option key={technician.id} value={technician.id}>
+                      {technician.firstName} {technician.lastName} ({technician.email})
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             {/* Priority */}
@@ -248,16 +258,21 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
                   Priority
                 </div>
               </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => handleChange('priority', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
-              >
-                <option value="Low">Low</option>
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.priority}
+                  onChange={(e) => handleChange('priority', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white pr-10"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             {/* Type */}
@@ -268,18 +283,23 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
                   Type
                 </div>
               </label>
-              <select
-                value={formData.type}
-                onChange={(e) => handleChange('type', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
-              >
-                <option value="General">General</option>
-                <option value="Plumbing">Plumbing</option>
-                <option value="Electrical">Electrical</option>
-                <option value="HVAC">HVAC</option>
-                <option value="Emergency">Emergency</option>
-                <option value="Preventive">Preventive</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.type}
+                  onChange={(e) => handleChange('type', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white pr-10"
+                >
+                  <option value="General">General</option>
+                  <option value="Plumbing">Plumbing</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="HVAC">HVAC</option>
+                  <option value="Emergency">Emergency</option>
+                  <option value="Preventive">Preventive</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             {/* Scheduled Date */}
@@ -304,20 +324,25 @@ export default function AddMaintenanceModal({ isOpen, onClose }: AddMaintenanceM
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Estimated Duration
               </label>
-              <select
-                value={formData.estimatedDuration}
-                onChange={(e) => handleChange('estimatedDuration', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzY2NzM4MCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+')] bg-no-repeat bg-right-3 bg-center pr-8"
-              >
-                <option value="30 minutes">30 minutes</option>
-                <option value="1 hour">1 hour</option>
-                <option value="1.5 hours">1.5 hours</option>
-                <option value="2 hours">2 hours</option>
-                <option value="3 hours">3 hours</option>
-                <option value="4 hours">4 hours</option>
-                <option value="6 hours">6 hours</option>
-                <option value="8 hours">8 hours</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.estimatedDuration}
+                  onChange={(e) => handleChange('estimatedDuration', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white pr-10"
+                >
+                  <option value="30 minutes">30 minutes</option>
+                  <option value="1 hour">1 hour</option>
+                  <option value="1.5 hours">1.5 hours</option>
+                  <option value="2 hours">2 hours</option>
+                  <option value="3 hours">3 hours</option>
+                  <option value="4 hours">4 hours</option>
+                  <option value="6 hours">6 hours</option>
+                  <option value="8 hours">8 hours</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             {/* Cost */}

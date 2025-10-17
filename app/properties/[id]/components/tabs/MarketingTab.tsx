@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Save, Globe, Smartphone, Calendar, Link, Copy, Check } from 'lucide-react'
+import { getCalendarExportUrl } from '../../../../../lib/api/config'
 
 interface MarketingTabProps {
   propertyData: any
@@ -19,6 +20,8 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
   
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [airbnbImportUrl, setAirbnbImportUrl] = useState('')
+  const [isUpdatingImport, setIsUpdatingImport] = useState(false)
   
   // Load marketing data on mount
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
         guestAccess: propertyData.guestAccess || '',
         otherNotes: propertyData.otherNotes || ''
       })
+      setAirbnbImportUrl(propertyData.airbnb_ical_import_url || '')
     }
   }, [propertyData])
 
@@ -62,7 +66,7 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
   // Generate iCal URL for Airbnb
   const generateICalUrl = () => {
     if (!propertyData?.id) return ''
-    return `https://luba-horoscopic-fragmentally.ngrok-free.dev/api/v2/calendar/properties/${propertyData.id}/calendar.ics`
+    return getCalendarExportUrl(propertyData.id)
   }
 
   // Copy iCal URL to clipboard
@@ -85,6 +89,37 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
       document.body.removeChild(textArea)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // Update Airbnb Import URL
+  const handleUpdateAirbnbImport = async () => {
+    setIsUpdatingImport(true)
+    try {
+      const response = await fetch(`/api/v2/calendar/properties/${propertyData.id}/calendar-imports`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          airbnb_ical_import_url: airbnbImportUrl
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Airbnb Import URL updated:', result)
+        // Show success message
+        alert('Airbnb Import URL updated successfully!')
+      } else {
+        throw new Error('Failed to update Airbnb Import URL')
+      }
+    } catch (error) {
+      console.error('Error updating Airbnb Import URL:', error)
+      alert('Failed to update Airbnb Import URL')
+    } finally {
+      setIsUpdatingImport(false)
     }
   }
 
@@ -312,6 +347,78 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
               <li>Click "Import calendar"</li>
               <li>Paste the URL and click "Add calendar"</li>
               <li>Your Airbnb calendar will now sync with your reservations</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      {/* Airbnb Import Configuration */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Calendar className="text-pink-500" size={20} />
+          <h2 className="text-lg font-semibold text-gray-900">Airbnb Import Configuration</h2>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="p-4 bg-pink-50 border border-pink-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-medium text-pink-900 mb-2">Import Airbnb Reservations</h3>
+                <p className="text-sm text-pink-700 mb-3">
+                  Configure your Airbnb iCal import URL to automatically import reservations from Airbnb into your system.
+                  This will keep your calendar synchronized with Airbnb bookings.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Airbnb iCal Import URL
+                    </label>
+                    <input
+                      type="url"
+                      value={airbnbImportUrl}
+                      onChange={(e) => setAirbnbImportUrl(e.target.value)}
+                      placeholder="https://www.airbnb.com/calendar/ical/..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={handleUpdateAirbnbImport}
+                      disabled={isUpdatingImport}
+                      className="flex items-center space-x-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-pink-400 text-white rounded-lg transition-colors"
+                    >
+                      {isUpdatingImport ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Updating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save size={16} />
+                          <span>Update Import URL</span>
+                        </>
+                      )}
+                    </button>
+                    {airbnbImportUrl && (
+                      <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        Configured
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">How to get your Airbnb iCal URL:</h4>
+            <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Go to your Airbnb listing → Calendar</li>
+              <li>Click "Export calendar" or "Sync calendars"</li>
+              <li>Copy the iCal URL (usually ends with .ics)</li>
+              <li>Paste it in the field above</li>
+              <li>Click "Update Import URL" to save</li>
+              <li>Your system will automatically import Airbnb reservations every 5 minutes</li>
             </ol>
           </div>
         </div>

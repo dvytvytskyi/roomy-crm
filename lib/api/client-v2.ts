@@ -87,6 +87,16 @@ class ApiClientV2 {
       ...(token && { Authorization: `Bearer ${token}` }),
     };
 
+    // Don't override Content-Type for FormData - let browser set it with boundary
+    const isFormData = options.body instanceof FormData;
+    
+    console.log('🌐 Request config:', {
+      isFormData,
+      bodyType: typeof options.body,
+      bodyConstructor: options.body?.constructor?.name,
+      hasBody: !!options.body
+    });
+    
     const config: RequestInit = {
       ...options,
       headers: {
@@ -94,6 +104,12 @@ class ApiClientV2 {
         ...options.headers,
       },
     };
+    
+    // For FormData, explicitly remove Content-Type to let browser set it with boundary
+    if (isFormData && config.headers) {
+      delete (config.headers as any)['Content-Type'];
+      delete (config.headers as any)['content-type'];
+    }
 
     try {
       const controller = new AbortController();
@@ -191,10 +207,25 @@ class ApiClientV2 {
     return this.makeRequest<T>(finalEndpoint);
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<ApiResponse<T>> {
+    const isFormData = data instanceof FormData;
+    
+    console.log('📤 POST request details:', {
+      endpoint,
+      isFormData,
+      dataType: typeof data,
+      hasData: !!data,
+      dataKeys: isFormData ? Array.from(data.keys()) : Object.keys(data || {})
+    });
+    
+    // For FormData, don't set any Content-Type header - let browser set it with boundary
+    const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
+    
     return this.makeRequest<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
+      headers,
+      ...options,
     });
   }
 

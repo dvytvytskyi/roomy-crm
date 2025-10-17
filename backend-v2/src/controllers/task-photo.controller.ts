@@ -17,6 +17,7 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit for photos
   },
   fileFilter: (req, file, cb) => {
+    logger.info(`Multer fileFilter called for file: ${file.originalname}, mimetype: ${file.mimetype}`);
     // Accept only image types
     const allowedMimes = [
       'image/jpeg',
@@ -27,8 +28,10 @@ const upload = multer({
     ];
 
     if (allowedMimes.includes(file.mimetype)) {
+      logger.info(`File accepted: ${file.originalname}`);
       cb(null, true);
     } else {
+      logger.error(`File rejected: ${file.originalname}, mimetype: ${file.mimetype}`);
       cb(new Error('Invalid file type. Only images are allowed (JPEG, PNG, GIF, WebP)'));
     }
   },
@@ -41,13 +44,58 @@ export class TaskPhotoController {
    * @access Private (JWT required)
    */
   public static uploadPhoto = [
+    // Add middleware to log request details
+    (req: any, res: any, next: any) => {
+      logger.info(`📤 Upload request received - Method: ${req.method}, URL: ${req.url}`);
+      logger.info(`📤 Headers: ${JSON.stringify(req.headers, null, 2)}`);
+      logger.info(`📤 Content-Type: ${req.headers['content-type']}`);
+      logger.info(`📤 Content-Length: ${req.headers['content-length']}`);
+      next();
+    },
     upload.single('photo'),
+    // Add error handling middleware for multer
+    (err: any, req: any, res: any, next: any) => {
+      if (err) {
+        logger.error(`Multer error: ${err.message}`);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            error: 'File too large',
+            message: 'File size exceeds 10MB limit',
+            timestamp: new Date().toISOString()
+          });
+        }
+        if (err.message.includes('Invalid file type')) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid file type',
+            message: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          error: 'Upload error',
+          message: err.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+      next();
+    },
     async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
       try {
         const currentUser: CurrentUser = req.user!;
         const taskId = req.params.taskId;
 
+        logger.info(`Upload photo request - TaskId: ${taskId}, User: ${currentUser.email}`);
+        logger.info(`Request body keys: ${Object.keys(req.body || {})}`);
+        logger.info(`Request file: ${req.file ? 'Present' : 'Missing'}`);
+        if (req.file) {
+          logger.info(`File details: ${req.file.originalname}, ${req.file.size} bytes, ${req.file.mimetype}`);
+        }
+
         if (!req.file) {
+          logger.error('No file provided in upload request');
           res.status(400).json({
             success: false,
             error: 'Bad Request',
@@ -97,20 +145,25 @@ export class TaskPhotoController {
         const s3Key = `maintenance-tasks/${taskId}/photos/${fileName}`;
 
         // Upload to S3
+        logger.info(`[Upload] Starting S3 upload for key: ${s3Key}`);
         const uploadResult = await S3Service.uploadFile(
           req.file.buffer,
           s3Key,
-          req.file.mimetype,
           {
-            taskId: taskId,
-            uploadedBy: currentUser.id,
-            uploadedAt: new Date().toISOString(),
-            originalName: req.file.originalname
+            contentType: req.file.mimetype,
+            isPublic: true
           }
         );
 
-        if (!uploadResult.success) {
+        logger.info(`[Upload] S3 upload completed:`, {
+          key: uploadResult.key,
+          bucket: uploadResult.bucket,
+          url: uploadResult.url
+        });
+
+        if (!uploadResult.key) {
           await prisma.$disconnect();
+          logger.error(`[Upload] S3 upload failed - no key returned`);
           res.status(500).json({
             success: false,
             error: 'Upload Failed',
@@ -121,6 +174,7 @@ export class TaskPhotoController {
         }
 
         // Save photo record to database
+        logger.info(`[Upload] Saving photo record to database`);
         const photoRecord = await prisma.task_photos.create({
           data: {
             id: `photo-${timestamp}-${randomString}`,
@@ -130,18 +184,25 @@ export class TaskPhotoController {
             file_size: req.file.size,
             mime_type: req.file.mimetype,
             s3_key: s3Key,
-            s3_url: uploadResult.data?.url || '',
+            s3_url: uploadResult.url || '',
             uploaded_by: currentUser.id,
             uploaded_at: new Date(),
             is_active: true
           }
         });
 
+        logger.info(`[Upload] Photo record saved:`, {
+          id: photoRecord.id,
+          taskId: photoRecord.task_id,
+          fileName: photoRecord.file_name,
+          s3Key: photoRecord.s3_key
+        });
+
         await prisma.$disconnect();
 
-        logger.info(`Photo uploaded successfully for task ${taskId}: ${fileName}`);
+        logger.info(`[Upload] Photo uploaded successfully for task ${taskId}: ${fileName}`);
 
-        res.json({
+        const responseData = {
           success: true,
           data: {
             id: photoRecord.id,
@@ -155,10 +216,22 @@ export class TaskPhotoController {
           },
           message: 'Photo uploaded successfully',
           timestamp: new Date().toISOString()
-        });
+        };
+
+        logger.info(`[Upload] Sending success response:`, responseData);
+        res.json(responseData);
 
       } catch (error) {
-        logger.error('Error in uploadPhoto controller:', error);
+        logger.error('[Upload] Error in uploadPhoto controller:', error);
+        logger.error('[Upload] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+        
+        // Ensure prisma is disconnected
+        try {
+          await prisma.$disconnect();
+        } catch (disconnectError) {
+          logger.error('[Upload] Error disconnecting Prisma:', disconnectError);
+        }
+        
         res.status(500).json({
           success: false,
           error: 'Internal Server Error',
@@ -189,13 +262,21 @@ export class TaskPhotoController {
         return;
       }
 
-      logger.info(`Getting photos for task ${taskId} by user ${currentUser.email}`);
+      logger.info(`[GetPhotos] Getting photos for task ${taskId} by user ${currentUser.email}`);
 
       const prisma = new PrismaClient();
+      logger.info(`[GetPhotos] Prisma client created, checking task_photos table...`);
       
       // Verify task exists
+      logger.info(`[GetPhotos] Verifying task exists: ${taskId}`);
       const task = await prisma.tasks.findUnique({
         where: { id: taskId, is_active: true }
+      });
+
+      logger.info(`[GetPhotos] Task verification result:`, {
+        taskExists: !!task,
+        taskId: task?.id,
+        taskTitle: task?.title
       });
 
       if (!task) {
@@ -210,6 +291,7 @@ export class TaskPhotoController {
       }
 
       // Get photos
+      logger.info(`[GetPhotos] Querying photos for task: ${taskId}`);
       const photos = await prisma.task_photos.findMany({
         where: { 
           task_id: taskId, 
@@ -227,6 +309,8 @@ export class TaskPhotoController {
           }
         }
       });
+
+      logger.info(`[GetPhotos] Found ${photos.length} photos for task ${taskId}`);
 
       await prisma.$disconnect();
 
