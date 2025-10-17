@@ -10,11 +10,12 @@ interface FinancialsOverviewProps {
     from: string
     to: string
   }
+  onDateRangeChange: (range: { from: string; to: string }) => void
   stats: FinancialStats | null
   loading: boolean
 }
 
-export default function FinancialsOverview({ dateRange, stats, loading }: FinancialsOverviewProps) {
+export default function FinancialsOverview({ dateRange, onDateRangeChange, stats, loading }: FinancialsOverviewProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
 
   const periods = [
@@ -25,6 +26,61 @@ export default function FinancialsOverview({ dateRange, stats, loading }: Financ
     { value: 'year', label: 'This Year' },
     { value: 'custom', label: 'Custom Range' }
   ]
+
+  const getCurrentPeriodDates = (period: string) => {
+    const now = new Date()
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+
+    switch (period) {
+      case 'today':
+        return {
+          from: startOfDay.toISOString().split('T')[0],
+          to: endOfDay.toISOString().split('T')[0]
+        }
+      
+      case 'week':
+        const startOfWeek = new Date(startOfDay)
+        startOfWeek.setDate(now.getDate() - now.getDay())
+        return {
+          from: startOfWeek.toISOString().split('T')[0],
+          to: endOfDay.toISOString().split('T')[0]
+        }
+      
+      case 'month':
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        return {
+          from: startOfMonth.toISOString().split('T')[0],
+          to: endOfDay.toISOString().split('T')[0]
+        }
+      
+      case 'quarter':
+        const quarter = Math.floor(now.getMonth() / 3)
+        const startOfQuarter = new Date(now.getFullYear(), quarter * 3, 1)
+        return {
+          from: startOfQuarter.toISOString().split('T')[0],
+          to: endOfDay.toISOString().split('T')[0]
+        }
+      
+      case 'year':
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+        return {
+          from: startOfYear.toISOString().split('T')[0],
+          to: endOfDay.toISOString().split('T')[0]
+        }
+      
+      default:
+        return dateRange
+    }
+  }
+
+  const handlePeriodChange = (period: string) => {
+    setSelectedPeriod(period)
+    if (period !== 'custom') {
+      const dates = getCurrentPeriodDates(period)
+      onDateRangeChange(dates)
+    }
+  }
 
   // Use real data from props
   const financialData = stats || {
@@ -63,11 +119,11 @@ export default function FinancialsOverview({ dateRange, stats, loading }: Financ
               {periods.map((period) => (
                 <button
                   key={period.value}
-                  onClick={() => setSelectedPeriod(period.value)}
+                  onClick={() => handlePeriodChange(period.value)}
                   className={`px-3 py-1 text-sm rounded-lg transition-colors cursor-pointer ${
                     selectedPeriod === period.value
                       ? 'bg-orange-500 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {period.label}
@@ -79,12 +135,14 @@ export default function FinancialsOverview({ dateRange, stats, loading }: Financ
                 <input
                   type="date"
                   value={dateRange.from}
+                  onChange={(e) => onDateRangeChange({ ...dateRange, from: e.target.value })}
                   className="h-8 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
-                <span className="text-sm text-slate-500">to</span>
+                <span className="text-sm text-gray-500">to</span>
                 <input
                   type="date"
                   value={dateRange.to}
+                  onChange={(e) => onDateRangeChange({ ...dateRange, to: e.target.value })}
                   className="h-8 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>

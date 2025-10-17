@@ -60,6 +60,7 @@ export interface UnitsAnalyticsV2 {
 export interface FinancialFiltersV2 {
   dateFrom?: string;
   dateTo?: string;
+  period?: string;
   propertyId?: string;
   transactionType?: string[];
   paymentMethod?: string[];

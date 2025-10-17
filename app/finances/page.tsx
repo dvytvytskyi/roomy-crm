@@ -144,6 +144,7 @@ export default function FinancialsPage() {
             {/* Financial Overview Dashboard */}
             <FinancialsOverview 
               dateRange={dateRange} 
+              onDateRangeChange={setDateRange}
               stats={stats}
               loading={loading}
             />
