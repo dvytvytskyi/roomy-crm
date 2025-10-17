@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, CreditCard, AlertCircle, Calendar, Filter } from 'lucide-react'
 
-import { FinancialStats } from '../../lib/api/services/financeService'
+import { FinancialOverviewV2 } from '../../lib/api/services/financialService-v2'
 
 interface FinancialsOverviewProps {
   dateRange: {
@@ -11,7 +11,7 @@ interface FinancialsOverviewProps {
     to: string
   }
   onDateRangeChange: (range: { from: string; to: string }) => void
-  stats: FinancialStats | null
+  stats: FinancialOverviewV2 | null
   loading: boolean
 }
 
@@ -85,13 +85,14 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
   // Use real data from props
   const financialData = stats || {
     totalRevenue: 0,
-    pendingPayments: 0,
     totalExpenses: 0,
     netIncome: 0,
-    transactionsCount: 0,
-    averageTransaction: 0,
-    refundsAmount: 0,
-    platformFees: 0
+    pendingPayments: 0,
+    completedTransactions: 0,
+    averageTransactionAmount: 0,
+    monthlyGrowth: 0,
+    topPaymentMethods: [],
+    revenueByMonth: []
   }
 
   const formatCurrency = (amount: number) => {
@@ -163,7 +164,7 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
               </p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+12.5%</span>
+                <span className="text-sm text-green-600">+{financialData.monthlyGrowth.toFixed(1)}%</span>
                 <span className="text-sm text-slate-500 ml-1">vs last month</span>
               </div>
             </div>
@@ -183,7 +184,7 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
               </p>
               <div className="flex items-center mt-1">
                 <AlertCircle className="w-4 h-4 text-orange-500 mr-1" />
-                <span className="text-sm text-orange-600">8 transactions</span>
+                <span className="text-sm text-orange-600">{financialData.pendingPayments > 0 ? 'Pending' : '0'} transactions</span>
               </div>
             </div>
             <div className="p-3 bg-orange-50 rounded-lg">
@@ -202,7 +203,7 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
               </p>
               <div className="flex items-center mt-1">
                 <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                <span className="text-sm text-red-600">-3.2%</span>
+                <span className="text-sm text-red-600">{financialData.monthlyGrowth.toFixed(1)}%</span>
                 <span className="text-sm text-slate-500 ml-1">vs last month</span>
               </div>
             </div>
@@ -222,7 +223,7 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
               </p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+15.8%</span>
+                <span className="text-sm text-green-600">+{financialData.monthlyGrowth.toFixed(1)}%</span>
                 <span className="text-sm text-slate-500 ml-1">vs last month</span>
               </div>
             </div>
@@ -241,10 +242,10 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
             <div>
               <p className="text-slate-600 text-sm mb-1">Total Transactions</p>
               <p className="text-xl font-medium text-slate-900">
-                {loading ? '...' : financialData.transactionsCount}
+                {loading ? '...' : financialData.completedTransactions}
               </p>
               <p className="text-sm text-slate-500">
-                Avg: {loading ? '...' : formatCurrency(financialData.averageTransaction)}
+                Avg: {loading ? '...' : formatCurrency(financialData.averageTransactionAmount)}
               </p>
             </div>
             <div className="p-2 bg-slate-50 rounded-lg">
@@ -259,7 +260,7 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
             <div>
               <p className="text-slate-600 text-sm mb-1">Platform Fees</p>
               <p className="text-xl font-medium text-slate-900">
-                {loading ? '...' : formatCurrency(financialData.platformFees)}
+                {loading ? '...' : formatCurrency(financialData.totalRevenue * 0.03)}
               </p>
               <p className="text-sm text-slate-500">3.0% of revenue</p>
             </div>
@@ -275,9 +276,9 @@ export default function FinancialsOverview({ dateRange, onDateRangeChange, stats
             <div>
               <p className="text-slate-600 text-sm mb-1">Refunds</p>
               <p className="text-xl font-medium text-slate-900">
-                {loading ? '...' : formatCurrency(financialData.refundsAmount)}
+                {loading ? '...' : formatCurrency(0)}
               </p>
-              <p className="text-sm text-slate-500">2 transactions</p>
+              <p className="text-sm text-slate-500">0 transactions</p>
             </div>
             <div className="p-2 bg-red-50 rounded-lg">
               <TrendingDown className="w-5 h-5 text-red-500" />
