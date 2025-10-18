@@ -32,11 +32,27 @@ export default function LoginPage() {
       const result = await login({ email, password })
       console.log('📋 Login result:', result)
       
-      if (result.success) {
-        console.log('✅ Login successful, redirecting to reservations...')
-        // Use window.location.href instead of router.push to avoid React DOM issues
-        window.location.href = '/reservations'
-        console.log('🚀 Window.location.href called')
+      if (result.success && result.data?.user) {
+        const userRole = result.data.user.role
+        console.log('✅ Login successful, user role:', userRole)
+        
+        // Role-based redirect logic
+        let redirectUrl = '/reservations' // Default for ADMIN
+        
+        if (userRole === 'AGENT') {
+          redirectUrl = '/agent-portal'
+          console.log('🔀 Redirecting AGENT to agent portal')
+        } else if (userRole === 'OWNER') {
+          redirectUrl = '/owner-portal'
+          console.log('🔀 Redirecting OWNER to owner portal')
+        } else if (userRole === 'ADMIN') {
+          redirectUrl = '/reservations'
+          console.log('🔀 Redirecting ADMIN to reservations')
+        }
+        
+        // Use window.location.href for full page reload (ensures middleware picks up cookies)
+        window.location.href = redirectUrl
+        console.log('🚀 Window.location.href called:', redirectUrl)
       } else {
         console.log('❌ Login failed:', result.error)
         setError(result.error || 'Login failed')

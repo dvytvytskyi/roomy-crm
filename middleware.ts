@@ -20,7 +20,10 @@ const protectedRoutes = [
   '/scheduler',
   '/scheduler-minimal',
   '/settings',
-  '/guests'
+  '/guests',
+  '/agent-portal',    // Agent portal (AGENT + ADMIN)
+  '/owner-portal',    // Owner portal (OWNER + ADMIN)
+  '/pending-approvals' // User approval (ADMIN only)
 ]
 
 export function middleware(request: NextRequest) {
