@@ -18,6 +18,7 @@ export default function SettingsTab({ propertyData, onUpdate }: SettingsTabProps
     checkInTime: propertyData?.checkInTime || '15:00',
     checkOutTime: propertyData?.checkOutTime || '11:00',
     bookingWindow: propertyData?.bookingWindow || '365',
+    dtcmLicenseExpiry: propertyData?.dtcmLicenseExpiry || '',
   })
 
   const handleSave = async () => {
@@ -61,6 +62,7 @@ export default function SettingsTab({ propertyData, onUpdate }: SettingsTabProps
                     checkInTime: propertyData?.checkInTime || '15:00',
                     checkOutTime: propertyData?.checkOutTime || '11:00',
                     bookingWindow: propertyData?.bookingWindow || '365',
+                    dtcmLicenseExpiry: propertyData?.dtcmLicenseExpiry || '',
                   })
                 }}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -179,6 +181,34 @@ export default function SettingsTab({ propertyData, onUpdate }: SettingsTabProps
             )}
             <p className="mt-2 text-xs text-gray-500">
               How far in advance guests can book this property
+            </p>
+          </div>
+
+          {/* DTCM License Expiry */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              DTCM License Expiry Date
+            </label>
+            {isEditing ? (
+              <input
+                type="date"
+                value={settings.dtcmLicenseExpiry}
+                onChange={(e) => setSettings({ ...settings, dtcmLicenseExpiry: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            ) : (
+              <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+                {settings.dtcmLicenseExpiry ? 
+                  new Date(settings.dtcmLicenseExpiry).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) 
+                  : 'Not set'}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              Dubai Tourism & Commerce Marketing license expiration date
             </p>
           </div>
         </div>

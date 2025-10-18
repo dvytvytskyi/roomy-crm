@@ -68,27 +68,13 @@ export class DashboardController {
           })
         },
         birthdays: {
-          today: {
-            count: 0,
-            details: []
-          },
-          thisWeek: {
-            count: 0,
-            details: []
-          }
+          today: await DashboardController.getBirthdaysToday(),
+          thisWeek: await DashboardController.getBirthdaysThisWeek()
         },
         alerts: {
-          dtcmPermitsExpiring: await prisma.properties.count({
-            where: {
-              dtcm_license_expiry: {
-                lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-                gte: new Date()
-              },
-              is_active: true
-            }
-          }),
+          dtcmPermitsExpiring: await DashboardController.getDTCMExpiringCount(),
           utilitiesReminders: 0, // TODO: Add utilities field to properties schema
-          dtcmExpiringUnits: [], // TODO: Implement getDTCMExpiringUnits method
+          dtcmExpiringUnits: await DashboardController.getDTCMExpiringUnits(),
           utilitiesPaymentReminders: []
         }
       };

@@ -3,7 +3,7 @@ import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {DateRangePicker} from "@mui/x-date-pickers-pro";
 import {DemoContainer} from "@mui/x-date-pickers/internals/demo/index.js";
 import React, {useEffect, useRef, useState} from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/components/searchBlock.scss"
 import "../styles/components/datePicker.scss"
 import "../styles/test-calendar.css"
@@ -15,56 +15,47 @@ const SearchBlock = ({data, setData, setShowSelect, loading = false}) => {
     const [searchUrl, setSearchUrl] = useState('/properties')
     const dropdownRef = useRef(null)
     const calendarRef = useRef(null)
+    const navigate = useNavigate();
 
-    // Функція для пошуку
+    // 🔍 Функція для пошуку з URL параметрами
     const handleSearch = () => {
-        console.log('🔍 handleSearch викликано!')
-        console.log('📊 Поточні дані:', data)
-        console.log('🎛️ selectedParam:', selectedParam)
+        console.log('🔍 Пошук розпочато!');
+        console.log('📊 Дані для пошуку:', data);
         
         // Закриваємо всі модалки
-        console.log('🔒 Закриваємо модалки...')
-        setSelectedParam(null) // Спочатку закриваємо всі модалки
-        setOpenCalendar(false) // Закриваємо календар
-        setShowSelect(false)
-        console.log('✅ Модалки закрито')
+        setSelectedParam(null);
+        setOpenCalendar(false);
+        if (setShowSelect) setShowSelect(false);
         
-        // Перевіряємо, чи є всі необхідні параметри
-        if (!data.neigh) {
-            console.log('❌ Район не вибрано')
-            return
+        // 🎯 Формуємо query параметри (додаємо тільки заповнені)
+        const params = new URLSearchParams();
+        
+        // Локація
+        if (data.neigh) {
+            params.append('area', data.neigh);
         }
         
-        if (!data.value || data.value.length < 2 || !data.value[0] || !data.value[1]) {
-            console.log('❌ Дати не вибрані')
-            return
+        // Дати
+        if (data.value && data.value.length === 2 && data.value[0] && data.value[1]) {
+            const checkIn = dayjs(data.value[0].$d || data.value[0]).format('YYYY-MM-DD');
+            const checkOut = dayjs(data.value[1].$d || data.value[1]).format('YYYY-MM-DD');
+            params.append('checkIn', checkIn);
+            params.append('checkOut', checkOut);
         }
         
-        // Встановлюємо мінімальну кількість гостей якщо не вибрано
-        const minGuests = data.minGuests || 1
+        // Кількість гостей
+        if (data.minGuests && data.minGuests > 1) {
+            params.append('guests', data.minGuests);
+        }
         
-        // Формуємо URL для пошуку
-        const checkIn = data.value[0] ? dayjs(data.value[0].$d).format('YYYY-MM-DD') : ''
-        const checkOut = data.value[1] ? dayjs(data.value[1].$d).format('YYYY-MM-DD') : ''
-        const location = encodeURIComponent(data.neigh)
+        // 🔗 Формуємо фінальний URL
+        const queryString = params.toString();
+        const finalUrl = queryString ? `/properties?${queryString}` : '/properties';
         
-        console.log('📅 checkIn:', checkIn)
-        console.log('📅 checkOut:', checkOut)
-        console.log('📍 location:', location)
-        console.log('👥 minGuests:', minGuests)
-        console.log('👥 data.minGuests:', data.minGuests)
+        console.log('🔗 Навігація до:', finalUrl);
         
-        // Формуємо URL для пошуку
-        const newSearchUrl = `/properties?checkIn=${checkIn}&checkOut=${checkOut}&location=${location}&minGuests=${minGuests}`
-        console.log('🔗 URL пошуку:', newSearchUrl)
-        
-        // Оновлюємо стан URL
-        setSearchUrl(newSearchUrl)
-        
-        // Перенаправляємо на сторінку Properties з параметрами
-        setTimeout(() => {
-            window.location.href = newSearchUrl
-        }, 100)
+        // ✅ Використовуємо navigate замість window.location.href
+        navigate(finalUrl);
     }
 
     // Додаємо стилі динамічно після відкриття календаря

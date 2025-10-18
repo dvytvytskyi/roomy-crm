@@ -38,7 +38,7 @@ import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {DateRangePicker} from "@mui/x-date-pickers-pro";
 import {DemoContainer} from "@mui/x-date-pickers/internals/demo/index.js";
 import dayjs from "dayjs";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 
 function Accommondation({img}) {
@@ -57,13 +57,44 @@ function Accommondation({img}) {
 
 
 const Home = () => {
+    const navigate = useNavigate();
     const [comment, setComment] = useState('1')
     const [value, setValue] = React.useState([dayjs(null), dayjs(null)]);
     const [open, setOpen] = useState(false);
     const [showWithWhom, setShowWithWhom] = useState(false)
+    const [showAreaDropdown, setShowAreaDropdown] = useState(false)
+    const [selectedArea, setSelectedArea] = useState('')
     const [peopleAmount, setPeopleAmount] = useState(null)
     const [petsAmount, setPetsAmount] = useState(null)
     const [daysDifference , setDaysDiffrence] = useState();
+    
+    // Список районів Dubai
+    const neighborhoods = [
+        "Dubai", 
+        "Business Bay",
+        "Downtown Dubai", 
+        "Dubai Marina",
+        "Palm Jumeirah",
+        "Jumeirah",
+        "JBR (Jumeirah Beach Residence)",
+        "DIFC (Dubai International Financial Centre)",
+        "JVC (Jumeirah Village Circle)",
+        "Dubai Hills",
+        "Damac Hills",
+        "Arabian Ranches",
+        "Motor City",
+        "Dubai Sports City",
+        "International City",
+        "Discovery Gardens",
+        "Dubai Silicon Oasis",
+        "Dubai Investment Park",
+        "Al Barsha",
+        "Al Quoz",
+        "Bur Dubai",
+        "Deira",
+        "Jumeirah Lake Towers (JLT)",
+        "Dubai Festival City"
+    ].sort();
 
     const getMonthName = (num) => {
         const months = [
@@ -71,6 +102,37 @@ const Home = () => {
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         ];
         return months[num - 1] || "Invalid month number";
+    }
+    
+    // Функція для пошуку з URL параметрами
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+        
+        // Додаємо район якщо вибраний
+        if (selectedArea) {
+            params.append('area', selectedArea);
+        }
+        
+        // Додаємо дати якщо вибрані
+        if (value[0] && value[0].$d) {
+            params.append('checkIn', dayjs(value[0]).format('YYYY-MM-DD'));
+        }
+        if (value[1] && value[1].$d) {
+            params.append('checkOut', dayjs(value[1]).format('YYYY-MM-DD'));
+        }
+        
+        // Додаємо кількість гостей
+        if (peopleAmount) {
+            params.append('guests', peopleAmount);
+        }
+        
+        // Додаємо pets якщо є
+        if (petsAmount) {
+            params.append('pets', petsAmount);
+        }
+        
+        // Переходимо на сторінку properties з параметрами
+        navigate(`/properties?${params.toString()}`);
     }
 
     const handleDateChange = (newValue) => {
@@ -84,17 +146,44 @@ const Home = () => {
         }
     };
 
+    // Приховати watermark
     useEffect(() => {
         const interval = setInterval(() => {
             const element = document.querySelector('div[style="position: absolute; pointer-events: none; color: rgba(130, 130, 130, 0.62); z-index: 100000; width: 100%; text-align: center; bottom: 50%; right: 0px; letter-spacing: 5px; font-size: 24px;"]');
-
             if (element) {
                 element.style.display = 'none';
             }
         }, 100);
-
         return () => clearInterval(interval);
     }, []);
+    
+    // Закриття дропдауну при кліку поза ним
+    useEffect(() => {
+        if (!showAreaDropdown) return;
+        
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.search-block')) {
+                setShowAreaDropdown(false);
+            }
+        };
+        
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [showAreaDropdown]);
+
+    // Закриття guests dropdown при кліку поза ним
+    useEffect(() => {
+        if (!showWithWhom) return;
+        
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.guests-block')) {
+                setShowWithWhom(false);
+            }
+        };
+        
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [showWithWhom]);
 
     return (<div className="home">
         <Header/>
@@ -117,37 +206,58 @@ const Home = () => {
                         disabled={false}
                     >
                         <div className="filter">
+                            {/* НОВИЙ КОД З НУЛЯ */}
                             <div className="search-block">
-                                <div className="search-bar">
+                                <div 
+                                    className="search-bar" 
+                                    onClick={() => setShowAreaDropdown(!showAreaDropdown)}
+                                >
                                     <div className="search-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                             viewBox="0 0 20 20"
-                                             fill="none">
-                                            <circle cx="8.49988" cy="8.49988" r="7.49988" stroke="#0D0C22"
-                                                    stroke-width="2"/>
-                                            <path d="M14 14L18.9999 18.9999" stroke="#0D0C22" stroke-width="2"
-                                                  stroke-linecap="round"/>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 490.4 490.4" fill="white">
+                                            <path d="M484.1,454.796l-110.5-110.6c29.8-36.3,47.6-82.8,47.6-133.4c0-116.3-94.3-210.6-210.6-210.6S0,94.496,0,210.796
+                                                s94.3,210.6,210.6,210.6c50.8,0,97.4-18,133.8-48l110.5,110.5c12.9,11.8,25,4.2,29.2,0C492.5,475.596,492.5,463.096,484.1,454.796z
+                                                M41.1,210.796c0-93.6,75.9-169.5,169.5-169.5s169.6,75.9,169.6,169.5s-75.9,169.5-169.5,169.5S41.1,304.396,41.1,210.796z"/>
                                         </svg>
 
                                         <div className="input">
-                                            <input type="text" placeholder="Select your area..."/>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Select your area..." 
+                                                value={selectedArea}
+                                                readOnly
+                                            />
                                         </div>
                                     </div>
 
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="6" viewBox="0 0 12 6"
-                                         fill="none">
-                                        <path d="M6 6L0 0H12L6 6Z" fill="#0D0C22"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="6" viewBox="0 0 12 6" fill="none">
+                                        <path d="M6 6L0 0H12L6 6Z" fill="white"/>
                                     </svg>
                                 </div>
+                                
+                                {showAreaDropdown && (
+                                    <div className="area-dropdown">
+                                        <div className="area-title">Select your area</div>
+                                        <div className="area-list">
+                                            {neighborhoods.map((area, index) => (
+                                                <div 
+                                                    key={index} 
+                                                    className={`area-option ${selectedArea === area ? 'selected' : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedArea(area);
+                                                        setShowAreaDropdown(false);
+                                                    }}
+                                                >
+                                                    {area}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="check-block">
                                 <div className="check" >
-                                    <svg onClick={() => setOpen(true)} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"
-                                         fill="none">
-                                        <path
-                                            d="M1 7H19M5 1V3M15 1V3M4 11H6M4 15H6M9 11H11M9 15H11M14 11H16M14 15H16M4.2 19H15.8C16.9201 19 17.4802 19 17.908 18.782C18.2843 18.5903 18.5903 18.2843 18.782 17.908C19 17.4802 19 16.9201 19 15.8V6.2C19 5.07989 19 4.51984 18.782 4.09202C18.5903 3.71569 18.2843 3.40973 17.908 3.21799C17.4802 3 16.9201 3 15.8 3H4.2C3.0799 3 2.51984 3 2.09202 3.21799C1.71569 3.40973 1.40973 3.71569 1.21799 4.09202C1 4.51984 1 5.07989 1 6.2V15.8C1 16.9201 1 17.4802 1.21799 17.908C1.40973 18.2843 1.71569 18.5903 2.09202 18.782C2.51984 19 3.07989 19 4.2 19Z"
-                                            stroke="#0D0C22" stroke-width="1.5" stroke-linecap="round"
-                                            stroke-linejoin="round"/>
+                                    <svg onClick={() => setOpen(true)} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 448 512" fill="white">
+                                        <path d="M152 64H296V24C296 10.745 306.745 0 320 0C333.255 0 344 10.745 344 24V64H384C419.346 64 448 92.654 448 128V448C448 483.346 419.346 512 384 512H64C28.654 512 0 483.346 0 448V128C0 92.654 28.654 64 64 64H104V24C104 10.745 114.745 0 128 0C141.255 0 152 10.745 152 24V64ZM48 448C48 456.837 55.163 464 64 464H384C392.837 464 400 456.837 400 448V192H48V448Z"/>
                                     </svg>
 
                                     <div className="checks" onClick={() => setOpen(true)}>
@@ -156,7 +266,7 @@ const Home = () => {
                                              fill="none">
                                             <path
                                                 d="M11.3536 4.35355C11.5488 4.15829 11.5488 3.84171 11.3536 3.64645L8.17157 0.464466C7.97631 0.269204 7.65973 0.269204 7.46447 0.464466C7.2692 0.659728 7.2692 0.976311 7.46447 1.17157L10.2929 4L7.46447 6.82843C7.2692 7.02369 7.2692 7.34027 7.46447 7.53553C7.65973 7.7308 7.97631 7.7308 8.17157 7.53553L11.3536 4.35355ZM0 4.5H11V3.5H0V4.5Z"
-                                                fill="#0D0C22"/>
+                                                fill="white"/>
                                         </svg>
                                         <span>{value[1] && value[1].$D ? value[1].$D + ' ' + getMonthName(value[1].$M) + ' ' : 'Check out'}</span>
                                     </div>
@@ -178,82 +288,51 @@ const Home = () => {
                             <div className="guests-block">
                                 <div className="guests-serach">
                                     <div onClick={() => setShowWithWhom(!showWithWhom)}
-                                        className={`guests ${showWithWhom ? 'active' : ''}`}>
+                                        className="guests">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                              viewBox="0 0 18 18" fill="none">
                                             <path
                                                 d="M11.3762 6.80085C10.7408 7.4614 9.88545 7.82682 9 7.82682C8.11455 7.82682 7.25918 7.4614 6.62382 6.80085C5.98751 6.13931 5.62514 5.23606 5.62514 4.28841C5.62514 3.34076 5.98751 2.43751 6.62382 1.77597C7.25918 1.11542 8.11455 0.75 9 0.75C9.88545 0.75 10.7408 1.11542 11.3762 1.77597C12.0125 2.43751 12.3749 3.34076 12.3749 4.28841C12.3749 5.23606 12.0125 6.13931 11.3762 6.80085ZM0.75 15.1394C0.75 15.0113 0.84331 14.6944 1.21679 14.2354C1.57105 13.8 2.11546 13.3152 2.84099 12.8616C4.28855 11.9566 6.40117 11.2109 9 11.2109C11.7137 11.2109 13.8259 11.8872 15.2369 12.7461C15.9438 13.1764 16.4614 13.6441 16.7949 14.0815C17.1345 14.5268 17.25 14.8944 17.25 15.1394V17.25H0.75V15.1394Z"
-                                                stroke="#0D0C22" stroke-width="1.5"/>
+                                                stroke="white" stroke-width="1.5"/>
                                         </svg>
                                         <div>{peopleAmount && peopleAmount ? peopleAmount + ' guests' : 'Add guests'}</div>
-
-                                        <div className={`people-pets ${showWithWhom ? 'active' : ''}`}>
-                                            <div className="count">
-                                                Guests
-                                                <div>
+                                    </div>
+                                </div>
+                                
+                                {showWithWhom && (
+                                    <div className="guests-dropdown">
+                                        <div className="guests-dropdown-title">Add guests</div>
+                                        <div className="guests-dropdown-content">
+                                            <div className="count-item">
+                                                <span className="count-label">Guests</span>
+                                                <div className="count-controls">
                                                     <svg
-                                                        onClick={(event) => { event.stopPropagation(); peopleAmount > 0 && setPeopleAmount(peopleAmount - 1); }}
+                                                        onClick={(e) => { e.stopPropagation(); peopleAmount > 0 && setPeopleAmount(peopleAmount - 1); }}
                                                         xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                                                        viewBox="0 0 32 32"
-                                                        fill="none">
-                                                        <rect x="0.5" y="0.5" width="31" height="31" rx="15.5"
-                                                              stroke="#F1F1F1"/>
-                                                        <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2"
-                                                              stroke-linecap="round"/>
+                                                        viewBox="0 0 32 32">
+                                                        <circle cx="16" cy="16" r="15" fill="rgba(255, 255, 255, 0.2)" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1"/>
+                                                        <path d="M10 16L22 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
                                                     </svg>
-                                                    {peopleAmount ? peopleAmount : '0'}
-                                                    <svg onClick={(event) => { event.stopPropagation(); setPeopleAmount(peopleAmount + 1); }}
+                                                    <span className="count-value">{peopleAmount ? peopleAmount : '0'}</span>
+                                                    <svg onClick={(e) => { e.stopPropagation(); setPeopleAmount(peopleAmount + 1); }}
                                                          xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                                                         viewBox="0 0 32 32"
-                                                         fill="none">
-                                                        <rect x="0.5" y="0.5" width="31" height="31" rx="15.5"
-                                                              stroke="#F1F1F1"/>
-                                                        <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2"
-                                                              stroke-linecap="round"/>
-                                                        <path d="M16.25 10.75L16.25 21.25" stroke="#F1F1F1"
-                                                              stroke-width="2"
-                                                              stroke-linecap="round"/>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div className="count">
-                                                Pets
-                                                <div>
-                                                    <svg onClick={(event) => { event.stopPropagation(); petsAmount > 0 && setPetsAmount(petsAmount - 1); }}
-                                                         xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                                                         viewBox="0 0 32 32"
-                                                         fill="none">
-                                                        <rect x="0.5" y="0.5" width="31" height="31" rx="15.5"
-                                                              stroke="#F1F1F1"/>
-                                                        <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2"
-                                                              stroke-linecap="round"/>
-                                                    </svg>
-                                                    {petsAmount ? petsAmount : '0'}
-                                                    <svg onClick={(event) => { event.stopPropagation(); setPetsAmount(petsAmount + 1); }}
-                                                         xmlns="http://www.w3.org/2000/svg" width="32" height="32"
-                                                         viewBox="0 0 32 32"
-                                                         fill="none">
-                                                        <rect x="0.5" y="0.5" width="31" height="31" rx="15.5"
-                                                              stroke="#F1F1F1"/>
-                                                        <path d="M11 16H21.5" stroke="#F1F1F1" stroke-width="2"
-                                                              stroke-linecap="round"/>
-                                                        <path d="M16.25 10.75L16.25 21.25" stroke="#F1F1F1"
-                                                              stroke-width="2"
-                                                              stroke-linecap="round"/>
+                                                         viewBox="0 0 32 32">
+                                                        <circle cx="16" cy="16" r="15" fill="rgba(255, 255, 255, 0.2)" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1"/>
+                                                        <path d="M16 10L16 22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                                        <path d="M10 16L22 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
                                                     </svg>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <Link to="/properties" state={{
-                                            value: value,
-                                            peopleAmountHome: peopleAmount,
-                                            daysDifference: daysDifference
-                                        }}
-                                          className="search-button">
-                                        Search
-                                    </Link>
-                                </div>
+                                )}
+
+                                <button 
+                                    onClick={handleSearch}
+                                    className="search-button"
+                                >
+                                    Search
+                                </button>
                             </div>
                         </div>
                     </AppleLiquidGlass>

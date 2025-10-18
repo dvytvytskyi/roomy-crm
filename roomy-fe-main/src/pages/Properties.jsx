@@ -5,7 +5,7 @@ import Footer from "../components/Footer.jsx";
 import React, {useEffect, useState} from "react";
 import axios from "axios";
 import SearchBlock from "../components/SearchBlock.jsx";
-import {useLocation} from "react-router-dom";
+import {useLocation, useSearchParams, useNavigate} from "react-router-dom";
 import dayjs from "dayjs";
 import { API_ENDPOINTS, formatDateForAPI, buildQueryString } from "../config/api.js";
 
@@ -14,102 +14,128 @@ const Properties = () => {
     const [loading, setLoading] = useState(false)
     const lastModifiedTimestamp = new Date().toUTCString();
     const location = useLocation();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
+    // 🎯 Читаємо ВСІ параметри з URL
+    const urlArea = searchParams.get('area') || searchParams.get('location');
+    const urlCheckIn = searchParams.get('checkIn');
+    const urlCheckOut = searchParams.get('checkOut');
+    const urlGuests = searchParams.get('guests') || searchParams.get('minGuests');
+    const urlType = searchParams.get('type');
+    const urlRooms = searchParams.get('rooms');
+    const urlPriceMin = searchParams.get('price_min') || searchParams.get('priceMin');
+    const urlPriceMax = searchParams.get('price_max') || searchParams.get('priceMax');
+    
     // Default values if no location.state (direct navigation)
     const defaultCheckIn = dayjs().add(1, 'day');
     const defaultCheckOut = dayjs().add(4, 'day');
     
-    const [serachDay, setSearchDay] = useState(location.state?.value?.[0] || null)
-    const [serachFinalDay, setSearchFinalDay] = useState(location.state?.value?.[1] || null)
+    // Використовуємо URL параметри якщо є, інакше беремо з state
+    const initialCheckIn = urlCheckIn ? dayjs(urlCheckIn) : location.state?.value?.[0];
+    const initialCheckOut = urlCheckOut ? dayjs(urlCheckOut) : location.state?.value?.[1];
+    const initialGuests = urlGuests ? parseInt(urlGuests) : location.state?.peopleAmountHome || 1;
+    const initialArea = urlArea || location.state?.selectedArea;
+    
+    const [serachDay, setSearchDay] = useState(initialCheckIn || null)
+    const [serachFinalDay, setSearchFinalDay] = useState(initialCheckOut || null)
     const [projects, setProjects] = useState()
     const daysSelected = location.state?.daysDifference || 3;
 
     const [searchData, setSerachData] =  useState({
-        "value": location.state?.value || [null, null], // Пусті дати по дефолту
-        "minGuests": location.state?.peopleAmountHome || 1, // Мінімум 1 гість по дефолту
-        "neigh": null // Пустий район
+        "value": [initialCheckIn, initialCheckOut] || [null, null],
+        "minGuests": initialGuests,
+        "neigh": initialArea || null
     })
 
+    // 🔄 Основна логіка завантаження проектів
     useEffect(() => {
         const fetchProperties = async () => {
-            console.log('🔄 Автоматичний запит при зміні параметрів:', {
-                neigh: searchData.neigh,
-                minGuests: searchData.minGuests,
-                checkIn: serachDay,
-                checkOut: serachFinalDay
-            });
-            
-            // Завжди робимо запит, щоб показати проекти
-            console.log('🔄 Запитуємо проекти з фільтрами:', {
-                neigh: searchData.neigh,
-                minGuests: searchData.minGuests,
-                checkIn: serachDay,
-                checkOut: serachFinalDay
-            });
-            
             setLoading(true);
+            
             try {
-                // Build query parameters
+                // 🎯 1. Build query parameters - починаємо з базових
                 const params = {
                     limit: 45,
                     page: 1
                 };
                 
-                // Додаємо дати тільки якщо вони вибрані
-                if (serachDay && serachFinalDay) {
-                    params.checkIn = formatDateForAPI(serachDay);
-                    params.checkOut = formatDateForAPI(serachFinalDay);
+                // 🎯 2. Додаємо фільтри ТІЛЬКИ якщо вони є в URL
+                if (urlArea) {
+                    params.location = urlArea;
                 }
                 
-                // Додаємо мінімальну кількість гостей тільки якщо вона більше 1
-                if (searchData.minGuests && searchData.minGuests > 1) {
-                    params.minOccupancy = searchData.minGuests;
+                if (urlCheckIn && urlCheckOut) {
+                    params.checkIn = urlCheckIn;
+                    params.checkOut = urlCheckOut;
                 }
                 
-                // Додаємо фільтр по локації якщо вибрано
-                if (searchData.neigh) {
-                    params.location = searchData.neigh;
+                if (urlGuests && parseInt(urlGuests) > 1) {
+                    params.minOccupancy = parseInt(urlGuests);
                 }
                 
+                if (urlType) {
+                    params.type = urlType;
+                }
+                
+                if (urlRooms) {
+                    params.rooms = parseInt(urlRooms);
+                }
+                
+                if (urlPriceMin) {
+                    params.priceMin = parseFloat(urlPriceMin);
+                }
+                
+                if (urlPriceMax) {
+                    params.priceMax = parseFloat(urlPriceMax);
+                }
+                
+                // 🎯 3. Логування для дебагу
+                const hasFilters = Object.keys(params).length > 2; // більше ніж limit і page
+                console.log(hasFilters ? '🔍 Завантаження з фільтрами:' : '📋 Завантаження всіх проектів (без фільтрів)');
                 console.log('📋 Параметри запиту:', params);
                 
+                // 🎯 4. Формуємо URL
                 const queryString = buildQueryString(params);
                 const url = `${API_ENDPOINTS.PROPERTIES.LIST}?${queryString}`;
-                
                 console.log('🔗 URL запиту:', url);
                 
+                // 🎯 5. Виконуємо запит
                 const response = await axios.get(url);
                 
                 if (response.data.success) {
-                    console.log('✅ Отримано проекти:', response.data.results.length);
-                    console.log('📊 Загальна кількість в БД:', response.data.total);
-                    console.log('📄 Поточна сторінка:', response.data.page);
-                    console.log('🔢 Ліміт на сторінку:', response.data.limit);
+                    console.log('✅ Отримано проектів:', response.data.results.length);
+                    console.log('📊 Загальна кількість:', response.data.total);
                     setProjects(response.data.results);
                 } else {
-                    console.error('❌ Failed to fetch properties:', response.data.message);
+                    console.error('❌ Помилка відповіді:', response.data.message);
                     setProjects([]);
                 }
             } catch (error) {
-                console.error('Error fetching properties:', error);
-                if (error.code === 'ERR_NETWORK' || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-                    console.error('Network error - backend might be down');
-                    // Додаємо fallback дані для тестування
-                    setProjects([]);
-                } else {
-                    setProjects([]);
-                }
+                console.error('❌ Помилка завантаження:', error);
+                setProjects([]);
             } finally {
                 setLoading(false);
             }
         };
         
-        // Додаємо невелику затримку щоб уникнути зациклювання
-        const timeoutId = setTimeout(fetchProperties, 100);
-        
-        return () => clearTimeout(timeoutId);
-    }, [serachDay, serachFinalDay, searchData.neigh, searchData.minGuests]); // Автоматичні запити при зміні параметрів
+        fetchProperties();
+    }, [searchParams]); // ✅ Перезавантажуємо при зміні будь-якого параметра URL
 
+    // 🧹 Функція для очищення всіх фільтрів
+    const clearFilters = () => {
+        console.log('🧹 Очищення всіх фільтрів...');
+        navigate('/properties'); // Редірект на /properties без параметрів
+        // Також очищаємо локальний стан
+        setSerachData({
+            "value": [null, null],
+            "minGuests": 1,
+            "neigh": null
+        });
+    };
+
+    // 🔍 Перевірка чи є активні фільтри
+    const hasActiveFilters = urlArea || urlCheckIn || urlCheckOut || urlGuests || urlType || urlRooms || urlPriceMin || urlPriceMax;
 
     return (<div className="properties">
         <Header/>
@@ -119,6 +145,19 @@ const Properties = () => {
                 setData={setSerachData}
                 loading={loading}
             />
+            
+            {/* 🧹 Кнопка очищення фільтрів */}
+            {hasActiveFilters && (
+                <div className="filters-info">
+                    <button className="clear-filters-btn" onClick={clearFilters}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Очистити всі фільтри
+                    </button>
+                </div>
+            )}
         </div>
 
         {loading ? (

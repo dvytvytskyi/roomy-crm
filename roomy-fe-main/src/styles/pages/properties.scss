@@ -4,6 +4,48 @@
   background-color: white;
   min-height: 100vh;
 
+  // 🧹 Блок з кнопкою очищення фільтрів
+  .filters-info {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin-top: 16px;
+    
+    .clear-filters-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #F88559 0%, #E6764A 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: Onest, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(248, 133, 89, 0.3);
+      
+      svg {
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(248, 133, 89, 0.4);
+        
+        svg {
+          transform: rotate(90deg);
+        }
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
   .loading-container {
     display: flex;
     flex-direction: column;
