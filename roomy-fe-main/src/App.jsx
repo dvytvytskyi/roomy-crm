@@ -11,6 +11,8 @@ import Confirmation from "./pages/Confirmation.jsx";
 import Lease from "./pages/Lease.jsx";
 import Test from "./pages/Test.jsx";
 import Landlords from "./pages/Landlords.jsx";
+import AboutUs from "./pages/AboutUs.jsx";
+import ContactUs from "./pages/ContactUs.jsx";
 
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/properties" element={<Properties />} />
       <Route path="/landlords" element={<Landlords />} />
+      <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/contact-us" element={<ContactUs />} />
       <Route path="/selection" element={<Selection />} />
       <Route path="/project-map" element={<ProjectMap />} />
       <Route path="/map" element={<MapPage />} />

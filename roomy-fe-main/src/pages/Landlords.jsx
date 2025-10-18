@@ -1,10 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/pages/landlords.scss';
 import Header from '../components/Header/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import WhyLandlords from '../components/WhyLandlords.jsx';
 
 const Landlords = () => {
+    // Intersection Observer for scroll animations
+    const observerRef = useRef(null);
+
+    useEffect(() => {
+        observerRef.current = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            },
+            { threshold: 0.1 }
+        );
+
+        const elements = document.querySelectorAll('.fade-in-element');
+        elements.forEach((el) => observerRef.current.observe(el));
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+        };
+    }, []);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -37,7 +61,7 @@ const Landlords = () => {
 
             {/* Hero Section */}
             <section className="hero-section">
-                <div className="hero-content">
+                <div className="hero-content hero-animate-slide-left">
                     <h1 className="hero-title">
                         Maximize Your Property's Potential with Roomy
                     </h1>
@@ -45,24 +69,24 @@ const Landlords = () => {
                         We help property owners generate up to 30% more revenue through professional management, 
                         dynamic pricing, and access to our global network of quality guests.
                     </p>
-                    <button className="hero-cta" onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth' })}>
+                    <button className="hero-cta pulse-button" onClick={() => document.getElementById('contact-form').scrollIntoView({ behavior: 'smooth' })}>
                         Get Started Today
                     </button>
                 </div>
-                <div className="hero-image">
+                <div className="hero-image hero-animate-slide-right">
                     <div className="hero-image-placeholder">
                         {/* Glass morphism card with property stats */}
                         <div className="stats-card">
-                            <div className="stat">
-                                <div className="stat-number">$2,500+</div>
+                            <div className="stat stat-animate" style={{ animationDelay: '0.2s' }}>
+                                <div className="stat-number count-up">$2,500+</div>
                                 <div className="stat-label">Average Monthly Income</div>
                             </div>
-                            <div className="stat">
-                                <div className="stat-number">95%</div>
+                            <div className="stat stat-animate" style={{ animationDelay: '0.4s' }}>
+                                <div className="stat-number count-up">95%</div>
                                 <div className="stat-label">Occupancy Rate</div>
                             </div>
-                            <div className="stat">
-                                <div className="stat-number">24/7</div>
+                            <div className="stat stat-animate" style={{ animationDelay: '0.6s' }}>
+                                <div className="stat-number count-up">24/7</div>
                                 <div className="stat-label">Support Available</div>
                             </div>
                         </div>
@@ -71,10 +95,10 @@ const Landlords = () => {
             </section>
 
             {/* About Roomy Section */}
-            <section className="about-section">
+            <section className="about-section fade-in-element">
                 <div className="about-content">
                     <div className="about-text">
-                        <h2>Who is Roomy?</h2>
+                        <h2 className="section-title-animate">Who is Roomy?</h2>
                         <p>
                             Roomy is your trusted partner in property management and vacation rentals. 
                             We combine cutting-edge technology with personalized service to help property 
@@ -86,23 +110,23 @@ const Landlords = () => {
                         </p>
                     </div>
                     <div className="about-features">
-                        <div className="feature-card">
-                            <div className="feature-icon">🏆</div>
+                        <div className="feature-card card-float" style={{ animationDelay: '0.1s' }}>
+                            <div className="feature-icon icon-bounce">🏆</div>
                             <h3>Airbnb Superhosts</h3>
                             <p>Our 4.8+ rating ensures your property gets maximum visibility and bookings</p>
                         </div>
-                        <div className="feature-card">
-                            <div className="feature-icon">💰</div>
+                        <div className="feature-card card-float" style={{ animationDelay: '0.2s' }}>
+                            <div className="feature-icon icon-bounce">💰</div>
                             <h3>Dynamic Pricing</h3>
                             <p>AI-powered pricing optimization to maximize your revenue year-round</p>
                         </div>
-                        <div className="feature-card">
-                            <div className="feature-icon">🛡️</div>
+                        <div className="feature-card card-float" style={{ animationDelay: '0.3s' }}>
+                            <div className="feature-icon icon-bounce">🛡️</div>
                             <h3>Full Protection</h3>
                             <p>Comprehensive insurance and guest verification for your peace of mind</p>
                         </div>
-                        <div className="feature-card">
-                            <div className="feature-icon">🌍</div>
+                        <div className="feature-card card-float" style={{ animationDelay: '0.4s' }}>
+                            <div className="feature-icon icon-bounce">🌍</div>
                             <h3>Global Reach</h3>
                             <p>Access to our network of verified guests from around the world</p>
                         </div>
@@ -114,35 +138,35 @@ const Landlords = () => {
             <WhyLandlords />
 
             {/* Services Section */}
-            <section className="services-section">
-                <h2>What We Offer</h2>
+            <section className="services-section fade-in-element">
+                <h2 className="section-title-animate">What We Offer</h2>
                 <div className="services-grid">
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.1s' }}>
                         <div className="service-number">01</div>
                         <h3>Professional Photography</h3>
                         <p>High-quality photos and videos that showcase your property's best features</p>
                     </div>
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.2s' }}>
                         <div className="service-number">02</div>
                         <h3>Listing Optimization</h3>
                         <p>SEO-optimized descriptions across multiple booking platforms</p>
                     </div>
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.3s' }}>
                         <div className="service-number">03</div>
                         <h3>Guest Communication</h3>
                         <p>24/7 guest support in multiple languages, handling all inquiries</p>
                     </div>
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.4s' }}>
                         <div className="service-number">04</div>
                         <h3>Cleaning & Maintenance</h3>
                         <p>Professional cleaning and routine maintenance after each guest</p>
                     </div>
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.5s' }}>
                         <div className="service-number">05</div>
                         <h3>Revenue Management</h3>
                         <p>Dynamic pricing strategy adjusted daily based on market demand</p>
                     </div>
-                    <div className="service-item">
+                    <div className="service-item service-slide-in" style={{ animationDelay: '0.6s' }}>
                         <div className="service-number">06</div>
                         <h3>Reporting & Analytics</h3>
                         <p>Monthly reports with detailed performance metrics and insights</p>

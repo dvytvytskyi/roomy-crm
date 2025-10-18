@@ -5,8 +5,8 @@ const Navigation = ({ variant = 'default' }) => {
     const navItems = [
         { label: 'Our Homes', href: '/properties' },
         { label: 'Landlords', href: '/landlords' },
-        { label: 'About Us', href: '/map' },
-        { label: 'Contact Us', href: '/project' }
+        { label: 'About Us', href: '/about-us' },
+        { label: 'Contact Us', href: '/contact-us' }
     ];
 
     if (variant === 'simple') {

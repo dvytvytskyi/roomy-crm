@@ -1,0 +1,741 @@
+// 🎨 About Us Page Styles
+
+// 🎭 Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.about-us-page {
+  min-height: 100vh;
+  background: #FAFAFA;
+
+  // 🎯 Hero Section
+  .hero-section {
+    position: relative;
+    padding: 120px 64px 80px;
+    background: linear-gradient(135deg, #F88559 0%, #FF6B6B 50%, #E6764A 100%);
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .hero-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+
+      .floating-circle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        animation: float 6s ease-in-out infinite;
+
+        &.circle-1 {
+          width: 300px;
+          height: 300px;
+          top: -100px;
+          right: -50px;
+          animation-delay: 0s;
+        }
+
+        &.circle-2 {
+          width: 200px;
+          height: 200px;
+          bottom: -50px;
+          left: 10%;
+          animation-delay: 2s;
+        }
+
+        &.circle-3 {
+          width: 150px;
+          height: 150px;
+          top: 50%;
+          left: -50px;
+          animation-delay: 4s;
+        }
+      }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 800px;
+      animation: fadeInUp 1s ease-out;
+
+      .hero-badge {
+        display: inline-block;
+        padding: 8px 24px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        color: white;
+        font-family: Onest, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .hero-title {
+        color: white;
+        font-family: Onest, sans-serif;
+        font-size: 64px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 24px;
+
+        .gradient-text {
+          background: linear-gradient(135deg, #FFFFFF 0%, #FFE5DB 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: gradientShift 3s ease infinite;
+          background-size: 200% 200%;
+        }
+      }
+
+      .hero-subtitle {
+        color: rgba(255, 255, 255, 0.95);
+        font-family: Onest, sans-serif;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.6;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  // 📖 Story Section
+  .story-section {
+    padding: 100px 64px;
+    background: white;
+
+    .story-content {
+      display: flex;
+      gap: 80px;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+
+      .story-text {
+        flex: 1;
+
+        .section-title {
+          color: #0D0C22;
+          font-family: Onest, sans-serif;
+          font-size: 48px;
+          font-weight: 700;
+          margin-bottom: 32px;
+        }
+
+        p {
+          color: #4A4A4A;
+          font-family: Onest, sans-serif;
+          font-size: 18px;
+          font-weight: 400;
+          line-height: 1.8;
+          margin-bottom: 24px;
+
+          strong {
+            color: #F88559;
+            font-weight: 600;
+          }
+        }
+      }
+
+      .story-image {
+        flex: 1;
+
+        .story-photo {
+          width: 100%;
+          height: 500px;
+          object-fit: cover;
+          border-radius: 24px;
+          box-shadow: 0 20px 60px rgba(248, 133, 89, 0.2);
+          border: 4px solid rgba(248, 133, 89, 0.1);
+          transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+
+          &:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 80px rgba(248, 133, 89, 0.3);
+          }
+
+          @media (max-width: 968px) {
+            height: 400px;
+          }
+
+          @media (max-width: 576px) {
+            height: 300px;
+          }
+        }
+      }
+    }
+  }
+
+  // 📊 Statistics Section
+  .stats-section {
+    padding: 100px 64px;
+    background: linear-gradient(180deg, #FAFAFA 0%, white 100%);
+    text-align: center;
+
+    .section-title {
+      color: #0D0C22;
+      font-family: Onest, sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 64px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+
+      .stat-card {
+        background: white;
+        padding: 48px 32px;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: linear-gradient(90deg, #F88559 0%, #FF6B6B 100%);
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.4s ease;
+        }
+
+        &:hover {
+          transform: translateY(-12px);
+          box-shadow: 0 20px 60px rgba(248, 133, 89, 0.2);
+
+          &::before {
+            transform: scaleX(1);
+          }
+
+          .stat-icon {
+            transform: scale(1.2) rotate(10deg);
+          }
+        }
+
+        .stat-icon {
+          font-size: 56px;
+          margin-bottom: 20px;
+          transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          display: inline-block;
+        }
+
+        .stat-number {
+          color: #F88559;
+          font-family: Onest, sans-serif;
+          font-size: 56px;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .stat-label {
+          color: #717171;
+          font-family: Onest, sans-serif;
+          font-size: 16px;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  // 👥 Team Section
+  .team-section {
+    padding: 100px 64px;
+    background: white;
+    text-align: center;
+
+    .section-title {
+      color: #0D0C22;
+      font-family: Onest, sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      color: #717171;
+      font-family: Onest, sans-serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 64px;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+
+      .team-card {
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F2 100%);
+        padding: 40px 24px;
+        border-radius: 20px;
+        border: 2px solid transparent;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: fadeInUp 0.6s ease forwards;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #F88559 0%, #FF6B6B 100%);
+          opacity: 0;
+          transition: opacity 0.4s ease;
+          z-index: 0;
+        }
+
+        &:hover {
+          transform: translateY(-12px) scale(1.02);
+          border-color: #F88559;
+          box-shadow: 0 20px 60px rgba(248, 133, 89, 0.25);
+
+          &::before {
+            opacity: 0.05;
+          }
+
+          .team-avatar {
+            transform: scale(1.15) rotate(5deg);
+          }
+        }
+
+        > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .team-avatar {
+          font-size: 80px;
+          margin-bottom: 16px;
+          transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          display: inline-block;
+        }
+
+        .team-badge {
+          display: inline-block;
+          padding: 6px 16px;
+          background: linear-gradient(135deg, #F88559 0%, #FF6B6B 100%);
+          color: white;
+          border-radius: 20px;
+          font-family: Onest, sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+
+        .team-name {
+          color: #0D0C22;
+          font-family: Onest, sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+
+        .team-role {
+          color: #F88559;
+          font-family: Onest, sans-serif;
+          font-size: 16px;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+
+        .team-description {
+          color: #717171;
+          font-family: Onest, sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.6;
+        }
+      }
+    }
+  }
+
+  // 💎 Values Section
+  .values-section {
+    padding: 100px 64px;
+    background: linear-gradient(180deg, #FAFAFA 0%, white 100%);
+    text-align: center;
+
+    .section-title {
+      color: #0D0C22;
+      font-family: Onest, sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      color: #717171;
+      font-family: Onest, sans-serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 64px;
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+
+      .value-card {
+        background: white;
+        padding: 40px 32px;
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0;
+        animation: fadeInUp 0.6s ease forwards;
+        position: relative;
+        overflow: hidden;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, rgba(248, 133, 89, 0.05) 0%, rgba(255, 107, 107, 0.05) 100%);
+          opacity: 0;
+          transition: opacity 0.4s ease;
+        }
+
+        &:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 12px 48px rgba(248, 133, 89, 0.15);
+
+          &::after {
+            opacity: 1;
+          }
+
+          .value-icon {
+            transform: scale(1.2) rotate(-10deg);
+          }
+        }
+
+        > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .value-icon {
+          font-size: 64px;
+          margin-bottom: 20px;
+          transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          display: inline-block;
+        }
+
+        .value-title {
+          color: #0D0C22;
+          font-family: Onest, sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .value-description {
+          color: #717171;
+          font-family: Onest, sans-serif;
+          font-size: 16px;
+          font-weight: 400;
+          line-height: 1.6;
+        }
+      }
+    }
+  }
+
+  // 🏆 Certification Section
+  .certification-section {
+    padding: 80px 64px;
+    background: linear-gradient(135deg, #FFF5F2 0%, #FFE5DB 100%);
+
+    .certification-content {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+
+      .certification-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        background: white;
+        padding: 32px 48px;
+        border-radius: 20px;
+        box-shadow: 0 12px 48px rgba(248, 133, 89, 0.15);
+        margin-bottom: 32px;
+        transition: transform 0.4s ease;
+
+        &:hover {
+          transform: scale(1.02);
+        }
+
+        .badge-icon {
+          font-size: 64px;
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        .badge-text {
+          text-align: left;
+
+          h3 {
+            color: #0D0C22;
+            font-family: Onest, sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+          }
+
+          p {
+            color: #F88559;
+            font-family: Onest, sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+          }
+        }
+      }
+
+      .certification-description {
+        color: #4A4A4A;
+        font-family: Onest, sans-serif;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 1.8;
+      }
+    }
+  }
+
+  // 🎯 CTA Section
+  .cta-section {
+    padding: 100px 64px;
+    background: white;
+    text-align: center;
+
+    .cta-title {
+      color: #0D0C22;
+      font-family: Onest, sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .cta-subtitle {
+      color: #717171;
+      font-family: Onest, sans-serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 48px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+
+      .cta-button {
+        padding: 18px 48px;
+        border-radius: 14px;
+        font-family: Onest, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+
+        &.primary {
+          background: linear-gradient(135deg, #F88559 0%, #FF6B6B 50%, #E6764A 100%);
+          color: white;
+          box-shadow: 0 8px 24px rgba(248, 133, 89, 0.3);
+
+          &:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 16px 48px rgba(248, 133, 89, 0.4);
+          }
+
+          &:active {
+            transform: translateY(-2px) scale(1.02);
+          }
+        }
+
+        &.secondary {
+          background: white;
+          color: #F88559;
+          border-color: #F88559;
+
+          &:hover {
+            background: #FFF5F2;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(248, 133, 89, 0.15);
+          }
+
+          &:active {
+            transform: translateY(-2px);
+          }
+        }
+      }
+    }
+  }
+
+  // 🎬 Fade-in animation for sections
+  .fade-in-element {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+
+    &.animate-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // 📱 Responsive Design
+  @media (max-width: 1024px) {
+    .story-section .story-content {
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    .stats-section .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .team-section .team-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .values-section .values-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 80px 32px 60px;
+
+      .hero-content .hero-title {
+        font-size: 40px;
+      }
+    }
+
+    .stats-section .stats-grid,
+    .team-section .team-grid,
+    .values-section .values-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-section .cta-buttons {
+      flex-direction: column;
+
+      .cta-button {
+        width: 100%;
+      }
+    }
+  }
+}
+
