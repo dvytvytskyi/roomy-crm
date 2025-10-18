@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const Navigation = ({ variant = 'default' }) => {
     const navItems = [
         { label: 'Our Homes', href: '/properties' },
-        { label: 'Landlords', href: '/project-map' },
+        { label: 'Landlords', href: '/landlords' },
         { label: 'About Us', href: '/map' },
         { label: 'Contact Us', href: '/project' }
     ];
