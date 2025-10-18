@@ -138,6 +138,7 @@ import pricingCalendarRoutes from './routes/pricing-calendar.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import publicRoutes from './routes/public.routes';
+import portalRoutes from './routes/portal.routes';
 
 // API routes
 app.get('/api/v2', (_req, res) => {
@@ -193,6 +194,7 @@ app.use('/api/v2/calendar', pricingCalendarRoutes);
 app.use('/api/v2/calendar', calendarRoutes);
 app.use('/api/v2/dashboard', dashboardRoutes);
 app.use('/api/v2/analytics', analyticsRoutes);
+app.use('/api/v2/portal', portalRoutes); // Portal routes for AGENT and OWNER
 app.use('/health', healthRoutes);
 
 // 404 handler
