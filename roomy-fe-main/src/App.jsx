@@ -10,6 +10,7 @@ import ProjectPage from "./pages/ProjectPage.jsx";
 import Confirmation from "./pages/Confirmation.jsx";
 import Lease from "./pages/Lease.jsx";
 import Test from "./pages/Test.jsx";
+import Landlords from "./pages/Landlords.jsx";
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
     <Routes >
       <Route path="/" element={<Home />} />
       <Route path="/properties" element={<Properties />} />
+      <Route path="/landlords" element={<Landlords />} />
       <Route path="/selection" element={<Selection />} />
       <Route path="/project-map" element={<ProjectMap />} />
       <Route path="/map" element={<MapPage />} />
