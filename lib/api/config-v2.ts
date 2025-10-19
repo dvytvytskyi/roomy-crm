@@ -121,7 +121,7 @@ apiClientV2.interceptors.request.use(
 
 // Add response interceptor for error handling
 apiClientV2.interceptors.response.use(
-  (response) => response,
+  (response) => response.data, // Return only data, not full Axios response
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized

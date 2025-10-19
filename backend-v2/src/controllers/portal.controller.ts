@@ -204,16 +204,25 @@ export class PortalController {
         return;
       }
 
-      const whereClause = user.role === UserRole.ADMIN 
+      // First, get properties assigned to this agent
+      const propertiesWhereClause = user.role === UserRole.ADMIN 
         ? {} 
         : { agent_id: user.userId };
 
+      const agentProperties = await prisma.properties.findMany({
+        where: propertiesWhereClause,
+        select: { id: true },
+      });
+
+      const propertyIds = agentProperties.map(p => p.id);
+
       // Get total revenue from reservations
+      const reservationsWhereClause = user.role === UserRole.ADMIN 
+        ? { status: 'CONFIRMED' } 
+        : { agent_id: user.userId, status: 'CONFIRMED' };
+
       const reservations = await prisma.reservations.findMany({
-        where: {
-          ...whereClause,
-          status: 'CONFIRMED',
-        },
+        where: reservationsWhereClause,
         select: {
           total_amount: true,
           paid_amount: true,
@@ -225,9 +234,9 @@ export class PortalController {
       const totalPaid = reservations.reduce((sum, r) => sum + (r.paid_amount || 0), 0);
       const totalOutstanding = reservations.reduce((sum, r) => sum + (r.outstanding_balance || 0), 0);
 
-      // Get expenses
+      // Get expenses filtered by property_id (since expenses don't have agent_id)
       const expenses = await prisma.expenses.findMany({
-        where: whereClause,
+        where: propertyIds.length > 0 ? { property_id: { in: propertyIds } } : {},
         select: {
           amount: true,
           category: true,
@@ -366,12 +375,12 @@ export class PortalController {
       const propertyIds = properties.map(p => p.id);
 
       // Get reservations for these properties
+      const reservationsWhereClause = user.role === UserRole.ADMIN 
+        ? {} 
+        : { property_id: { in: propertyIds } };
+
       const reservations = await prisma.reservations.findMany({
-        where: {
-          property_id: user.role === UserRole.ADMIN 
-            ? undefined 
-            : { in: propertyIds },
-        },
+        where: reservationsWhereClause,
         include: {
           properties: {
             select: {
@@ -433,19 +442,18 @@ export class PortalController {
 
       const properties = await prisma.properties.findMany({
         where: wherePropertyClause,
-        select: { id: true, title: true },
+        select: { id: true, name: true, title: true, nickname: true },
       });
 
       const propertyIds = properties.map(p => p.id);
 
       // Get reservations revenue
+      const reservationsWhereClause = user.role === UserRole.ADMIN 
+        ? { status: 'CONFIRMED' } 
+        : { property_id: { in: propertyIds }, status: 'CONFIRMED' };
+
       const reservations = await prisma.reservations.findMany({
-        where: {
-          property_id: user.role === UserRole.ADMIN 
-            ? undefined 
-            : { in: propertyIds },
-          status: 'CONFIRMED',
-        },
+        where: reservationsWhereClause,
         select: {
           total_amount: true,
           paid_amount: true,
@@ -459,12 +467,12 @@ export class PortalController {
       const totalOutstanding = reservations.reduce((sum, r) => sum + (r.outstanding_balance || 0), 0);
 
       // Get expenses per property
+      const expensesWhereClause = user.role === UserRole.ADMIN 
+        ? {} 
+        : { property_id: { in: propertyIds } };
+
       const expenses = await prisma.expenses.findMany({
-        where: {
-          property_id: user.role === UserRole.ADMIN 
-            ? undefined 
-            : { in: propertyIds },
-        },
+        where: expensesWhereClause,
         select: {
           amount: true,
           category: true,
@@ -483,9 +491,12 @@ export class PortalController {
         const propPaid = propReservations.reduce((sum, r) => sum + (r.paid_amount || 0), 0);
         const propExpenseTotal = propExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
+        // Use nickname, title, or name as property title (in order of preference)
+        const propertyTitle = property.nickname || property.title || property.name;
+
         return {
           propertyId: property.id,
-          propertyTitle: property.title,
+          propertyTitle,
           revenue: propRevenue,
           paid: propPaid,
           expenses: propExpenseTotal,

@@ -11,27 +11,38 @@ export function useAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-      if (authServiceAdapted.isAuthenticated()) {
-        const response = await authServiceAdapted.getProfile();
+        console.log('🔍 useAuth: Starting auth check...');
+        const hasToken = authServiceAdapted.isAuthenticated();
+        console.log('🔍 useAuth: Has token?', hasToken);
+        
+        if (hasToken) {
+          console.log('🔍 useAuth: Fetching profile...');
+          const response = await authServiceAdapted.getProfile();
+          console.log('🔍 useAuth: Profile response:', response);
+          
           if (response.success && response.data) {
+            console.log('✅ useAuth: Profile loaded successfully');
             setUser(response.data);
             setIsAuthenticated(true);
           } else {
             // Token is invalid, clear auth state
+            console.log('⚠️ useAuth: Profile failed, clearing auth');
             await authServiceAdapted.logout();
             setUser(null);
             setIsAuthenticated(false);
           }
         } else {
           // No token, user is not authenticated
+          console.log('⚠️ useAuth: No token found');
           setUser(null);
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('❌ useAuth: Auth check failed:', error);
         setUser(null);
         setIsAuthenticated(false);
       } finally {
+        console.log('🏁 useAuth: Auth check complete, setting initialized=true');
         setIsLoading(false);
         setIsInitialized(true);
       }

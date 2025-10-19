@@ -23,21 +23,27 @@ export default function DashboardLayout({ className = '' }: DashboardLayoutProps
 
   const loadDashboardStats = async () => {
     try {
+      console.log('📊 DashboardLayout: Starting to load stats...')
       setLoading(true)
       setError(null)
       
       const response = await dashboardServiceV2.getStats()
+      console.log('📊 DashboardLayout: Stats response:', response)
       
       if (response.success && response.data) {
+        console.log('✅ DashboardLayout: Stats loaded successfully:', response.data)
         setStats(response.data)
         setLastUpdated(new Date())
       } else {
+        console.error('❌ DashboardLayout: Stats failed:', response.message, response.error)
         setError(response.message || 'Failed to load dashboard statistics')
       }
     } catch (err: any) {
+      console.error('💥 DashboardLayout: Exception caught:', err)
       setError('Error loading dashboard data')
       console.error('Dashboard error:', err)
     } finally {
+      console.log('🏁 DashboardLayout: Loading complete')
       setLoading(false)
     }
   }

@@ -46,14 +46,22 @@ class DashboardServiceV2 {
    */
   async getStats(): Promise<ApiResponseV2<DashboardStatsV2>> {
     try {
+      console.log('🔍 dashboardService: Fetching stats...');
       const response = await apiClientV2.get('/dashboard/stats');
+      console.log('🔍 dashboardService: Raw response:', response);
+      
+      // Backend response structure: { success: true, data: {...}, timestamp: ... }
+      // apiClientV2.get() already returns the full response
+      const statsData = response.data || response;
+      console.log('🔍 dashboardService: Extracted data:', statsData);
       
       return {
         success: true,
-        data: response.data.data!,
+        data: statsData as DashboardStatsV2,
         timestamp: new Date().toISOString()
       };
     } catch (error: any) {
+      console.error('❌ dashboardService: Error:', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Unknown error',

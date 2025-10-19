@@ -24,6 +24,7 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
   // Auth redirect effect - now handled by middleware, but keep as fallback
   useEffect(() => {
     if (!mounted) return
+    if (isAuthPage) return // Don't redirect on auth pages
 
     console.log('🛡 ClientAuthGuard: Auth state changed', {
       isInitialized,
@@ -33,8 +34,8 @@ export default function ClientAuthGuard({ children }: ClientAuthGuardProps) {
       pathname
     })
 
-    // Middleware handles redirects, this is just a fallback
-    if (isInitialized && !isLoading && !isAuthenticated && !isAuthPage) {
+    // Only redirect when fully initialized and definitely not authenticated
+    if (isInitialized && !isLoading && !isAuthenticated) {
       console.log('🔄 ClientAuthGuard: Fallback redirect to login...')
       // Use window.location.href instead of router.push to avoid React DOM issues
       window.location.href = '/login'
