@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker deployments
+  output: 'standalone',
+  
   webpack: (config, { isServer }) => {
     // Handle Bryntum modules
     config.resolve.fallback = {
@@ -19,6 +22,7 @@ const nextConfig = {
   },
   // Enable static file serving for Bryntum assets and API proxy
   async rewrites() {
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
     return [
       {
         source: '/build/:path*',
@@ -27,7 +31,7 @@ const nextConfig = {
       // Proxy API requests to backend
       {
         source: '/api/v2/:path*',
-        destination: 'http://localhost:3002/api/v2/:path*',
+        destination: `${backendUrl}/api/v2/:path*`,
       },
     ];
   },

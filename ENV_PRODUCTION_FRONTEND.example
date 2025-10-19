@@ -1,0 +1,12 @@
+# ======================================
+# FRONTEND ENVIRONMENT VARIABLES
+# ======================================
+# For Vercel deployment, add these as Environment Variables in the Vercel dashboard
+
+# API Configuration
+NEXT_PUBLIC_API_V2_URL=https://your-backend-url.up.railway.app/api/v2
+BACKEND_API_URL=https://your-backend-url.up.railway.app
+
+# Build Configuration
+NODE_ENV=production
+

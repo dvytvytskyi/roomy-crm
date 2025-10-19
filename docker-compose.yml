@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: roomy-postgres
+    environment:
+      POSTGRES_USER: roomy
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: roomy_db_v2
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roomy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - roomy-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend-v2
+      dockerfile: Dockerfile
+    container_name: roomy-backend
+    environment:
+      - DATABASE_URL=postgresql://roomy:${DB_PASSWORD:-changeme}@postgres:5432/roomy_db_v2
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3002
+      - NODE_ENV=production
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-eu-west-3}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-roomy-ae}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - backend_logs:/app/logs
+    networks:
+      - roomy-network
+    restart: unless-stopped
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_V2_URL=${NEXT_PUBLIC_API_V2_URL:-http://localhost:3002/api/v2}
+    container_name: roomy-frontend
+    environment:
+      - BACKEND_API_URL=http://backend:3002
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - roomy-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  roomy-network:
+    driver: bridge
+

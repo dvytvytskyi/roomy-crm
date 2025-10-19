@@ -89,4 +89,26 @@ export const validateConfig = (): void => {
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
+
+  // Additional production checks
+  if (config.isProduction) {
+    // Check JWT_SECRET is strong enough
+    if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+      throw new Error('❌ JWT_SECRET must be at least 32 characters long in production');
+    }
+
+    // Check JWT_SECRET is not the default value
+    if (process.env.JWT_SECRET === 'your-super-secret-jwt-key-for-v2-here') {
+      throw new Error('❌ JWT_SECRET must be changed from default value in production');
+    }
+
+    // Warn about missing optional but recommended configs
+    if (!process.env.CORS_ORIGIN) {
+      console.warn('⚠️  WARNING: CORS_ORIGIN not set, using defaults. This may cause issues in production.');
+    }
+
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      console.warn('⚠️  WARNING: AWS S3 credentials not set. File uploads will not work.');
+    }
+  }
 };
