@@ -1,4 +1,4 @@
-import { apiClient } from '../client-v2'
+import { apiClientV2 as apiClient } from '../client-v2'
 
 export interface AnalyticsOverview {
   totalRevenue: number

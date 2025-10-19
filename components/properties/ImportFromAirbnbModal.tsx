@@ -256,7 +256,7 @@ export default function ImportFromAirbnbModal({ isOpen, onClose, onShowToast }: 
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Property data will be fetched from Airbnb</li>
                   <li>A new property will be created automatically</li>
-                  <li>You'll be redirected to review the imported data</li>
+                  <li>You&apos;ll be redirected to review the imported data</li>
                   <li>You can edit any details as needed</li>
                 </ul>
               </div>

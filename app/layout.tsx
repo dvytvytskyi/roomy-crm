@@ -20,7 +20,7 @@ export default function RootLayout({
         {/* Bryntum Scheduler CSS */}
         <link rel="stylesheet" href="/build/scheduler.stockholm.css" />
         {/* Bryntum Scheduler UMD */}
-        <script src="/build/scheduler.umd.js" />
+        <script src="/build/scheduler.umd.js" async />
       </head>
       <body className="antialiased">
       <ToastProvider />

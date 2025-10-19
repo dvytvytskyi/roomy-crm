@@ -287,7 +287,7 @@ export default function ChangePasswordPage() {
             <ul className="text-xs text-gray-600 space-y-1">
               <li>• Use a mix of uppercase, lowercase, numbers, and special characters</li>
               <li>• Avoid using personal information or common words</li>
-              <li>• Don't reuse passwords from other accounts</li>
+              <li>• Don&apos;t reuse passwords from other accounts</li>
               <li>• Change your password regularly</li>
             </ul>
           </div>

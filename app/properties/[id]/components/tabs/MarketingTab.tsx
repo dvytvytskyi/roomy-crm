@@ -300,7 +300,7 @@ export default function MarketingTab({ propertyData, onUpdate }: MarketingTabPro
               <div className="flex-1">
                 <h3 className="font-medium text-blue-900 mb-2">Airbnb Calendar Sync</h3>
                 <p className="text-sm text-blue-700 mb-3">
-                  Use this iCal URL to sync your property's availability with Airbnb. 
+                  Use this iCal URL to sync your property&apos;s availability with Airbnb. 
                   This will automatically block dates when you have reservations and keep your calendar up-to-date.
                 </p>
                 <div className="bg-white border border-blue-300 rounded-lg p-3 mb-3">
