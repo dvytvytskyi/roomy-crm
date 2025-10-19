@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { portalService, Property, Reservation, OwnerFinancialSummary } from '@/lib/api/services/portalService-v2'
-import { Wallet, LayoutDashboard, Home, Calendar } from 'lucide-react'
+import { Wallet, LayoutDashboard, Home, Calendar, Lock } from 'lucide-react'
 
 export default function OwnerPortalPage() {
   const router = useRouter()
@@ -127,6 +128,19 @@ export default function OwnerPortalPage() {
               <span style={{ color: '#717171', fontSize: '14px' }}>
                 {user?.firstName} {user?.lastName}
               </span>
+              <Link
+                href="/change-password"
+                className="px-6 py-2 rounded-full font-medium transition-all hover:opacity-90 flex items-center gap-2"
+                style={{ 
+                  background: 'white',
+                  border: '1px solid #E8E8E8',
+                  color: '#717171',
+                  fontSize: '14px'
+                }}
+              >
+                <Lock size={16} />
+                Change Password
+              </Link>
               <button
                 onClick={() => {
                   localStorage.removeItem('token')

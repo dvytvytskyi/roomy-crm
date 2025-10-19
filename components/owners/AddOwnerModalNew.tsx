@@ -7,6 +7,7 @@ import { showToast } from '@/lib/utils/toast'
 import { getCountryFlag } from '@/lib/utils/countryFlags'
 import { useFormValidation } from '@/lib/hooks/useFormValidation'
 import { createOwnerSchema, type CreateOwnerData } from '@/lib/schemas/validation'
+import PasswordDisplayModal from './PasswordDisplayModal'
 
 interface AddOwnerModalProps {
   onClose: () => void
@@ -31,6 +32,11 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
   });
 
   const [isNationalityDropdownOpen, setIsNationalityDropdownOpen] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [generatedCredentials, setGeneratedCredentials] = useState<{
+    email: string
+    password: string
+  } | null>(null)
   
   // Watch form values for dynamic updates
   const watchedValues = watch();
@@ -75,15 +81,6 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
         // Check if password was generated
         const generatedPassword = (response.data as any).generatedPassword
         
-        if (generatedPassword) {
-          showToast.success('Owner created with auto-generated password!')
-          
-          // Show password to admin (will implement modal in next step)
-          alert(`Owner created successfully!\n\nEmail: ${ownerData.email}\nPassword: ${generatedPassword}\n\nPlease save this password and send it to the owner securely.`)
-        } else {
-          showToast.success('Owner created successfully!')
-        }
-        
         // Transform API response to match expected format
         const transformedOwner = {
           ...response.data,
@@ -99,9 +96,26 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
           createdAt: new Date().toISOString()
         }
 
+        if (generatedPassword) {
+          // Show password modal
+          setGeneratedCredentials({
+            email: ownerData.email,
+            password: generatedPassword
+          })
+          setShowPasswordModal(true)
+          showToast.success('Owner created with auto-generated password!')
+        } else {
+          showToast.success('Owner created successfully!')
+        }
+
         onSave(transformedOwner)
         reset()
-        onClose()
+        
+        // Only close the modal if password wasn't generated
+        // Otherwise, close after password modal is dismissed
+        if (!generatedPassword) {
+          onClose()
+        }
       } else {
         throw new Error(response.error || 'Failed to create owner')
       }
@@ -296,6 +310,21 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
           </div>
         </form>
       </div>
+
+      {/* Password Display Modal */}
+      {showPasswordModal && generatedCredentials && (
+        <PasswordDisplayModal
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false)
+            setGeneratedCredentials(null)
+            onClose() // Close the main modal after password modal is closed
+          }}
+          email={generatedCredentials.email}
+          password={generatedCredentials.password}
+          role="OWNER"
+        />
+      )}
     </div>
   )
 }
