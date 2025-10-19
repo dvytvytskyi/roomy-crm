@@ -65,5 +65,4 @@ scripts/
 Dockerfile
 .dockerignore
 docker-compose.yml
-tsconfig.json
 
