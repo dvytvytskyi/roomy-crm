@@ -185,11 +185,6 @@ playwright/.cache/
 # PM2
 .pm2/
 
-# Docker
-.dockerignore
-Dockerfile
-docker-compose.yml
-
 # SSL certificates
 *.pem
 *.key

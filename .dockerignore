@@ -1,0 +1,69 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next/
+out/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# Backend (we're building frontend only)
+backend-v2/
+
+# Test files
+__tests__/
+*.test.tsx
+*.test.ts
+*.spec.tsx
+*.spec.ts
+jest.config.js
+jest.setup.js
+
+# Other
+.github/
+.gitlab/
+Dockerfile
+.dockerignore
+docker-compose.yml
+
