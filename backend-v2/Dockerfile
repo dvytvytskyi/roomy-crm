@@ -13,6 +13,7 @@ RUN npx prisma generate
 
 # Build stage
 FROM node:18-alpine AS builder
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 # Copy dependencies from deps stage
