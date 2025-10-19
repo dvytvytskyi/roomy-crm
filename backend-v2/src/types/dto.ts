@@ -6,7 +6,7 @@ export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
 // Existing imports and types...
 export interface CreateUserDto {
   email: string;
-  password: string;
+  password?: string; // Optional: will be auto-generated if not provided
   firstName: string;
   lastName: string;
   phone?: string;

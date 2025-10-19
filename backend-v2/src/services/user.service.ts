@@ -5,6 +5,38 @@ import { ServiceResponse } from '../types';
 import { CreateUserDto, UpdateUserDto, UserResponseDto, PaginationOptions, PaginatedResponse, CurrentUser, UserQueryParams, UserWithStatsDto, CreateBankAccountDto, UpdateBankAccountDto, BankAccountResponseDto, CreateTransactionDto, UpdateTransactionDto, TransactionResponseDto, CreateDocumentDto, UpdateDocumentDto, DocumentResponseDto, CreateActivityLogDto, ActivityLogResponseDto } from '../types/dto';
 import logger from '../utils/logger';
 
+/**
+ * Generate a secure random password
+ * @param length Password length (default: 16)
+ * @returns Generated password
+ */
+export function generateSecurePassword(length: number = 16): string {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*';
+  const all = uppercase + lowercase + numbers + special;
+
+  let password = '';
+  
+  // Ensure at least one character from each category
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += all[Math.floor(Math.random() * all.length)];
+  }
+  
+  // Shuffle the password
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}
+
 export class UserService extends BaseService {
   private static instance: UserService;
 
@@ -240,7 +272,7 @@ export class UserService extends BaseService {
   /**
    * Create new user
    */
-  public static async create(currentUser: CurrentUser, data: CreateUserDto): Promise<ServiceResponse<UserResponseDto>> {
+  public static async create(currentUser: CurrentUser, data: CreateUserDto): Promise<ServiceResponse<UserResponseDto & { generatedPassword?: string }>> {
     try {
       const prisma = new PrismaClient();
 
@@ -260,8 +292,20 @@ export class UserService extends BaseService {
         return UserService.prototype.error('Conflict', 'User with this email already exists');
       }
 
+      // Generate password if not provided
+      let plainPassword: string | undefined;
+      let passwordToHash: string;
+      
+      if (!data.password || data.password.trim() === '') {
+        plainPassword = generateSecurePassword(16);
+        passwordToHash = plainPassword;
+        logger.info(`[User Creation] Generated secure password for ${data.email}`);
+      } else {
+        passwordToHash = data.password;
+      }
+
       // Hash password
-      const hashedPassword = await bcrypt.hash(data.password, 12);
+      const hashedPassword = await bcrypt.hash(passwordToHash, 12);
 
       logger.info(`[User Creation] Starting user creation for role: ${data.role}`);
 
@@ -328,6 +372,16 @@ export class UserService extends BaseService {
 
 
       const userResponse = UserService.mapToUserResponse(result);
+      
+      // If password was generated, include it in response for admin
+      if (plainPassword) {
+        logger.info(`User created successfully with generated password: ${result.email} by ${currentUser.email}`);
+        return UserService.prototype.success(
+          { ...userResponse, generatedPassword: plainPassword }, 
+          'User created successfully. Generated password included in response.'
+        );
+      }
+      
       logger.info(`User created successfully: ${result.email} by ${currentUser.email}`);
       return UserService.prototype.success(userResponse, 'User created successfully');
     } catch (error) {

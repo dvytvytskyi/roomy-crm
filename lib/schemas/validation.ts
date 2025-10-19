@@ -72,6 +72,8 @@ export const createOwnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
   lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
   nationality: z.string().min(1, 'Nationality is required'),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
   role: z.literal('OWNER').optional(),
 });
 

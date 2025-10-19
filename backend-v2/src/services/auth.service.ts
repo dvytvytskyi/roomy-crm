@@ -278,7 +278,7 @@ export class AuthService extends BaseService {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
       
       if (!isCurrentPasswordValid) {
         return AuthService.prototype.error(

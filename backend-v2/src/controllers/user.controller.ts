@@ -52,9 +52,9 @@ export class UserController extends BaseController {
         personalStayDays
       } = req.body;
       
-      // Validate required fields
-      if (!firstName || !lastName || !email || !password) {
-        UserController.validationError(res, [], 'First name, last name, email, and password are required');
+      // Validate required fields (password is optional - will be auto-generated if not provided)
+      if (!firstName || !lastName || !email) {
+        UserController.validationError(res, [], 'First name, last name, and email are required');
         return;
       }
       

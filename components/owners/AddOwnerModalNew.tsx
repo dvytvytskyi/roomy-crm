@@ -46,21 +46,43 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
 
     try {
       // Prepare simplified data for API
-      const ownerData = {
+      const ownerData: any = {
         firstName: data.firstName,
         lastName: data.lastName,
         nationality: data.nationality,
         role: 'OWNER',
-        email: `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@owner.com`, // Generate email
-        password: 'TempPassword123!', // TODO: Generate secure password
         status: 'ACTIVE'
       }
+
+      // Use provided email or generate one
+      if (data.email && data.email.trim()) {
+        ownerData.email = data.email
+      } else {
+        ownerData.email = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@owner.com`
+      }
+
+      // Use provided password or let backend generate one
+      if (data.password && data.password.trim()) {
+        ownerData.password = data.password
+      }
+      // If password not provided, backend will auto-generate it
 
       const response = await userServiceAdapter.createUser(ownerData)
       
       if (response.success && response.data) {
         showToast.dismiss(loadingToast)
-        showToast.success('Owner created successfully!')
+        
+        // Check if password was generated
+        const generatedPassword = (response.data as any).generatedPassword
+        
+        if (generatedPassword) {
+          showToast.success('Owner created with auto-generated password!')
+          
+          // Show password to admin (will implement modal in next step)
+          alert(`Owner created successfully!\n\nEmail: ${ownerData.email}\nPassword: ${generatedPassword}\n\nPlease save this password and send it to the owner securely.`)
+        } else {
+          showToast.success('Owner created successfully!')
+        }
         
         // Transform API response to match expected format
         const transformedOwner = {
@@ -207,6 +229,42 @@ export default function AddOwnerModalNew({ onClose, onSave }: AddOwnerModalProps
               )}
             </div>
             {errors.nationality && <p className="mt-1 text-sm text-red-600">{errors.nationality.message}</p>}
+          </div>
+
+          {/* Email (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <User size={16} className="inline mr-2" />
+              Email (Optional)
+            </label>
+            <input
+              type="email"
+              {...register('email')}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+                errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="owner@example.com (auto-generated if empty)"
+            />
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+            <p className="mt-1 text-xs text-gray-500">Leave empty to auto-generate: firstname.lastname@owner.com</p>
+          </div>
+
+          {/* Password (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <User size={16} className="inline mr-2" />
+              Password (Optional)
+            </label>
+            <input
+              type="password"
+              {...register('password')}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+                errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="Leave empty to auto-generate secure password"
+            />
+            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+            <p className="mt-1 text-xs text-gray-500">Leave empty to auto-generate a secure 16-character password</p>
           </div>
 
           {/* Form Actions */}
