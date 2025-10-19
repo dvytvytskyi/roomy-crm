@@ -9,6 +9,8 @@ RUN apk add --no-cache libc6-compat openssl
 COPY package*.json ./
 RUN npm ci
 
+# Generate Prisma Client and build the TypeScript project
+
 # Copy the rest of the application source code
 COPY . .
 
